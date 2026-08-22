@@ -44,6 +44,10 @@ await api.combineSkills(actor, {
 });
 ```
 
+## Acceptance campaign
+
+[`TEST_SCENARIO.md`](TEST_SCENARIO.md) contains **The First Steam**, a complete programmatic PF2e test campaign. It creates tagged Actors, a Scene, a Journal Entry, and a Macro; imports and combines skills; verifies tags, lineage, idempotency, and map configuration; then returns a pass/fail report. It also provides a targeted cleanup command that removes only documents it created.
+
 ## Map scaffold
 
 `assets\atlas\grand-design-atlas.svg` is an original, scalable campaign atlas. Configure its path in **Configure Settings > Grand Design AI** or replace it with a map asset that you are licensed to use. See [`../world-map.md`](../world-map.md) for scene setup.

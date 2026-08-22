@@ -6,6 +6,7 @@ import {
   normalizeEntry,
   registerEntry
 } from "./lineage.js";
+import { clearTestScenario, runTestScenario } from "./test-scenario.js";
 import { validateClassEntry, validateConversion, validateSkillEntry } from "./validator.js";
 
 export class GrandDesignApi {
@@ -77,6 +78,19 @@ export class GrandDesignApi {
 
   getActorRegistry(actor) {
     return actor?.getFlag(MODULE_ID, REGISTRY_FLAG) ?? emptyRegistry();
+  }
+
+  async runTestScenario() {
+    this.#assertGm();
+    if (game.system.id !== "pf2e") {
+      throw new Error("The Grand Design test scenario requires the PF2e game system.");
+    }
+    return runTestScenario(this);
+  }
+
+  async clearTestScenario() {
+    this.#assertGm();
+    return clearTestScenario();
   }
 
   async #approveEvolution(actor, kind, entry, operation) {
