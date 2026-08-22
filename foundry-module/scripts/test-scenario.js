@@ -88,7 +88,7 @@ export async function runTestScenario(api) {
     assert(
       report,
       "Every campaign scene uses the configured atlas asset.",
-      campaign.scenes.every((scene) => sameFoundryPath(scene._source.background?.src, campaign.atlasAssetPath))
+      campaign.scenes.every((scene) => sameFoundryPath(sceneAtlasSource(scene), campaign.atlasAssetPath))
     );
     assert(
       report,
@@ -107,6 +107,10 @@ export async function runTestScenario(api) {
   } catch (error) {
     report.failed.push(`Unexpected test campaign error: ${error.message}`);
     console.error(`${MODULE_ID} | test campaign failed`, error);
+  }
+
+  function sceneAtlasSource(scene) {
+    return scene.background?.src ?? scene._source.background?.src;
   }
 
   if (report.passed.length !== report.expectedAssertions) {
@@ -145,9 +149,9 @@ async function createCampaignDocuments(report) {
       grid: { type: CONST.GRID_TYPES.GRIDLESS },
       flags: { [MODULE_ID]: { [TEST_SCENARIO_FLAG]: true, act: index + 1 } }
     });
-    await scene.update({ "background.src": atlasAssetPath });
+    await scene.update({ background: { src: atlasAssetPath } });
     await scene.createEmbeddedDocuments("Token", tokenFixtures(index, actors));
-    scenes.push(scene);
+    scenes.push(game.scenes.get(scene.id) ?? scene);
   }
   await scenes[0].activate();
   report.documents.scenes = scenes.map((scene) => scene.id);
