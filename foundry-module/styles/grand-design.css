@@ -1,0 +1,8 @@
+.grand-design-import .fa-sparkles {
+  color: #e0b75f;
+}
+
+.grand-design-conversion textarea[name="conversion"] {
+  min-height: 20rem;
+  font-family: monospace;
+}

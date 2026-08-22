@@ -1,0 +1,12 @@
+[
+  {"level_band":"1-2","minimum_level":1,"maximum_level":2,"maximum_spell_rank":1,"maximum_actions":2,"reference":"PF2e rank 1 spell and low-level feat envelope"},
+  {"level_band":"3-4","minimum_level":3,"maximum_level":4,"maximum_spell_rank":2,"maximum_actions":2,"reference":"PF2e rank 2 spell and low-level feat envelope"},
+  {"level_band":"5-6","minimum_level":5,"maximum_level":6,"maximum_spell_rank":3,"maximum_actions":2,"reference":"PF2e rank 3 spell and early mid-level feat envelope"},
+  {"level_band":"7-8","minimum_level":7,"maximum_level":8,"maximum_spell_rank":4,"maximum_actions":2,"reference":"PF2e rank 4 spell and mid-level feat envelope"},
+  {"level_band":"9-10","minimum_level":9,"maximum_level":10,"maximum_spell_rank":5,"maximum_actions":3,"reference":"PF2e rank 5 spell and mid-level feat envelope"},
+  {"level_band":"11-12","minimum_level":11,"maximum_level":12,"maximum_spell_rank":6,"maximum_actions":3,"reference":"PF2e rank 6 spell and late mid-level feat envelope"},
+  {"level_band":"13-14","minimum_level":13,"maximum_level":14,"maximum_spell_rank":7,"maximum_actions":3,"reference":"PF2e rank 7 spell and high-level feat envelope"},
+  {"level_band":"15-16","minimum_level":15,"maximum_level":16,"maximum_spell_rank":8,"maximum_actions":3,"reference":"PF2e rank 8 spell and high-level feat envelope"},
+  {"level_band":"17-18","minimum_level":17,"maximum_level":18,"maximum_spell_rank":9,"maximum_actions":3,"reference":"PF2e rank 9 spell and apex feat envelope"},
+  {"level_band":"19-20","minimum_level":19,"maximum_level":20,"maximum_spell_rank":10,"maximum_actions":3,"reference":"PF2e rank 10 and world-category reserve envelope"}
+]

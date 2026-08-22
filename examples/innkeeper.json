@@ -1,0 +1,25 @@
+{
+  "id": "example-innkeeper",
+  "character": "Example Innkeeper",
+  "classes": [
+    {
+      "name": "Innkeeper",
+      "level": 12,
+      "power_tier": "standard",
+      "is_primary": true,
+      "is_secondary": false
+    }
+  ],
+  "skills": [
+    {
+      "name": "Cooking",
+      "changes_identity": false,
+      "maps_to_existing_mechanic": false
+    },
+    {
+      "name": "Rapid Slash",
+      "changes_identity": false,
+      "maps_to_existing_mechanic": true
+    }
+  ]
+}

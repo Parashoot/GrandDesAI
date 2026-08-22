@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 1152" role="img" aria-labelledby="title desc">
+  <title id="title">Grand Design Atlas</title>
+  <desc id="desc">An original campaign-world atlas with coastlines, trade routes, and unlabeled room for a Game Master to add locations.</desc>
+  <defs>
+    <linearGradient id="sea" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#1e4c67"/><stop offset="1" stop-color="#092337"/></linearGradient>
+    <linearGradient id="land" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#9da86f"/><stop offset="1" stop-color="#4d613b"/></linearGradient>
+    <pattern id="grid" width="128" height="128" patternUnits="userSpaceOnUse"><path d="M128 0H0V128" fill="none" stroke="#a5d6e6" stroke-opacity=".12" stroke-width="2"/></pattern>
+  </defs>
+  <rect width="2048" height="1152" fill="url(#sea)"/>
+  <rect width="2048" height="1152" fill="url(#grid)"/>
+  <path d="M165 170 330 110 528 185 650 325 590 476 445 490 340 635 170 590 105 440z" fill="url(#land)" stroke="#d7d198" stroke-width="12"/>
+  <path d="M828 105 1100 145 1285 295 1220 432 1340 550 1230 720 1010 690 920 820 700 735 680 540 780 400z" fill="url(#land)" stroke="#d7d198" stroke-width="12"/>
+  <path d="M1480 305 1775 225 1940 380 1870 585 1980 780 1780 945 1550 840 1435 665z" fill="url(#land)" stroke="#d7d198" stroke-width="12"/>
+  <path d="M430 820 615 770 745 870 690 1030 490 1060 360 960z" fill="url(#land)" stroke="#d7d198" stroke-width="12"/>
+  <g fill="none" stroke="#e8bc65" stroke-width="7" stroke-dasharray="18 14" opacity=".8">
+    <path d="M300 320 C650 190 860 250 1090 370 S1600 460 1770 420"/>
+    <path d="M260 530 C580 690 790 660 1030 610 S1480 650 1740 790"/>
+    <path d="M575 925 C840 850 1110 830 1540 775"/>
+  </g>
+  <g font-family="Georgia, serif" fill="#f8edbf" text-anchor="middle">
+    <text x="1024" y="75" font-size="44" letter-spacing="8">THE GRAND DESIGN ATLAS</text>
+    <text x="375" y="370" font-size="34">SAPPHIRE COAST</text>
+    <text x="1000" y="470" font-size="34">THE HEARTHLANDS</text>
+    <text x="1695" y="580" font-size="34">EMBER REACH</text>
+    <text x="550" y="930" font-size="30">THE LANTERN ISLES</text>
+    <text x="1030" y="1040" font-size="24">Original campaign atlas - replace with a licensed world asset as needed</text>
+  </g>
+</svg>
