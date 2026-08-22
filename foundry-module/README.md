@@ -17,9 +17,32 @@ The repository is currently private, so Foundry cannot download that URL anonymo
 1. Extract `releases\grand-design-ai.zip` into Foundry's `Data\modules\grand-design-ai` directory, or copy the `foundry-module` directory there while developing.
 2. Start a PF2e world, enable **Grand Design AI**, and reload the world.
 3. Open a PF2e Actor sheet as GM and select **Grand Design** in the header.
-4. Paste a conversion record such as the structure in `examples\innkeeper.json`. Add each Skill's `tier` and `pf2e_equivalent` before import.
+4. Paste `examples\foundry-innkeeper.json` from the repository, or provide the same shape for your own character.
 
-The module validates the input, stores the approved record in `flags.grand-design-ai.conversion`, and emits the `grand-design-ai.conversionApplied` hook. Other modules can retrieve `game.modules.get("grand-design-ai").api` to validate, apply, journal, or read conversions.
+The module validates the input, stores the approved record in `flags.grand-design-ai.conversion`, and emits the `grand-design-ai.conversionApplied` hook. On approval, it also adds each Class and Skill as an idempotent PF2e custom feature Item on the Actor sheet. The module never overwrites the Actor's core PF2e class; Grand Design Classes are stored as class-feature Items so their fictional progression can coexist with the normal PF2e chassis.
+
+## Tags, lineage, and evolution
+
+Every approved Class or Skill gets a stable registry ID, tags, and a lineage record in `flags.grand-design-ai.registry`. The same metadata is attached to its Actor Item. Tags such as `mobility`, `fire`, `support`, or `martial` make later review and combination traceable.
+
+The module API exposes GM-only paths for `combineSkills`, `upgradeSkill`, and `upgradeClass`. A combine operation must list two existing registry IDs; an upgrade must list exactly one. Both preserve source links, inherit all source tags, and create a new approved Actor Item. This keeps the original entries intact and records the rationale for the evolution.
+
+```js
+const api = game.modules.get("grand-design-ai").api;
+await api.combineSkills(actor, {
+  name: "Steam Step",
+  tier: 3,
+  pf2e_equivalent: "Narrative-milestone-gated custom ability",
+  metadata: {
+    tags: ["mobility", "steam"],
+    lineage: {
+      operation: "combine",
+      sources: ["skill:ember-step", "skill:mist-step"],
+      rationale: "The character mastered both travel techniques."
+    }
+  }
+});
+```
 
 ## Map scaffold
 

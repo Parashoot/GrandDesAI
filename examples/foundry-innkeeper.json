@@ -1,0 +1,47 @@
+{
+  "character": "Example Innkeeper",
+  "classes": [
+    {
+      "name": "Innkeeper",
+      "level": 12,
+      "power_tier": "standard",
+      "is_primary": true,
+      "metadata": {
+        "tags": ["hospitality", "community", "support"],
+        "lineage": {
+          "operation": "origin",
+          "sources": [],
+          "rationale": "The character repeatedly created safety and community through hospitality."
+        }
+      }
+    }
+  ],
+  "skills": [
+    {
+      "name": "Cooking",
+      "tier": 1,
+      "pf2e_equivalent": "Skill Feat or narrative flavor",
+      "metadata": {
+        "tags": ["craft", "food", "support"],
+        "lineage": {
+          "operation": "origin",
+          "sources": [],
+          "rationale": "Routine practice established a practical culinary skill."
+        }
+      }
+    },
+    {
+      "name": "Rapid Slash",
+      "tier": 2,
+      "pf2e_equivalent": "Reskinned Class Feat",
+      "metadata": {
+        "tags": ["martial", "melee", "speed"],
+        "lineage": {
+          "operation": "origin",
+          "sources": [],
+          "rationale": "Repeated decisive strikes established a named combat technique."
+        }
+      }
+    }
+  ]
+}

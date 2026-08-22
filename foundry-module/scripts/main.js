@@ -34,7 +34,7 @@ Hooks.on("getActorSheetHeaderButtons", (sheet, buttons) => {
 function openImporter(actor) {
   new Dialog({
     title: "Apply Grand Design Conversion",
-    content: `<form><div class="form-group stacked"><label>Conversion JSON</label><textarea name="conversion" rows="16" placeholder='{"character":"Name","classes":[...],"skills":[...]}'></textarea></div></form>`,
+    content: `<form class="grand-design-conversion"><div class="form-group stacked"><label>Conversion JSON</label><textarea name="conversion" rows="16" placeholder='{"character":"Name","classes":[...],"skills":[...]}'></textarea></div></form>`,
     buttons: {
       apply: {
         icon: '<i class="fas fa-check"></i>',

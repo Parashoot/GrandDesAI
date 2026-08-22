@@ -1,5 +1,12 @@
-import { ACTOR_FLAG, MODULE_ID } from "./constants.js";
-import { validateConversion } from "./validator.js";
+import { ACTOR_FLAG, MODULE_ID, REGISTRY_FLAG } from "./constants.js";
+import {
+  cloneRegistry,
+  createFeatureSource,
+  emptyRegistry,
+  normalizeEntry,
+  registerEntry
+} from "./lineage.js";
+import { validateClassEntry, validateConversion, validateSkillEntry } from "./validator.js";
 
 export class GrandDesignApi {
   validate(payload) {
@@ -14,16 +21,33 @@ export class GrandDesignApi {
     if (!result.valid) {
       throw new Error(`Grand Design conversion is invalid: ${result.errors.join(" ")}`);
     }
+    const registry = cloneRegistry(actor.getFlag(MODULE_ID, REGISTRY_FLAG) ?? emptyRegistry());
     const normalized = {
       character: payload.character.trim(),
-      classes: payload.classes.map((entry) => ({ ...entry })),
-      skills: (payload.skills ?? []).map((entry) => ({ ...entry })),
+      classes: payload.classes.map((entry) => normalizeEntry("class", entry, registry)),
+      skills: (payload.skills ?? []).map((entry) => normalizeEntry("skill", entry, registry)),
       source: "grand-design-ai",
       updatedAt: new Date().toISOString()
     };
-    await actor.update({ [`flags.${MODULE_ID}.${ACTOR_FLAG}`]: normalized });
+    const approved = await this.#approveEntries(actor, normalized, registry);
+    await actor.update({
+      [`flags.${MODULE_ID}.${ACTOR_FLAG}`]: normalized,
+      [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: approved.registry
+    });
     Hooks.callAll("grand-design-ai.conversionApplied", actor, normalized);
-    return normalized;
+    return { conversion: normalized, approved };
+  }
+
+  async combineSkills(actor, entry) {
+    return this.#approveEvolution(actor, "skill", entry, "combine");
+  }
+
+  async upgradeSkill(actor, entry) {
+    return this.#approveEvolution(actor, "skill", entry, "upgrade");
+  }
+
+  async upgradeClass(actor, entry) {
+    return this.#approveEvolution(actor, "class", entry, "upgrade");
   }
 
   async createConversionJournal(payload) {
@@ -49,6 +73,52 @@ export class GrandDesignApi {
 
   getActorConversion(actor) {
     return actor?.getFlag(MODULE_ID, ACTOR_FLAG) ?? null;
+  }
+
+  getActorRegistry(actor) {
+    return actor?.getFlag(MODULE_ID, REGISTRY_FLAG) ?? emptyRegistry();
+  }
+
+  async #approveEvolution(actor, kind, entry, operation) {
+    this.#assertPf2eActor(actor);
+    this.#assertGm();
+    const validation = kind === "class" ? validateClassEntry(entry) : validateSkillEntry(entry);
+    if (!validation.valid) {
+      throw new Error(`Grand Design ${kind} is invalid: ${validation.errors.join(" ")}`);
+    }
+    const registry = cloneRegistry(this.getActorRegistry(actor));
+    const normalized = normalizeEntry(kind, entry, registry, operation);
+    const approved = await this.#ensureFeatureItem(actor, kind, normalized, registry);
+    await actor.update({ [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: approved.registry });
+    Hooks.callAll("grand-design-ai.entryApproved", actor, kind, normalized);
+    return approved;
+  }
+
+  async #approveEntries(actor, conversion, registry) {
+    let nextRegistry = registry;
+    const items = [];
+    for (const entry of conversion.classes) {
+      const approved = await this.#ensureFeatureItem(actor, "class", entry, nextRegistry);
+      nextRegistry = approved.registry;
+      items.push(approved);
+    }
+    for (const entry of conversion.skills) {
+      const approved = await this.#ensureFeatureItem(actor, "skill", entry, nextRegistry);
+      nextRegistry = approved.registry;
+      items.push(approved);
+    }
+    return { registry: nextRegistry, items };
+  }
+
+  async #ensureFeatureItem(actor, kind, entry, registry) {
+    const existing = actor.items.find(
+      (item) => item.getFlag(MODULE_ID, "registryId") === entry.metadata.id
+    );
+    const item = existing ?? (await actor.createEmbeddedDocuments("Item", [createFeatureSource(kind, entry)]))[0];
+    return {
+      item,
+      registry: registerEntry(kind, entry, item.id, registry)
+    };
   }
 
   #assertGm() {

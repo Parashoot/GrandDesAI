@@ -1,4 +1,4 @@
-import { POWER_TIERS, SKILL_TIERS } from "./constants.js";
+import { LINEAGE_OPERATIONS, POWER_TIERS, SKILL_TIERS } from "./constants.js";
 
 export function validateConversion(payload) {
   const errors = [];
@@ -25,6 +25,18 @@ export function validateConversion(payload) {
   return { valid: errors.length === 0, errors };
 }
 
+export function validateClassEntry(entry) {
+  const errors = [];
+  validateClasses([entry], errors);
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateSkillEntry(entry) {
+  const errors = [];
+  validateSkills([entry], errors);
+  return { valid: errors.length === 0, errors };
+}
+
 function validateClasses(classes, errors) {
   let primaryCount = 0;
   let secondaryCount = 0;
@@ -40,6 +52,7 @@ function validateClasses(classes, errors) {
     if (!POWER_TIERS.has(entry.power_tier)) {
       errors.push(`[${entry.name}] requires a standard, elevated, or prestige power tier.`);
     }
+    validateMetadata(entry.metadata, entry.name, errors);
     primaryCount += entry.is_primary === true ? 1 : 0;
     secondaryCount += entry.is_secondary === true ? 1 : 0;
     if (entry.is_primary === true && entry.is_secondary === true) {
@@ -65,6 +78,32 @@ function validateSkills(skills, errors) {
     }
     if (!isNonEmptyString(skill.pf2e_equivalent)) {
       errors.push(`[${skill.name}] requires a PF2e equivalent or review note.`);
+    }
+    validateMetadata(skill.metadata, skill.name, errors);
+  }
+}
+
+function validateMetadata(metadata, name, errors) {
+  if (metadata === undefined) {
+    return;
+  }
+  if (!isRecord(metadata)) {
+    errors.push(`[${name}] metadata must be an object.`);
+    return;
+  }
+  if (metadata.tags !== undefined && (!Array.isArray(metadata.tags) || metadata.tags.some((tag) => !isNonEmptyString(tag)))) {
+    errors.push(`[${name}] metadata.tags must contain non-empty strings.`);
+  }
+  if (metadata.lineage !== undefined) {
+    if (!isRecord(metadata.lineage)) {
+      errors.push(`[${name}] metadata.lineage must be an object.`);
+      return;
+    }
+    if (metadata.lineage.operation !== undefined && !LINEAGE_OPERATIONS.has(metadata.lineage.operation)) {
+      errors.push(`[${name}] has an unsupported lineage operation.`);
+    }
+    if (metadata.lineage.sources !== undefined && (!Array.isArray(metadata.lineage.sources) || metadata.lineage.sources.some((source) => !isNonEmptyString(source)))) {
+      errors.push(`[${name}] metadata.lineage.sources must contain registry IDs.`);
     }
   }
 }

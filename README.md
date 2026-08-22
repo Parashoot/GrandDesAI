@@ -58,6 +58,8 @@ Use `evaluate-abilities --predictions path\to\predictions.jsonl` to score a mode
 
 [`foundry-module`](foundry-module) is a Foundry VTT 12-13 module for PF2e worlds. It validates approved conversion JSON, stores it on Actor flags, and exposes an API for later automation. [`GAME_DESIGN.md`](GAME_DESIGN.md) defines the campaign loop, while [`world-map.md`](world-map.md) documents the original zoomable atlas scaffold and how to replace it with a licensed map asset.
 
+Approved Foundry entries include tags and lineage metadata. The module automatically adds approved Grand Design Classes and Skills as custom PF2e feature Items without overwriting the Actor's normal PF2e chassis; later combinations and upgrades retain all source IDs, inherited tags, and the recorded rationale.
+
 ## Convert a character
 
 `convert` accepts a reviewed JSON character profile and prints the project's per-character documentation template. Skills require two explicit human judgments, matching the established checklist:
