@@ -1,5 +1,5 @@
 import { GrandDesignApi } from "./api.js";
-import { defaultAtlasAssetPath } from "./atlas.js";
+import { defaultAtlasAssetPath, isLegacyGithubAtlasPath } from "./atlas.js";
 import { MODULE_ID } from "./constants.js";
 
 Hooks.once("init", () => {
@@ -14,7 +14,12 @@ Hooks.once("init", () => {
   game.modules.get(MODULE_ID).api = new GrandDesignApi();
 });
 
-Hooks.once("ready", () => {
+Hooks.once("ready", async () => {
+  const atlasAssetPath = game.settings.get(MODULE_ID, "atlasAssetPath");
+  if (game.user.isGM && isLegacyGithubAtlasPath(atlasAssetPath)) {
+    await game.settings.set(MODULE_ID, "atlasAssetPath", defaultAtlasAssetPath());
+    ui.notifications.info("Grand Design AI migrated the atlas setting to Foundry's local module asset.");
+  }
   if (game.system.id !== "pf2e") {
     ui.notifications.warn("Grand Design AI is loaded outside the PF2e system; actor sync is disabled.");
   }

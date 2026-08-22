@@ -62,4 +62,6 @@ await api.combineSkills(actor, {
 
 `assets\atlas\grand-design-atlas.svg` is an original, scalable campaign atlas. Configure its path in **Configure Settings > Grand Design AI** or replace it with a map asset that you are licensed to use. See [`../world-map.md`](../world-map.md) for scene setup.
 
+The built-in atlas path is local to Foundry: `modules/grand-design-ai/assets/atlas/grand-design-atlas.svg`. Version 0.10.0 automatically migrates the older GitHub URL setting, which browsers block under CORS.
+
 Do not upload or distribute a derivative canonical map unless you have the right to do so.

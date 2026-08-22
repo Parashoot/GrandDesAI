@@ -1,5 +1,5 @@
 import { MODULE_ID, TEST_SCENARIO_FLAG } from "./constants.js";
-import { defaultAtlasAssetPath } from "./atlas.js";
+import { resolveAtlasAssetPath as resolveConfiguredAtlasAssetPath } from "./atlas.js";
 import {
   combinedSkillFixture,
   TEST_ACTORS,
@@ -337,8 +337,5 @@ async function atlasAssetResponds(assetPath) {
 }
 
 function resolveAtlasAssetPath() {
-  const configured = game.settings.get(MODULE_ID, "atlasAssetPath");
-  return typeof configured === "string" && configured.trim()
-    ? configured.trim()
-    : defaultAtlasAssetPath();
+  return resolveConfiguredAtlasAssetPath(game.settings.get(MODULE_ID, "atlasAssetPath"));
 }
