@@ -19,7 +19,17 @@ The repository is currently private, so Foundry cannot download that URL anonymo
 3. Open a PF2e Actor sheet as GM and select **Grand Design** in the header.
 4. Paste `examples\foundry-innkeeper.json` from the repository, or provide the same shape for your own character.
 
-The module validates the input, stores the approved record in `flags.grand-design-ai.conversion`, and emits the `grand-design-ai.conversionApplied` hook. On approval, it also adds each Class and Skill as an idempotent PF2e custom feature Item on the Actor sheet. The module never overwrites the Actor's core PF2e class; Grand Design Classes are stored as class-feature Items so their fictional progression can coexist with the normal PF2e chassis.
+The module validates the input, stores the approved record in `flags.grand-design-ai.conversion`, and emits the `grand-design-ai.conversionApplied` hook. On approval, it also adds each Class and Skill as an idempotent PF2e Item on the Actor sheet. The module never overwrites the Actor's core PF2e class; Grand Design Classes can coexist with the normal PF2e chassis.
+
+## Required mechanics
+
+Every approved entry must specify a `gameItem.kind` and `mechanics` object. Supported kinds are `feat`, `action`, `reaction`, `free`, `passive`, `spell`, and `weapon`.
+
+- **Actions, reactions, free actions, spells, and weapons** require a dice formula, resolution kind, concrete effect, frequency, and duration. Reactions also require a trigger; actions require a 1-3 action cost.
+- **Passives and feats** require a concrete effect, duration, and frequency. A passive without a stated cadence or benefit is rejected.
+- **Spells** require a rank and tradition. **Weapons** require a dice damage formula and damage type.
+
+The module renders the effect, frequency, duration, trigger, and inline dice roll in the Item description. It uses PF2e item types for actions, spells, and weapons, so the resulting records are tangible Actor-sheet entries rather than prose-only notes.
 
 ## Tags, lineage, and evolution
 

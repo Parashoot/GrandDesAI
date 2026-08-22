@@ -1,4 +1,5 @@
 import { LINEAGE_OPERATIONS, POWER_TIERS, SKILL_TIERS } from "./constants.js";
+import { validateMechanics } from "./mechanics.js";
 
 export function validateConversion(payload) {
   const errors = [];
@@ -53,6 +54,7 @@ function validateClasses(classes, errors) {
       errors.push(`[${entry.name}] requires a standard, elevated, or prestige power tier.`);
     }
     validateMetadata(entry.metadata, entry.name, errors);
+    validateMechanics(entry, errors);
     primaryCount += entry.is_primary === true ? 1 : 0;
     secondaryCount += entry.is_secondary === true ? 1 : 0;
     if (entry.is_primary === true && entry.is_secondary === true) {
@@ -80,6 +82,7 @@ function validateSkills(skills, errors) {
       errors.push(`[${skill.name}] requires a PF2e equivalent or review note.`);
     }
     validateMetadata(skill.metadata, skill.name, errors);
+    validateMechanics(skill, errors);
   }
 }
 

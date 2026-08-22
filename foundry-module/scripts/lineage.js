@@ -1,4 +1,5 @@
 import { LINEAGE_OPERATIONS } from "./constants.js";
+import { createMechanicsHtml, itemTypeFor, pf2eActionType } from "./mechanics.js";
 
 export function emptyRegistry() {
   return { version: 1, classes: {}, skills: {} };
@@ -49,7 +50,9 @@ export function registerEntry(kind, entry, itemId, registry) {
     name: entry.name,
     itemId,
     approvedAt: new Date().toISOString(),
-    metadata: entry.metadata
+    metadata: entry.metadata,
+    gameItem: entry.gameItem,
+    mechanics: entry.mechanics
   };
   return next;
 }
@@ -63,16 +66,13 @@ export function createFeatureSource(kind, entry) {
   const sources = entry.metadata.lineage.sources.length
     ? entry.metadata.lineage.sources.join(", ")
     : "none";
-  return {
+  const source = {
     name: title,
-    type: "feat",
+    type: itemTypeFor(entry.gameItem.kind),
     system: {
-      category,
-      level: { value: level },
       description: {
-        value: `<p><strong>PF2e equivalent:</strong> ${escapeHtml(equivalent)}</p><p><strong>Tags:</strong> ${escapeHtml(tags)}</p><p><strong>Lineage:</strong> ${escapeHtml(entry.metadata.lineage.operation)}; sources: ${escapeHtml(sources)}</p><p>${escapeHtml(entry.metadata.lineage.rationale)}</p>`
-      },
-      traits: { value: [] }
+        value: `<p><strong>PF2e equivalent:</strong> ${escapeHtml(equivalent)}</p>${createMechanicsHtml(entry)}<p><strong>Tags:</strong> ${escapeHtml(tags)}</p><p><strong>Lineage:</strong> ${escapeHtml(entry.metadata.lineage.operation)}; sources: ${escapeHtml(sources)}</p><p>${escapeHtml(entry.metadata.lineage.rationale)}</p>`
+      }
     },
     flags: {
       "grand-design-ai": {
@@ -82,6 +82,26 @@ export function createFeatureSource(kind, entry) {
       }
     }
   };
+  if (source.type === "feat") {
+    source.system.category = entry.gameItem.kind === "passive" && kind !== "class" ? "skill" : category;
+    source.system.level = { value: level };
+  } else if (source.type === "action") {
+    source.system.actionType = { value: pf2eActionType(entry.gameItem.kind) };
+    source.system.actions = { value: entry.mechanics.actions ?? null };
+    source.system.category = "offensive";
+  } else if (source.type === "spell") {
+    source.system.level = { value: entry.gameItem.rank };
+    source.system.traits = { traditions: { value: [entry.gameItem.tradition] }, value: [] };
+    source.system.time = { value: `${entry.mechanics.actions ?? 1} action${entry.mechanics.actions === 1 ? "" : "s"}` };
+    source.system.duration = { value: entry.mechanics.duration, sustained: false };
+  } else if (source.type === "weapon") {
+    const weaponDamage = parseWeaponDamage(entry.gameItem.damage);
+    source.system.category = entry.gameItem.category ?? "simple";
+    source.system.group = entry.gameItem.group ?? "club";
+    source.system.damage = { dice: weaponDamage.dice, die: weaponDamage.die, damageType: entry.gameItem.damageType };
+    source.system.traits = { value: entry.gameItem.traits ?? [] };
+  }
+  return source;
 }
 
 export function cloneRegistry(registry) {
@@ -111,4 +131,9 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function parseWeaponDamage(formula) {
+  const match = /^(\d+)d(\d+)/i.exec(formula);
+  return { dice: Number(match[1]), die: `d${match[2]}` };
 }

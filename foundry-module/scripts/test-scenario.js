@@ -6,6 +6,7 @@ import {
   TEST_ACTS,
   TEST_SCENARIO_NAME,
   testConversionFixture,
+  mechanicsConversionFixture,
   upgradedClassFixture
 } from "./test-fixtures.js";
 
@@ -13,7 +14,7 @@ export async function runTestScenario(api) {
   await clearTestScenario();
   const report = {
     name: TEST_SCENARIO_NAME,
-    expectedAssertions: 20,
+    expectedAssertions: 28,
     passed: [],
     failed: [],
     documents: {}
@@ -22,6 +23,7 @@ export async function runTestScenario(api) {
   try {
     const campaign = await createCampaignDocuments(report);
     const ari = campaign.actors.ari;
+    const mera = campaign.actors.mera;
     report.atlas = {
       requestedPath: campaign.atlasAssetPath,
       persistedSources: campaign.scenes.map((scene) => sceneAtlasSource(scene)),
@@ -42,6 +44,57 @@ export async function runTestScenario(api) {
       Object.keys(api.getActorRegistry(ari).skills).length,
       2
     );
+    const canalChef = grandDesignItem(ari, "class:canal-chef");
+    const emberStep = grandDesignItem(ari, "skill:ember-step");
+    const mistStep = grandDesignItem(ari, "skill:mist-step");
+    assert(
+      report,
+      "Passive Class feature has a tangible frequency and benefit description.",
+      canalChef?.type === "feat" && canalChef.system.description.value.includes("Frequency:")
+    );
+    assert(
+      report,
+      "Action Skill creates a one-action PF2e action Item with an inline dice roll.",
+      emberStep?.type === "action"
+        && emberStep.system.actionType.value === "action"
+        && emberStep.system.description.value.includes("[[/r 1d20+8]]")
+    );
+    assert(
+      report,
+      "Reaction Skill creates a triggered PF2e reaction Item with an inline dice roll.",
+      mistStep?.type === "action"
+        && mistStep.system.actionType.value === "reaction"
+        && mistStep.system.description.value.includes("Trigger:")
+    );
+    await api.applyToActor(mera, mechanicsConversionFixture());
+    const meraItems = mera.items.filter((item) => item.getFlag(MODULE_ID, "registryId"));
+    assert(
+      report,
+      "Mechanics fixtures create a PF2e spell Item.",
+      meraItems.some((item) => item.type === "spell")
+    );
+    assert(
+      report,
+      "Mechanics fixtures create a PF2e weapon Item.",
+      meraItems.some((item) => item.type === "weapon")
+    );
+    const canalSpark = grandDesignItem(mera, "skill:canal-spark");
+    const siltHook = grandDesignItem(mera, "skill:silt-hook");
+    assert(
+      report,
+      "Spell Item exposes a ranked spell entry with an inline dice roll.",
+      canalSpark?.type === "spell"
+        && canalSpark.system.level.value === 1
+        && canalSpark.system.description.value.includes("[[/r 1d20+7]]")
+    );
+    assert(
+      report,
+      "Weapon Item exposes its tangible damage die and damage type.",
+      siltHook?.type === "weapon"
+        && siltHook.system.damage.dice === 1
+        && siltHook.system.damage.die === "d6"
+        && siltHook.system.damage.damageType === "piercing"
+    );
 
     await api.combineSkills(ari, combinedSkillFixture());
     let registry = api.getActorRegistry(ari);
@@ -58,6 +111,14 @@ export async function runTestScenario(api) {
       report,
       "Act II combined Skill inherits both parent tags.",
       ["fire", "water", "mobility"].every((tag) => steamStep.metadata.tags.includes(tag))
+    );
+    const steamStepItem = grandDesignItem(ari, "skill:steam-step");
+    assert(
+      report,
+      "Combined Skill creates a PF2e free action Item with an inline dice roll.",
+      steamStepItem?.type === "action"
+        && steamStepItem.system.actionType.value === "free"
+        && steamStepItem.system.description.value.includes("[[/r 1d20+10]]")
     );
 
     await api.upgradeClass(ari, upgradedClassFixture());
@@ -250,6 +311,10 @@ function allCampaignDocumentsAreTagged(campaign) {
 
 function featureCount(actor) {
   return actor.items.filter((item) => item.getFlag(MODULE_ID, "registryId")).length;
+}
+
+function grandDesignItem(actor, registryId) {
+  return actor.items.find((item) => item.getFlag(MODULE_ID, "registryId") === registryId);
 }
 
 function assert(report, description, condition) {

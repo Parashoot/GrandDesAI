@@ -13,6 +13,17 @@
           "sources": [],
           "rationale": "The character repeatedly created safety and community through hospitality."
         }
+      },
+      "gameItem": {
+        "kind": "passive"
+      },
+      "mechanics": {
+        "effect": "At the start of an encounter in your inn or a camp you prepared, one ally gains a +1 circumstance bonus to their first Recovery Check that encounter.",
+        "duration": "until the end of the encounter",
+        "frequency": {
+          "max": 1,
+          "per": "encounter"
+        }
       }
     }
   ],
@@ -28,6 +39,23 @@
           "sources": [],
           "rationale": "Routine practice established a practical culinary skill."
         }
+      },
+      "gameItem": {
+        "kind": "action"
+      },
+      "mechanics": {
+        "effect": "Prepare a restorative snack for one adjacent willing creature. On a success, it gains 1 temporary Hit Point.",
+        "duration": "instant",
+        "frequency": {
+          "max": 1,
+          "per": "hour"
+        },
+        "actions": 1,
+        "roll": {
+          "kind": "Crafting check",
+          "formula": "1d20+5",
+          "dc": 15
+        }
       }
     },
     {
@@ -40,6 +68,23 @@
           "operation": "origin",
           "sources": [],
           "rationale": "Repeated decisive strikes established a named combat technique."
+        }
+      },
+      "gameItem": {
+        "kind": "action"
+      },
+      "mechanics": {
+        "effect": "Make a melee Strike. On a success, deal an additional 1d6 precision damage.",
+        "duration": "instant",
+        "frequency": {
+          "max": 1,
+          "per": "round"
+        },
+        "actions": 1,
+        "roll": {
+          "kind": "melee attack",
+          "formula": "1d20+6",
+          "dc": 17
         }
       }
     }

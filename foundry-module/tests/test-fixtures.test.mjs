@@ -6,6 +6,7 @@ import {
   TEST_ACTORS,
   TEST_ACTS,
   testConversionFixture,
+  mechanicsConversionFixture,
   upgradedClassFixture
 } from "../scripts/test-fixtures.js";
 import { validateConversion } from "../scripts/validator.js";
@@ -27,4 +28,5 @@ test("full campaign fixtures define three acts and five actors", () => {
   assert.equal(TEST_ACTS.length, 3);
   assert.equal(TEST_ACTORS.length, 5);
   assert.equal(upgradedClassFixture().metadata.lineage.operation, "upgrade");
+  assert.equal(mechanicsConversionFixture().skills.length, 2);
 });
