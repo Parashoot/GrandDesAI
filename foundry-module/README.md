@@ -31,6 +31,24 @@ Every approved entry must specify a `gameItem.kind` and `mechanics` object. Supp
 
 The module renders the effect, frequency, duration, trigger, and inline dice roll in the Item description. It uses PF2e item types for actions, spells, and weapons, so the resulting records are tangible Actor-sheet entries rather than prose-only notes.
 
+## Gameplay-driven skill proposals
+
+The module can build a **pending** skill proposal from demonstrated, tagged gameplay. This is intentionally GM-approved: it records what happened but never grants a new ability automatically.
+
+```js
+const api = game.modules.get("grand-design-ai").api;
+const result = await api.recordGrowthEvent(actor, {
+  summary: "Mera crossed a flooded rope line to rescue a trapped resident.",
+  tags: ["mobility", "water"],
+  outcome: "success"
+});
+
+// After three successful events with both tags:
+await api.approveSkillProposal(actor, "proposal:canal-step");
+```
+
+Each event is stored in `flags.grand-design-ai.growthEvents`; generated drafts are stored in `flags.grand-design-ai.growthProposals` with their exact evidence IDs. The first proposal templates cover water mobility, crafting support, precision martial play, and fire spellcasting. Every draft still passes the same mechanics validator before it can create an Item.
+
 ## Tags, lineage, and evolution
 
 Every approved Class or Skill gets a stable registry ID, tags, and a lineage record in `flags.grand-design-ai.registry`. The same metadata is attached to its Actor Item. Tags such as `mobility`, `fire`, `support`, or `martial` make later review and combination traceable.

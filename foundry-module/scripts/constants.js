@@ -2,6 +2,8 @@ export const MODULE_ID = "grand-design-ai";
 export const ACTOR_FLAG = "conversion";
 export const REGISTRY_FLAG = "registry";
 export const TEST_SCENARIO_FLAG = "testScenario";
+export const GROWTH_EVENTS_FLAG = "growthEvents";
+export const GROWTH_PROPOSALS_FLAG = "growthProposals";
 
 export const POWER_TIERS = new Set(["standard", "elevated", "prestige"]);
 export const SKILL_TIERS = new Set([1, 2, 3]);

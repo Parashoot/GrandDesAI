@@ -209,3 +209,26 @@ export function mechanicsConversionFixture() {
     skills: mechanicsItemFixtures()
   };
 }
+
+export function canalStepGrowthEvents() {
+  return [
+    {
+      id: "event:canal-rescue",
+      summary: "Mera crossed a flooded rope line to rescue a trapped resident.",
+      tags: ["mobility", "water"],
+      outcome: "success"
+    },
+    {
+      id: "event:sluice-run",
+      summary: "Mera carried a pressure valve through the rising canal.",
+      tags: ["mobility", "water"],
+      outcome: "criticalSuccess"
+    },
+    {
+      id: "event:lock-gate",
+      summary: "Mera navigated a submerged lock gate to secure an escape route.",
+      tags: ["mobility", "water"],
+      outcome: "success"
+    }
+  ];
+}

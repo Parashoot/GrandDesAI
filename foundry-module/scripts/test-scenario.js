@@ -2,6 +2,7 @@ import { MODULE_ID, TEST_SCENARIO_FLAG } from "./constants.js";
 import { resolveAtlasAssetPath as resolveConfiguredAtlasAssetPath } from "./atlas.js";
 import {
   combinedSkillFixture,
+  canalStepGrowthEvents,
   TEST_ACTORS,
   TEST_ACTS,
   TEST_SCENARIO_NAME,
@@ -14,7 +15,7 @@ export async function runTestScenario(api) {
   await clearTestScenario();
   const report = {
     name: TEST_SCENARIO_NAME,
-    expectedAssertions: 28,
+    expectedAssertions: 32,
     passed: [],
     failed: [],
     documents: {}
@@ -94,6 +95,36 @@ export async function runTestScenario(api) {
         && siltHook.system.damage.dice === 1
         && siltHook.system.damage.die === "d6"
         && siltHook.system.damage.damageType === "piercing"
+    );
+    let growthResult;
+    for (const event of canalStepGrowthEvents()) {
+        growthResult = await api.recordGrowthEvent(mera, event);
+    }
+    const canalStepProposal = growthResult.proposals.find(
+        (proposal) => proposal.id === "proposal:canal-step"
+    );
+    assert(
+        report,
+        "Repeated tagged gameplay creates a pending, evidence-backed skill proposal.",
+        canalStepProposal?.status === "pending" && canalStepProposal.evidence.length === 3
+    );
+    await api.approveSkillProposal(mera, canalStepProposal.id);
+    const canalStep = grandDesignItem(mera, "skill:canal-step");
+    assert(
+        report,
+        "GM approval turns the generated proposal into a PF2e action Item.",
+        canalStep?.type === "action" && canalStep.system.description.value.includes("[[/r")
+    );
+    assertEqual(
+        report,
+        "Approved proposals preserve the actor growth-event audit trail.",
+        api.getGrowth(mera).events.length,
+        3
+    );
+    assert(
+        report,
+        "Approved proposals are not offered again as pending drafts.",
+        api.getGrowth(mera).proposals.find((proposal) => proposal.id === canalStepProposal.id)?.status === "approved"
     );
 
     await api.combineSkills(ari, combinedSkillFixture());

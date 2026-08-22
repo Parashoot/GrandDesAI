@@ -1,4 +1,10 @@
-import { ACTOR_FLAG, MODULE_ID, REGISTRY_FLAG } from "./constants.js";
+import {
+  ACTOR_FLAG,
+  GROWTH_EVENTS_FLAG,
+  GROWTH_PROPOSALS_FLAG,
+  MODULE_ID,
+  REGISTRY_FLAG
+} from "./constants.js";
 import {
   cloneRegistry,
   createFeatureSource,
@@ -8,6 +14,11 @@ import {
 } from "./lineage.js";
 import { clearTestScenario, runTestScenario } from "./test-scenario.js";
 import { validateClassEntry, validateConversion, validateSkillEntry } from "./validator.js";
+import {
+  generateSkillProposals,
+  growthFlags,
+  normalizeGrowthEvent
+} from "./progression.js";
 
 export class GrandDesignApi {
   validate(payload) {
@@ -78,6 +89,46 @@ export class GrandDesignApi {
 
   getActorRegistry(actor) {
     return actor?.getFlag(MODULE_ID, REGISTRY_FLAG) ?? emptyRegistry();
+  }
+
+  getGrowth(actor) {
+    return growthFlags(actor);
+  }
+
+  async recordGrowthEvent(actor, event) {
+    this.#assertPf2eActor(actor);
+    this.#assertGm();
+    const growth = this.getGrowth(actor);
+    const normalizedEvent = normalizeGrowthEvent(event, growth.events.length + 1);
+    const events = [...growth.events, normalizedEvent];
+    const modifier = actor.system?.skills?.acrobatics?.mod ?? 0;
+    const generated = generateSkillProposals(events, this.getActorRegistry(actor), modifier);
+    const known = new Map(growth.proposals.map((proposal) => [proposal.id, proposal]));
+    for (const proposal of generated) {
+      if (!known.has(proposal.id)) known.set(proposal.id, proposal);
+    }
+    const proposals = [...known.values()];
+    await actor.update({
+      [`flags.${MODULE_ID}.${GROWTH_EVENTS_FLAG}`]: events,
+      [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals
+    });
+    Hooks.callAll("grand-design-ai.growthEventRecorded", actor, normalizedEvent, proposals);
+    return { event: normalizedEvent, proposals };
+  }
+
+  async approveSkillProposal(actor, id) {
+    this.#assertPf2eActor(actor);
+    this.#assertGm();
+    const growth = this.getGrowth(actor);
+    const proposal = growth.proposals.find((candidate) => candidate.id === id && candidate.status === "pending");
+    if (!proposal) throw new Error(`No pending skill proposal exists for ${id}.`);
+    const approved = await this.#approveEvolution(actor, "skill", proposal.entry, "origin");
+    const proposals = growth.proposals.map((candidate) =>
+      candidate.id === id ? { ...candidate, status: "approved", approvedAt: new Date().toISOString() } : candidate
+    );
+    await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+    Hooks.callAll("grand-design-ai.skillProposalApproved", actor, proposal, approved);
+    return approved;
   }
 
   async runTestScenario() {
