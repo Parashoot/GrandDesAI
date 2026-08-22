@@ -1,4 +1,5 @@
 import { GrandDesignApi } from "./api.js";
+import { defaultAtlasAssetPath } from "./atlas.js";
 import { MODULE_ID } from "./constants.js";
 
 Hooks.once("init", () => {
@@ -8,7 +9,7 @@ Hooks.once("init", () => {
     scope: "world",
     config: true,
     type: String,
-    default: `modules/${MODULE_ID}/assets/atlas/grand-design-atlas.svg`
+    default: defaultAtlasAssetPath()
   });
   game.modules.get(MODULE_ID).api = new GrandDesignApi();
 });

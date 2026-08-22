@@ -1,4 +1,5 @@
 import { MODULE_ID, TEST_SCENARIO_FLAG } from "./constants.js";
+import { defaultAtlasAssetPath } from "./atlas.js";
 import {
   combinedSkillFixture,
   TEST_SCENARIO_NAME,
@@ -28,15 +29,18 @@ export async function runTestScenario(api) {
     });
     report.documents.actors = [actor.id, witness.id];
 
-    const atlasAssetPath = game.settings.get(MODULE_ID, "atlasAssetPath");
+    const atlasAssetPath = resolveAtlasAssetPath();
     const scene = await Scene.create({
       name: "GD Test - Lantern Crossing",
       navigation: true,
-      background: {},
+      width: 2048,
+      height: 1152,
+      background: { src: atlasAssetPath },
       grid: { type: CONST.GRID_TYPES.GRIDLESS },
       flags: { [MODULE_ID]: { [TEST_SCENARIO_FLAG]: true } }
     });
     await scene.update({ "background.src": atlasAssetPath });
+    await scene.activate();
     report.documents.scene = scene.id;
 
     const journal = await JournalEntry.create({
@@ -164,4 +168,11 @@ function sameFoundryPath(actual, expected) {
   return typeof actual === "string"
     && typeof expected === "string"
     && actual.replaceAll("\\", "/") === expected.replaceAll("\\", "/");
+}
+
+function resolveAtlasAssetPath() {
+  const configured = game.settings.get(MODULE_ID, "atlasAssetPath");
+  return typeof configured === "string" && configured.trim()
+    ? configured.trim()
+    : defaultAtlasAssetPath();
 }
