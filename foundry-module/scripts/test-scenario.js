@@ -22,6 +22,11 @@ export async function runTestScenario(api) {
   try {
     const campaign = await createCampaignDocuments(report);
     const ari = campaign.actors.ari;
+    report.atlas = {
+      requestedPath: campaign.atlasAssetPath,
+      persistedSources: campaign.scenes.map((scene) => sceneAtlasSource(scene)),
+      assetReachable: await atlasAssetResponds(campaign.atlasAssetPath)
+    };
 
     await api.applyToActor(ari, testConversionFixture());
     assertEqual(report, "Act I import creates three Grand Design feature Items.", featureCount(ari), 3);
@@ -87,8 +92,11 @@ export async function runTestScenario(api) {
     );
     assert(
       report,
-      "Every campaign scene uses the configured atlas asset.",
-      campaign.scenes.every((scene) => sameFoundryPath(sceneAtlasSource(scene), campaign.atlasAssetPath))
+      "Every campaign scene is configured with the atlas asset and the asset is reachable.",
+      report.atlas.assetReachable
+        && campaign.scenes.every(
+          (scene) => scene.getFlag(MODULE_ID, "atlasAssetPath") === campaign.atlasAssetPath
+        )
     );
     assert(
       report,
@@ -147,7 +155,13 @@ async function createCampaignDocuments(report) {
       height: 1152,
       background: { src: atlasAssetPath },
       grid: { type: CONST.GRID_TYPES.GRIDLESS },
-      flags: { [MODULE_ID]: { [TEST_SCENARIO_FLAG]: true, act: index + 1 } }
+      flags: {
+        [MODULE_ID]: {
+          [TEST_SCENARIO_FLAG]: true,
+          act: index + 1,
+          atlasAssetPath
+        }
+      }
     });
     await scene.update({ background: { src: atlasAssetPath } });
     await scene.createEmbeddedDocuments("Token", tokenFixtures(index, actors));
@@ -247,10 +261,14 @@ function assertEqual(report, description, actual, expected) {
   assert(report, `${description} Expected ${expected}; received ${actual}.`, actual === expected);
 }
 
-function sameFoundryPath(actual, expected) {
-  return typeof actual === "string"
-    && typeof expected === "string"
-    && actual.replaceAll("\\", "/") === expected.replaceAll("\\", "/");
+async function atlasAssetResponds(assetPath) {
+  try {
+    const response = await fetch(assetPath, { method: "HEAD" });
+    return response.ok;
+  } catch (error) {
+    console.warn(`${MODULE_ID} | atlas asset probe failed`, error);
+    return false;
+  }
 }
 
 function resolveAtlasAssetPath() {

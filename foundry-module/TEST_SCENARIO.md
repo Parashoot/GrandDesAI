@@ -21,7 +21,7 @@ The story is structured as **Act I: evacuation**, **Act II: recovery**, and **Ac
 
 ## Expected result
 
-The returned report has `ok: true`, **20/20 passed**, and **0 failed**. Ari's Actor sheet has five Grand Design feature Items: the origin Class, two origin Skills, one combined Skill, and one upgraded Class.
+The returned report has `ok: true`, **20/20 passed**, and **0 failed**. Ari's Actor sheet has five Grand Design feature Items: the origin Class, two origin Skills, one combined Skill, and one upgraded Class. The report's `atlas` object records the requested asset path, each persisted Scene source, and the module's live asset-load result.
 
 ## Cleanup
 
