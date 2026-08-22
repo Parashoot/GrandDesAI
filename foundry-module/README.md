@@ -4,17 +4,17 @@ This module targets Foundry VTT 12-13 with the PF2e game system installed. It is
 
 ## Install from GitHub
 
-In Foundry's **Add-on Modules** screen, choose **Install Module** and paste:
+If this repository is made public or distributed through an authenticated module registry, Foundry's **Install Module** flow can use:
 
 ```text
 https://raw.githubusercontent.com/Parashoot/GrandDesAI/main/foundry-module/module.json
 ```
 
-Foundry downloads the versioned module ZIP. For local development, use the manual option below.
+The repository is currently private, so Foundry cannot download that URL anonymously. Use the manual/private option below unless you intentionally publish a release distribution.
 
-## Install locally
+## Install locally or from the private ZIP
 
-1. Copy the `foundry-module` directory to Foundry's `Data\modules\grand-design-ai` directory.
+1. Extract `releases\grand-design-ai.zip` into Foundry's `Data\modules\grand-design-ai` directory, or copy the `foundry-module` directory there while developing.
 2. Start a PF2e world, enable **Grand Design AI**, and reload the world.
 3. Open a PF2e Actor sheet as GM and select **Grand Design** in the header.
 4. Paste a conversion record such as the structure in `examples\innkeeper.json`. Add each Skill's `tier` and `pf2e_equivalent` before import.
