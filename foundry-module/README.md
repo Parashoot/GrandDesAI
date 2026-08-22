@@ -2,6 +2,16 @@
 
 This module targets Foundry VTT 12-13 with the PF2e game system installed. It is a GM-facing bridge between Grand Design conversion records and PF2e Actors; it is not a replacement PF2e system.
 
+## Install from GitHub
+
+In Foundry's **Add-on Modules** screen, choose **Install Module** and paste:
+
+```text
+https://raw.githubusercontent.com/Parashoot/GrandDesAI/main/foundry-module/module.json
+```
+
+Foundry downloads the versioned module ZIP. For local development, use the manual option below.
+
 ## Install locally
 
 1. Copy the `foundry-module` directory to Foundry's `Data\modules\grand-design-ai` directory.
