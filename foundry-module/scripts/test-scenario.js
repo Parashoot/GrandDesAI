@@ -7,7 +7,13 @@ import {
 
 export async function runTestScenario(api) {
   await clearTestScenario();
-  const report = { name: TEST_SCENARIO_NAME, passed: [], failed: [], documents: {} };
+  const report = {
+    name: TEST_SCENARIO_NAME,
+    expectedAssertions: 9,
+    passed: [],
+    failed: [],
+    documents: {}
+  };
 
   try {
     const actor = await Actor.create({
@@ -22,13 +28,15 @@ export async function runTestScenario(api) {
     });
     report.documents.actors = [actor.id, witness.id];
 
+    const atlasAssetPath = game.settings.get(MODULE_ID, "atlasAssetPath");
     const scene = await Scene.create({
       name: "GD Test - Lantern Crossing",
       navigation: true,
-      background: { src: game.settings.get(MODULE_ID, "atlasAssetPath") },
+      background: {},
       grid: { type: CONST.GRID_TYPES.GRIDLESS },
       flags: { [MODULE_ID]: { [TEST_SCENARIO_FLAG]: true } }
     });
+    await scene.update({ "background.src": atlasAssetPath });
     report.documents.scene = scene.id;
 
     const journal = await JournalEntry.create({
@@ -99,7 +107,7 @@ export async function runTestScenario(api) {
     assert(
       report,
       "Test scene uses the configured atlas asset.",
-      scene.background.src === game.settings.get(MODULE_ID, "atlasAssetPath")
+      sameFoundryPath(scene._source.background?.src, atlasAssetPath)
     );
     assert(report, "Test actor and witness remain isolated test documents.", Boolean(witness.getFlag(MODULE_ID, TEST_SCENARIO_FLAG)));
   } catch (error) {
@@ -107,8 +115,13 @@ export async function runTestScenario(api) {
     console.error(`${MODULE_ID} | test scenario failed`, error);
   }
 
+  if (report.passed.length !== report.expectedAssertions) {
+    report.failed.push(
+      `Expected ${report.expectedAssertions} assertions but completed ${report.passed.length}.`
+    );
+  }
   report.ok = report.failed.length === 0;
-  const summary = `${report.name}: ${report.passed.length} passed, ${report.failed.length} failed.`;
+  const summary = `${report.name}: ${report.passed.length}/${report.expectedAssertions} passed, ${report.failed.length} failed.`;
   if (report.ok) {
     ui.notifications.info(summary);
   } else {
@@ -145,4 +158,10 @@ function assert(report, description, condition) {
 
 function assertEqual(report, description, actual, expected) {
   assert(report, `${description} Expected ${expected}; received ${actual}.`, actual === expected);
+}
+
+function sameFoundryPath(actual, expected) {
+  return typeof actual === "string"
+    && typeof expected === "string"
+    && actual.replaceAll("\\", "/") === expected.replaceAll("\\", "/");
 }

@@ -23,7 +23,7 @@ It then automatically imports the conversion, combines `[Ember Step]` and `[Mist
 
 ## Expected result
 
-The returned report has `ok: true`, **10 passed**, and **0 failed**. The Actor sheet has four Grand Design feature Items: one Class, two original Skills, and one combined Skill.
+The returned report has `ok: true`, **9/9 passed**, and **0 failed**. The Actor sheet has four Grand Design feature Items: one Class, two original Skills, and one combined Skill.
 
 ## Cleanup
 
