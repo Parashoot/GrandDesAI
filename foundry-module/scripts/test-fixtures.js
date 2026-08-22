@@ -1,5 +1,31 @@
 export const TEST_SCENARIO_NAME = "GD Test - The First Steam";
 
+export const TEST_ACTS = [
+  {
+    name: "GD Test - Act I: Lantern Crossing",
+    journalTitle: "Act I: The Rising Canal",
+    briefing: "Evacuate Lantern Crossing before the canal breaks its banks."
+  },
+  {
+    name: "GD Test - Act II: The Siltworks",
+    journalTitle: "Act II: The Broken Siltworks",
+    briefing: "Recover the pressure wheel while the old works flood from below."
+  },
+  {
+    name: "GD Test - Act III: The Steam Bell",
+    journalTitle: "Act III: The Bell That Calls the Tide",
+    briefing: "Ring the steam bell and prove that Ari's new technique is earned."
+  }
+];
+
+export const TEST_ACTORS = [
+  { key: "ari", name: "GD Test - Ari of the Lantern Canal", type: "character", role: "player" },
+  { key: "mera", name: "GD Test - Mera the Ropewalker", type: "character", role: "player" },
+  { key: "warden", name: "GD Test - Warden of Lantern Crossing", type: "npc", role: "ally" },
+  { key: "ripper", name: "GD Test - Brine Ripper", type: "npc", role: "hazard" },
+  { key: "echo", name: "GD Test - Steam Bell Echo", type: "npc", role: "finale" }
+];
+
 export function testConversionFixture() {
   return {
     character: "Ari of the Lantern Canal",
@@ -48,6 +74,23 @@ export function testConversionFixture() {
         }
       }
     ]
+  };
+}
+
+export function upgradedClassFixture() {
+  return {
+    name: "Canal Hearthkeeper",
+    level: 9,
+    power_tier: "standard",
+    pf2e_chassis: "Alchemist",
+    metadata: {
+      tags: ["craft", "food", "flood-support", "leadership"],
+      lineage: {
+        operation: "upgrade",
+        sources: ["class:canal-chef"],
+        rationale: "Ari turned emergency cooking into a reliable refuge for the whole district."
+      }
+    }
   };
 }
 

@@ -1,6 +1,6 @@
-# The First Steam: Programmatic Foundry Acceptance Campaign
+# The First Steam: Programmatic Foundry Test Campaign
 
-This isolated acceptance scenario verifies the entire Grand Design Foundry workflow inside a real PF2e world.
+This isolated three-act campaign verifies the Grand Design workflow inside a real PF2e world while creating a playable, original test adventure.
 
 ## Run it
 
@@ -13,17 +13,15 @@ console.table(report);
 
 The macro creates only documents marked with `flags.grand-design-ai.testScenario`:
 
-- `GD Test - Ari of the Lantern Canal`, a PF2e character with one Class and two Skills
-- `GD Test - Warden of Lantern Crossing`, a control Actor
-- `GD Test - Lantern Crossing`, a gridless scene using the configured atlas asset
-- `GD Test - Scenario Briefing`, a Journal Entry
-- `GD Test - Run The First Steam`, a reusable macro
+- Five original PF2e Actors: two player characters, one ally, and two escalating opposition Actors
+- Three navigation Scenes: Lantern Crossing, the Siltworks, and the Steam Bell; each uses the atlas and has placed encounter tokens
+- A three-page campaign journal, six-result Flood Encounter Oracle, and runner/cleanup macros
 
-It then automatically imports the conversion, combines `[Ember Step]` and `[Mist Step]` into `[Steam Step]`, checks inherited tags and source IDs, and re-imports the original conversion to prove that feature items are not duplicated.
+The story is structured as **Act I: evacuation**, **Act II: recovery**, and **Act III: a milestone finale**. It imports Ari's origin conversion, combines `[Ember Step]` and `[Mist Step]` into `[Steam Step]`, upgrades `[Canal Chef]` into `[Canal Hearthkeeper]`, then re-imports the origin conversion to prove idempotency.
 
 ## Expected result
 
-The returned report has `ok: true`, **9/9 passed**, and **0 failed**. The Actor sheet has four Grand Design feature Items: one Class, two original Skills, and one combined Skill.
+The returned report has `ok: true`, **20/20 passed**, and **0 failed**. Ari's Actor sheet has five Grand Design feature Items: the origin Class, two origin Skills, one combined Skill, and one upgraded Class.
 
 ## Cleanup
 

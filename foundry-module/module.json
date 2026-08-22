@@ -2,7 +2,7 @@
   "id": "grand-design-ai",
   "title": "Grand Design AI",
   "description": "PF2e conversion tools, actor metadata, and campaign-atlas scaffolding for Grand Design campaigns.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "url": "https://github.com/Parashoot/GrandDesAI",
   "manifest": "https://raw.githubusercontent.com/Parashoot/GrandDesAI/main/foundry-module/module.json",
   "download": "https://github.com/Parashoot/GrandDesAI/raw/main/releases/grand-design-ai.zip",
