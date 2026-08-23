@@ -84,6 +84,150 @@ const PROPOSAL_TEMPLATES = [
         lineage: { operation: "origin", sources: [], rationale: "" }
       }
     }
+  },
+  {
+    id: "field-triage",
+    requiredTags: ["medicine", "support"],
+    entry: {
+      name: "Field Triage",
+      tier: 1,
+      pf2e_equivalent: "Medicine support action",
+      gameItem: { kind: "action" },
+      mechanics: {
+        effect: "Attempt to Treat Wounds on one adjacent living creature. On a success, it regains 1d8 Hit Points.",
+        duration: "10 minutes",
+        frequency: { max: 1, per: "hour" },
+        actions: 2,
+        roll: { kind: "Medicine check", formula: "", dc: 15 }
+      },
+      metadata: {
+        tags: ["medicine", "support"],
+        lineage: { operation: "origin", sources: [], rationale: "" }
+      }
+    }
+  },
+  {
+    id: "shadow-thread",
+    requiredTags: ["stealth", "precision"],
+    entry: {
+      name: "Shadow Thread",
+      tier: 2,
+      pf2e_equivalent: "Stealth reaction",
+      gameItem: { kind: "reaction" },
+      mechanics: {
+        effect: "Step 5 feet into cover or concealment. On a success, the triggering ranged Strike takes a -1 circumstance penalty.",
+        duration: "instant",
+        frequency: { max: 1, per: "round" },
+        trigger: "A creature targets you with a ranged Strike while you are concealed or in cover.",
+        roll: { kind: "Stealth check", formula: "", dc: 18 }
+      },
+      metadata: {
+        tags: ["stealth", "precision"],
+        lineage: { operation: "origin", sources: [], rationale: "" }
+      }
+    }
+  },
+  {
+    id: "rallying-call",
+    requiredTags: ["leadership", "support"],
+    entry: {
+      name: "Rallying Call",
+      tier: 2,
+      pf2e_equivalent: "Leadership free action",
+      gameItem: { kind: "free" },
+      mechanics: {
+        effect: "One ally within 30 feet gains a +1 circumstance bonus to its next saving throw before the start of your next turn.",
+        duration: "until the start of your next turn",
+        frequency: { max: 1, per: "round" },
+        roll: { kind: "Diplomacy check", formula: "", dc: 18 }
+      },
+      metadata: {
+        tags: ["leadership", "support"],
+        lineage: { operation: "origin", sources: [], rationale: "" }
+      }
+    }
+  },
+  {
+    id: "warden-brace",
+    requiredTags: ["defense", "martial"],
+    entry: {
+      name: "Warden's Brace",
+      tier: 2,
+      pf2e_equivalent: "Martial defense reaction",
+      gameItem: { kind: "reaction" },
+      mechanics: {
+        effect: "Gain resistance 2 to the triggering physical damage. On a success, an adjacent ally also gains the resistance.",
+        duration: "instant",
+        frequency: { max: 1, per: "round" },
+        trigger: "You or an adjacent ally takes physical damage from a Strike.",
+        roll: { kind: "Athletics check", formula: "", dc: 18 }
+      },
+      metadata: {
+        tags: ["defense", "martial"],
+        lineage: { operation: "origin", sources: [], rationale: "" }
+      }
+    }
+  },
+  {
+    id: "trail-sense",
+    requiredTags: ["survival", "nature"],
+    entry: {
+      name: "Trail Sense",
+      tier: 1,
+      pf2e_equivalent: "Survival exploration feat",
+      gameItem: { kind: "passive" },
+      mechanics: {
+        effect: "When you Follow the Expert in natural terrain, one ally gains a +1 circumstance bonus to Survival checks to Avoid Getting Lost.",
+        duration: "while exploring natural terrain",
+        frequency: { max: 1, per: "unlimited" }
+      },
+      metadata: {
+        tags: ["survival", "nature"],
+        lineage: { operation: "origin", sources: [], rationale: "" }
+      }
+    }
+  },
+  {
+    id: "winter-veil",
+    requiredTags: ["cold", "spellcasting"],
+    entry: {
+      name: "Winter Veil",
+      tier: 2,
+      pf2e_equivalent: "Rank 1 cold spell",
+      gameItem: { kind: "spell", rank: 1, tradition: "primal" },
+      mechanics: {
+        effect: "Make a spell attack against one creature within 30 feet. On a success, deal 2d6 cold damage and the target is concealed until the start of your next turn.",
+        duration: "until the start of your next turn",
+        frequency: { max: 2, per: "encounter" },
+        actions: 2,
+        roll: { kind: "Spell attack", formula: "", dc: 17 }
+      },
+      metadata: {
+        tags: ["cold", "spellcasting"],
+        lineage: { operation: "origin", sources: [], rationale: "" }
+      }
+    }
+  },
+  {
+    id: "storm-arc",
+    requiredTags: ["electricity", "spellcasting"],
+    entry: {
+      name: "Storm Arc",
+      tier: 2,
+      pf2e_equivalent: "Rank 1 electricity spell",
+      gameItem: { kind: "spell", rank: 1, tradition: "arcane" },
+      mechanics: {
+        effect: "Make a spell attack against one creature within 30 feet. On a success, deal 2d6 electricity damage.",
+        duration: "instant",
+        frequency: { max: 2, per: "encounter" },
+        actions: 2,
+        roll: { kind: "Spell attack", formula: "", dc: 17 }
+      },
+      metadata: {
+        tags: ["electricity", "spellcasting"],
+        lineage: { operation: "origin", sources: [], rationale: "" }
+      }
+    }
   }
 ];
 
@@ -137,6 +281,7 @@ function buildProposal(template, events, modifier) {
     `Generated after ${evidence.length} successful tagged events: ${evidence.join(", ")}. GM approval is required.`;
   return {
     id: `proposal:${template.id}`,
+    kind: "skill",
     status: "pending",
     evidence,
     entry

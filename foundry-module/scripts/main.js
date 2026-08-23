@@ -1,6 +1,7 @@
 import { GrandDesignApi } from "./api.js";
 import { defaultAtlasAssetPath, isLegacyGithubAtlasPath } from "./atlas.js";
 import { MODULE_ID } from "./constants.js";
+import { openGrowthManager } from "./growth-ui.js";
 
 Hooks.once("init", () => {
   game.settings.register(MODULE_ID, "atlasAssetPath", {
@@ -34,6 +35,12 @@ Hooks.on("getActorSheetHeaderButtons", (sheet, buttons) => {
     icon: "fas fa-sparkles",
     label: "Grand Design",
     onclick: () => openImporter(sheet.actor)
+  });
+  buttons.unshift({
+    class: "grand-design-growth",
+    icon: "fas fa-seedling",
+    label: "Growth",
+    onclick: () => openGrowthManager(sheet.actor)
   });
 });
 

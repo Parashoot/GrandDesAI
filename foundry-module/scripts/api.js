@@ -20,6 +20,7 @@ import {
   normalizeGrowthEvent
 } from "./progression.js";
 import { analyzeSessionNotes, validateAdapterEvents } from "./session-notes.js";
+import { createAiGatewayAdapter } from "./ai-gateway.js";
 
 export class GrandDesignApi {
   constructor() {
@@ -31,8 +32,8 @@ export class GrandDesignApi {
   }
 
   async applyToActor(actor, payload) {
-    this.#assertPf2eActor(actor);
-    this.#assertGm();
+    this._assertPf2eActor(actor);
+    this._assertGm();
 
     const result = validateConversion(payload);
     if (!result.valid) {
@@ -46,7 +47,7 @@ export class GrandDesignApi {
       source: "grand-design-ai",
       updatedAt: new Date().toISOString()
     };
-    const approved = await this.#approveEntries(actor, normalized, registry);
+    const approved = await this._approveEntries(actor, normalized, registry);
     await actor.update({
       [`flags.${MODULE_ID}.${ACTOR_FLAG}`]: normalized,
       [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: approved.registry
@@ -56,19 +57,19 @@ export class GrandDesignApi {
   }
 
   async combineSkills(actor, entry) {
-    return this.#approveEvolution(actor, "skill", entry, "combine");
+    return this._approveEvolution(actor, "skill", entry, "combine");
   }
 
   async upgradeSkill(actor, entry) {
-    return this.#approveEvolution(actor, "skill", entry, "upgrade");
+    return this._approveEvolution(actor, "skill", entry, "upgrade");
   }
 
   async upgradeClass(actor, entry) {
-    return this.#approveEvolution(actor, "class", entry, "upgrade");
+    return this._approveEvolution(actor, "class", entry, "upgrade");
   }
 
   async createConversionJournal(payload) {
-    this.#assertGm();
+    this._assertGm();
     const result = validateConversion(payload);
     if (!result.valid) {
       throw new Error(`Grand Design conversion is invalid: ${result.errors.join(" ")}`);
@@ -107,29 +108,39 @@ export class GrandDesignApi {
     this._proposalAdapter = adapter;
   }
 
+  setAiGateway(config) {
+    this.setProposalAdapter(createAiGatewayAdapter(config));
+  }
+
   async analyzeSessionNotes(actor, notes) {
-    this.#assertPf2eActor(actor);
-    this.#assertGm();
+    this._assertPf2eActor(actor);
+    this._assertGm();
     if (typeof notes !== "string" || !notes.trim()) {
       throw new Error("Session notes must be non-empty text.");
     }
     const source = this._proposalAdapter ? "adapter" : "local";
+    const adapterOutput = this._proposalAdapter ? await this._proposalAdapter({ actor, notes }) : null;
     const candidateEvents = this._proposalAdapter
-      ? validateAdapterEvents(await this._proposalAdapter({ actor, notes }))
+      ? validateAdapterEvents(adapterOutput)
       : analyzeSessionNotes(notes);
     const recorded = [];
-    let proposals = this.getGrowth(actor).proposals;
+    let eventProposals = this.getGrowth(actor).proposals;
     for (const event of candidateEvents) {
       const result = await this.recordGrowthEvent(actor, event);
       recorded.push(result.event);
-      proposals = result.proposals;
+      eventProposals = result.proposals;
     }
+    const modelProposals = this._proposalAdapter
+      ? this._validateModelProposals(adapterOutput?.proposals ?? [], actor)
+      : [];
+    const proposals = mergeProposals(eventProposals, modelProposals);
+    await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
     return { source, events: recorded, proposals };
   }
 
   async recordGrowthEvent(actor, event) {
-    this.#assertPf2eActor(actor);
-    this.#assertGm();
+    this._assertPf2eActor(actor);
+    this._assertGm();
     const growth = this.getGrowth(actor);
     const normalizedEvent = normalizeGrowthEvent(event, growth.events.length + 1);
     const events = [...growth.events, normalizedEvent];
@@ -149,12 +160,16 @@ export class GrandDesignApi {
   }
 
   async approveSkillProposal(actor, id) {
-    this.#assertPf2eActor(actor);
-    this.#assertGm();
+    return this.approveProposal(actor, id);
+  }
+
+  async approveProposal(actor, id) {
+    this._assertPf2eActor(actor);
+    this._assertGm();
     const growth = this.getGrowth(actor);
     const proposal = growth.proposals.find((candidate) => candidate.id === id && candidate.status === "pending");
     if (!proposal) throw new Error(`No pending skill proposal exists for ${id}.`);
-    const approved = await this.#approveEvolution(actor, "skill", proposal.entry, "origin");
+    const approved = await this._approveEvolution(actor, proposal.kind ?? "skill", proposal.entry, "origin");
     const proposals = growth.proposals.map((candidate) =>
       candidate.id === id ? { ...candidate, status: "approved", approvedAt: new Date().toISOString() } : candidate
     );
@@ -164,7 +179,7 @@ export class GrandDesignApi {
   }
 
   async runTestScenario() {
-    this.#assertGm();
+    this._assertGm();
     if (game.system.id !== "pf2e") {
       throw new Error("The Grand Design test scenario requires the PF2e game system.");
     }
@@ -172,42 +187,72 @@ export class GrandDesignApi {
   }
 
   async clearTestScenario() {
-    this.#assertGm();
+    this._assertGm();
     return clearTestScenario();
   }
 
-  async #approveEvolution(actor, kind, entry, operation) {
-    this.#assertPf2eActor(actor);
-    this.#assertGm();
+  _validateModelProposals(proposals, actor) {
+    if (!Array.isArray(proposals)) throw new Error("AI gateway proposals must be an array.");
+    const registry = this.getActorRegistry(actor);
+    return proposals.map((proposal) => {
+      if (!proposal || !["skill", "class"].includes(proposal.kind)) {
+        throw new Error("AI gateway proposal kind must be skill or class.");
+      }
+      const validation = proposal.kind === "class"
+        ? validateClassEntry(proposal.entry)
+        : validateSkillEntry(proposal.entry);
+      if (!validation.valid) {
+        throw new Error(`Invalid AI ${proposal.kind} proposal: ${validation.errors.join(" ")}`);
+      }
+      const registryId = `${proposal.kind}:${slugify(proposal.entry.name)}`;
+      const bucket = proposal.kind === "class" ? registry.classes : registry.skills;
+      if (bucket[registryId]) {
+        throw new Error(`AI proposed an already approved ${proposal.kind}: ${proposal.entry.name}.`);
+      }
+      return {
+        id: proposal.id ?? `proposal:ai-${registryId}`,
+        kind: proposal.kind,
+        status: "pending",
+        evidence: Array.isArray(proposal.evidence) ? proposal.evidence : [],
+        entry: proposal.entry,
+        source: "ai-gateway"
+      };
+    });
+  }
+
+  async _approveEvolution(actor, kind, entry, operation) {
+    this._assertPf2eActor(actor);
+    this._assertGm();
     const validation = kind === "class" ? validateClassEntry(entry) : validateSkillEntry(entry);
     if (!validation.valid) {
       throw new Error(`Grand Design ${kind} is invalid: ${validation.errors.join(" ")}`);
     }
+
     const registry = cloneRegistry(this.getActorRegistry(actor));
     const normalized = normalizeEntry(kind, entry, registry, operation);
-    const approved = await this.#ensureFeatureItem(actor, kind, normalized, registry);
+    const approved = await this._ensureFeatureItem(actor, kind, normalized, registry);
     await actor.update({ [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: approved.registry });
     Hooks.callAll("grand-design-ai.entryApproved", actor, kind, normalized);
     return approved;
   }
 
-  async #approveEntries(actor, conversion, registry) {
+  async _approveEntries(actor, conversion, registry) {
     let nextRegistry = registry;
     const items = [];
     for (const entry of conversion.classes) {
-      const approved = await this.#ensureFeatureItem(actor, "class", entry, nextRegistry);
+      const approved = await this._ensureFeatureItem(actor, "class", entry, nextRegistry);
       nextRegistry = approved.registry;
       items.push(approved);
     }
     for (const entry of conversion.skills) {
-      const approved = await this.#ensureFeatureItem(actor, "skill", entry, nextRegistry);
+      const approved = await this._ensureFeatureItem(actor, "skill", entry, nextRegistry);
       nextRegistry = approved.registry;
       items.push(approved);
     }
     return { registry: nextRegistry, items };
   }
 
-  async #ensureFeatureItem(actor, kind, entry, registry) {
+  async _ensureFeatureItem(actor, kind, entry, registry) {
     const existing = actor.items.find(
       (item) => item.getFlag(MODULE_ID, "registryId") === entry.metadata.id
     );
@@ -218,13 +263,13 @@ export class GrandDesignApi {
     };
   }
 
-  #assertGm() {
+  _assertGm() {
     if (!game.user?.isGM) {
       throw new Error("Only a GM can apply or publish Grand Design conversions.");
     }
   }
 
-  #assertPf2eActor(actor) {
+  _assertPf2eActor(actor) {
     if (game.system.id !== "pf2e") {
       throw new Error("Grand Design AI requires the PF2e game system.");
     }
@@ -232,6 +277,18 @@ export class GrandDesignApi {
       throw new Error("A Foundry Actor is required.");
     }
   }
+}
+
+function mergeProposals(existing, additions) {
+  const merged = new Map(existing.map((proposal) => [proposal.id, proposal]));
+  for (const proposal of additions) {
+    if (!merged.has(proposal.id)) merged.set(proposal.id, proposal);
+  }
+  return [...merged.values()];
+}
+
+function slugify(value) {
+  return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
 function renderConversionHtml(payload) {

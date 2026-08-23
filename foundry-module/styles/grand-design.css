@@ -6,3 +6,13 @@
   min-height: 20rem;
   font-family: monospace;
 }
+
+.grand-design-growth textarea[name="growth-notes"] {
+  min-height: 12rem;
+  resize: vertical;
+}
+
+.grand-design-growth ul {
+  max-height: 12rem;
+  overflow-y: auto;
+}

@@ -49,11 +49,24 @@ await api.approveSkillProposal(actor, "proposal:canal-step");
 
 Each event is stored in `flags.grand-design-ai.growthEvents`; generated drafts are stored in `flags.grand-design-ai.growthProposals` with their exact evidence IDs. The first proposal templates cover water mobility, crafting support, precision martial play, and fire spellcasting. Every draft still passes the same mechanics validator before it can create an Item.
 
+The Actor sheet now has a GM-only **Growth** button. Paste session notes, review the tagged evidence and pending drafts, then choose **Approve Selected** to add a draft to the sheet. No console commands are required for normal use.
+
 ## Session-note model adapter
 
 Use `analyzeSessionNotes(actor, notes)` to turn session prose into the same validated growth-event pipeline. The built-in local analyzer recognizes demonstrated water/mobility, crafting/support, martial/precision, and fire/spellcasting behavior only when the prose also signals success.
 
-An AI integration can register a function with `setProposalAdapter(async ({ actor, notes }) => ({ events }))`. The adapter is never given permission to create Items: returned events must pass the growth-event validator, generated skills still use bounded mechanics templates, and a GM must explicitly approve each proposal. Keep provider credentials and external note-sharing decisions outside this module.
+An AI integration can register a function with `setProposalAdapter(async ({ actor, notes }) => ({ events, proposals }))`. A proposal can be a `skill` or `class`, but it must use the same complete PF2e mechanics schema as a manual entry. The adapter is never given permission to create Items: returned events and proposals are validated, duplicates are rejected, and a GM must explicitly approve each proposal.
+
+For an HTTPS JSON gateway, register it from a GM macro or a companion module:
+
+```js
+game.modules.get("grand-design-ai").api.setAiGateway({
+  endpoint: "https://your-approved-ai-gateway.example/propose",
+  getHeaders: () => ({ Authorization: "Bearer YOUR_GATEWAY_TOKEN" })
+});
+```
+
+The module sends structured notes, actor context, allowed tags, and the required output schema. It does not store credentials or make any external request until a GM explicitly registers a gateway. Keep provider credentials and external note-sharing decisions outside this module.
 
 ## Tags, lineage, and evolution
 
