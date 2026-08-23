@@ -35,6 +35,12 @@ This mirrors the checked-out module directly into `C:\Users\parez\AppData\Local\
 ..\tools\deploy-foundry-module.ps1 -Destination "D:\Foundry\Data\modules\grand-design-ai"
 ```
 
+Campaign runs also save their latest machine-readable report to `C:\Users\parez\AppData\Local\FoundryVTT\Data\grand-design-ai-reports\last-test-report.json`. Read it outside Foundry with:
+
+```powershell
+..\tools\read-foundry-test-report.ps1
+```
+
 ## Required mechanics
 
 Every approved entry must specify a `gameItem.kind` and `mechanics` object. Supported kinds are `feat`, `action`, `reaction`, `free`, `passive`, `spell`, and `weapon`.

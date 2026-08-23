@@ -231,6 +231,7 @@ export async function runTestScenario(api) {
     );
   }
   report.ok = report.failed.length === 0;
+  await persistTestReport(report);
   const summary = `${report.name}: ${report.passed.length}/${report.expectedAssertions} passed, ${report.failed.length} failed.`;
   if (report.ok) ui.notifications.info(summary);
   else {
@@ -243,6 +244,28 @@ export async function runTestScenario(api) {
   }
   console.info(`${MODULE_ID} | ${summary}`, report);
   return report;
+}
+
+async function persistTestReport(report) {
+  const directory = "grand-design-ai-reports";
+  try {
+    await FilePicker.createDirectory("data", directory);
+  } catch (error) {
+    if (!String(error.message).includes("EEXIST")) throw error;
+  }
+  const file = new File(
+    [JSON.stringify({ ...report, completedAt: new Date().toISOString() }, null, 2)],
+    "last-test-report.json",
+    { type: "application/json" }
+  );
+  try {
+    const result = await FilePicker.upload("data", directory, file, { notify: false });
+    report.logPath = result.path;
+  } catch (error) {
+    report.logError = error.message;
+    console.error(`${MODULE_ID} | could not persist test report`, error);
+    ui.notifications.warn("Grand Design campaign report could not be saved to local Foundry Data.");
+  }
 }
 
 async function createCampaignDocuments(report) {
