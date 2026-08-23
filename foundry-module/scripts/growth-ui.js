@@ -3,8 +3,9 @@ import { MODULE_ID } from "./constants.js";
 export function openGrowthManager(actor) {
   const api = game.modules.get(MODULE_ID).api;
   const growth = api.getGrowth(actor);
+  const progression = api.getLevelProgression(actor);
   const pending = growth.proposals.filter((proposal) => proposal.status === "pending");
-  const content = renderGrowthContent(growth, pending);
+  const content = renderGrowthContent(growth, progression, pending);
 
   new Dialog({
     title: `Grand Design Growth: ${actor.name}`,
@@ -44,13 +45,29 @@ export function openGrowthManager(actor) {
           }
         }
       },
+      rest: {
+        icon: '<i class="fas fa-bed"></i>',
+        label: "Resolve Rest",
+        callback: async (html) => {
+          const restType = html.find('select[name="growth-rest-type"]').val();
+          try {
+            const result = await api.resolveLevelRest(actor, { restType });
+            const levels = result.gainedLevels.length ? ` Reached level(s): ${result.gainedLevels.join(", ")}.` : " No level was reached.";
+            ui.notifications.info(`Grand Design ${restType} rest resolved.${levels}`);
+            openGrowthManager(actor);
+          } catch (error) {
+            console.error(`${MODULE_ID} | rest resolution failed`, error);
+            ui.notifications.error(error.message);
+          }
+        }
+      },
       close: { icon: '<i class="fas fa-times"></i>', label: "Close" }
     },
     default: "analyze"
   }).render(true);
 }
 
-function renderGrowthContent(growth, pending) {
+function renderGrowthContent(growth, progression, pending) {
   const eventList = growth.events.length
     ? growth.events.map((event) => `<li><strong>${escapeHtml(event.outcome)}</strong>: ${escapeHtml(event.summary)} <em>(${escapeHtml(event.tags.join(", "))})</em></li>`).join("")
     : "<li>No recorded growth events.</li>";
@@ -61,6 +78,11 @@ function renderGrowthContent(growth, pending) {
     ? pending.map((proposal) => `<li><strong>${escapeHtml(proposal.entry.name)}</strong>: ${escapeHtml(proposal.entry.mechanics.effect)} <em>Evidence: ${escapeHtml(proposal.evidence.join(", "))}</em></li>`).join("")
     : "<li>No proposal has enough evidence yet.</li>";
   return `<form class="grand-design-growth">
+    <h3>Grand Design Level ${progression.level}/100</h3>
+    <p><strong>${Math.floor(progression.progress)} progression</strong> toward the next level; <strong>${progression.grantAllowances}</strong> level-up grant allowance(s) available.</p>
+    <div class="form-group"><label>Resolve progression at rest</label><select name="growth-rest-type"><option value="short">Short Rest</option><option value="long">Long Rest</option></select></div>
+    <p>Generated entries can only be granted after resolving a level-up at rest. Class evolution is reserved for levels 20, 30, and 50.</p>
+    <hr>
     <div class="form-group stacked"><label>Session Notes</label><textarea name="growth-notes" rows="8" placeholder="Describe what the character accomplished and whether they succeeded."></textarea></div>
     <p>Only successful demonstrated behavior becomes evidence. Approval is always GM-controlled.</p>
     <hr><h3>Pending Proposals</h3><select name="growth-proposal">${options}</select><ul>${evidence}</ul>

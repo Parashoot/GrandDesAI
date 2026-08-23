@@ -51,13 +51,36 @@ Each event is stored in `flags.grand-design-ai.growthEvents`; generated drafts a
 
 The Actor sheet now has a GM-only **Growth** button. Paste session notes, review the tagged evidence and pending drafts, then choose **Approve Selected** to add a draft to the sheet. No console commands are required for normal use.
 
+## Grand Design levels (0-100)
+
+Grand Design progression is separate from PF2e's 1-20 level. Every successful recorded event adds progression (25 for a success, 40 for a critical success), while the amount required for the next level increases quadratically from 100 at level 0 through the level-100 cap.
+
+- Levels resolve only through the Growth dialog's **Resolve Rest** button after a short or long rest. The GM API can mark an exceptional immediate resolution as `dire: true`.
+- Each resolved level creates one pending-entry grant allowance. A generated Skill, feat, action, spell, weapon, or other validated entry consumes an allowance when the GM approves it. Evidence may be recorded at any time; it never grants an Item by itself.
+- Generated Class creation, upgrade, or merge is additionally gated to Grand Design levels **20, 30, and 50**. The initial conversion import remains character setup, not a progression grant.
+
+The exact current Grand Design level, accumulated progression, available grant allowances, and latest resolved rest are stored per Actor in `flags.grand-design-ai.levelProgression`.
+
+## AI provider setup (local first)
+
+The built-in note analyzer is always available and sends nothing off the computer. AI generation is opt-in and starts **disabled**. As a GM, open **Configure Settings → Grand Design AI → Configure AI Provider** and choose one of these OpenAI-compatible chat-completions providers:
+
+1. **Recommended: Ollama local server.** Install [Ollama for Windows](https://docs.ollama.com/windows), then in PowerShell run `ollama pull qwen3:14b`. Select **Local Ollama**, leaving the default endpoint `http://127.0.0.1:11434/v1/chat/completions` and model `qwen3:14b`. Qwen3 14B is the practical quality/default balance for structured drafts. Use its non-thinking mode for cleaner JSON.
+2. **Higher-quality local model (24 GB VRAM class):** pull/select `mistral-small3.1:24b` in Ollama, then replace the model field. It is a stronger choice for mechanically complete drafts when the machine can run it comfortably.
+3. **GUI local option: LM Studio.** Start its local server, select **Local OpenAI-compatible server**, and use `http://127.0.0.1:1234/v1/chat/completions` plus the loaded model ID. Use a model of at least 7B parameters for reliable structured output.
+4. **Hosted bring-your-own provider:** select **Hosted OpenAI-compatible API**, enter that provider's HTTPS chat-completions endpoint, model ID, and API key. [OpenRouter](https://openrouter.ai/docs/api-reference/overview) and OpenAI-compatible providers work with this shape. Create and fund/enable API access with the provider; a consumer chat subscription does not necessarily include API usage.
+
+The API key field is intentionally password-masked and **client-scoped**: it stays in the configuring Foundry browser profile, is not saved in world data, and is never shared with players. It is not a hardware-backed secret vault; use a restricted local user profile and revoke/rotate a key if that profile is compromised. Remote endpoints must use HTTPS; plain HTTP is accepted only for `localhost` or `127.0.0.1`.
+
+For predictable structured JSON, use a low temperature (the module uses 0.2), retain GM approval, and test a few notes before live play. The module asks the AI only for events and pending proposals; it validates every returned Class/Skill and cannot let the provider directly create an Item.
+
 ## Session-note model adapter
 
 Use `analyzeSessionNotes(actor, notes)` to turn session prose into the same validated growth-event pipeline. The built-in local analyzer recognizes demonstrated water/mobility, crafting/support, martial/precision, and fire/spellcasting behavior only when the prose also signals success.
 
 An AI integration can register a function with `setProposalAdapter(async ({ actor, notes }) => ({ events, proposals }))`. A proposal can be a `skill` or `class`, but it must use the same complete PF2e mechanics schema as a manual entry. The adapter is never given permission to create Items: returned events and proposals are validated, duplicates are rejected, and a GM must explicitly approve each proposal.
 
-For an HTTPS JSON gateway, register it from a GM macro or a companion module:
+For a custom HTTPS JSON gateway, register it from a GM macro or a companion module:
 
 ```js
 game.modules.get("grand-design-ai").api.setAiGateway({

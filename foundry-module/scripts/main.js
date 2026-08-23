@@ -2,8 +2,10 @@ import { GrandDesignApi } from "./api.js";
 import { defaultAtlasAssetPath, isLegacyGithubAtlasPath } from "./atlas.js";
 import { MODULE_ID } from "./constants.js";
 import { openGrowthManager } from "./growth-ui.js";
+import { createConfiguredAiAdapter, registerAiProviderSettings } from "./ai-provider-config.js";
 
 Hooks.once("init", () => {
+  registerAiProviderSettings();
   game.settings.register(MODULE_ID, "atlasAssetPath", {
     name: "Grand Design Atlas Asset",
     hint: "Path to a licensed world-map image or SVG to use as the Foundry scene background.",
@@ -23,6 +25,14 @@ Hooks.once("ready", async () => {
   }
   if (game.system.id !== "pf2e") {
     ui.notifications.warn("Grand Design AI is loaded outside the PF2e system; actor sync is disabled.");
+  }
+  if (game.user.isGM) {
+    try {
+      const adapter = createConfiguredAiAdapter();
+      if (adapter) game.modules.get(MODULE_ID).api.setProposalAdapter(adapter);
+    } catch (error) {
+      console.warn(`${MODULE_ID} | AI provider is not configured`, error);
+    }
   }
 });
 

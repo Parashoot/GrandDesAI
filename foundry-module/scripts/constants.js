@@ -4,9 +4,12 @@ export const REGISTRY_FLAG = "registry";
 export const TEST_SCENARIO_FLAG = "testScenario";
 export const GROWTH_EVENTS_FLAG = "growthEvents";
 export const GROWTH_PROPOSALS_FLAG = "growthProposals";
+export const LEVEL_PROGRESSION_FLAG = "levelProgression";
 
 export const POWER_TIERS = new Set(["standard", "elevated", "prestige"]);
 export const SKILL_TIERS = new Set([1, 2, 3]);
 export const LINEAGE_OPERATIONS = new Set(["origin", "combine", "upgrade"]);
 export const PF2E_ITEM_KINDS = new Set(["feat", "action", "reaction", "free", "passive", "spell", "weapon"]);
 export const FREQUENCY_PERIODS = new Set(["round", "minute", "hour", "day", "encounter", "unlimited"]);
+export const GRAND_DESIGN_MAX_LEVEL = 100;
+export const CLASS_EVOLUTION_LEVELS = new Set([20, 30, 50]);

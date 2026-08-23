@@ -20,4 +20,5 @@ test("AI gateway request supplies bounded context and schema", () => {
 
 test("AI gateway only accepts HTTPS endpoints", () => {
   assert.throws(() => createAiGatewayAdapter({ endpoint: "http://insecure.example" }));
+  assert.doesNotThrow(() => createAiGatewayAdapter({ endpoint: "http://127.0.0.1:11434/v1/chat/completions" }));
 });

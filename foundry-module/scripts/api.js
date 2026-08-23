@@ -2,6 +2,7 @@ import {
   ACTOR_FLAG,
   GROWTH_EVENTS_FLAG,
   GROWTH_PROPOSALS_FLAG,
+  LEVEL_PROGRESSION_FLAG,
   MODULE_ID,
   REGISTRY_FLAG
 } from "./constants.js";
@@ -17,7 +18,12 @@ import { validateClassEntry, validateConversion, validateSkillEntry } from "./va
 import {
   generateSkillProposals,
   growthFlags,
-  normalizeGrowthEvent
+  normalizeGrowthEvent,
+  canApproveGeneratedProposal,
+  levelProgressionFlags,
+  progressionForEvent,
+  resolveRest,
+  spendGrantAllowance
 } from "./progression.js";
 import { analyzeSessionNotes, validateAdapterEvents } from "./session-notes.js";
 import { createAiGatewayAdapter } from "./ai-gateway.js";
@@ -101,6 +107,10 @@ export class GrandDesignApi {
     return growthFlags(actor);
   }
 
+  getLevelProgression(actor) {
+    return levelProgressionFlags(actor);
+  }
+
   setProposalAdapter(adapter) {
     if (adapter !== null && typeof adapter !== "function") {
       throw new Error("A proposal adapter must be a function or null.");
@@ -144,6 +154,11 @@ export class GrandDesignApi {
     const growth = this.getGrowth(actor);
     const normalizedEvent = normalizeGrowthEvent(event, growth.events.length + 1);
     const events = [...growth.events, normalizedEvent];
+    const levelProgression = this.getLevelProgression(actor);
+    const updatedProgression = {
+      ...levelProgression,
+      progress: levelProgression.progress + progressionForEvent(normalizedEvent)
+    };
     const modifier = actor.system?.skills?.acrobatics?.mod ?? 0;
     const generated = generateSkillProposals(events, this.getActorRegistry(actor), modifier);
     const known = new Map(growth.proposals.map((proposal) => [proposal.id, proposal]));
@@ -153,7 +168,8 @@ export class GrandDesignApi {
     const proposals = [...known.values()];
     await actor.update({
       [`flags.${MODULE_ID}.${GROWTH_EVENTS_FLAG}`]: events,
-      [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals
+      [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
+      [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: updatedProgression
     });
     Hooks.callAll("grand-design-ai.growthEventRecorded", actor, normalizedEvent, proposals);
     return { event: normalizedEvent, proposals };
@@ -169,11 +185,22 @@ export class GrandDesignApi {
     const growth = this.getGrowth(actor);
     const proposal = growth.proposals.find((candidate) => candidate.id === id && candidate.status === "pending");
     if (!proposal) throw new Error(`No pending skill proposal exists for ${id}.`);
-    const approved = await this._approveEvolution(actor, proposal.kind ?? "skill", proposal.entry, "origin");
+    const levelProgression = this.getLevelProgression(actor);
+    const eligibility = canApproveGeneratedProposal(levelProgression, proposal);
+    if (!eligibility.valid) throw new Error(eligibility.error);
+    const approved = await this._approveEvolution(
+      actor,
+      proposal.kind ?? "skill",
+      proposal.entry,
+      proposal.entry.metadata?.lineage?.operation ?? "origin"
+    );
     const proposals = growth.proposals.map((candidate) =>
       candidate.id === id ? { ...candidate, status: "approved", approvedAt: new Date().toISOString() } : candidate
     );
-    await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+    await actor.update({
+      [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
+      [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: spendGrantAllowance(levelProgression)
+    });
     Hooks.callAll("grand-design-ai.skillProposalApproved", actor, proposal, approved);
     return approved;
   }
@@ -184,6 +211,15 @@ export class GrandDesignApi {
       throw new Error("The Grand Design test scenario requires the PF2e game system.");
     }
     return runTestScenario(this);
+  }
+
+  async resolveLevelRest(actor, options) {
+    this._assertPf2eActor(actor);
+    this._assertGm();
+    const result = resolveRest(this.getLevelProgression(actor), options);
+    await actor.update({ [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: result.progression });
+    Hooks.callAll("grand-design-ai.levelsResolved", actor, result);
+    return result;
   }
 
   async clearTestScenario() {

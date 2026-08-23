@@ -1,4 +1,11 @@
-import { GROWTH_EVENTS_FLAG, GROWTH_PROPOSALS_FLAG, MODULE_ID } from "./constants.js";
+import {
+  CLASS_EVOLUTION_LEVELS,
+  GRAND_DESIGN_MAX_LEVEL,
+  GROWTH_EVENTS_FLAG,
+  GROWTH_PROPOSALS_FLAG,
+  LEVEL_PROGRESSION_FLAG,
+  MODULE_ID
+} from "./constants.js";
 
 const MINIMUM_EVIDENCE = 3;
 
@@ -312,5 +319,78 @@ export function growthFlags(actor) {
   return {
     events: actor.getFlag(MODULE_ID, GROWTH_EVENTS_FLAG) ?? [],
     proposals: actor.getFlag(MODULE_ID, GROWTH_PROPOSALS_FLAG) ?? []
+  };
+}
+
+export function levelProgressionFlags(actor) {
+  return normalizeLevelProgression(actor.getFlag(MODULE_ID, LEVEL_PROGRESSION_FLAG));
+}
+
+export function progressionForEvent(event) {
+  return event.outcome === "criticalSuccess" ? 40 : 25;
+}
+
+export function levelRequirement(level) {
+  if (!Number.isInteger(level) || level < 0 || level >= GRAND_DESIGN_MAX_LEVEL) {
+    throw new Error(`Level must be an integer from 0 to ${GRAND_DESIGN_MAX_LEVEL - 1}.`);
+  }
+  return 100 + level * 35 + level * level * 4;
+}
+
+export function resolveRest(progression, { restType, dire = false } = {}) {
+  if (!["short", "long"].includes(restType) && !dire) {
+    throw new Error("Levels can only be resolved during a short or long rest unless the scenario is marked dire.");
+  }
+  const next = normalizeLevelProgression(progression);
+  const gainedLevels = [];
+  while (next.level < GRAND_DESIGN_MAX_LEVEL && next.progress >= levelRequirement(next.level)) {
+    next.progress -= levelRequirement(next.level);
+    next.level += 1;
+    next.grantAllowances += 1;
+    gainedLevels.push(next.level);
+  }
+  next.lastRestAt = new Date().toISOString();
+  next.lastRestType = dire ? "dire" : restType;
+  return {
+    progression: next,
+    gainedLevels,
+    classEvolutionUnlocked: gainedLevels.filter((level) => CLASS_EVOLUTION_LEVELS.has(level))
+  };
+}
+
+export function canApproveGeneratedProposal(progression, proposal) {
+  const state = normalizeLevelProgression(progression);
+  if (state.grantAllowances < 1) {
+    return { valid: false, error: "Resolve a Grand Design level-up at rest before granting a generated entry." };
+  }
+  if (proposal.kind === "class" && !CLASS_EVOLUTION_LEVELS.has(state.level)) {
+    return {
+      valid: false,
+      error: `Generated Class evolution is only available at Grand Design levels 20, 30, or 50 (current level: ${state.level}).`
+    };
+  }
+  return { valid: true, error: null };
+}
+
+export function spendGrantAllowance(progression) {
+  const state = normalizeLevelProgression(progression);
+  if (state.grantAllowances < 1) throw new Error("No Grand Design grant allowances are available.");
+  return { ...state, grantAllowances: state.grantAllowances - 1 };
+}
+
+function normalizeLevelProgression(value) {
+  const level = Number.isInteger(value?.level) && value.level >= 0 && value.level <= GRAND_DESIGN_MAX_LEVEL
+    ? value.level
+    : 0;
+  const progress = Number.isFinite(value?.progress) && value.progress >= 0 ? value.progress : 0;
+  const grantAllowances = Number.isInteger(value?.grantAllowances) && value.grantAllowances >= 0
+    ? value.grantAllowances
+    : 0;
+  return {
+    level,
+    progress,
+    grantAllowances,
+    lastRestAt: value?.lastRestAt ?? null,
+    lastRestType: value?.lastRestType ?? null
   };
 }
