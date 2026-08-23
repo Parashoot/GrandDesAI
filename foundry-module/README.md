@@ -21,6 +21,20 @@ The repository is currently private, so Foundry cannot download that URL anonymo
 
 The module validates the input, stores the approved record in `flags.grand-design-ai.conversion`, and emits the `grand-design-ai.conversionApplied` hook. On approval, it also adds each Class and Skill as an idempotent PF2e Item on the Actor sheet. The module never overwrites the Actor's core PF2e class; Grand Design Classes can coexist with the normal PF2e chassis.
 
+## Fast local deployment
+
+For this development machine, do not wait for Foundry's module updater after a Git push. From `foundry-module`, run:
+
+```powershell
+npm run deploy:foundry
+```
+
+This mirrors the checked-out module directly into `C:\Users\parez\AppData\Local\FoundryVTT\Data\modules\grand-design-ai`, verifies that the deployed `module.json` version matches the source, and excludes development-only `node_modules` and `.git` directories. Then reload the active Foundry world (for example, **F5**); there is no need to return to Setup or use **Update**. The deployment target can be changed with:
+
+```powershell
+..\tools\deploy-foundry-module.ps1 -Destination "D:\Foundry\Data\modules\grand-design-ai"
+```
+
 ## Required mechanics
 
 Every approved entry must specify a `gameItem.kind` and `mechanics` object. Supported kinds are `feat`, `action`, `reaction`, `free`, `passive`, `spell`, and `weapon`.
