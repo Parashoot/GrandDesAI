@@ -14,6 +14,14 @@ Hooks.once("init", () => {
     type: String,
     default: defaultAtlasAssetPath()
   });
+  game.settings.register(MODULE_ID, "runTestScenarioOnLaunch", {
+    name: "Run Test Campaign on Launch",
+    hint: "GM only. Automatically runs 'The First Steam' test campaign every time this world finishes loading. Intended for development machines, not live play.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false
+  });
   game.modules.get(MODULE_ID).api = new GrandDesignApi();
 });
 
@@ -32,6 +40,18 @@ Hooks.once("ready", async () => {
       if (adapter) game.modules.get(MODULE_ID).api.setProposalAdapter(adapter);
     } catch (error) {
       console.warn(`${MODULE_ID} | AI provider is not configured`, error);
+    }
+  }
+  if (game.user.isGM && game.settings.get(MODULE_ID, "runTestScenarioOnLaunch")) {
+    if (game.system.id !== "pf2e") {
+      ui.notifications.warn("Grand Design AI cannot auto-run the test campaign outside the PF2e system.");
+    } else {
+      try {
+        await game.modules.get(MODULE_ID).api.runTestScenario();
+      } catch (error) {
+        console.error(`${MODULE_ID} | automatic test campaign run failed`, error);
+        ui.notifications.error("Grand Design AI's automatic test campaign run failed. See console for details.");
+      }
     }
   }
 });

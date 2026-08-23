@@ -11,6 +11,8 @@ const report = await game.modules.get("grand-design-ai").api.runTestScenario();
 console.table(report);
 ```
 
+Alternatively, enable **Run Test Campaign on Launch** in **Configure Settings → Grand Design AI** to automatically run the campaign every time the world finishes loading. This is intended for a development machine, not live play — it deletes and recreates the tagged test documents on every launch.
+
 The macro creates only documents marked with `flags.grand-design-ai.testScenario`:
 
 - Five original PF2e Actors: two player characters, one ally, and two escalating opposition Actors
