@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 1152" role="img" aria-labelledby="title-1 desc-1">
+  <title id="title-1">Surveyor's Sketch No. 7</title>
+  <desc id="desc-1">A large hand-drawn pencil-sketch placeholder map for a Game Master to relabel and repurpose.</desc>
+  <defs>
+    <filter id="pencil-1" x="-8%" y="-8%" width="116%" height="116%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="4" seed="54" result="grain"/>
+      <feDisplacementMap in="SourceGraphic" in2="grain" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="paper-grain-1" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="85" result="fiber"/>
+      <feColorMatrix in="fiber" type="matrix" values="0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.05  0 0 0 0.05 0"/>
+    </filter>
+    <pattern id="hatch-1" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(44)">
+      <path d="M0 0 L0 14" stroke="#3a332a" stroke-width="1" opacity="0.28"/>
+    </pattern>
+    <pattern id="crosshatch-1" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(-19)">
+      <path d="M0 0 L16 16 M16 0 L0 16" stroke="#2c261e" stroke-width="1" opacity="0.22"/>
+    </pattern>
+  </defs>
+  <rect width="2048" height="1152" fill="#ece1c6"/>
+  <rect width="2048" height="1152" filter="url(#paper-grain-1)" opacity="0.5"/>
+  <rect x="10" y="10" width="2028" height="1132" fill="none" stroke="#4a3f2e" stroke-width="6" stroke-dasharray="2 10" opacity="0.55"/>
+  <g filter="url(#pencil-1)" fill="none" stroke="#2c2416" stroke-width="5" stroke-linejoin="round">
+    <path d="M 1380.3,596.7 L 1512.8,774.2 L 1235.0,837.0 L 1038.5,959.2 L 796.6,876.0 L 608.7,793.8 L 564.2,658.4 L 425.9,514.0 L 639.8,416.7 L 773.3,279.3 L 1025.7,299.6 L 1315.5,284.2 L 1412.7,451.9 Z" fill="#ded0a4" fill-opacity="0.9"/>
+    <path d="M 1380.3,596.7 L 1512.8,774.2 L 1235.0,837.0 L 1038.5,959.2 L 796.6,876.0 L 608.7,793.8 L 564.2,658.4 L 425.9,514.0 L 639.8,416.7 L 773.3,279.3 L 1025.7,299.6 L 1315.5,284.2 L 1412.7,451.9 Z" fill="url(#hatch-1)"/>
+    <path d="M 1826.5,306.6 L 1797.6,366.2 L 1701.5,371.6 L 1627.6,366.1 L 1524.0,342.5 L 1529.5,272.0 L 1626.1,245.5 L 1701.7,240.6 L 1782.7,254.7 Z" fill="#dccf9f" stroke-width="4"/>
+    <path d="M 98.3 342.8882982674986 L 141.0 199.4 L 183.8 342.8882982674986 M 175.9 342.8882982674986 L 218.7 154.4 L 261.4 342.8882982674986 M 283.6 342.8882982674986 L 326.4 171.5 L 369.1 342.8882982674986 M 373.0 342.8882982674986 L 415.7 187.6 L 458.5 342.8882982674986 M 474.6 342.8882982674986 L 517.3 232.7 L 560.1 342.8882982674986 M 572.5 342.8882982674986 L 615.3 205.7 L 658.0 342.8882982674986 " stroke-width="4.5" fill="url(#crosshatch-1)" stroke="#241f16"/>
+    <path d="M 1322.8 997.7976676286198 L 1362.4 856.7 L 1402.0 997.7976676286198 M 1423.4 997.7976676286198 L 1463.0 891.7 L 1502.6 997.7976676286198 M 1500.8 997.7976676286198 L 1540.4 861.0 L 1580.0 997.7976676286198 M 1591.5 997.7976676286198 L 1631.1 859.5 L 1670.7 997.7976676286198 M 1680.6 997.7976676286198 L 1720.2 890.5 L 1759.8 997.7976676286198 " stroke-width="4.5" fill="url(#crosshatch-1)" stroke="#241f16"/>
+    <path d="M 266.6,140.0 L 367.9,220.3 L 422.9,325.2 L 499.6,412.6 L 596.8,496.5 L 644.8,579.9 L 675.8,679.9 L 783.9,773.0 L 884.0,850.9 L 991.0,948.4 L 1026.3,1047.3 L 1072.6,1169.7" stroke="#3c5a63" stroke-width="6" opacity="0.8"/>
+    <path d="M 1700.7,1000.0 L 1642.9,919.4 L 1607.8,842.5 L 1543.9,742.2 L 1447.9,677.3 L 1379.6,613.6 L 1277.3,519.5 L 1246.9,475.5 L 1197.7,413.0 L 1110.1,337.2" stroke="#3c5a63" stroke-width="5" opacity="0.75"/>
+    <path d="M 210.0,980.0 L 338.8,916.1 L 513.8,821.0 L 709.8,740.8 L 852.4,666.5 L 1008.0,627.1 L 1142.9,557.4 L 1331.2,467.2 L 1494.6,396.9 L 1634.5,356.9 L 1755.1,297.6" stroke="#5b4a30" stroke-width="4" stroke-dasharray="14 12" opacity="0.85"/>
+    <path d="M 596.3 899.5 L 596.3 870.0 M 587.4 882.5 L 596.3 870.0 L 605.1 882.5" /><path d="M 695.9 908.1 L 695.9 875.7 M 686.2 889.5 L 695.9 875.7 L 705.7 889.5" /><path d="M 609.7 852.1 L 609.7 819.8 M 600.0 833.5 L 609.7 819.8 L 619.4 833.5" /><path d="M 625.1 830.1 L 625.1 798.1 M 615.5 811.7 L 625.1 798.1 L 634.8 811.7" /><path d="M 753.2 787.9 L 753.2 757.6 M 744.2 770.5 L 753.2 757.6 L 762.3 770.5" /><path d="M 814.8 932.3 L 814.8 903.2 M 806.1 915.6 L 814.8 903.2 L 823.6 915.6" /><path d="M 806.4 833.8 L 806.4 815.4 M 800.9 823.2 L 806.4 815.4 L 811.9 823.2" /><path d="M 504.0 965.5 L 504.0 945.0 M 497.8 953.7 L 504.0 945.0 L 510.1 953.7" /><path d="M 627.3 940.2 L 627.3 915.5 M 619.9 926.0 L 627.3 915.5 L 634.7 926.0" /><path d="M 766.6 867.9 L 766.6 847.3 M 760.4 856.1 L 766.6 847.3 L 772.7 856.1" /><path d="M 753.3 969.3 L 753.3 935.4 M 743.2 949.8 L 753.3 935.4 L 763.5 949.8" /><path d="M 799.8 811.6 L 799.8 784.4 M 791.7 795.9 L 799.8 784.4 L 808.0 795.9" /><path d="M 574.3 929.6 L 574.3 897.6 M 564.7 911.2 L 574.3 897.6 L 584.0 911.2" /><path d="M 557.3 920.4 L 557.3 900.3 M 551.3 908.9 L 557.3 900.3 L 563.4 908.9" />
+    <path d="M 1390.9 455.6 L 1390.9 426.1 M 1382.1 438.7 L 1390.9 426.1 L 1399.8 438.7" /><path d="M 1378.5 438.2 L 1378.5 406.7 M 1369.1 420.1 L 1378.5 406.7 L 1388.0 420.1" /><path d="M 1303.4 476.1 L 1303.4 455.0 M 1297.1 463.9 L 1303.4 455.0 L 1309.8 463.9" /><path d="M 1538.7 546.7 L 1538.7 522.0 M 1531.2 532.5 L 1538.7 522.0 L 1546.1 532.5" /><path d="M 1526.1 488.0 L 1526.1 460.7 M 1517.9 472.3 L 1526.1 460.7 L 1534.3 472.3" /><path d="M 1315.8 489.8 L 1315.8 467.8 M 1309.1 477.1 L 1315.8 467.8 L 1322.4 477.1" /><path d="M 1465.2 471.7 L 1465.2 449.1 M 1458.4 458.7 L 1465.2 449.1 L 1472.0 458.7" /><path d="M 1467.0 495.0 L 1467.0 476.5 M 1461.5 484.4 L 1467.0 476.5 L 1472.6 484.4" /><path d="M 1447.1 461.4 L 1447.1 427.6 M 1437.0 442.0 L 1447.1 427.6 L 1457.3 442.0" /><path d="M 1312.7 436.6 L 1312.7 412.5 M 1305.4 422.8 L 1312.7 412.5 L 1319.9 422.8" />
+  </g>
+  
+  <g filter="url(#pencil-1)" fill="none" stroke="#241f16" stroke-width="2.5" opacity="0.8">
+    <circle cx="1780" cy="150" r="70"/>
+    <path d="M1780 80 L1780 220 M1710 150 L1850 150 M1732 102 L1828 198 M1828 102 L1732 198"/>
+  </g>
+  <g font-family="Georgia, serif" fill="#2b2416" text-anchor="middle" opacity="0.92">
+    <text x="1024" y="90" font-size="46" letter-spacing="6" font-style="italic">Surveyor's Sketch No. 7</text>
+    <text x="1024" y="1090" font-size="20" font-style="italic">Unlabeled placeholder sketch - relabel freely for your table.</text>
+    <text x="629" y="729" font-size="30">Hollow Vale</text>
+    <text x="285" y="339" font-size="28">Rooktooth Ridge</text>
+    <text x="1512" y="516" font-size="28">Ashmere Crossing</text>
+    <text x="1125" y="986" font-size="28">The Split Road</text>
+  </g>
+</svg>

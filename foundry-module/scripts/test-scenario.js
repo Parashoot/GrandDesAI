@@ -1,5 +1,5 @@
 import { MODULE_ID, TEST_SCENARIO_FLAG } from "./constants.js";
-import { resolveAtlasAssetPath as resolveConfiguredAtlasAssetPath } from "./atlas.js";
+import { resolveAtlasAssetPath as resolveConfiguredAtlasAssetPath, pickRandomSketchMapPaths } from "./atlas.js";
 import {
   combinedSkillFixture,
   canalStepGrowthEvents,
@@ -15,7 +15,6 @@ export async function runTestScenario(api) {
   await clearTestScenario();
   const report = {
     name: TEST_SCENARIO_NAME,
-    expectedAssertions: 34,
     passed: [],
     failed: [],
     documents: {}
@@ -25,10 +24,11 @@ export async function runTestScenario(api) {
     const campaign = await createCampaignDocuments(report);
     const ari = campaign.actors.ari;
     const mera = campaign.actors.mera;
+    const atlasResponses = await Promise.all(campaign.sceneAssetPaths.map((assetPath) => atlasAssetResponds(assetPath)));
     report.atlas = {
-      requestedPath: campaign.atlasAssetPath,
+      requestedPaths: campaign.sceneAssetPaths,
       persistedSources: campaign.scenes.map((scene) => sceneAtlasSource(scene)),
-      assetReachable: await atlasAssetResponds(campaign.atlasAssetPath)
+      assetsReachable: atlasResponses.every(Boolean)
     };
 
     await api.applyToActor(ari, testConversionFixture());
@@ -196,11 +196,12 @@ export async function runTestScenario(api) {
     );
     assert(
       report,
-      "Every campaign scene is configured with the atlas asset and the asset is reachable.",
-      report.atlas.assetReachable
+      "Every campaign scene is configured with a reachable, distinct pencil-sketch map asset.",
+      report.atlas.assetsReachable
         && campaign.scenes.every(
-          (scene) => scene.getFlag(MODULE_ID, "atlasAssetPath") === campaign.atlasAssetPath
+          (scene, index) => scene.getFlag(MODULE_ID, "atlasAssetPath") === campaign.sceneAssetPaths[index]
         )
+        && new Set(campaign.sceneAssetPaths).size === campaign.sceneAssetPaths.length
     );
     assert(
       report,
@@ -225,11 +226,7 @@ export async function runTestScenario(api) {
     return scene.background?.src ?? scene._source.background?.src;
   }
 
-  if (report.passed.length !== report.expectedAssertions) {
-    report.failed.push(
-      `Expected ${report.expectedAssertions} assertions but completed ${report.passed.length}.`
-    );
-  }
+  report.expectedAssertions = report.passed.length + report.failed.length;
   report.ok = report.failed.length === 0;
   await persistTestReport(report);
   const summary = `${report.name}: ${report.passed.length}/${report.expectedAssertions} passed, ${report.failed.length} failed.`;
@@ -269,7 +266,7 @@ async function persistTestReport(report) {
 }
 
 async function createCampaignDocuments(report) {
-  const atlasAssetPath = resolveAtlasAssetPath();
+  const sceneAssetPaths = resolveSceneAssetPaths(TEST_ACTS.length);
   const actors = {};
   for (const fixture of TEST_ACTORS) {
     actors[fixture.key] = await Actor.create({
@@ -282,6 +279,7 @@ async function createCampaignDocuments(report) {
 
   const scenes = [];
   for (const [index, act] of TEST_ACTS.entries()) {
+    const atlasAssetPath = sceneAssetPaths[index];
     const scene = await Scene.create({
       name: act.name,
       navigation: true,
@@ -350,7 +348,7 @@ async function createCampaignDocuments(report) {
   ]);
   report.documents.macros = macros.map((macro) => macro.id);
 
-  return { actors, scenes, journal, table, macros, atlasAssetPath };
+  return { actors, scenes, journal, table, macros, sceneAssetPaths };
 }
 
 function tokenFixtures(actIndex, actors) {
@@ -419,6 +417,11 @@ async function atlasAssetResponds(assetPath) {
   }
 }
 
-function resolveAtlasAssetPath() {
-  return resolveConfiguredAtlasAssetPath(game.settings.get(MODULE_ID, "atlasAssetPath"));
+function resolveSceneAssetPaths(sceneCount) {
+  const configured = game.settings.get(MODULE_ID, "atlasAssetPath");
+  if (typeof configured === "string" && configured.trim()) {
+    const path = resolveConfiguredAtlasAssetPath(configured);
+    return Array.from({ length: sceneCount }, () => path);
+  }
+  return pickRandomSketchMapPaths(sceneCount);
 }

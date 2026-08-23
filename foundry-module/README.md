@@ -145,4 +145,6 @@ await api.combineSkills(actor, {
 
 The built-in atlas path is local to Foundry: `modules/grand-design-ai/assets/atlas/grand-design-atlas.svg`. Version 0.10.0 automatically migrates the older GitHub URL setting, which browsers block under CORS.
 
+`assets\atlas\sketch-maps\` ships five additional original, large (2048x1152) hand-drawn pencil-sketch placeholder maps (`sketch-map-01.svg` through `sketch-map-05.svg`), generated with `tools\generate-sketch-maps.mjs`. Each has unlabeled coastlines, rivers, mountains, forests, and a compass rose so a GM can relabel it freely for any biome. The programmatic test campaign (`TEST_SCENARIO.md`) randomly assigns a distinct one of these to each of its three Scenes on every run, unless the GM has configured a custom **Grand Design Atlas Asset**, in which case all Scenes use that image instead.
+
 Do not upload or distribute a derivative canonical map unless you have the right to do so.
