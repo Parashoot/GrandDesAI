@@ -288,6 +288,7 @@ async function createCampaignDocuments(report) {
       width: 2048,
       height: 1152,
       background: { src: atlasAssetPath },
+      backgroundColor: "#000000",
       grid: { type: CONST.GRID_TYPES.GRIDLESS },
       flags: {
         [MODULE_ID]: {
@@ -297,7 +298,7 @@ async function createCampaignDocuments(report) {
         }
       }
     });
-    await scene.update({ background: { src: atlasAssetPath } });
+    await scene.update({ background: { src: atlasAssetPath }, backgroundColor: "#000000" });
     await scene.createEmbeddedDocuments("Token", tokenFixtures(index, actors));
     scenes.push(game.scenes.get(scene.id) ?? scene);
   }

@@ -17,7 +17,7 @@ The macro creates only documents marked with `flags.grand-design-ai.testScenario
 - Three navigation Scenes: Lantern Crossing, the Siltworks, and the Steam Bell; each uses the atlas and has placed encounter tokens
 - A three-page campaign journal, six-result Flood Encounter Oracle, and runner/cleanup macros
 
-The story is structured as **Act I: evacuation**, **Act II: recovery**, and **Act III: a milestone finale**. It imports Ari's origin conversion, combines `[Ember Step]` and `[Mist Step]` into `[Steam Step]`, upgrades `[Canal Chef]` into `[Canal Hearthkeeper]`, then re-imports the origin conversion to prove idempotency.
+The story is structured as **Act I: evacuation**, **Act II: recovery**, and **Act III: a milestone finale**. It imports Ari's origin conversion, combines `[Ember Step]` and `[Mist Step]` into `[Steam Step]`, upgrades `[Canal Chef]` into `[Canal Hearthkeeper]`, then re-imports the origin conversion to prove idempotency. Every test Scene uses a black canvas background so a missing or unreachable atlas image never renders as Foundry's default tan/parchment color.
 
 ## Expected result
 
