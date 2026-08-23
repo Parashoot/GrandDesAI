@@ -165,7 +165,8 @@ export class GrandDesignApi {
     const generated = generateSkillProposals(events, this.getActorRegistry(actor), modifier);
     const known = new Map(growth.proposals.map((proposal) => [proposal.id, proposal]));
     for (const proposal of generated) {
-      if (!known.has(proposal.id)) known.set(proposal.id, proposal);
+      const existing = known.get(proposal.id);
+      if (!existing || existing.status === "pending") known.set(proposal.id, proposal);
     }
     const proposals = [...known.values()];
     await actor.update({
