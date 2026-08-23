@@ -19,8 +19,13 @@ import {
   growthFlags,
   normalizeGrowthEvent
 } from "./progression.js";
+import { analyzeSessionNotes, validateAdapterEvents } from "./session-notes.js";
 
 export class GrandDesignApi {
+  constructor() {
+    this._proposalAdapter = null;
+  }
+
   validate(payload) {
     return validateConversion(payload);
   }
@@ -93,6 +98,33 @@ export class GrandDesignApi {
 
   getGrowth(actor) {
     return growthFlags(actor);
+  }
+
+  setProposalAdapter(adapter) {
+    if (adapter !== null && typeof adapter !== "function") {
+      throw new Error("A proposal adapter must be a function or null.");
+    }
+    this._proposalAdapter = adapter;
+  }
+
+  async analyzeSessionNotes(actor, notes) {
+    this.#assertPf2eActor(actor);
+    this.#assertGm();
+    if (typeof notes !== "string" || !notes.trim()) {
+      throw new Error("Session notes must be non-empty text.");
+    }
+    const source = this._proposalAdapter ? "adapter" : "local";
+    const candidateEvents = this._proposalAdapter
+      ? validateAdapterEvents(await this._proposalAdapter({ actor, notes }))
+      : analyzeSessionNotes(notes);
+    const recorded = [];
+    let proposals = this.getGrowth(actor).proposals;
+    for (const event of candidateEvents) {
+      const result = await this.recordGrowthEvent(actor, event);
+      recorded.push(result.event);
+      proposals = result.proposals;
+    }
+    return { source, events: recorded, proposals };
   }
 
   async recordGrowthEvent(actor, event) {

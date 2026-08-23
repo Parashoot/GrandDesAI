@@ -49,6 +49,12 @@ await api.approveSkillProposal(actor, "proposal:canal-step");
 
 Each event is stored in `flags.grand-design-ai.growthEvents`; generated drafts are stored in `flags.grand-design-ai.growthProposals` with their exact evidence IDs. The first proposal templates cover water mobility, crafting support, precision martial play, and fire spellcasting. Every draft still passes the same mechanics validator before it can create an Item.
 
+## Session-note model adapter
+
+Use `analyzeSessionNotes(actor, notes)` to turn session prose into the same validated growth-event pipeline. The built-in local analyzer recognizes demonstrated water/mobility, crafting/support, martial/precision, and fire/spellcasting behavior only when the prose also signals success.
+
+An AI integration can register a function with `setProposalAdapter(async ({ actor, notes }) => ({ events }))`. The adapter is never given permission to create Items: returned events must pass the growth-event validator, generated skills still use bounded mechanics templates, and a GM must explicitly approve each proposal. Keep provider credentials and external note-sharing decisions outside this module.
+
 ## Tags, lineage, and evolution
 
 Every approved Class or Skill gets a stable registry ID, tags, and a lineage record in `flags.grand-design-ai.registry`. The same metadata is attached to its Actor Item. Tags such as `mobility`, `fire`, `support`, or `martial` make later review and combination traceable.
