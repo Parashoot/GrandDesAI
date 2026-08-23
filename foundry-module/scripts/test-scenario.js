@@ -1,5 +1,5 @@
 import { MODULE_ID, TEST_SCENARIO_FLAG } from "./constants.js";
-import { resolveAtlasAssetPath as resolveConfiguredAtlasAssetPath, pickRandomSketchMapPaths } from "./atlas.js";
+import { defaultAtlasAssetPath, resolveAtlasAssetPath as resolveConfiguredAtlasAssetPath, pickRandomSketchMapPaths } from "./atlas.js";
 import {
   combinedSkillFixture,
   canalStepGrowthEvents,
@@ -419,7 +419,8 @@ async function atlasAssetResponds(assetPath) {
 
 function resolveSceneAssetPaths(sceneCount) {
   const configured = game.settings.get(MODULE_ID, "atlasAssetPath");
-  if (typeof configured === "string" && configured.trim()) {
+  const isCustomized = typeof configured === "string" && configured.trim() && configured.trim() !== defaultAtlasAssetPath();
+  if (isCustomized) {
     const path = resolveConfiguredAtlasAssetPath(configured);
     return Array.from({ length: sceneCount }, () => path);
   }
