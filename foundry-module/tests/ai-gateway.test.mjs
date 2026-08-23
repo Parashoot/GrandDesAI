@@ -6,7 +6,9 @@ import { buildAiGatewayRequest, createAiGatewayAdapter } from "../scripts/ai-gat
 const actor = {
   name: "Ari",
   system: { details: { level: { value: 5 } } },
-  getFlag: () => ({ skills: {} })
+  getFlag: (_module, flag) => flag === "levelProgression"
+    ? { level: 20, grantAllowances: 1 }
+    : ({ skills: {} })
 };
 
 test("AI gateway request supplies bounded context and schema", () => {
@@ -16,6 +18,8 @@ test("AI gateway request supplies bounded context and schema", () => {
   assert.equal(request.actor.level, 5);
   assert.ok(request.allowedTags.includes("medicine"));
   assert.equal(request.requirements.approvalRequired, true);
+  assert.equal(request.actor.grandDesign.classEvolutionAvailable, true);
+  assert.deepEqual(request.requirements.outputShape, { events: ["eventSchema"], proposals: ["proposalSchema"] });
 });
 
 test("AI gateway only accepts HTTPS endpoints", () => {

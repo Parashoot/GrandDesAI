@@ -73,6 +73,7 @@ The built-in note analyzer is always available and sends nothing off the compute
 The API key field is intentionally password-masked and **client-scoped**: it stays in the configuring Foundry browser profile, is not saved in world data, and is never shared with players. It is not a hardware-backed secret vault; use a restricted local user profile and revoke/rotate a key if that profile is compromised. Remote endpoints must use HTTPS; plain HTTP is accepted only for `localhost` or `127.0.0.1`.
 
 For predictable structured JSON, use a low temperature (the module uses 0.2), retain GM approval, and test a few notes before live play. The module asks the AI only for events and pending proposals; it validates every returned Class/Skill and cannot let the provider directly create an Item.
+It supplies the current Grand Design level and available grant allowances, constrains output to the module taxonomy, and requires an explicit `{ events, proposals }` JSON envelope. Insufficient evidence should produce empty arrays rather than invented mechanics.
 
 ## Session-note model adapter
 

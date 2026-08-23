@@ -27,6 +27,7 @@ import {
 } from "./progression.js";
 import { analyzeSessionNotes, validateAdapterEvents } from "./session-notes.js";
 import { createAiGatewayAdapter } from "./ai-gateway.js";
+import { GROWTH_TAXONOMY } from "./growth-taxonomy.js";
 
 export class GrandDesignApi {
   constructor() {
@@ -133,6 +134,7 @@ export class GrandDesignApi {
     const candidateEvents = this._proposalAdapter
       ? validateAdapterEvents(adapterOutput)
       : analyzeSessionNotes(notes);
+    this._assertAllowedEventTags(candidateEvents);
     const recorded = [];
     let eventProposals = this.getGrowth(actor).proposals;
     for (const event of candidateEvents) {
@@ -240,11 +242,13 @@ export class GrandDesignApi {
       if (!validation.valid) {
         throw new Error(`Invalid AI ${proposal.kind} proposal: ${validation.errors.join(" ")}`);
       }
+      this._assertAllowedEventTags([{ tags: proposal.entry.metadata?.tags ?? [] }]);
       const registryId = `${proposal.kind}:${slugify(proposal.entry.name)}`;
       const bucket = proposal.kind === "class" ? registry.classes : registry.skills;
       if (bucket[registryId]) {
         throw new Error(`AI proposed an already approved ${proposal.kind}: ${proposal.entry.name}.`);
       }
+
       return {
         id: proposal.id ?? `proposal:ai-${registryId}`,
         kind: proposal.kind,
@@ -254,6 +258,15 @@ export class GrandDesignApi {
         source: "ai-gateway"
       };
     });
+  }
+
+  _assertAllowedEventTags(entries) {
+    const allowedTags = new Set(GROWTH_TAXONOMY.map(([tag]) => tag));
+    for (const entry of entries) {
+      for (const tag of entry.tags ?? []) {
+        if (!allowedTags.has(tag)) throw new Error(`AI returned an unsupported gameplay tag: ${tag}.`);
+      }
+    }
   }
 
   async _approveEvolution(actor, kind, entry, operation) {

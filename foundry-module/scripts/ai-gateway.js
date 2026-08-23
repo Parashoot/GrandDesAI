@@ -1,4 +1,5 @@
 import { GROWTH_TAXONOMY } from "./growth-taxonomy.js";
+import { CLASS_EVOLUTION_LEVELS, LEVEL_PROGRESSION_FLAG, MODULE_ID } from "./constants.js";
 
 export function createAiGatewayAdapter({ endpoint, getHeaders = () => ({}) }) {
   assertSafeEndpoint(endpoint);
@@ -28,7 +29,10 @@ export function createChatCompletionsAdapter({ endpoint, model, getHeaders = () 
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: "Return only valid JSON matching the requested events and proposals schema. Do not grant anything." },
+          {
+            role: "system",
+            content: "Return only valid JSON matching the requested events and proposals schema. Use only allowed tags. Return {\"events\":[],\"proposals\":[]} when the evidence is insufficient. Do not grant, approve, or claim to create any item."
+          },
           { role: "user", content: JSON.stringify(request) }
         ],
         response_format: { type: "json_object" },
@@ -49,18 +53,29 @@ export function createChatCompletionsAdapter({ endpoint, model, getHeaders = () 
 }
 
 export function buildAiGatewayRequest(actor, notes) {
+  const progression = actor.getFlag(MODULE_ID, LEVEL_PROGRESSION_FLAG) ?? {};
+  const grandDesignLevel = Number.isInteger(progression.level) ? progression.level : 0;
   return {
     task: "grand-design-pf2e-proposals",
     notes,
     actor: {
       name: actor.name,
       level: actor.system?.details?.level?.value ?? null,
-      existingGrandDesign: actor.getFlag("grand-design-ai", "registry") ?? {}
+      existingGrandDesign: actor.getFlag(MODULE_ID, "registry") ?? {},
+      grandDesign: {
+        level: grandDesignLevel,
+        availableGrantAllowances: Number.isInteger(progression.grantAllowances) ? progression.grantAllowances : 0,
+        classEvolutionAvailable: CLASS_EVOLUTION_LEVELS.has(grandDesignLevel)
+      }
     },
     allowedTags: GROWTH_TAXONOMY.map(([tag]) => tag),
     requirements: {
       approvalRequired: true,
       outputMustBeJson: true,
+      outputShape: {
+        events: ["eventSchema"],
+        proposals: ["proposalSchema"]
+      },
       eventSchema: {
         summary: "string",
         tags: ["string"],
@@ -68,9 +83,10 @@ export function buildAiGatewayRequest(actor, notes) {
       },
       proposalSchema: {
         kind: "skill | class",
-        entry: {
+        skillEntry: {
           name: "string",
           tier: "1 | 2 | 3 for skills",
+          pf2e_equivalent: "specific PF2e comparison",
           gameItem: { kind: "feat | action | reaction | free | passive | spell | weapon" },
           mechanics: {
             effect: "concrete game benefit",
@@ -79,8 +95,25 @@ export function buildAiGatewayRequest(actor, notes) {
             roll: { kind: "required for action-like entries", formula: "dice formula such as 1d20+8" }
           },
           metadata: { tags: ["string"], lineage: { operation: "origin", sources: [], rationale: "string" } }
+        },
+        classEntry: {
+          name: "string",
+          level: "integer >= 1",
+          power_tier: "standard | elevated | prestige",
+          is_primary: "boolean",
+          is_secondary: "boolean",
+          pf2e_chassis: "specific PF2e chassis comparison",
+          gameItem: { kind: "feat | action | reaction | free | passive | spell | weapon" },
+          mechanics: {
+            effect: "concrete game benefit",
+            duration: "string",
+            frequency: { max: "integer >= 1", per: "round | minute | hour | day | encounter | unlimited" },
+            roll: { kind: "required for action-like entries", formula: "dice formula such as 1d20+8" }
+          },
+          metadata: { tags: ["string"], lineage: { operation: "origin | combine | upgrade", sources: ["approved registry IDs"], rationale: "string" } }
         }
-      }
+      },
+      classProposalRule: "Only propose a Class entry when actor.grandDesign.classEvolutionAvailable is true; otherwise return a Skill proposal or no proposal."
     }
   };
 }
