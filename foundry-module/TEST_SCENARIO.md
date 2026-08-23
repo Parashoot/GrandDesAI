@@ -21,7 +21,7 @@ The story is structured as **Act I: evacuation**, **Act II: recovery**, and **Ac
 
 ## Expected result
 
-The returned report has `ok: true`, **28/28 passed**, and **0 failed**. It verifies complete passive, action, reaction, free-action, spell, and weapon mechanics, including tangible benefits, frequencies, triggers, PF2e item types, and inline dice rolls. Ari's Actor sheet has five Grand Design feature Items: the origin Class, two origin Skills, one combined Skill, and one upgraded Class. Mera's sheet verifies creation of both a PF2e spell Item and a PF2e weapon Item. The report's `atlas` object records the requested asset path, each persisted Scene source, and the module's live asset-load result.
+The returned report has `ok: true`, **34/34 passed**, and **0 failed**. It verifies complete passive, action, reaction, free-action, spell, and weapon mechanics, including tangible benefits, frequencies, triggers, PF2e item types, and inline dice rolls. It also proves that four successful gameplay events earn enough progression to resolve level 1 during a short rest before a generated Skill can be approved. Ari's Actor sheet has five Grand Design feature Items: the origin Class, two origin Skills, one combined Skill, and one upgraded Class. Mera's sheet verifies creation of both a PF2e spell Item and a PF2e weapon Item. The report's `atlas` object records the requested asset path, each persisted Scene source, and the module's live asset-load result.
 
 ## Cleanup
 

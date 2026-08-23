@@ -15,7 +15,7 @@ export async function runTestScenario(api) {
   await clearTestScenario();
   const report = {
     name: TEST_SCENARIO_NAME,
-    expectedAssertions: 32,
+    expectedAssertions: 34,
     passed: [],
     failed: [],
     documents: {}
@@ -100,13 +100,25 @@ export async function runTestScenario(api) {
     for (const event of canalStepGrowthEvents()) {
         growthResult = await api.recordGrowthEvent(mera, event);
     }
+    growthResult = await api.recordGrowthEvent(mera, {
+      id: "event:canal-evacuation",
+      summary: "Mera guided a family through the flooded canal to safety.",
+      tags: ["mobility", "water", "support"],
+      outcome: "success"
+    });
     const canalStepProposal = growthResult.proposals.find(
         (proposal) => proposal.id === "proposal:canal-step"
     );
     assert(
         report,
         "Repeated tagged gameplay creates a pending, evidence-backed skill proposal.",
-        canalStepProposal?.status === "pending" && canalStepProposal.evidence.length === 3
+        canalStepProposal?.status === "pending" && canalStepProposal.evidence.length === 4
+    );
+    const restResult = await api.resolveLevelRest(mera, { restType: "short" });
+    assert(
+      report,
+      "A short rest resolves earned progression into a level-up grant allowance.",
+      restResult.gainedLevels.includes(1) && restResult.progression.grantAllowances === 1
     );
     await api.approveSkillProposal(mera, canalStepProposal.id);
     const canalStep = grandDesignItem(mera, "skill:canal-step");
@@ -119,7 +131,7 @@ export async function runTestScenario(api) {
         report,
         "Approved proposals preserve the actor growth-event audit trail.",
         api.getGrowth(mera).events.length,
-        3
+        4
     );
     assert(
         report,
