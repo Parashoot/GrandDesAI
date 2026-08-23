@@ -233,7 +233,14 @@ export async function runTestScenario(api) {
   report.ok = report.failed.length === 0;
   const summary = `${report.name}: ${report.passed.length}/${report.expectedAssertions} passed, ${report.failed.length} failed.`;
   if (report.ok) ui.notifications.info(summary);
-  else ui.notifications.error(summary);
+  else {
+    ui.notifications.error(summary);
+    new Dialog({
+      title: "Grand Design Campaign Test Failures",
+      content: `<p><strong>${escapeHtml(summary)}</strong></p><p>Copy these failures for diagnosis:</p><textarea rows="12" readonly>${escapeHtml(report.failed.join("\n"))}</textarea>`,
+      buttons: { close: { icon: '<i class="fas fa-times"></i>', label: "Close" } }
+    }).render(true);
+  }
   console.info(`${MODULE_ID} | ${summary}`, report);
   return report;
 }
@@ -367,6 +374,15 @@ function assert(report, description, condition) {
 
 function assertEqual(report, description, actual, expected) {
   assert(report, `${description} Expected ${expected}; received ${actual}.`, actual === expected);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 async function atlasAssetResponds(assetPath) {
