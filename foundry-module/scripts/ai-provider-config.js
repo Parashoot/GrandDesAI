@@ -18,7 +18,7 @@ const PROVIDERS = {
   ollama: {
     label: "Local Ollama (recommended)",
     endpoint: "http://127.0.0.1:11434/v1/chat/completions",
-    model: "qwen3:14b",
+    model: "mistral-small3.1:24b",
     requiresKey: false
   },
   openaiCompatible: {
