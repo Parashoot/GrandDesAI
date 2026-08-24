@@ -4,6 +4,10 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
+    "test:live-ai": "node tests/integration/run-live-ai-campaign.mjs",
     "deploy:foundry": "powershell -ExecutionPolicy Bypass -File ..\\tools\\deploy-foundry-module.ps1"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
   }
 }

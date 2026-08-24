@@ -63,17 +63,20 @@ const result = await api.recordGrowthEvent(actor, {
   outcome: "success"
 });
 
-// After three successful events with both tags:
+// After roughly three tagged events' worth of weighted evidence with both tags (successes count
+// for more than failures, but repeated failed attempts add up too -- see below):
 await api.approveSkillProposal(actor, "proposal:canal-step");
 ```
 
 Each event is stored in `flags.grand-design-ai.growthEvents`; generated drafts are stored in `flags.grand-design-ai.growthProposals` with their exact evidence IDs. The first proposal templates cover water mobility, crafting support, precision martial play, and fire spellcasting. Every draft still passes the same mechanics validator before it can create an Item.
 
+Growth events aren't success-only. `outcome` is one of `criticalSuccess`, `success`, `criticalFailure`, or `failure` — genuine repeated effort is evidence even without success, just weighted lower (`criticalSuccess` 1.6x, `success` 1x, `criticalFailure` 0.5x, `failure` 0.25x a plain success, see `GROWTH_EVENT_OUTCOME_WEIGHTS` in `constants.js`). A handful of successes still reaches a proposal's evidence threshold far faster than failures do, but enough persistence through failure — practicing something dozens of times even while failing — can earn a proposal on its own. A dramatic failure (`criticalFailure`) is weighted above a plain one on purpose: getting hurt or having a plan backfire badly tends to teach something concrete, and an AI-generated proposal is free to shape that into a defensive or resistance-flavored entry (repeatedly failing to safely handle something volatile might plausibly earn a resistance to it) rather than a mastery-flavored one for succeeding at the same task.
+
 The Actor sheet now has a GM-only **Growth** button. Paste session notes, review the tagged evidence and pending drafts, then choose **Approve Selected** to add a draft to the sheet. No console commands are required for normal use.
 
 ## Grand Design levels (0-100)
 
-Grand Design progression is separate from PF2e's 1-20 level. Every successful recorded event adds progression (25 for a success, 40 for a critical success), while the amount required for the next level increases quadratically from 100 at level 0 through the level-100 cap.
+Grand Design progression is separate from PF2e's 1-20 level. Every recorded event adds progression, scaled by outcome (25 for a success, 40 for a critical success, 12.5 for a critical failure, 6.25 for a plain failure), while the amount required for the next level increases quadratically from 100 at level 0 through the level-100 cap. Failures aren't dead weight — enough of them (persistence) add up to a level just like successes do, only slower.
 
 - Levels resolve only through the Growth dialog's **Resolve Rest** button after a short or long rest. The GM API can mark an exceptional immediate resolution as `dire: true`.
 - Each resolved level creates one pending-entry grant allowance. A generated Skill, feat, action, spell, weapon, or other validated entry consumes an allowance when the GM approves it. Evidence may be recorded at any time; it never grants an Item by itself.
@@ -97,7 +100,7 @@ It supplies the current Grand Design level and available grant allowances, const
 
 ## Session-note model adapter
 
-Use `analyzeSessionNotes(actor, notes)` to turn session prose into the same validated growth-event pipeline. The built-in local analyzer recognizes demonstrated water/mobility, crafting/support, martial/precision, and fire/spellcasting behavior only when the prose also signals success.
+Use `analyzeSessionNotes(actor, notes)` to turn session prose into the same validated growth-event pipeline. The built-in local analyzer recognizes demonstrated water/mobility, crafting/support, martial/precision, and fire/spellcasting behavior when the prose signals success, failure, or either one's dramatic/critical form — a failed, honestly-attempted action is recorded too, just at a lower evidence weight than a success.
 
 An AI integration can register a function with `setProposalAdapter(async ({ actor, notes }) => ({ events, proposals }))`. A proposal can be a `skill` or `class`, but it must use the same complete PF2e mechanics schema as a manual entry. The adapter is never given permission to create Items: returned events and proposals are validated, duplicates are rejected, and a GM must explicitly approve each proposal.
 
@@ -116,14 +119,14 @@ The module sends structured notes, actor context, allowed tags, and the required
 
 Every approved Class or Skill gets a stable registry ID, tags, and a lineage record in `flags.grand-design-ai.registry`. The same metadata is attached to its Actor Item. Tags such as `mobility`, `fire`, `support`, or `martial` make later review and combination traceable.
 
-The module API exposes GM-only paths for `combineSkills`, `upgradeSkill`, and `upgradeClass`. A combine operation must list two existing registry IDs; an upgrade must list exactly one. Both preserve source links, inherit all source tags, and create a new approved Actor Item. This keeps the original entries intact and records the rationale for the evolution.
+The module API exposes GM-only paths for `combineSkills`, `upgradeSkill`, `upgradeClass`, and `combineClasses`. A combine operation must list two existing registry IDs; an upgrade must list exactly one. All of them preserve source links, inherit all source tags, and create a new approved Actor Item. This keeps the original entries intact and records the rationale for the evolution.
 
 ```js
 const api = game.modules.get("grand-design-ai").api;
 await api.combineSkills(actor, {
   name: "Steam Step",
   tier: 3,
-  pf2e_equivalent: "Narrative-milestone-gated custom ability",
+  system_equivalent: "Narrative-milestone-gated custom ability",
   metadata: {
     tags: ["mobility", "steam"],
     lineage: {
@@ -135,9 +138,47 @@ await api.combineSkills(actor, {
 });
 ```
 
+### Class merging: specialization vs. generalization
+
+`scripts/class-merging.js` computes a merged Class's name and power tier from its source Classes rather than requiring either to be hand-picked. The rule it encodes: **more powerful merges get longer, more distinctive names, but length alone isn't power -- specialization is.**
+
+- **Focus** (`computeMergeFocus`) is the average pairwise tag overlap between the source Classes, penalized for every source beyond two. Two closely related Classes (say, both `martial` and `precision`) are tightly focused; three unrelated Classes stitched together are not, no matter how strong any one of them was individually.
+- **Power tier** (`resolveMergedPowerTier`): a tightly focused merge (focus &ge; 0.5) climbs one tier above its strongest source, up to `prestige` -- following your own path closely pays off. A generalist grab-bag (focus &lt; 0.2) is capped at `standard` regardless of source tier -- spreading across too many unrelated disciplines dilutes what any of them was good at. Anything in between holds at the strongest source's own tier.
+- **Naming** (`buildMergedClassName`) follows power tier and focus:
+  - Generalist blend: every source's name strung together (`"Cinderwright Nightwhisper Hearthsong"`) -- visibly long, but that length is the cost of spreading thin.
+  - Workable, moderately focused fusion: one flowing phrase (`"Spearmaster of Horizon's Edge"`).
+  - Tightly focused, `prestige`-tier fusion: both source identities kept fully intact, joined by a comma instead of melted into one phrase (`"Spearmaster, Horizon's Edge"`).
+  - Tightly focused, `prestige`-tier fusion at or above the level-50 class-evolution checkpoint: a wordy, grandiose title built from the merge's dominant theme instead of its sources' literal names (`"The Ephemeral Purveyor of Lost Dreams"` for an occult-themed pair).
+
+`mergeClassEntry` ties this together into a ready-to-approve Class entry, and `GrandDesignApi#buildClassMergePreview` reads the sources straight out of the actor's own approved registry so a GM can inspect (or hand-edit) the computed name before approving it:
+
+```js
+const api = game.modules.get("grand-design-ai").api;
+const preview = api.buildClassMergePreview(actor, {
+  sourceIds: ["class:spearmaster", "class:horizon-s-edge"],
+  level: 25,
+  gameItem: { kind: "passive" },
+  mechanics: {
+    effect: "Once per round, a melee Strike that hits within 10 feet of a fallen ally deals 1d6 additional precision damage.",
+    duration: "instant",
+    frequency: { max: 1, per: "round" }
+  }
+});
+// preview.name === "Spearmaster, Horizon's Edge"; preview.power_tier === "prestige"
+await api.combineClasses(actor, preview);
+```
+
+See `tests/class-merging.test.mjs` for the naming/power-tier math in isolation and `tests/class-merging-api.test.mjs` for the same thing exercised end to end through the public API.
+
+### Class-flavored proposal naming
+
+`scripts/naming.js` derives a short motif from a character's own Class (e.g. `"Spearmaster"` &rarr; `"Speartip"`, by stripping a generic role suffix like "-master" and adding back a themed one from the class's own tags) so generated proposals read as belonging to that character rather than as a generic label: `buildClassFlavoredName(spearmasterClass, "Undead's Bane")` &rarr; `"Speartip: Undead's Bane"`. The AI-gateway system prompt (`requirements.namingConvention` in `ai-gateway.js`) asks the model to follow the same convention -- both this naming pattern and the Class-merging naming rules above -- when it generates proposals of its own.
+
 ## Acceptance campaign
 
-[`TEST_SCENARIO.md`](TEST_SCENARIO.md) contains **The First Steam**, a complete programmatic PF2e test campaign. It creates tagged Actors, a Scene, a Journal Entry, and a Macro; imports and combines skills; verifies tags, lineage, idempotency, and map configuration; then returns a pass/fail report. It also provides a targeted cleanup command that removes only documents it created.
+[`TEST_SCENARIO.md`](TEST_SCENARIO.md) contains **The First Steam**, a complete programmatic PF2e test campaign. It creates tagged Actors, a Scene, a Journal Entry, and a Macro; imports and combines skills; verifies tags, lineage, idempotency, and map configuration; then returns a pass/fail report. It also provides a targeted cleanup command that removes only documents it created. It uses fixture data throughout and never calls an AI provider.
+
+[`AI_TEST_CAMPAIGN.md`](AI_TEST_CAMPAIGN.md) is the counterpart that does call a live AI provider (Ollama by default): it sends genuinely varied session notes through `analyzeSessionNotes()`, validates whatever the model proposes, and approves one result into a real Item — runnable by hand in Foundry or automatically via `npm run test:live-ai` from outside it.
 
 ## Map scaffold
 

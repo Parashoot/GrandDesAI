@@ -8,13 +8,13 @@ test("combined skills inherit source tags and retain source IDs", () => {
   let registry = emptyRegistry();
   const first = normalizeEntry(
     "skill",
-    { name: "Ember Step", tier: 2, pf2e_equivalent: "Movement feat", metadata: { tags: ["fire", "mobility"] } },
+    { name: "Ember Step", tier: 2, system_equivalent: "Movement feat", metadata: { tags: ["fire", "mobility"] } },
     registry
   );
   registry = registerEntry("skill", first, "item-one", registry);
   const second = normalizeEntry(
     "skill",
-    { name: "Mist Step", tier: 2, pf2e_equivalent: "Movement feat", metadata: { tags: ["water", "mobility"] } },
+    { name: "Mist Step", tier: 2, system_equivalent: "Movement feat", metadata: { tags: ["water", "mobility"] } },
     registry
   );
   registry = registerEntry("skill", second, "item-two", registry);
@@ -24,7 +24,7 @@ test("combined skills inherit source tags and retain source IDs", () => {
     {
       name: "Steam Step",
       tier: 3,
-      pf2e_equivalent: "Milestone ability",
+      system_equivalent: "Milestone ability",
       metadata: {
         tags: ["escape"],
         lineage: {
@@ -48,7 +48,7 @@ test("conversion validation rejects malformed lineage tags", () => {
     skills: [{
       name: "Dash",
       tier: 1,
-      pf2e_equivalent: "Skill feat",
+      system_equivalent: "Skill feat",
       metadata: { tags: ["valid", ""] }
     }]
   });

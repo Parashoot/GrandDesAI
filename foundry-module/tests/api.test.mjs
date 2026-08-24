@@ -61,3 +61,85 @@ test("a still-pending proposal keeps up-to-date evidence as more matching events
     globalThis.Hooks = originalHooks;
   }
 });
+
+function emberStepSkillEntry() {
+  return {
+    name: "Ember Step",
+    tier: 2,
+    system_equivalent: "Reskinned movement Class Feat",
+    metadata: {
+      tags: ["fire", "mobility"],
+      lineage: { operation: "origin", sources: [], rationale: "Ari learned to cross hot canal grates without slowing down." }
+    },
+    gameItem: { kind: "action" },
+    mechanics: {
+      effect: "Stride up to half your Speed. On a success, ignore difficult terrain from hot metal or shallow water during that movement.",
+      duration: "instant",
+      frequency: { max: 1, per: "round" },
+      actions: 1,
+      roll: { kind: "Acrobatics check", formula: "1d20+8", dc: 18 }
+    }
+  };
+}
+
+// End-to-end regression guard for the analyzeSessionNotes -> configured AI adapter -> proposal
+// pipeline. It exercises the exact shape a real Ollama/OpenAI-compatible reply must have per
+// the prompt in ai-gateway.js's buildAiGatewayRequest (kind + entry), with no live network call
+// or Foundry server involved -- the adapter here is a plain stub standing in for
+// createChatCompletionsAdapter's parsed return value.
+test("analyzeSessionNotes accepts a schema-shaped AI-gateway proposal ({kind, entry}) and records it pending", async () => {
+  const originalGame = globalThis.game;
+  const originalHooks = globalThis.Hooks;
+  globalThis.game = { user: { isGM: true }, system: { id: "pf2e" } };
+  globalThis.Hooks = { callAll: () => {} };
+
+  try {
+    const api = new GrandDesignApi();
+    api.setProposalAdapter(async () => ({
+      events: [],
+      proposals: [{ kind: "skill", entry: emberStepSkillEntry(), evidence: ["Session note analysis"] }]
+    }));
+    const actor = createMockActor();
+
+    const result = await api.analyzeSessionNotes(actor, "Ari dashed across the hot canal grates to reach the sluice gate.");
+
+    assert.equal(result.source, "adapter");
+    assert.equal(result.proposals.length, 1);
+    const [proposal] = result.proposals;
+    assert.equal(proposal.status, "pending");
+    assert.equal(proposal.kind, "skill");
+    assert.equal(proposal.entry.name, "Ember Step");
+    assert.equal(proposal.source, "ai-gateway");
+  } finally {
+    globalThis.game = originalGame;
+    globalThis.Hooks = originalHooks;
+  }
+});
+
+// The mirror-image case: if the adapter returns the OLD, incorrect shape ({kind, skillEntry})
+// that the prompt used to document, GrandDesignApi must reject it clearly rather than silently
+// dropping the proposal -- this is what would have happened against a real, schema-compliant
+// Ollama reply before the prompt in ai-gateway.js was fixed to say "entry".
+test("analyzeSessionNotes rejects a {kind, skillEntry} proposal shape with a clear error", async () => {
+  const originalGame = globalThis.game;
+  const originalHooks = globalThis.Hooks;
+  globalThis.game = { user: { isGM: true }, system: { id: "pf2e" } };
+  globalThis.Hooks = { callAll: () => {} };
+
+  try {
+    const api = new GrandDesignApi();
+    api.setProposalAdapter(async () => ({
+      events: [],
+      proposals: [{ kind: "skill", skillEntry: emberStepSkillEntry(), evidence: ["Session note analysis"] }]
+    }));
+    const actor = createMockActor();
+
+    await assert.rejects(
+      () => api.analyzeSessionNotes(actor, "Ari dashed across the hot canal grates to reach the sluice gate."),
+      /Invalid AI skill proposal/
+    );
+  } finally {
+    globalThis.game = originalGame;
+    globalThis.Hooks = originalHooks;
+  }
+});

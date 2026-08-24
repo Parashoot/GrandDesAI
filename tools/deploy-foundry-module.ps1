@@ -21,7 +21,7 @@ if (Test-Path $Destination) {
   $destinationPath = (Resolve-Path $Destination).Path
 }
 
-robocopy $sourcePath $destinationPath /MIR /XD node_modules .git /NFL /NDL /NJH /NJS /NP
+robocopy $sourcePath $destinationPath /MIR /XD node_modules .git tests /XF *.md package.json package-lock.json /NFL /NDL /NJH /NJS /NP
 if ($LASTEXITCODE -gt 7) {
   throw "Foundry module deployment failed with robocopy exit code $LASTEXITCODE."
 }

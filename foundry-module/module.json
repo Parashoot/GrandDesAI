@@ -1,8 +1,8 @@
 {
   "id": "grand-design-ai",
   "title": "Grand Design AI",
-  "description": "PF2e conversion tools, actor metadata, and campaign-atlas scaffolding for Grand Design campaigns.",
-  "version": "0.25.1",
+  "description": "PF2e and dnd5e conversion tools, actor metadata, and campaign-atlas scaffolding for Grand Design campaigns.",
+  "version": "0.26.0",
   "url": "https://github.com/Parashoot/GrandDesAI",
   "manifest": "https://raw.githubusercontent.com/Parashoot/GrandDesAI/main/foundry-module/module.json",
   "download": "https://github.com/Parashoot/GrandDesAI/raw/main/releases/grand-design-ai.zip",
@@ -35,6 +35,13 @@
         "type": "system",
         "compatibility": {
           "minimum": "6.0.0"
+        }
+      },
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "compatibility": {
+          "minimum": "4.0.0"
         }
       }
     ]

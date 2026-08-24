@@ -35,11 +35,28 @@ test("mechanics map to PF2e spell and weapon sources with dice details", () => {
   spell.metadata.id = "skill:canal-spark";
   weapon.metadata.id = "skill:silt-hook";
 
-  const spellSource = createFeatureSource("skill", spell);
-  const weaponSource = createFeatureSource("skill", weapon);
+  const { source: spellSource } = createFeatureSource("skill", spell, "pf2e");
+  const { source: weaponSource } = createFeatureSource("skill", weapon, "pf2e");
 
   assert.equal(spellSource.type, "spell");
   assert.equal(spellSource.system.level.value, 1);
   assert.equal(weaponSource.type, "weapon");
   assert.deepEqual(weaponSource.system.damage, { dice: 1, die: "d6", damageType: "piercing" });
+});
+
+test("mechanics map to dnd5e spell and weapon sources with dice details", () => {
+  const [spell, weapon] = mechanicsConversionFixture().skills;
+  spell.metadata.id = "skill:canal-spark";
+  weapon.metadata.id = "skill:silt-hook";
+
+  const { source: spellSource, postCreate: spellPostCreate } = createFeatureSource("skill", spell, "dnd5e");
+  const { source: weaponSource, postCreate: weaponPostCreate } = createFeatureSource("skill", weapon, "dnd5e");
+
+  assert.equal(spellSource.type, "spell");
+  assert.equal(spellSource.system.level, 1);
+  assert.equal(spellSource.system.school, "evo");
+  assert.equal(typeof spellPostCreate, "function");
+  assert.equal(weaponSource.type, "weapon");
+  assert.deepEqual(weaponSource.system.damage.base, { number: 1, denomination: 6, bonus: "2", types: ["piercing"] });
+  assert.equal(weaponPostCreate, null);
 });

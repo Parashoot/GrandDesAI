@@ -1,9 +1,9 @@
-import { FREQUENCY_PERIODS, PF2E_ITEM_KINDS } from "./constants.js";
+import { FREQUENCY_PERIODS, GRAND_DESIGN_ITEM_KINDS, SPELL_SCHOOLS } from "./constants.js";
 
 export function validateMechanics(entry, errors) {
   const item = entry.gameItem;
   const mechanics = entry.mechanics;
-  if (!isRecord(item) || !PF2E_ITEM_KINDS.has(item.kind)) {
+  if (!isRecord(item) || !GRAND_DESIGN_ITEM_KINDS.has(item.kind)) {
     errors.push(`[${entry.name}] requires gameItem.kind: feat, action, reaction, free, passive, spell, or weapon.`);
     return;
   }
@@ -24,7 +24,13 @@ export function validateMechanics(entry, errors) {
       errors.push(`[${entry.name}] spell rank must be an integer from 0 to 10.`);
     }
     if (!isNonEmptyString(item.tradition)) {
-      errors.push(`[${entry.name}] spell requires a PF2e tradition.`);
+      errors.push(`[${entry.name}] spell requires a tradition (e.g. arcane/primal/divine/occult -- used by PF2e; ignored by systems without traditions).`);
+    }
+    // Not every system has "traditions" the way PF2e does, but every current system this module
+    // supports does have a fixed spell-school enum, so it's required unconditionally here to
+    // keep this validator system-agnostic -- an adapter that doesn't need it just ignores it.
+    if (!SPELL_SCHOOLS.has(item.school)) {
+      errors.push(`[${entry.name}] spell requires gameItem.school to be one of: ${[...SPELL_SCHOOLS].join(", ")}.`);
     }
   }
   if (item.kind === "weapon") {
@@ -55,18 +61,6 @@ export function createMechanicsHtml(entry) {
     parts.push(`<p><strong>Weapon damage:</strong> [[/r ${escapeHtml(gameItem.damage)}]] ${escapeHtml(gameItem.damageType)}</p>`);
   }
   return parts.join("");
-}
-
-export function itemTypeFor(kind) {
-  if (kind === "reaction" || kind === "free") return "action";
-  if (kind === "passive") return "feat";
-  return kind;
-}
-
-export function pf2eActionType(kind) {
-  if (kind === "reaction") return "reaction";
-  if (kind === "free") return "free";
-  return "action";
 }
 
 function validateFrequency(name, frequency, errors) {

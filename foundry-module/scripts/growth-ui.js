@@ -72,7 +72,7 @@ function renderGrowthContent(growth, progression, pending) {
     ? growth.events.map((event) => `<li><strong>${escapeHtml(event.outcome)}</strong>: ${escapeHtml(event.summary)} <em>(${escapeHtml(event.tags.join(", "))})</em></li>`).join("")
     : "<li>No recorded growth events.</li>";
   const options = pending.length
-    ? pending.map((proposal) => `<option value="${escapeHtml(proposal.id)}">${escapeHtml(proposal.entry.name)} — ${escapeHtml(proposal.entry.pf2e_equivalent)}</option>`).join("")
+    ? pending.map((proposal) => `<option value="${escapeHtml(proposal.id)}">${escapeHtml(proposal.entry.name)} — ${escapeHtml(proposal.entry.system_equivalent)}</option>`).join("")
     : '<option value="">No pending proposals</option>';
   const evidence = pending.length
     ? pending.map((proposal) => `<li><strong>${escapeHtml(proposal.entry.name)}</strong>: ${escapeHtml(proposal.entry.mechanics.effect)} <em>Evidence: ${escapeHtml(proposal.evidence.join(", "))}</em></li>`).join("")
@@ -83,8 +83,8 @@ function renderGrowthContent(growth, progression, pending) {
     <div class="form-group"><label>Resolve progression at rest</label><select name="growth-rest-type"><option value="short">Short Rest</option><option value="long">Long Rest</option></select></div>
     <p>Generated entries can only be granted after resolving a level-up at rest. Class evolution is reserved for levels 20, 30, and 50.</p>
     <hr>
-    <div class="form-group stacked"><label>Session Notes</label><textarea name="growth-notes" rows="8" placeholder="Describe what the character accomplished and whether they succeeded."></textarea></div>
-    <p>Only successful demonstrated behavior becomes evidence. Approval is always GM-controlled.</p>
+    <div class="form-group stacked"><label>Session Notes</label><textarea name="growth-notes" rows="8" placeholder="Describe what the character attempted and how it went — success or failure both count."></textarea></div>
+    <p>Both successes and genuine failed attempts become evidence — successes count for more, but real effort still counts, even a long string of failures. Approval is always GM-controlled.</p>
     <hr><h3>Pending Proposals</h3><select name="growth-proposal">${options}</select><ul>${evidence}</ul>
     <hr><h3>Recorded Evidence</h3><ul>${eventList}</ul>
   </form>`;

@@ -35,7 +35,7 @@ export function testConversionFixture() {
         level: 8,
         power_tier: "standard",
         is_primary: true,
-        pf2e_chassis: "Alchemist",
+        system_chassis: "Alchemist",
         metadata: {
           tags: ["craft", "food", "flood-support"],
           lineage: {
@@ -56,7 +56,7 @@ export function testConversionFixture() {
       {
         name: "Ember Step",
         tier: 2,
-        pf2e_equivalent: "Reskinned movement Class Feat",
+        system_equivalent: "Reskinned movement Class Feat",
         metadata: {
           tags: ["fire", "mobility"],
           lineage: {
@@ -77,7 +77,7 @@ export function testConversionFixture() {
       {
         name: "Mist Step",
         tier: 2,
-        pf2e_equivalent: "Reskinned movement Class Feat",
+        system_equivalent: "Reskinned movement Class Feat",
         metadata: {
           tags: ["water", "mobility"],
           lineage: {
@@ -104,7 +104,7 @@ export function upgradedClassFixture() {
     name: "Canal Hearthkeeper",
     level: 9,
     power_tier: "standard",
-    pf2e_chassis: "Alchemist",
+    system_chassis: "Alchemist",
     metadata: {
       tags: ["craft", "food", "flood-support", "leadership"],
       lineage: {
@@ -126,7 +126,7 @@ export function combinedSkillFixture() {
   return {
     name: "Steam Step",
     tier: 3,
-    pf2e_equivalent: "Narrative-milestone-gated custom ability",
+    system_equivalent: "Narrative-milestone-gated custom ability",
     metadata: {
       tags: ["escape", "steam"],
       lineage: {
@@ -150,8 +150,8 @@ export function mechanicsItemFixtures() {
     {
       name: "Canal Spark",
       tier: 2,
-      pf2e_equivalent: "Rank 1 elemental spell",
-      gameItem: { kind: "spell", rank: 1, tradition: "primal" },
+      system_equivalent: "Rank 1 elemental spell",
+      gameItem: { kind: "spell", rank: 1, tradition: "primal", school: "evo" },
       mechanics: {
         effect: "A jet of boiling canal water deals fire damage to one creature within 30 feet.",
         duration: "instant",
@@ -167,7 +167,7 @@ export function mechanicsItemFixtures() {
     {
       name: "Silt Hook",
       tier: 1,
-      pf2e_equivalent: "Simple melee weapon",
+      system_equivalent: "Simple melee weapon",
       gameItem: { kind: "weapon", damage: "1d6+2", damageType: "piercing", category: "simple", group: "knife", traits: ["agile"] },
       mechanics: {
         effect: "Make a melee Strike with a hooked canal tool.",
@@ -193,7 +193,7 @@ export function mechanicsConversionFixture() {
         level: 6,
         power_tier: "standard",
         is_primary: true,
-        pf2e_chassis: "Ranger",
+        system_chassis: "Ranger",
         gameItem: { kind: "passive" },
         mechanics: {
           effect: "While balancing on a rope or narrow surface, gain a +1 circumstance bonus to Acrobatics checks to Balance.",
