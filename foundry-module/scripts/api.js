@@ -40,7 +40,7 @@ import {
   spendCapstoneAllowance,
   spendGrantAllowance
 } from "./progression.js";
-import { analyzeSessionNotes, validateAdapterEvents } from "./session-notes.js";
+import { explainSessionNotes, validateAdapterEvents } from "./session-notes.js";
 import { createAiGatewayAdapter } from "./ai-gateway.js";
 import { GROWTH_TAXONOMY } from "./growth-taxonomy.js";
 import { getSystemAdapter, isSupportedSystem, supportedSystemIds } from "./systems/index.js";
@@ -611,9 +611,15 @@ export class GrandDesignApi {
     }
     const source = this._proposalAdapter ? "adapter" : "local";
     const adapterOutput = this._proposalAdapter ? await this._proposalAdapter({ actor, notes }) : null;
+    // The local path reports how it reached its answer (see session-notes.js#explainSessionNotes).
+    // "0 events" must never come back unexplained: without this a GM cannot tell whether their
+    // notes were unusable, the keyword vocabulary missed everything, or the AI provider they
+    // believed was configured silently never attached and they have been running the local
+    // keyword matcher the whole time.
+    const localAnalysis = this._proposalAdapter ? null : explainSessionNotes(notes);
     const candidateEvents = this._proposalAdapter
       ? validateAdapterEvents(adapterOutput)
-      : analyzeSessionNotes(notes);
+      : localAnalysis.events;
     this._assertAllowedEventTags(candidateEvents);
     const recorded = [];
     let eventProposals = this.getGrowth(actor).proposals;
@@ -627,7 +633,13 @@ export class GrandDesignApi {
       : [];
     const proposals = mergeProposals(eventProposals, modelProposals);
     await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
-    return { source, events: recorded, proposals };
+    return {
+      source,
+      adapterConfigured: this.hasProposalAdapter(),
+      events: recorded,
+      proposals,
+      ...(localAnalysis ? { diagnostics: localAnalysis.diagnostics } : {})
+    };
   }
 
   async recordGrowthEvent(actor, event) {
