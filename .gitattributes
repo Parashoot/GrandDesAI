@@ -1,0 +1,29 @@
+# The repository is stored with LF line endings (that is what every commit through HEAD
+# contains). Windows editors and tooling had rewritten the entire working tree to CRLF, which
+# made `git status` report all 72 tracked files as modified with 9,391 insertions and 9,391
+# deletions -- every line of every file "changed", with no actual content difference. That churn
+# would have buried real work in an unreviewable diff.
+#
+# `* text=auto eol=lf` normalizes text files to LF in the index regardless of what the working
+# tree holds, so the same thing cannot happen again. After adding this file, run once:
+#
+#     git add --renormalize .
+#
+# ...which rewrites the index using these rules and drops the phantom diff.
+* text=auto eol=lf
+
+# Binary files must never be normalized -- doing so corrupts them.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.zip binary
+*.docx binary
+*.pdf binary
+*.gz binary
+*.tar binary
+
+# PowerShell tooling under tools/ is executed by Windows PowerShell and is kept CRLF on checkout.
+*.ps1 text eol=crlf
