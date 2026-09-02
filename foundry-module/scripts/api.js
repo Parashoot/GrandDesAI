@@ -609,17 +609,31 @@ export class GrandDesignApi {
     if (typeof notes !== "string" || !notes.trim()) {
       throw new Error("Session notes must be non-empty text.");
     }
-    const source = this._proposalAdapter ? "adapter" : "local";
-    const adapterOutput = this._proposalAdapter ? await this._proposalAdapter({ actor, notes }) : null;
+    // An AI provider that is configured but unreachable must never cost a GM the notes they just
+    // typed. Before this, a dead provider rejected out of analyzeSessionNotes entirely and the
+    // Growth dialog showed the browser's bare "Failed to fetch" -- mid-session, with the notes
+    // still sitting unanalyzed in the textarea. Now the adapter's failure is caught, the local
+    // keyword analyzer runs instead, and the result says exactly what happened (source
+    // "local-fallback" plus adapterError) so the fallback is never mistaken for a working AI path.
+    let adapterOutput = null;
+    let adapterError = null;
+    if (this._proposalAdapter) {
+      try {
+        adapterOutput = await this._proposalAdapter({ actor, notes });
+      } catch (error) {
+        adapterError = error;
+        console.warn(`${MODULE_ID} | AI provider failed; falling back to local note analysis`, error);
+      }
+    }
+    const usedAdapter = this._proposalAdapter !== null && adapterError === null;
+    const source = usedAdapter ? "adapter" : this._proposalAdapter ? "local-fallback" : "local";
     // The local path reports how it reached its answer (see session-notes.js#explainSessionNotes).
     // "0 events" must never come back unexplained: without this a GM cannot tell whether their
     // notes were unusable, the keyword vocabulary missed everything, or the AI provider they
     // believed was configured silently never attached and they have been running the local
     // keyword matcher the whole time.
-    const localAnalysis = this._proposalAdapter ? null : explainSessionNotes(notes);
-    const candidateEvents = this._proposalAdapter
-      ? validateAdapterEvents(adapterOutput)
-      : localAnalysis.events;
+    const localAnalysis = usedAdapter ? null : explainSessionNotes(notes);
+    const candidateEvents = usedAdapter ? validateAdapterEvents(adapterOutput) : localAnalysis.events;
     this._assertAllowedEventTags(candidateEvents);
     const recorded = [];
     let eventProposals = this.getGrowth(actor).proposals;
@@ -628,9 +642,7 @@ export class GrandDesignApi {
       recorded.push(result.event);
       eventProposals = result.proposals;
     }
-    const modelProposals = this._proposalAdapter
-      ? this._validateModelProposals(adapterOutput?.proposals ?? [], actor)
-      : [];
+    const modelProposals = usedAdapter ? this._validateModelProposals(adapterOutput?.proposals ?? [], actor) : [];
     const proposals = mergeProposals(eventProposals, modelProposals);
     await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
     return {
@@ -638,6 +650,7 @@ export class GrandDesignApi {
       adapterConfigured: this.hasProposalAdapter(),
       events: recorded,
       proposals,
+      ...(adapterError ? { adapterError: adapterError.message } : {}),
       ...(localAnalysis ? { diagnostics: localAnalysis.diagnostics } : {})
     };
   }

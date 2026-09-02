@@ -9,7 +9,7 @@ export function createAiGatewayAdapter({ endpoint, getHeaders = () => ({}) }) {
     throw new Error("getHeaders must be a function.");
   }
   return async ({ actor, notes }) => {
-    const response = await fetch(endpoint, {
+    const response = await fetchOrExplain(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getHeaders() },
       body: JSON.stringify(buildAiGatewayRequest(actor, notes, typeof game !== "undefined" ? game.system.id : "pf2e"))
@@ -19,13 +19,59 @@ export function createAiGatewayAdapter({ endpoint, getHeaders = () => ({}) }) {
   };
 }
 
+// A browser `fetch` that cannot reach its target rejects with a bare TypeError whose message is
+// the famously unhelpful "Failed to fetch" -- no URL, no cause, nothing a GM can act on. Since
+// these two functions hold the only fetch calls in the module's normal runtime path, that string
+// was ALSO the only thing a GM saw when the Growth dialog's "Analyze Notes" button hit a provider
+// that wasn't running: a red toast reading "Failed to fetch" with no hint that it was about AI at
+// all, let alone which endpoint or why. Everything actionable is spelled out here instead.
+export class AiProviderUnreachableError extends Error {
+  constructor(endpoint, cause) {
+    const { hostname, port } = safeUrlParts(endpoint);
+    // The origin that must be allowed is the page MAKING the request (this Foundry server), not
+    // the endpoint's own -- getting these backwards is exactly the mistake that makes a CORS
+    // misconfiguration hard to diagnose.
+    const callerOrigin = typeof location !== "undefined" && location?.origin ? location.origin : "this Foundry server's origin";
+    super(
+      `Could not reach the AI provider at ${endpoint}. Nothing was sent and no notes were lost. `
+        + `Check that: (1) the provider is actually running and listening on ${hostname}:${port} `
+        + `-- for Ollama, \`ollama serve\`, then \`ollama list\` to confirm the model is pulled; `
+        + `(2) it allows browser requests from ${callerOrigin} -- Ollama gates this with the `
+        + `OLLAMA_ORIGINS environment variable, which must include that origin; and (3) the endpoint `
+        + `in Grand Design's AI Provider Setup matches the port the provider is really on.`
+    );
+    this.name = "AiProviderUnreachableError";
+    this.endpoint = endpoint;
+    this.cause = cause;
+  }
+}
+
+async function fetchOrExplain(endpoint, init) {
+  try {
+    return await fetch(endpoint, init);
+  } catch (error) {
+    // Only a genuine transport failure lands here; an HTTP error status resolves normally and is
+    // handled by the response.ok checks above.
+    throw new AiProviderUnreachableError(endpoint, error);
+  }
+}
+
+function safeUrlParts(endpoint) {
+  try {
+    const url = new URL(endpoint);
+    return { hostname: url.hostname, port: url.port || (url.protocol === "https:" ? "443" : "80") };
+  } catch {
+    return { hostname: "the configured host", port: "its port" };
+  }
+}
+
 export function createChatCompletionsAdapter({ endpoint, model, getHeaders = () => ({}), requestOptions = {} }) {
   assertSafeEndpoint(endpoint);
   if (typeof model !== "string" || !model.trim()) throw new Error("An AI model name is required.");
   if (typeof getHeaders !== "function") throw new Error("getHeaders must be a function.");
   return async ({ actor, notes }) => {
     const request = buildAiGatewayRequest(actor, notes, typeof game !== "undefined" ? game.system.id : "pf2e");
-    const response = await fetch(endpoint, {
+    const response = await fetchOrExplain(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getHeaders() },
       body: JSON.stringify({
