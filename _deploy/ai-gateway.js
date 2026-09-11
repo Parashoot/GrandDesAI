@@ -65,44 +65,51 @@ function safeUrlParts(endpoint) {
   }
 }
 
-export function createChatCompletionsAdapter({ endpoint, model, getHeaders = () => ({}), requestOptions = {} }) {
+const PROPOSAL_SYSTEM_PROMPT = "Return only valid JSON matching the requested events and proposals schema. "
+  + "Log failed attempts as events too, not just successes -- outcome may be criticalSuccess, success, criticalFailure, or failure; "
+  + "see requirements.eventOutcomePhilosophy for exactly how to weigh and use failed attempts as evidence. "
+  + "Name every generated proposal so it reads as belonging to the character's own class, not a generic label -- "
+  + "see requirements.namingConvention for the exact naming pattern and worked examples. "
+  + "A small minority of proposals may be metadata.polarity: \"red\" (taboo/vile origins) instead of the "
+  + "default \"standard\" -- see requirements.polarityGuidance for exactly when that applies and what it requires. "
+  + "Every tags array (on an event and on a proposal entry's metadata.tags) may ONLY contain values that appear verbatim in the allowedTags array in this request -- "
+  + "never invent, pluralize, or reword a tag (for example, allowedTags has \"martial\" and \"defense\", not \"melee\" or \"defensive\"). "
+  + "If nothing in allowedTags genuinely fits, use fewer tags or an empty array rather than inventing one; a proposal is rejected outright if any tag isn't in allowedTags. "
+  + "Return {\"events\":[],\"proposals\":[]} when the evidence is insufficient. Do not grant, approve, or claim to create any item. "
+  + "Every field is REQUIRED unless requirements.proposalSchema marks it optional -- never omit a required field, even if you think it is implied. "
+  + "Always include, on every proposal's entry: name, mechanics.effect, mechanics.frequency {max, per}, gameItem.kind, and metadata.tags (only tags from allowedTags). "
+  + "A skill entry also always needs tier (1, 2, or 3) and system_equivalent. A class entry also always needs level, power_tier, is_primary, is_secondary, and system_chassis. "
+  + "Beyond that, requirements.requiredFieldsByKind lists the exact extra fields required for whichever gameItem.kind you choose -- check it every time, per kind, before answering. "
+  + "requirements.exampleByKind has one complete, valid, fully-fielded example proposal for every kind (feat, action, reaction, free, passive, spell, weapon, and one class example) -- "
+  + "find the entry matching your chosen kind and match its exact field set, changing only the content to fit these notes.";
+
+// `transport: "openai"` (default) posts to an OpenAI-compatible /v1/chat/completions endpoint.
+// `transport: "ollama-native"` posts to Ollama's own /api/chat instead. This distinction matters
+// for a concrete, previously-undiagnosed bug: Ollama's OpenAI-compatibility shim silently ignores
+// an `options` object (including `num_ctx`) on /v1/chat/completions -- the model stays loaded at
+// whatever context size it last had (4096 by default, far too small for this module's large
+// schema/example request body), so every response was truncated mid-JSON and every call silently
+// fell back to the local heuristic analyzer. Ollama's native /api/chat DOES honor `options.num_ctx`
+// (verified: `ollama ps` shows the requested context size only after a native-endpoint call), so
+// the default Ollama preset uses that transport instead. See ai-provider-config.js for where
+// `OLLAMA_INFERENCE_OPTIONS` is set and why 16384 was chosen.
+export function createChatCompletionsAdapter({ endpoint, model, getHeaders = () => ({}), requestOptions = {}, transport = "openai" }) {
   assertSafeEndpoint(endpoint);
   if (typeof model !== "string" || !model.trim()) throw new Error("An AI model name is required.");
   if (typeof getHeaders !== "function") throw new Error("getHeaders must be a function.");
   return async ({ actor, notes }) => {
     const request = buildAiGatewayRequest(actor, notes, typeof game !== "undefined" ? game.system.id : "pf2e");
+    const messages = [
+      { role: "system", content: PROPOSAL_SYSTEM_PROMPT },
+      { role: "user", content: JSON.stringify(request) }
+    ];
+    const body = transport === "ollama-native"
+      ? { model, messages, format: "json", stream: false, ...requestOptions }
+      : { model, messages, response_format: { type: "json_object" }, temperature: 0.2, ...requestOptions };
     const response = await fetchOrExplain(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getHeaders() },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: "Return only valid JSON matching the requested events and proposals schema. "
-              + "Log failed attempts as events too, not just successes -- outcome may be criticalSuccess, success, criticalFailure, or failure; "
-              + "see requirements.eventOutcomePhilosophy for exactly how to weigh and use failed attempts as evidence. "
-              + "Name every generated proposal so it reads as belonging to the character's own class, not a generic label -- "
-              + "see requirements.namingConvention for the exact naming pattern and worked examples. "
-              + "A small minority of proposals may be metadata.polarity: \"red\" (taboo/vile origins) instead of the "
-              + "default \"standard\" -- see requirements.polarityGuidance for exactly when that applies and what it requires. "
-              + "Every tags array (on an event and on a proposal entry's metadata.tags) may ONLY contain values that appear verbatim in the allowedTags array in this request -- "
-              + "never invent, pluralize, or reword a tag (for example, allowedTags has \"martial\" and \"defense\", not \"melee\" or \"defensive\"). "
-              + "If nothing in allowedTags genuinely fits, use fewer tags or an empty array rather than inventing one; a proposal is rejected outright if any tag isn't in allowedTags. "
-              + "Return {\"events\":[],\"proposals\":[]} when the evidence is insufficient. Do not grant, approve, or claim to create any item. "
-              + "Every field is REQUIRED unless requirements.proposalSchema marks it optional -- never omit a required field, even if you think it is implied. "
-              + "Always include, on every proposal's entry: name, mechanics.effect, mechanics.frequency {max, per}, gameItem.kind, and metadata.tags (only tags from allowedTags). "
-              + "A skill entry also always needs tier (1, 2, or 3) and system_equivalent. A class entry also always needs level, power_tier, is_primary, is_secondary, and system_chassis. "
-              + "Beyond that, requirements.requiredFieldsByKind lists the exact extra fields required for whichever gameItem.kind you choose -- check it every time, per kind, before answering. "
-              + "requirements.exampleByKind has one complete, valid, fully-fielded example proposal for every kind (feat, action, reaction, free, passive, spell, weapon, and one class example) -- "
-              + "find the entry matching your chosen kind and match its exact field set, changing only the content to fit these notes."
-          },
-          { role: "user", content: JSON.stringify(request) }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.2,
-        ...requestOptions
-      })
+      body: JSON.stringify(body)
     });
     if (!response.ok) throw new Error(`AI provider returned HTTP ${response.status}.`);
     const payload = await response.json();
