@@ -96,3 +96,6 @@
 .grand-design-emergent-themes input[type="text"], .grand-design-emergent-themes select { width: 100%; }
 .grand-design-emergent-themes .gd-slug { font-family: monospace; font-size: 0.9em; }
 .grand-design-emergent-themes .gd-ignored td { opacity: 0.55; }
+
+/* Stated payoff of a growth event ("no guest was lost"), shown after its summary. */
+.gd-consequence { opacity: 0.8; font-style: italic; }

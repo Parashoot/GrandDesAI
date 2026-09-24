@@ -142,6 +142,7 @@ export function buildAiGatewayRequest(actor, notes, systemId = "pf2e") {
       system: systemId,
       systemLabel: adapter.label,
       level: adapter.getCharacterLevel(actor),
+      systemClass: adapter.getCharacterClass?.(actor) ?? null,
       existingGrandDesign: actor.getFlag(MODULE_ID, "registry") ?? {},
       grandDesign: {
         level: grandDesignLevel,

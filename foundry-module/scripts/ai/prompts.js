@@ -11,6 +11,7 @@
 // Pure ESM, zero Foundry globals.
 
 import { CANONICAL_TAGS } from "./normalize.js";
+import { VICE_TAXONOMY } from "../vice-taxonomy.js";
 
 // One line per canonical tag. Kept terse on purpose: this block is sent with every chunk.
 export const TAG_MEANINGS = {
@@ -82,7 +83,7 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
     notes: "- mira nat20 persuasion w/ the guard captain, ez\n- torv rolled a 3 on stealth vs DC 15, got spotted\n- ogre almost tpk'd us lol, we ran",
     events: [
       { quote: "mira nat20 persuasion w/ the guard captain", summary: "Mira persuaded the guard captain brilliantly.", actorName: "Mira", tags: ["diplomacy"], themes: ["persuasion"], outcome: "criticalSuccess", dangerGap: "none", language: "en" },
-      { quote: "torv rolled a 3 on stealth vs DC 15, got spotted", summary: "Torv tried to sneak but was spotted.", actorName: "Torv", tags: ["stealth"], themes: ["sneaking"], outcome: "failure", dangerGap: "none", language: "en" },
+      { quote: "torv rolled a 3 on stealth vs DC 15, got spotted", summary: "Torv tried to sneak past.", consequence: "He was spotted.", actorName: "Torv", tags: ["stealth"], themes: ["sneaking"], outcome: "failure", dangerGap: "none", language: "en" },
       { quote: "ogre almost tpk'd us lol, we ran", summary: "The party fled from an ogre that nearly killed them all.", actorName: "", tags: ["mobility"], themes: ["escape"], outcome: "success", dangerGap: "severe", language: "en" }
     ]
   },
@@ -90,15 +91,20 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
     notes: "Lia curó al herrero herido. Luego intentó convencer al alcalde, pero no la escuchó.",
     events: [
       { quote: "Lia curó al herrero herido.", summary: "Lia healed the wounded blacksmith.", actorName: "Lia", tags: ["medicine", "support"], themes: ["first-aid"], outcome: "success", dangerGap: "none", language: "es" },
-      { quote: "intentó convencer al alcalde, pero no la escuchó", summary: "Lia tried to convince the mayor, but he would not listen.", actorName: "Lia", tags: ["diplomacy"], themes: ["persuasion"], outcome: "failure", dangerGap: "none", language: "es" }
+      { quote: "intentó convencer al alcalde, pero no la escuchó", summary: "Lia tried to convince the mayor.", consequence: "He would not listen.", actorName: "Lia", tags: ["diplomacy"], themes: ["persuasion"], outcome: "failure", dangerGap: "none", language: "es" }
     ]
   },
   {
-    notes: "Orla swung at the troll and got knocked flat lol. Dain's been carving a notch in his bow for every kill. Tam ran the ferry solo all week, never lost a passenger.",
+    notes: [
+      "Orla swung at the troll and got knocked flat lol. Dain's been carving a notch in his bow for every kill.",
+      "- Tam ran the ferry solo all week",
+      "- never lost a passenger",
+      "- harbourmaster offered him a permanent post"
+    ].join("\n"),
     events: [
-      { quote: "Orla swung at the troll and got knocked flat", summary: "Orla attacked the troll but was knocked flat.", actorName: "Orla", tags: ["martial"], themes: ["melee"], outcome: "failure", dangerGap: "moderate", language: "en" },
+      { quote: "Orla swung at the troll and got knocked flat", summary: "Orla attacked the troll.", consequence: "She was knocked flat.", actorName: "Orla", tags: ["martial"], themes: ["melee"], outcome: "failure", dangerGap: "moderate", language: "en" },
       { quote: "Dain's been carving a notch in his bow for every kill", summary: "Dain carves a notch in his bow for every kill.", actorName: "Dain", tags: ["ranged"], themes: ["archery", "trophy-taking"], outcome: "success", dangerGap: "none", language: "en" },
-      { quote: "Tam ran the ferry solo all week, never lost a passenger", summary: "Tam ran the ferry alone all week without losing a passenger.", actorName: "Tam", tags: ["water", "leadership"], themes: ["ferrying"], outcome: "success", dangerGap: "none", language: "en" }
+      { quote: "Tam ran the ferry solo all week", summary: "Tam ran the ferry alone all week.", consequence: "He never lost a passenger and the harbourmaster offered him a permanent post.", actorName: "Tam", tags: ["water", "leadership"], themes: ["ferrying"], outcome: "success", dangerGap: "none", language: "en" }
     ]
   },
   {
@@ -110,9 +116,11 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
   }
 ];
 
+// Examples show the ideal, already-merged answer, so every example event is continuesPrevious:false.
 function exampleBlock(examples) {
+  const shaped = (events) => events.map(({ quote, ...rest }) => ({ quote, continuesPrevious: false, ...rest }));
   return examples
-    .map((ex, i) => `Example ${i + 1} notes:\n${ex.notes}\nExample ${i + 1} output:\n${JSON.stringify({ events: ex.events })}`)
+    .map((ex, i) => `Example ${i + 1} notes:\n${ex.notes}\nExample ${i + 1} output:\n${JSON.stringify({ events: shaped(ex.events) })}`)
     .join("\n\n");
 }
 
@@ -125,13 +133,16 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     "The notes can be written by anyone: broken or non-native English, typos and phonetic spelling, texting shorthand (ez, w/, b4, bc, nat20, crit, tpk), bullet lists and fragments, dice/table jargon (\"rolled a 3 on stealth\", \"DC 15\", \"used action surge\", \"failed the save\"), any language, or several languages mixed -- including romanized Japanese/Greek/etc. with transliterated jargon (\"kuritikaru\" = crit, \"nag-crit\" = crit). Work out what actually happened. Never skip a line because of its spelling, grammar or language.",
     "",
     "An EVENT is one thing a character actually attempted or did, whether it worked or not. One event per distinct action -- split compound sentences with several actions, and do not repeat the same action twice.",
-    "An event INCLUDES its result. What happened because of the action (they got hurt or flattened, got stung, the crowd cried, the goods sold out, no guest was lost, the animal finally let them near, visions came, the crit landed on the final blow) is NOT a separate event: fold it into that action's outcome and summary. Do not add a scene-level event (\"the party fought the warband\") when you also list what each character did in it. Being attacked, scared off or knocked down is not an event of the victim.",
+    "An event INCLUDES its result. Whatever came of the action goes in that event's consequence field and outcome, NEVER in a new event: they got hurt, stung or knocked out; the crowd cheered or cried; the goods sold out or someone bought one; they were thrown out, moved on or offered a job; nobody was lost; the animal finally let them near; a fever broke; visions came; they learned the secret; the crit landed on the final blow; they won 2 of 3. A second line or bullet that only states such a result belongs to the event above it. Also no event that just restates or elaborates the same activity by the same person (\"brewed the ale\" + \"adjusted the malt\" is one brewing event).",
+    "Do not add a scene-level event (\"the party fought the warband\") when you also list what each character did in it. Something that merely happens TO a character (attacked, scared off, knocked down) is not their event.",
     "Habitual or ongoing actions count (\"has started taking trophies\", \"keeps sneaking out\", \"every night he prays\"), and so does an action mentioned only as a cause or aside (\"people hate us because Rhys threatened the priest\" -> Rhys threatened the priest).",
     "NOT events: intentions or plans (\"wanted to\", \"was going to\", \"plans to\", \"next session\"), questions, attempts that explicitly never happened (\"didn't even try\", \"never got around to it\"), doing nothing, pure scenery or weather, rumours and legends, and anything out of character: reminders, notes-to-self, shopping lists, scheduling, rules questions, talk about the real players.",
     "",
     "For every event give:",
     "- quote: the exact source fragment, copied verbatim in its original language (keep it short).",
+    "- continuesPrevious: true ONLY when this entry is just the result, payoff or an elaboration of the entry right before it (same person, same occasion: \"didn't lose a single guest\", \"the owner offered her a slot\", \"he adjusted the malt\"). false for any new action, even one of the same kind on another occasion.",
     `- summary: one short third-person sentence in ${lang} saying who did what.`,
+    `- consequence: what came of it, if the notes say (one short ${lang} sentence), else "".`,
     "- actorName: who did it, if the notes say (else \"\").",
     "- tags: 0-3 tags from ALLOWED TAGS that genuinely fit. Only these exact words.",
     "- themes: 1-3 short lowercase English slugs naming the SPECIFIC activity (e.g. lockpicking, beekeeping, innkeeping, gambling, cartography, brewing, poetry, haggling). Always give themes. If no tag fits, still record the event with tags [] and themes -- never drop an activity because no tag fits.",
@@ -190,13 +201,21 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       : `Propose at most ${config.maxProposals} proposals, and only where the evidence genuinely supports one (repeated effort, including repeated failures). Return {"proposals":[]} when it does not.`,
     "Every proposal is { kind: \"skill\" | \"class\", theme?: string, evidence: [short strings citing events], entry: {...} }. The entry is never nested under skillEntry/classEntry.",
     "metadata.tags may ONLY contain values from ALLOWED TAGS; put any other concept in metadata.themes instead.",
-    "EMERGENT THEMES: an activity outside the tag list (beekeeping, gambling, innkeeping...) that has repeated evidence (weighted evidence >= 3 in THEME EVIDENCE) can become a brand-new Skill named for that theme -- set the proposal's theme and metadata.themes to it and use the closest tags, or none.",
+    // The ">= 3" threshold made the model answer {"proposals":[]} for every single-event novel
+    // activity even when the GM had asked for suggestions (20 of 22 empty "always" runs, 2026-09-24).
+    mustPropose
+      ? "EMERGENT THEMES: an activity outside the tag list (beekeeping, gambling, innkeeping...) can become a brand-new Skill named for that theme -- set the proposal's theme and metadata.themes to it and use the closest tags, or none. Because the GM asked for suggestions now, a single event is enough evidence; keep such a first Skill at tier 1."
+      : "EMERGENT THEMES: an activity outside the tag list (beekeeping, gambling, innkeeping...) that has repeated evidence (weighted evidence >= 3 in THEME EVIDENCE) can become a brand-new Skill named for that theme -- set the proposal's theme and metadata.themes to it and use the closest tags, or none.",
     `Always include on every entry: name, gameItem.kind, mechanics.effect, mechanics.frequency {max >= 1, per: round|minute|hour|day|encounter|unlimited}, metadata.tags. A skill also needs tier (1, 2 or 3) and system_equivalent. A class also needs level, power_tier, is_primary, is_secondary, system_chassis.`,
     `Extra fields required per gameItem.kind: ${JSON.stringify(req.requiredFieldsByKind ?? {})}`,
     ...(req.rulesVocabulary ? [`Rules vocabulary -- write every effect, trigger and roll in THIS system's terms (the examples below only show the field shape): ${req.rulesVocabulary}`] : []),
-    `Naming: ${req.namingConvention ?? ""}`,
+    `Naming: ${req.namingConvention ?? ""} Take the class motif from the character's Grand Design classes if it has any, else from actor.systemClass; never from the character's personal name. The motif is ONE evocative word you coin from that class plus this entry's own activity (for example a Ranger's trapping skill might be "Snarewright:", a Cleric's brewing skill "Altarbrew:"; never copy these example words), never the bare class name itself ("Fighter: ..." is wrong), and each proposal gets its own motif.`,
     ...(config.namingStyle ? [`GM naming style (takes priority): ${config.namingStyle}`] : []),
     `Polarity: ${polarity}`,
+    // The guidance alone ("almost every proposal is standard") made the model pick standard even
+    // for "broke the captured scout's will over three days" (3 of 8 red-worthy items were red).
+    // A per-proposal check with the vice list as the match key makes the decision explicit.
+    ...(config.allowRed ? [`Red check, for EVERY proposal before you write it: compare its evidence (read the quotes) with this list. If one clearly matches, the proposal MUST be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- a matching pattern written up as a clean standard ability is wrong. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} If nothing matches, stay standard.`] : []),
     `Failures: ${req.eventOutcomePhilosophy ?? ""}`,
     `Class rule: ${req.classProposalRule ?? ""}${allowClass ? "" : " (Class evolution is NOT available right now: skills only.)"}`,
     `Creativity: ${CREATIVITY_WORDING[config.creativity] ?? CREATIVITY_WORDING.balanced}`,
@@ -218,11 +237,16 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       name: actor.name,
       system: actor.systemLabel ?? actor.system,
       level: actor.level,
+      ...(actor.systemClass ? { systemClass: actor.systemClass } : {}),
       grandDesign: actor.grandDesign,
       existingClassesAndSkills: existingNames.slice(0, 40)
     },
+    // The verbatim quote travels with the summary: summaries sanitize ("broke the scout's will over
+    // three days" became "interrogated the scout"), which hid exactly the cues red polarity needs.
     newEvents: events.map((event) => ({
       summary: event.summary,
+      ...(event.quote ? { quote: String(event.quote).slice(0, 240) } : {}),
+      ...(event.consequence ? { consequence: event.consequence } : {}),
       tags: event.tags,
       themes: event.themes,
       outcome: event.outcome,

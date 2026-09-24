@@ -377,6 +377,7 @@ export function normalizeGrowthEvent(event, index) {
   const quote = optionalText(event.quote, MAX_QUOTE_LENGTH);
   const language = optionalText(event.language, 16);
   const actorName = optionalText(event.actorName, 120);
+  const consequence = optionalText(event.consequence, 240);
   const source = GROWTH_EVENT_SOURCES.has(event.source) ? event.source : undefined;
   return {
     id: event.id ?? `event:${Date.now()}-${index}`,
@@ -389,6 +390,7 @@ export function normalizeGrowthEvent(event, index) {
     ...(quote ? { quote } : {}),
     ...(language ? { language } : {}),
     ...(actorName ? { actorName } : {}),
+    ...(consequence ? { consequence } : {}),
     ...(source ? { source } : {})
   };
 }

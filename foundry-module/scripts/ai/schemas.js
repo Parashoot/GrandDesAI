@@ -24,7 +24,15 @@ export const EVENT_ITEM_SCHEMA = {
   type: "object",
   properties: {
     quote: { type: "string" },
+    // Model-declared "this line is only the payoff/elaboration of the previous event". Prompting alone
+    // never stopped the split (see pipeline.js#mergeFollowUpEvents); a flag lets the model record the
+    // line AND lets us fold it deterministically. Right after quote so it is decided from the source.
+    continuesPrevious: { type: "boolean" },
     summary: { type: "string" },
+    // Optional slot for "what came of it". Without it the model has nowhere to put a stated payoff
+    // ("didn't lose a single guest", "the owner offered her a slot") and emits it as a second event,
+    // which inflates evidence and was the main count error in the 2026-09-24 corpus run.
+    consequence: { type: "string" },
     actorName: { type: "string" },
     tags: { type: "array", items: { type: "string", enum: CANONICAL_TAGS } },
     themes: { type: "array", items: { type: "string" } },
@@ -32,7 +40,7 @@ export const EVENT_ITEM_SCHEMA = {
     dangerGap: { type: "string", enum: DANGER_GAP_VALUES },
     language: { type: "string" }
   },
-  required: ["quote", "summary", "tags", "themes", "outcome", "dangerGap"]
+  required: ["quote", "continuesPrevious", "summary", "tags", "themes", "outcome", "dangerGap"]
 };
 
 export const EVENT_EXTRACTION_SCHEMA = {
@@ -134,6 +142,20 @@ export const PROPOSAL_SCHEMA = {
   required: ["proposals"]
 };
 
+// Same schema with the array capped. Measured 2026-09-24: once asked to always propose, qwen3.8
+// looped out 15+ near-duplicate proposals per call (the pipeline kept 3) -- a grammar-level maxItems
+// stops the decoder at the cap instead of burning the output budget. Tagged so schemaName() still
+// recognizes it for the OpenAI json_schema name.
+export function proposalSchemaCapped(maxProposals) {
+  const max = Number.isInteger(maxProposals) && maxProposals > 0 ? maxProposals : 3;
+  return {
+    ...PROPOSAL_SCHEMA,
+    properties: { proposals: { ...PROPOSAL_SCHEMA.properties.proposals, maxItems: max } },
+    [CAPPED_OF]: PROPOSAL_SCHEMA
+  };
+}
+const CAPPED_OF = Symbol("cappedOf");
+
 // pipeline "single": one call returns both.
 export const COMBINED_SCHEMA = {
   type: "object",
@@ -147,7 +169,7 @@ export const COMBINED_SCHEMA = {
 /** Names used for OpenAI's json_schema.name (must match ^[a-zA-Z0-9_-]{1,64}$). */
 export function schemaName(schema) {
   if (schema === EVENT_EXTRACTION_SCHEMA) return "grand_design_events";
-  if (schema === PROPOSAL_SCHEMA) return "grand_design_proposals";
+  if (schema === PROPOSAL_SCHEMA || schema?.[CAPPED_OF] === PROPOSAL_SCHEMA) return "grand_design_proposals";
   if (schema === COMBINED_SCHEMA) return "grand_design_events_and_proposals";
   return "grand_design_output";
 }

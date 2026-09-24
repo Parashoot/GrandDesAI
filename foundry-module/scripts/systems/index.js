@@ -12,6 +12,7 @@ import {
   buildTitleGrantItemSourcePf2e,
   buildTitleItemSourcePf2e,
   equivalentLabelPf2e,
+  getCharacterClassPf2e,
   getCharacterLevelPf2e,
   SYSTEM_LABEL as PF2E_LABEL,
   RULES_VOCABULARY as PF2E_VOCABULARY
@@ -24,6 +25,7 @@ import {
   buildTitleGrantItemSource5e,
   buildTitleItemSource5e,
   equivalentLabel5e,
+  getCharacterClass5e,
   getCharacterLevel5e,
   SYSTEM_LABEL as DND5E_LABEL,
   RULES_VOCABULARY as DND5E_VOCABULARY
@@ -36,6 +38,7 @@ const ADAPTERS = {
     rulesVocabulary: PF2E_VOCABULARY,
     buildItemSource: buildItemSourcePf2e,
     getCharacterLevel: getCharacterLevelPf2e,
+    getCharacterClass: getCharacterClassPf2e,
     equivalentLabel: equivalentLabelPf2e,
     buildNpcActorSource: buildNpcActorSourcePf2e,
     buildEquipmentItemSource: buildEquipmentItemSourcePf2e,
@@ -49,6 +52,7 @@ const ADAPTERS = {
     rulesVocabulary: DND5E_VOCABULARY,
     buildItemSource: buildItemSource5e,
     getCharacterLevel: getCharacterLevel5e,
+    getCharacterClass: getCharacterClass5e,
     equivalentLabel: equivalentLabel5e,
     buildNpcActorSource: buildNpcActorSource5e,
     buildEquipmentItemSource: buildEquipmentItemSource5e,

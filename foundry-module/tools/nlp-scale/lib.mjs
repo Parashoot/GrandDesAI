@@ -58,7 +58,9 @@ export function filterCorpus(corpus, { filter, lang, ids, limit, offset = 0 } = 
 // ---- actor / request -------------------------------------------------------------------------
 
 /** A minimal Foundry-free actor good enough for buildAiGatewayRequest, for either system. */
-export function makeHarnessActor(systemId = "pf2e", { name = "Scale Tester", level = 5, registry = {}, gdLevel = 3 } = {}) {
+// The harness actor has a system class so proposal names can be judged: without one the model
+// had no class motif to use and named 40 of 93 proposals "Scale Tester: ...".
+export function makeHarnessActor(systemId = "pf2e", { name = "Scale Tester", level = 5, registry = {}, gdLevel = 3, className = "Fighter" } = {}) {
   const flags = { registry, levelProgression: { level: gdLevel, progress: 0, grantAllowances: 1 } };
   return {
     id: `harness-${systemId}`,
@@ -67,6 +69,7 @@ export function makeHarnessActor(systemId = "pf2e", { name = "Scale Tester", lev
     system: systemId === "dnd5e"
       ? { details: { level }, skills: { acr: { total: 6, mod: 3 } }, attributes: { prof: 3 } }
       : { details: { level: { value: level } }, skills: { acrobatics: { mod: 8 } } },
+    ...(systemId === "dnd5e" ? { classes: { [className.toLowerCase()]: { name: className, type: "class", system: { levels: level } } } } : { class: { name: className } }),
     items: { find: () => undefined, filter: () => [] },
     getFlag(_scope, key) {
       return flags[key];
@@ -207,6 +210,11 @@ export function scoreRep(item, rep) {
   const redOk = gold.redWorthy && (rep.proposals ?? []).length
     ? rep.proposals.some((proposal) => proposal?.entry?.metadata?.polarity === "red")
     : null;
+  // False positive: a red proposal on notes that are not red-worthy (e.g. an ordinary thief or con
+  // artist). redOk alone could be gamed by making everything red.
+  const redFalse = !gold.redWorthy && (rep.proposals ?? []).length
+    ? rep.proposals.some((proposal) => proposal?.entry?.metadata?.polarity === "red")
+    : null;
 
   const checks = [recall, precision, outcomeOk, dangerOk, themeOk, trapOk, forbidOk, countOk].filter((value) => value !== null).map(Number);
   const score = failed ? 0 : checks.length ? checks.reduce((a, b) => a + b, 0) / checks.length : 1;
@@ -222,6 +230,7 @@ export function scoreRep(item, rep) {
     forbidOk,
     countOk,
     redOk,
+    redFalse,
     invalidEvents,
     eventCount: events.length,
     tags: [...predicted].sort(),
@@ -314,14 +323,17 @@ export function scoreItem(item, runResult) {
     forbidAcc: agg("forbidOk"),
     countAcc: agg("countOk"),
     redAcc: agg("redOk"),
+    redFalseRate: agg("redFalse"),
     failRate: mean(reps.map((r) => (r.failed ? 1 : 0))),
     invalidEvents: reps.reduce((sum, r) => sum + r.invalidEvents, 0),
     score: agg("score"),
     consistency: consistency(runResult.reps),
     sampleOutput: runResult.reps.map((rep) => ({
       error: rep.error ?? undefined,
-      events: (rep.events ?? []).map((e) => ({ summary: e.summary, tags: e.tags, themes: e.themes, outcome: e.outcome, dangerGap: e.dangerGap })),
-      proposals: (rep.proposals ?? []).map((p) => ({ name: p?.entry?.name, kind: p?.entry?.gameItem?.kind, tags: p?.entry?.metadata?.tags, polarity: p?.entry?.metadata?.polarity }))
+      events: (rep.events ?? []).map((e) => ({ summary: e.summary, consequence: e.consequence, actorName: e.actorName, tags: e.tags, themes: e.themes, outcome: e.outcome, dangerGap: e.dangerGap })),
+      proposals: (rep.proposals ?? []).map((p) => ({ name: p?.entry?.name, kind: p?.entry?.gameItem?.kind, tags: p?.entry?.metadata?.tags, polarity: p?.entry?.metadata?.polarity })),
+      skippedProposals: (rep.skippedProposals ?? []).map((sp) => ({ reason: sp?.reason, name: sp?.proposal?.entry?.name ?? sp?.proposal?.name, errors: (sp?.errors ?? []).slice(0, 3) })),
+      proposalStage: rep.diagnostics?.proposalStage
     }))
   };
 }
@@ -345,6 +357,7 @@ function aggregateGroup(items) {
     trapAcc: pick("trapAcc"),
     countAcc: pick("countAcc"),
     redAcc: pick("redAcc"),
+    redFalseRate: pick("redFalseRate"),
     fallbackRate: reps.length ? reps.filter((rep) => rep.failed).length / reps.length : null,
     invalidEvents: items.reduce((s, item) => s + item.invalidEvents, 0),
     firstTryValidRate: stages ? diag.reduce((s, d) => s + d.firstTryValid, 0) / stages : null,
@@ -474,6 +487,7 @@ export function renderMarkdown(state) {
   lines.push(`- **fallback (total failure) rate ${pct(o.fallbackRate)}**, first-try-valid ${pct(o.firstTryValidRate)}, repair turns/call ${num(o.repairTurnsPerCall)}, JSON repairs/call ${num(o.jsonRepairsPerCall)}, calls/run ${num(o.callsPerRun)}, invalid events returned ${o.invalidEvents}`);
   lines.push(`- latency per run p50 ${ms(o.latencyP50)} / p95 ${ms(o.latencyP95)}; per call p50 ${ms(o.callLatencyP50)} / p95 ${ms(o.callLatencyP95)}`);
   lines.push(`- consistency: tag Jaccard ${num(o.tagJaccard)}, outcome agreement ${num(o.outcomeAgreement)}, event-count stdev ${num(o.eventCountStdev)}`);
+  if (o.redAcc !== null || o.redFalseRate !== null) lines.push(`- red polarity: red on red-worthy items ${o.redAcc === null ? "–" : (o.redAcc * 100).toFixed(1) + "%"}, red on other items (false positives) ${o.redFalseRate === null ? "–" : (o.redFalseRate * 100).toFixed(1) + "%"}`);
   lines.push("");
   lines.push("## Overall");
   lines.push(HEADER);

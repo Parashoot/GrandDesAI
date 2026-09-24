@@ -43,10 +43,10 @@ export const WORLD_FLAVOR_SETTING = "aiGatewayWorld";
 export const CLIENT_TUNING_KEYS = Object.freeze(["temperature", "numCtx", "numPredict", "timeoutMs", "maxRepairAttempts", "pipeline", "chunkChars", "outputLanguage"]);
 export const WORLD_FLAVOR_KEYS = Object.freeze([
   "houseRules", "namingStyle", "toneHints", "customSynonyms", "extractionExamples",
-  "creativity", "allowRed", "emergentThemes", "proposalMode", "maxProposals"
+  "creativity", "allowRed", "emergentThemes", "mergeFollowUps", "proposalMode", "maxProposals"
 ]);
 const NUMBER_KEYS = new Set(["temperature", "numCtx", "numPredict", "timeoutMs", "maxRepairAttempts", "chunkChars", "maxProposals"]);
-const BOOLEAN_KEYS = new Set(["allowRed", "emergentThemes"]);
+const BOOLEAN_KEYS = new Set(["allowRed", "emergentThemes", "mergeFollowUps"]);
 const CANONICAL_TAGS = GROWTH_TAXONOMY.map(([tag]) => tag);
 
 // ------------------------------------------------------------------------------------------------
@@ -485,6 +485,8 @@ export function renderGatewayForm(config, stored = {}) {
     <div class="form-group"><label>Allow red (taboo) entries</label><input type="checkbox" name="allowRed" ${world.allowRed ? "checked" : ""}></div>
     <div class="form-group"><label>Emergent themes</label><input type="checkbox" name="emergentThemes" ${world.emergentThemes ? "checked" : ""}></div>
     <p class="gd-help">Lets activities the tag list never anticipated (beekeeping, gambling, map-making...) grow into brand-new Skills.</p>
+    <div class="form-group"><label>Fold follow-up lines into one event</label><input type="checkbox" name="mergeFollowUps" ${world.mergeFollowUps !== false ? "checked" : ""}></div>
+    <p class="gd-help">"Ran the inn all week" + "didn't lose a single guest" counts once, with the payoff kept as its consequence. Turn off to count every line the AI splits out.</p>
     <div class="form-group"><label>Naming style</label><input type="text" name="namingStyle" value="${escapeHtml(world.namingStyle ?? "")}" placeholder="e.g. short, bracketed, Wandering Inn style: [Sword Art: Crescent Cut]"></div>
     <div class="form-group"><label>Tone hints</label><input type="text" name="toneHints" value="${escapeHtml(world.toneHints ?? "")}" placeholder="e.g. grim and grounded; humor welcome"></div>
     <div class="form-group stacked"><label>House rules</label><textarea name="houseRules" rows="4" placeholder="Anything the AI should respect when writing Skills: no flight before level 10, healing is rare, ...">${escapeHtml(world.houseRules ?? "")}</textarea></div>

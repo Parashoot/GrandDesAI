@@ -731,6 +731,7 @@ export function coerceEvent(rawEvent, opts = {}) {
     coercions.push("summary-from-quote");
   }
   if (!summary) return { rejected: "missing-summary", coercions };
+  const consequence = textOf(raw.consequence ?? raw.consequences, 240);
 
   const tags = [];
   const themes = [];
@@ -823,6 +824,9 @@ export function coerceEvent(rawEvent, opts = {}) {
     ...(outcomeInferred ? { outcomeInferred: true } : {}),
     ...(dangerGap ? { dangerGap } : {}),
     ...(quote ? { quote } : {}),
+    ...(consequence && !NOISE_WORDS.has(consequence.toLowerCase()) ? { consequence } : {}),
+    // Internal marker consumed (and removed) by pipeline.js#mergeFollowUpEvents.
+    ...(raw.continuesPrevious === true || raw.continuesPrevious === "true" ? { continuesPrevious: true } : {}),
     ...(actorName ? { actorName } : {}),
     ...(language ? { language } : {})
   };

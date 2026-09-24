@@ -82,6 +82,20 @@ export function getCharacterLevel5e(actor) {
   return Number.isInteger(actor.system?.details?.level) ? actor.system.details.level : null;
 }
 
+// dnd5e characters can multiclass: actor.classes is { identifier: classItem }. Returns e.g.
+// "Fighter 3 / Wizard 2" for the prompt, or null. Tolerates plain objects (harness, tests).
+export function getCharacterClass5e(actor) {
+  let classItems = actor?.classes && typeof actor.classes === "object" ? Object.values(actor.classes) : [];
+  if (!classItems.length && typeof actor?.items?.filter === "function") classItems = actor.items.filter((item) => item?.type === "class");
+  const labels = classItems
+    .filter((item) => typeof item?.name === "string" && item.name.trim())
+    .map((item) => {
+      const levels = item.system?.levels;
+      return classItems.length > 1 && Number.isInteger(levels) ? `${item.name.trim()} ${levels}` : item.name.trim();
+    });
+  return labels.length ? labels.join(" / ") : null;
+}
+
 export function equivalentLabel5e(kind, entry) {
   return kind === "class" ? entry.system_chassis ?? "Pending 5E class chassis review" : entry.system_equivalent;
 }

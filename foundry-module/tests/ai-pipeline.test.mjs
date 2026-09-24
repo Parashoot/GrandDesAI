@@ -110,7 +110,11 @@ test("two-stage: extract then propose, returning validated events and proposals"
   assert.deepEqual(validateSkillEntry(result.proposals[0].entry).errors, []);
   assert.equal(transport.calls.length, 2);
   assert.deepEqual(transport.calls[0].schema, EVENT_EXTRACTION_SCHEMA);
-  assert.deepEqual(transport.calls[1].schema, PROPOSAL_SCHEMA);
+  // Stage 2 sends the proposal schema with the array capped at maxProposals (default 3), so a
+  // looping model stops at the cap instead of emitting 15+ proposals.
+  assert.deepEqual(transport.calls[1].schema.properties.proposals.items, PROPOSAL_SCHEMA.properties.proposals.items);
+  assert.equal(transport.calls[1].schema.properties.proposals.maxItems, 3);
+  assert.deepEqual(transport.calls[1].schema.required, PROPOSAL_SCHEMA.required);
 });
 
 test("the extraction prompt carries the notes verbatim and the allowed tag list", async () => {
@@ -575,4 +579,41 @@ test("coerceFrequency understands prose and clamps", () => {
   assert.deepEqual(coerceFrequency("at will"), { max: 1, per: "unlimited" });
   assert.deepEqual(coerceFrequency(undefined), { max: 1, per: "day" });
   assert.deepEqual(coerceFrequency({ max: 0, per: "turn" }), { max: 1, per: "round" });
+});
+
+test("mergeFollowUpEvents folds only model-flagged follow-ups into the event before them", async () => {
+  const { mergeFollowUpEvents } = await import("../scripts/ai/pipeline.js");
+  const inn = { summary: "Erin ran the inn alone all week.", tags: ["leadership"], themes: ["innkeeping"], outcome: "success", quote: "Erin ran the inn solo", actorName: "Erin" };
+  const payoff = { summary: "Erin did not lose a single guest.", tags: ["diplomacy"], themes: ["customer-service"], outcome: "success", quote: "Didn't lose a single guest.", continuesPrevious: true };
+  const { events, merged } = mergeFollowUpEvents([inn, payoff]);
+  assert.equal(merged, 1);
+  assert.equal(events.length, 1);
+  assert.deepEqual(events[0].tags, ["leadership", "diplomacy"]);
+  assert.match(events[0].consequence, /did not lose a single guest/);
+  assert.match(events[0].quote, /Erin ran the inn solo \.\.\. Didn't lose/);
+  assert.equal("continuesPrevious" in events[0], false);
+
+  // Two separate actions of one activity stay two events when the model does not flag them.
+  const hives = { summary: "Maren moved the hives.", tags: [], themes: ["beekeeping"], outcome: "success" };
+  const honey = { summary: "Maren harvested honey.", tags: [], themes: ["beekeeping"], outcome: "success", continuesPrevious: false };
+  assert.equal(mergeFollowUpEvents([hives, honey]).events.length, 2);
+
+  // A flagged line that names a new occasion is repeated effort, not a payoff.
+  const again = { summary: "Maren tended the hives again on Friday.", tags: [], themes: ["beekeeping"], outcome: "success", continuesPrevious: true };
+  assert.equal(mergeFollowUpEvents([hives, again]).events.length, 2);
+
+  // A flag on the very first event has nothing to continue; it is kept and the marker is dropped.
+  const lone = mergeFollowUpEvents([{ ...payoff }]);
+  assert.equal(lone.events.length, 1);
+  assert.equal("continuesPrevious" in lone.events[0], false);
+});
+
+test("the pipeline merges flagged follow-ups unless mergeFollowUps is off", async () => {
+  const answer = { events: [ev("Erin ran the inn alone.", ["leadership"]), { ...ev("Erin lost no guests.", ["diplomacy"]), continuesPrevious: true }] };
+  const merged = await runGatewayPipeline({ transport: scriptedTransport([answer]), request: request(NOTES), config: { proposalMode: "never" } });
+  assert.equal(merged.events.length, 1);
+  assert.ok(merged.diagnostics.coercions.includes("merged-follow-up-events:1"));
+  const kept = await runGatewayPipeline({ transport: scriptedTransport([answer]), request: request(NOTES), config: { proposalMode: "never", mergeFollowUps: false } });
+  assert.equal(kept.events.length, 2);
+  assert.equal(kept.events.some((event) => "continuesPrevious" in event), false);
 });

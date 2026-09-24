@@ -15,7 +15,7 @@
 
 import { parseModelJson, ModelJsonError } from "./json-repair.js";
 import { coerceEvent, eventDedupeKey, resolveTag, slugifyTheme, CANONICAL_TAGS } from "./normalize.js";
-import { EVENT_EXTRACTION_SCHEMA, PROPOSAL_SCHEMA, COMBINED_SCHEMA } from "./schemas.js";
+import { EVENT_EXTRACTION_SCHEMA, COMBINED_SCHEMA, proposalSchemaCapped } from "./schemas.js";
 import { buildExtractionMessages, buildProposalMessages, buildSingleMessages, buildRepairMessage, creativityTemperature } from "./prompts.js";
 import { normalizeGatewayConfig } from "./gateway-config.js";
 import { AiProviderUnreachableError, AiProviderHttpError, AiProviderTimeoutError } from "./transport.js";
@@ -723,6 +723,48 @@ function summarizeThemes(events) {
   return [...map.values()].sort((a, b) => b.weight - a.weight || a.slug.localeCompare(b.slug));
 }
 
+// Why this pass: every prompt-only variant tried on 2026-09-24 (rules, a payoff few-shot, a
+// dedicated "consequence" field) left the same ~40 corpus items over-split -- "Erin ran the inn all
+// week" then "Erin didn't lose a single guest" -- because the model reliably emits a stated payoff
+// as its own event, which double-counts evidence. Merging on shared themes alone was tried and
+// rejected: it also folded genuinely separate actions of one activity ("moved the hives" then
+// "harvested honey"). So the model declares continuesPrevious per event (schemas.js) and this
+// pass folds only those, into the event right before, never across chunks, and never when the
+// follow-up names a new occasion.
+export function mergeFollowUpEvents(events) {
+  const out = [];
+  let merged = 0;
+  for (const event of events) {
+    const prev = out[out.length - 1];
+    if (prev && event.continuesPrevious === true && !marksNewOccasion(event)) {
+      prev.tags = [...new Set([...prev.tags, ...event.tags])].slice(0, 4);
+      prev.themes = [...new Set([...(prev.themes ?? []), ...(event.themes ?? [])])].slice(0, 4);
+      const followUp = [event.summary, event.consequence].filter(Boolean).join(" ");
+      prev.consequence = [prev.consequence, followUp].filter(Boolean).join(" ").slice(0, 240);
+      if (prev.quote && event.quote) prev.quote = `${prev.quote} ... ${event.quote}`.slice(0, 400);
+      if (!prev.actorName && event.actorName) prev.actorName = event.actorName;
+      if (event.dangerGap && (!prev.dangerGap || (prev.dangerGap === "moderate" && event.dangerGap === "severe"))) prev.dangerGap = event.dangerGap;
+      // The first event is the action; its outcome stands unless the model had to guess it.
+      if (prev.outcomeInferred && !event.outcomeInferred) {
+        prev.outcome = event.outcome;
+        delete prev.outcomeInferred;
+      }
+      merged += 1;
+      continue;
+    }
+    const { continuesPrevious, ...kept } = event;
+    out.push({ ...kept, tags: [...event.tags], themes: [...(event.themes ?? [])] });
+  }
+  return { events: out, merged };
+}
+
+// A follow-up that names a new occasion ("on Wednesday", "again", "the next day", "later") is
+// repeated effort -- exactly the evidence progression should count -- so it is never folded.
+const NEW_OCCASION = /\b(again|later|next|another|afterwards?|the following|meanwhile|every|each|mon|tues|wednes|thurs|fri|satur|sun)(day)?\b|\bday \d|\b(d[ií]a|jour|tag|giorno)\b/i;
+function marksNewOccasion(event) {
+  return NEW_OCCASION.test(`${event.quote ?? ""} ${event.summary ?? ""}`);
+}
+
 function coerceAll(items, ctx, chunkIndex) {
   const accepted = [];
   const rejected = [];
@@ -735,7 +777,13 @@ function coerceAll(items, ctx, chunkIndex) {
       rejected.push({ event: raw, reason: result.rejected, chunk: chunkIndex });
     }
   }
-  return { accepted, rejected };
+  if (ctx.cfg.mergeFollowUps === false) {
+    for (const event of accepted) delete event.continuesPrevious;
+    return { accepted, rejected };
+  }
+  const { events: folded, merged } = mergeFollowUpEvents(accepted);
+  if (merged) ctx.diagnostics.coercions.push(`merged-follow-up-events:${merged}`);
+  return { accepted: folded, rejected };
 }
 
 async function extractChunk(job, chunkCount, ctx) {
@@ -902,7 +950,7 @@ async function proposeStage(events, decision, ctx) {
   let lastContent = "";
   for (let attempt = 0; attempt <= cfg.maxRepairAttempts; attempt += 1) {
     stage.attempts += 1;
-    const response = await transport.chat({ messages, schema: PROPOSAL_SCHEMA, temperature, maxTokens: cfg.numPredict });
+    const response = await transport.chat({ messages, schema: proposalSchemaCapped(cfg.maxProposals), temperature, maxTokens: cfg.numPredict });
     stage.ms += Math.round(response.ms ?? 0);
     lastContent = response.content;
     let parsed;
@@ -973,7 +1021,7 @@ async function validateProposals(items, conversation, ctx) {
     invalid = [];
     try {
       conversation.stage.attempts += 1;
-      const response = await transport.chat({ messages: conversation.messages, schema: PROPOSAL_SCHEMA, temperature: conversation.temperature, maxTokens: cfg.numPredict });
+      const response = await transport.chat({ messages: conversation.messages, schema: proposalSchemaCapped(cfg.maxProposals), temperature: conversation.temperature, maxTokens: cfg.numPredict });
       conversation.stage.ms += Math.round(response.ms ?? 0);
       const parsed = parseModelJson(response.content);
       const located = locateProposals(parsed.value);

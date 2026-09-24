@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 604 unit tests, ~30 s, no network
+npm test                                    # 617 unit tests, ~30 s, no network
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -39,26 +39,30 @@ Contract + change log: `docs/ai-gateway-v2-contract.md` (read it first).
 - Harness: `tools/nlp-scale/` — 322-item labeled corpus (13 categories, 14 languages), scoring,
   consistency metrics, simulated fault-injecting model.
 
-## Status (2026-09-24) and open work
-Default model is **`qwen3.8:27b`** (set in both `GATEWAY_DEFAULTS.model` and `DEFAULT_OLLAMA_MODEL`), chosen by
-the phase-1 bake-off and confirmed on the full corpus (322 items × 3 reps, tuned prompt): score 96.1%,
-fallback 0%, traps 100%, tag recall 99.4%, tag Jaccard 0.92, outcome agreement 0.99, p50 1.9 s/item.
-Reports: `tools/nlp-scale/reports/2026-09-24T03-23-34-751Z-qwen3.8_27b.md` (worst-15 section shows the
-residual pattern: a consequence clause split into a second event, mostly on novel-activities / red items).
-Live Foundry check (`npm run test:live-ai`, headless Playwright, real Ollama) **passes on both worlds**;
-switching the active world is done from `/setup` by clicking the world card's `[data-action="worldLaunch"]`
-link after `game.shutDown()` (no admin password on this install).
+## Status (2026-09-24, evening) and open work
+Default model **`qwen3.8:27b`** (both `GATEWAY_DEFAULTS.model` and `DEFAULT_OLLAMA_MODEL`).
+Full corpus, extraction only (322 x 3, `--proposal-mode never`), `reports/2026-09-24T22-31-09-168Z-qwen3.8_27b.md`:
+score 97.6%, fallback 0%, traps 100%, tag recall 99.5%, event-count 96.2% (novel 88.6%, red 73.3%),
+tag Jaccard 0.92, outcome agreement 0.99, ~0.9 s/item.
+Stage 2, `--proposal-mode always` on novel/long/red/counter-leveling (86 items),
+`reports/2026-09-24T22-49-34-327Z-qwen3.8_27b.md`: every item got a proposal, 4 validator skips of 120,
+red on red-worthy items 70%, red false positives 1.3%, no names built from the personal name.
+Live Foundry check (`npm run test:live-ai`) passed 8/8 on dnd5e today. PF2e last passed live on
+2026-09-24 morning; it was not re-run because a user was connected to the dnd5e world. Switching worlds
+means `game.shutDown()` and clicking the world card's `[data-action="worldLaunch"]` on `/setup`, which
+kicks connected users, so only do it when nobody is on.
 
-1. **Stage-1 count precision.** Event-count accuracy is 90.9% overall but ~70% on novel-activities and
-   red items: the model still splits "ran the inn all week / didn't lose a guest" into two events. A
-   payoff-clause few-shot (the "Tam ran the ferry" line in `BUILTIN_EXTRACTION_EXAMPLES`) did **not**
-   help: recheck `reports/2026-09-24T04-09-53-440Z-qwen3.8_27b.md` (1 rep) has novel 70.5%, red 60%,
-   long-multiscene 73.3% count. That run's per-call p50 also doubled to 1.8 s, which is unexplained. Next:
-   revert or replace that few-shot, or try a post-pass that merges same-actor events sharing a theme.
-2. **Stage-2 proposal quality.** `--proposal-mode always` run `reports/2026-09-24T04-01-15-618Z-qwen3.8_27b.md`
-   (86 items: counter-leveling, long-multiscene, novel, red) had 0 validator skips and 93 proposals over
-   all 7 kinds, but 22 items still got none despite "always". Red polarity was right on only 37.5% of
-   red-worthy items. 40 of 93 names use the harness actor's name ("Scale Tester: ...") as the class motif
-   because the harness actor has no class, so give `makeHarnessActor` a class before judging naming.
-3. The job runner is stopped (`queue/STOP`). Delete that file before restarting it. Bash can also reach
-   Ollama directly.
+How the event over-splitting was fixed: the model declares `continuesPrevious` per event (schema),
+and `pipeline.js#mergeFollowUpEvents` folds only those into the event before them, keeping the payoff
+as `consequence`. World setting "Fold follow-up lines into one event" (`mergeFollowUps`) turns it off.
+Prompt-only attempts and a theme-based merge were tried first and failed (see the contract change log).
+
+Harness note: `makeHarnessActor` has a pending grant allowance, so in `when-earned` mode every rep also
+runs stage 2 and writes proposals (~9 s/rep). Use `--proposal-mode never` for extraction regressions.
+
+1. **Residual over-splits** (15 of the 40 hard items, e.g. bl-005 "bought rope" after haggling,
+   cs-es-04 climb/jump/grab, rd-003). Some of these are arguably fair splits; consider loosening gold.
+2. **Red misses**: rd-006 (a year of life for a spell), rd-008 (trophies from kills), rd-010 (raising
+   the dead without consent) still come out standard. Only false positive: nv-009 compulsive gambling.
+3. **Stage-2 latency**: ~9 s p50 per analysis when proposing (1 extraction + 1 proposal call).
+4. Re-run the live PF2e check when the server is free.

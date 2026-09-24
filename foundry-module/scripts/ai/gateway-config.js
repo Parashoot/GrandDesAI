@@ -32,6 +32,8 @@ export const GATEWAY_DEFAULTS = Object.freeze({
   creativity: "balanced",
   allowRed: true,
   emergentThemes: true,
+  // Fold a follow-up event (same actor, shared theme, next in the notes) into the one before it.
+  mergeFollowUps: true,
   outputLanguage: "en",
   namingStyle: "",
   houseRules: "",
@@ -83,6 +85,7 @@ export function normalizeGatewayConfig(partial = {}) {
     creativity: oneOf(input.creativity, CREATIVITY_LEVELS, d.creativity),
     allowRed: bool(input.allowRed, d.allowRed),
     emergentThemes: bool(input.emergentThemes, d.emergentThemes),
+    mergeFollowUps: bool(input.mergeFollowUps, d.mergeFollowUps),
     outputLanguage: normalizeLanguage(input.outputLanguage),
     namingStyle: text(input.namingStyle, 500),
     houseRules: text(input.houseRules, 4000),

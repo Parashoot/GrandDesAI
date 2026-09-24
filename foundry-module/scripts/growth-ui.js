@@ -231,7 +231,7 @@ export function renderEventLine(event, newThemes = new Set(), withQuote = false)
     ? `<details class="gd-quote"><summary>original${event.language ? ` (${escapeHtml(event.language)})` : ""}</summary><blockquote>${escapeHtml(event.quote)}</blockquote></details>`
     : "";
   return `<span class="gd-outcome gd-outcome-${escapeHtml(event?.outcome ?? "unknown")}" title="${escapeHtml(outcome.label)}"><i class="${outcome.icon}"></i></span>${flameHtml}
-    ${who}<span class="gd-summary">${escapeHtml(event?.summary ?? "")}</span>
+    ${who}<span class="gd-summary">${escapeHtml(event?.summary ?? "")}</span>${typeof event?.consequence === "string" && event.consequence.trim() ? ` <span class="gd-consequence">&rarr; ${escapeHtml(event.consequence)}</span>` : ""}
     <span class="gd-chips">${tags}${themes || (!tags ? '<span class="gd-chip">untagged</span>' : "")}</span>${quote}`;
 }
 

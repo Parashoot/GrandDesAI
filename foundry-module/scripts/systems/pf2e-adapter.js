@@ -45,6 +45,17 @@ export function getCharacterLevelPf2e(actor) {
   return actor.system?.details?.level?.value ?? null;
 }
 
+// The character's own class as the game system knows it ("Fighter"). The proposal prompt derives
+// name motifs from it; without it the model fell back to the character's personal name.
+// Tolerates plain objects (harness, tests) as well as real Actors.
+export function getCharacterClassPf2e(actor) {
+  const direct = actor?.class?.name;
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  const items = actor?.items;
+  const found = typeof items?.find === "function" ? items.find((item) => item?.type === "class") : undefined;
+  return typeof found?.name === "string" && found.name.trim() ? found.name.trim() : null;
+}
+
 export function equivalentLabelPf2e(kind, entry) {
   return kind === "class" ? entry.system_chassis ?? "Pending PF2e chassis review" : entry.system_equivalent;
 }
