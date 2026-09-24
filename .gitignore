@@ -16,3 +16,4 @@ foundry-module/tools/nlp-scale/reports/*.log
 foundry-module/tools/nlp-scale/reports/*.out
 foundry-module/tools/nlp-scale/queue/done/
 foundry-module/tools/nlp-scale/queue/runner.alive
+foundry-module/tools/nlp-scale/queue/STOP

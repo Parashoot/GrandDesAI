@@ -50,10 +50,15 @@ switching the active world is done from `/setup` by clicking the world card's `[
 link after `game.shutDown()` (no admin password on this install).
 
 1. **Stage-1 count precision.** Event-count accuracy is 90.9% overall but ~70% on novel-activities and
-   red items: the model still splits "ran the inn all week / didn't lose a guest" into two events. Iterate
-   on the few-shots in `scripts/ai/prompts.js`, re-run `--filter novel-activities,red-polarity-worthy --reps 3`.
-2. **Stage-2 proposal quality at scale.** `--proposal-mode always` now really forces a proposal
-   (`mustPropose`); read the latest `reports/*` run tagged `stage2-proposal-quality` for validator skips and
-   naming quality. dnd5e wording is steered by `RULES_VOCABULARY` in `scripts/systems/dnd5e-adapter.js`.
-3. Optional: the job runner (`node tools/nlp-scale/job-runner.mjs`) is not required -- Bash can reach
-   Ollama directly -- but is handy for chaining runs; leave a `STOP` file in `queue/` to end it.
+   red items: the model still splits "ran the inn all week / didn't lose a guest" into two events. A
+   payoff-clause few-shot (the "Tam ran the ferry" line in `BUILTIN_EXTRACTION_EXAMPLES`) did **not**
+   help: recheck `reports/2026-09-24T04-09-53-440Z-qwen3.8_27b.md` (1 rep) has novel 70.5%, red 60%,
+   long-multiscene 73.3% count. That run's per-call p50 also doubled to 1.8 s, which is unexplained. Next:
+   revert or replace that few-shot, or try a post-pass that merges same-actor events sharing a theme.
+2. **Stage-2 proposal quality.** `--proposal-mode always` run `reports/2026-09-24T04-01-15-618Z-qwen3.8_27b.md`
+   (86 items: counter-leveling, long-multiscene, novel, red) had 0 validator skips and 93 proposals over
+   all 7 kinds, but 22 items still got none despite "always". Red polarity was right on only 37.5% of
+   red-worthy items. 40 of 93 names use the harness actor's name ("Scale Tester: ...") as the class motif
+   because the harness actor has no class, so give `makeHarnessActor` a class before judging naming.
+3. The job runner is stopped (`queue/STOP`). Delete that file before restarting it. Bash can also reach
+   Ollama directly.
