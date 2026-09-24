@@ -67,7 +67,7 @@ test("createChatCompletionsAdapter parses a choices[0].message.content chat-comp
     async () => {
       const adapter = createChatCompletionsAdapter({ endpoint: "http://127.0.0.1:11434/v1/chat/completions", model: "mistral-small3.1:24b" });
       const result = await adapter({ actor, notes: "Ari saved the ferry." });
-      assert.deepEqual(result, { events: [], proposals: [] });
+      assert.deepEqual({ events: result.events, proposals: result.proposals }, { events: [], proposals: [] });
     }
   ));
 
@@ -77,7 +77,7 @@ test("createChatCompletionsAdapter falls back to a bare message.content reply sh
     async () => {
       const adapter = createChatCompletionsAdapter({ endpoint: "http://127.0.0.1:11434/v1/chat/completions", model: "mistral-small3.1:24b" });
       const result = await adapter({ actor, notes: "Ari saved the ferry." });
-      assert.deepEqual(result, { events: [], proposals: [] });
+      assert.deepEqual({ events: result.events, proposals: result.proposals }, { events: [], proposals: [] });
     }
   ));
 
@@ -130,7 +130,7 @@ test("createChatCompletionsAdapter sends the model, schema-locked system prompt,
       const body = JSON.parse(init.body);
       assert.equal(body.model, "mistral-small3.1:24b");
       assert.equal(body.think, false);
-      assert.equal(body.response_format.type, "json_object");
+      assert.equal(body.response_format.type, "json_schema"); // v2: schema-constrained; downgrades to json_object only after a 400
       assert.equal(body.messages[0].role, "system");
       assert.ok(body.messages[0].content.includes("Do not grant, approve, or claim to create any item."));
       assert.equal(body.messages[1].role, "user");

@@ -1,5 +1,32 @@
 {
   "GRAND_DESIGN_AI": {
-    "AtlasAssetPath": "Grand Design Atlas Asset"
+    "AtlasAssetPath": "Grand Design Atlas Asset",
+    "Gateway": {
+      "Title": "Grand Design AI Gateway",
+      "MenuName": "AI Gateway",
+      "MenuLabel": "Configure AI Gateway",
+      "MenuHint": "Choose the AI that reads session notes (local Ollama recommended), and tune how it writes Skills and Classes for your table.",
+      "TestConnection": "Test Connection",
+      "RefreshModels": "Refresh models",
+      "ResetDefaults": "Reset to defaults",
+      "Saved": "Grand Design AI Gateway saved.",
+      "Cleared": "Grand Design AI Gateway disabled -- the built-in local analyzer will read notes."
+    },
+    "Growth": {
+      "Analyze": "Analyze",
+      "Reanalyze": "Re-analyze last notes",
+      "Author": "Author with AI",
+      "Approve": "Approve",
+      "ResolveRest": "Resolve Rest",
+      "NotesPlaceholder": "Write however you like — any language, bullet points, shorthand, typos are fine.",
+      "UnderTheHood": "Under the hood",
+      "StatusLocal": "Local",
+      "StatusFallback": "Local fallback"
+    },
+    "Themes": {
+      "MenuName": "Emergent Themes",
+      "MenuLabel": "Review Emergent Themes",
+      "New": "new!"
+    }
   }
 }

@@ -13,7 +13,8 @@ import {
   buildTitleItemSourcePf2e,
   equivalentLabelPf2e,
   getCharacterLevelPf2e,
-  SYSTEM_LABEL as PF2E_LABEL
+  SYSTEM_LABEL as PF2E_LABEL,
+  RULES_VOCABULARY as PF2E_VOCABULARY
 } from "./pf2e-adapter.js";
 import {
   buildCombinationItemSource5e,
@@ -24,13 +25,15 @@ import {
   buildTitleItemSource5e,
   equivalentLabel5e,
   getCharacterLevel5e,
-  SYSTEM_LABEL as DND5E_LABEL
+  SYSTEM_LABEL as DND5E_LABEL,
+  RULES_VOCABULARY as DND5E_VOCABULARY
 } from "./dnd5e-adapter.js";
 
 const ADAPTERS = {
   pf2e: {
     id: "pf2e",
     label: PF2E_LABEL,
+    rulesVocabulary: PF2E_VOCABULARY,
     buildItemSource: buildItemSourcePf2e,
     getCharacterLevel: getCharacterLevelPf2e,
     equivalentLabel: equivalentLabelPf2e,
@@ -43,6 +46,7 @@ const ADAPTERS = {
   dnd5e: {
     id: "dnd5e",
     label: DND5E_LABEL,
+    rulesVocabulary: DND5E_VOCABULARY,
     buildItemSource: buildItemSource5e,
     getCharacterLevel: getCharacterLevel5e,
     equivalentLabel: equivalentLabel5e,

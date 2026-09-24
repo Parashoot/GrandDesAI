@@ -34,15 +34,27 @@ import {
   growthFlags,
   normalizeGrowthEvent,
   canApproveGeneratedProposal,
-  levelProgressionFlags,
   progressionForEvent,
+  levelProgressionFlags,
   resolveRest,
   spendCapstoneAllowance,
   spendGrantAllowance
 } from "./progression.js";
 import { explainSessionNotes, validateAdapterEvents } from "./session-notes.js";
 import { createAiGatewayAdapter } from "./ai-gateway.js";
-import { GROWTH_TAXONOMY } from "./growth-taxonomy.js";
+import {
+  applyThemeMap,
+  generateEmergentProposals,
+  isCanonicalTag,
+  listThemes,
+  normalizeEmergentThemeState,
+  observeThemes,
+  setThemeMapping,
+  splitTagsAndThemes,
+  themeLabel,
+  themeMapFromState,
+  themeSlug
+} from "./emergent-themes.js";
 import { getSystemAdapter, isSupportedSystem, supportedSystemIds } from "./systems/index.js";
 import { populate as runPopulate } from "./populate.js";
 
@@ -55,6 +67,16 @@ export class GrandDesignApi {
     // Node) without a provider wired in. main.js wires this to a world-settings-backed provider at
     // init, the same pluggable-adapter pattern setProposalAdapter/setPopulateAdapter already use.
     this._tagWeightsProvider = () => ({});
+    // AI gateway v2: config + emergent-theme store, both pluggable for the same reason (main.js
+    // wires Foundry settings; tests get defaults / an in-memory store).
+    this._gatewayConfigProvider = () => ({});
+    let themeState = { themes: {} };
+    this._emergentThemeStore = {
+      get: () => themeState,
+      set: async (next) => {
+        themeState = next;
+      }
+    };
   }
 
   validate(payload) {
@@ -599,27 +621,126 @@ export class GrandDesignApi {
     return this._proposalAdapter !== null;
   }
 
+  /** The adapter currently in use (so a caller can swap it temporarily and restore it). */
+  getProposalAdapter() {
+    return this._proposalAdapter;
+  }
+
   setAiGateway(config) {
     this.setProposalAdapter(createAiGatewayAdapter(config));
   }
 
-  async analyzeSessionNotes(actor, notes) {
+  /**
+   * AI gateway v2 customization surface. `provider` is a zero-arg function returning the current
+   * gateway config (scripts/ai/gateway-config.js keys: emergentThemes, proposalMode, customSynonyms,
+   * provider/endpoint/model...). main.js wires it to ai-provider-config.js#getGatewayConfig (client
+   * + world settings merged); tests and plain-Node callers get the defaults ({}), under which
+   * emergent themes are ON -- the same default GATEWAY_DEFAULTS uses.
+   */
+  setGatewayConfigProvider(provider) {
+    if (typeof provider !== "function") throw new Error("A gateway-config provider must be a function.");
+    this._gatewayConfigProvider = provider;
+  }
+
+  getGatewayConfig() {
+    try {
+      return this._gatewayConfigProvider?.() ?? {};
+    } catch (error) {
+      console.warn(`${MODULE_ID} | gateway config provider failed; using defaults`, error);
+      return {};
+    }
+  }
+
+  /**
+   * Where the world-level "seen emergent themes" state lives. `store` = { get() -> state|string,
+   * set(state) -> Promise }. main.js wires it to the `emergentThemes` world setting
+   * (emergent-themes-settings.js); the default is an in-memory store so GrandDesignApi stays
+   * Foundry-independent and testable.
+   */
+  setEmergentThemeStore(store) {
+    if (!store || typeof store.get !== "function" || typeof store.set !== "function") {
+      throw new Error("An emergent-theme store needs get() and set(state).");
+    }
+    this._emergentThemeStore = store;
+  }
+
+  getEmergentThemes() {
+    const state = normalizeEmergentThemeState(this._emergentThemeStore.get());
+    return { ...state, list: listThemes(state), themeMap: themeMapFromState(state) };
+  }
+
+  /**
+   * GM action from the Emergent Themes settings menu (or a macro): rename a theme, merge it into
+   * another, map it onto a canonical tag, or ignore it. `mapping` = { label?, mergeInto?, mapTo?,
+   * ignored? } or null to clear. Takes effect on the next growth event / analysis -- evidence is
+   * always recomputed from the stored raw themes, so a mapping is reversible.
+   */
+  async setEmergentThemeMapping(slug, mapping) {
+    this._assertGm();
+    const next = setThemeMapping(this._emergentThemeStore.get(), slug, mapping);
+    await this._emergentThemeStore.set(next);
+    Hooks.callAll("grand-design-ai.emergentThemeMapped", slug, mapping);
+    return this.getEmergentThemes();
+  }
+
+  _emergentEnabled() {
+    return this.getGatewayConfig().emergentThemes !== false;
+  }
+
+  _themeMap() {
+    return themeMapFromState(this._emergentThemeStore.get());
+  }
+
+  async _observeThemes(events, { countExisting = true } = {}) {
+    if (!this._emergentEnabled()) return [];
+    const withThemes = events.filter((event) => Array.isArray(event?.themes) && event.themes.length);
+    if (!withThemes.length) return [];
+    try {
+      const { state, newlySeen } = observeThemes(this._emergentThemeStore.get(), withThemes, new Date().toISOString(), { countExisting });
+      await this._emergentThemeStore.set(state);
+      return newlySeen;
+    } catch (error) {
+      // Theme bookkeeping is a nice-to-have; it must never cost the GM an analysis.
+      console.warn(`${MODULE_ID} | could not update the emergent-theme registry`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Analyzes free-form session notes into growth events (and, via the AI gateway, proposals).
+   *
+   * AI gateway v2 (2026-09-23) changes, per docs/ai-gateway-v2-contract.md:
+   *  - the adapter may return the rich shape { events, proposals, themes, skippedEvents,
+   *    skippedProposals, gatewayDiagnostics }; all of it is surfaced on the result,
+   *  - model PROPOSALS are now tolerant per proposal: an invalid one lands in
+   *    `adapterSkippedProposals` with its errors instead of throwing for the whole batch (the gateway
+   *    pipeline already repairs proposals before they get here, so a shape error that survives is a
+   *    one-off, not a systemic regression worth losing the notes over),
+   *  - unknown tags become emergent themes (events and proposal metadata) instead of being dropped,
+   *  - the notes + a diagnostics summary are stored per actor (flag "lastAnalysis") so the GM can
+   *    re-run them (reanalyzeLastNotes).
+   * The invariant is unchanged: any adapter failure -> local analysis with a stated reason; the GM's
+   * notes are never lost.
+   */
+  async analyzeSessionNotes(actor, notes, { replaceEventIds = [] } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
     if (typeof notes !== "string" || !notes.trim()) {
       throw new Error("Session notes must be non-empty text.");
     }
     // An AI provider that is configured but unreachable must never cost a GM the notes they just
-    // typed. Before this, a dead provider rejected out of analyzeSessionNotes entirely and the
-    // Growth dialog showed the browser's bare "Failed to fetch" -- mid-session, with the notes
-    // still sitting unanalyzed in the textarea. Now the adapter's failure is caught, the local
-    // keyword analyzer runs instead, and the result says exactly what happened (source
-    // "local-fallback" plus adapterError) so the fallback is never mistaken for a working AI path.
+    // typed (the original "Failed to fetch" bug). Parsing the adapter's output happens inside the
+    // same try/catch as the call itself, so a nonsense body falls back to the local analyzer the
+    // same way a dead connection does.
+    const gatewayCore = await loadGatewayCore();
+    const config = this.getGatewayConfig();
     let adapterOutput = null;
     let adapterError = null;
+    let adapterEvents = null; // { events, skipped } once the adapter has produced a usable shape
     if (this._proposalAdapter) {
       try {
-        adapterOutput = await this._proposalAdapter({ actor, notes });
+        adapterOutput = await this._proposalAdapter({ actor, notes, systemId: game.system?.id });
+        adapterEvents = validateAdapterEvents(adapterOutput);
       } catch (error) {
         adapterError = error;
         console.warn(`${MODULE_ID} | AI provider failed; falling back to local note analysis`, error);
@@ -627,35 +748,241 @@ export class GrandDesignApi {
     }
     const usedAdapter = this._proposalAdapter !== null && adapterError === null;
     const source = usedAdapter ? "adapter" : this._proposalAdapter ? "local-fallback" : "local";
-    // The local path reports how it reached its answer (see session-notes.js#explainSessionNotes).
-    // "0 events" must never come back unexplained: without this a GM cannot tell whether their
-    // notes were unusable, the keyword vocabulary missed everything, or the AI provider they
-    // believed was configured silently never attached and they have been running the local
-    // keyword matcher the whole time.
+    // The local path reports how it reached its answer (see session-notes.js#explainSessionNotes):
+    // "0 events" must never come back unexplained.
     const localAnalysis = usedAdapter ? null : explainSessionNotes(notes);
-    const candidateEvents = usedAdapter ? validateAdapterEvents(adapterOutput) : localAnalysis.events;
-    this._assertAllowedEventTags(candidateEvents);
+    const emergentEnabled = this._emergentEnabled();
+    const { events: taggedEvents, rejectedTags } = usedAdapter
+      ? this._sanitizeEventTags(adapterEvents.events, { customSynonyms: config.customSynonyms, emergentEnabled })
+      : { events: localAnalysis.events, rejectedTags: [] };
+
+    // Re-analysis: drop the events the previous run of these same notes recorded (and their progress)
+    // before recording the new interpretation, so re-running never double-counts evidence.
+    if (replaceEventIds.length) await this._removeRecordedEvents(actor, replaceEventIds);
+
     const recorded = [];
     let eventProposals = this.getGrowth(actor).proposals;
-    for (const event of candidateEvents) {
-      const result = await this.recordGrowthEvent(actor, event);
+    for (const event of taggedEvents) {
+      const result = await this.recordGrowthEvent(actor, { ...event, source: usedAdapter ? "adapter" : "local" }, { observeThemes: false });
       recorded.push(result.event);
       eventProposals = result.proposals;
     }
-    const modelProposals = usedAdapter ? this._validateModelProposals(adapterOutput?.proposals ?? [], actor) : [];
+    // A re-analysis of the same notes registers any newly noticed theme but does not re-count old ones.
+    const newlySeenThemes = await this._observeThemes(recorded, { countExisting: !replaceEventIds.length });
+
+    const { accepted: modelProposals, skipped: invalidProposals } = usedAdapter
+      ? this._validateModelProposals(adapterOutput?.proposals ?? [], actor, { customSynonyms: config.customSynonyms })
+      : { accepted: [], skipped: [] };
     const proposals = mergeProposals(eventProposals, modelProposals);
-    await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+
+    const adapterSkippedEvents = usedAdapter
+      ? [...(Array.isArray(adapterOutput?.skippedEvents) ? adapterOutput.skippedEvents : []), ...adapterEvents.skipped]
+      : [];
+    const adapterSkippedProposals = usedAdapter
+      ? [...(Array.isArray(adapterOutput?.skippedProposals) ? adapterOutput.skippedProposals : []), ...invalidProposals]
+      : [];
+    const gatewayDiagnostics = usedAdapter && adapterOutput && typeof adapterOutput === "object" && !Array.isArray(adapterOutput)
+      ? adapterOutput.gatewayDiagnostics ?? adapterOutput.diagnostics ?? null
+      : null;
+    const themes = summarizeThemes(recorded, newlySeenThemes, this.getEmergentThemes().themes);
+
+    const lastAnalysis = {
+      notes,
+      at: new Date().toISOString(),
+      source,
+      eventIds: recorded.map((event) => event.id),
+      proposalIds: modelProposals.map((proposal) => proposal.id),
+      diagnostics: summarizeDiagnostics({ source, gatewayDiagnostics, adapterError, localAnalysis, recorded, adapterSkippedEvents, adapterSkippedProposals })
+    };
+    await actor.update({
+      [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
+      [`flags.${MODULE_ID}.${LAST_ANALYSIS_FLAG}`]: lastAnalysis
+    });
     return {
       source,
       adapterConfigured: this.hasProposalAdapter(),
       events: recorded,
       proposals,
+      themes,
       ...(adapterError ? { adapterError: adapterError.message } : {}),
-      ...(localAnalysis ? { diagnostics: localAnalysis.diagnostics } : {})
+      ...(localAnalysis ? { diagnostics: localAnalysis.diagnostics } : {}),
+      ...(gatewayDiagnostics ? { gatewayDiagnostics } : {}),
+      ...(adapterSkippedEvents.length ? { adapterSkippedEvents } : {}),
+      ...(adapterSkippedProposals.length ? { adapterSkippedProposals } : {}),
+      ...(rejectedTags.length ? { adapterRejectedTags: rejectedTags } : {}),
+      ...(emergentEnabled ? {} : { emergentThemesDisabled: true })
     };
   }
 
-  async recordGrowthEvent(actor, event) {
+  getLastAnalysis(actor) {
+    return actor?.getFlag(MODULE_ID, LAST_ANALYSIS_FLAG) ?? null;
+  }
+
+  /**
+   * Re-runs the last notes analyzed for this actor (e.g. after fixing the AI provider, switching
+   * model, or editing house rules). By default the events that previous run recorded -- and the
+   * progress and still-pending AI proposals they produced -- are replaced, not added to, so a
+   * re-analysis never double-counts. Pass { replace: false } to keep them and add a second reading.
+   */
+  async reanalyzeLastNotes(actor, { replace = true } = {}) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    const last = this.getLastAnalysis(actor);
+    if (!last?.notes) throw new Error(`No previous session notes are stored for ${actor.name ?? "this actor"}.`);
+    if (replace && Array.isArray(last.proposalIds) && last.proposalIds.length) {
+      const stale = new Set(last.proposalIds);
+      const proposals = this.getGrowth(actor).proposals.filter((proposal) => !(stale.has(proposal.id) && proposal.status === "pending"));
+      await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+    }
+    return this.analyzeSessionNotes(actor, last.notes, { replaceEventIds: replace ? last.eventIds ?? [] : [] });
+  }
+
+  async _removeRecordedEvents(actor, eventIds) {
+    const remove = new Set(eventIds);
+    const growth = this.getGrowth(actor);
+    const removed = growth.events.filter((event) => remove.has(event.id));
+    if (!removed.length) return;
+    const events = growth.events.filter((event) => !remove.has(event.id));
+    const levelProgression = this.getLevelProgression(actor);
+    const lostProgress = removed.reduce((sum, event) => sum + progressionForEvent(event), 0);
+    // A pending proposal whose every cited event was just removed no longer has any evidence behind it.
+    const proposals = growth.proposals.filter((proposal) =>
+      proposal.status !== "pending"
+      || !Array.isArray(proposal.evidence)
+      || !proposal.evidence.length
+      || proposal.evidence.some((id) => !remove.has(id))
+    );
+    await actor.update({
+      [`flags.${MODULE_ID}.${GROWTH_EVENTS_FLAG}`]: events,
+      [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
+      [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: { ...levelProgression, progress: Math.max(0, levelProgression.progress - lostProgress) }
+    });
+  }
+
+  /**
+   * Checks an AI provider end to end: reachability + latency (ping), the models it offers
+   * (listModels), and a one-sentence sample extraction through the real adapter (nothing is
+   * recorded). Defaults to the saved config + attached adapter; the settings form passes its UNSAVED
+   * `config` and a freshly built `adapter` so the GM can test before saving. Never throws -- the UI
+   * shows whatever comes back.
+   */
+  async testAiConnection({
+    actor = null,
+    sampleNotes = "Kesh parried the guard's blade, then talked the captain into letting them pass.",
+    config: overrideConfig,
+    adapter: overrideAdapter
+  } = {}) {
+    const started = Date.now();
+    const config = overrideConfig ?? this.getGatewayConfig();
+    const adapter = overrideAdapter !== undefined ? overrideAdapter : this._proposalAdapter;
+    const result = { ok: false, provider: config.provider ?? null, endpoint: config.endpoint ?? null, model: config.model ?? null, models: [], ms: null };
+    if (!config.provider || config.provider === "disabled") {
+      return { ...result, error: "No AI provider is configured -- Grand Design uses the built-in local analyzer." };
+    }
+    let probe = typeof adapter?.ping === "function" ? adapter : null;
+    if (!probe) {
+      const gatewayCore = await loadGatewayCore();
+      if (gatewayCore?.createTransport) {
+        try {
+          probe = gatewayCore.createTransport({ ...config, ollamaOptions: { num_ctx: config.numCtx, num_predict: config.numPredict } });
+        } catch (error) {
+          return { ...result, ms: Date.now() - started, error: error.message };
+        }
+      }
+    }
+    if (probe) {
+      try {
+        const ping = await probe.ping();
+        Object.assign(result, {
+          ok: Boolean(ping?.ok),
+          ms: ping?.ms ?? null,
+          models: Array.isArray(ping?.models) ? ping.models : [],
+          ...(ping?.model ? { model: ping.model } : {}),
+          ...(ping?.modelAvailable !== undefined ? { modelAvailable: ping.modelAvailable } : {}),
+          ...(ping?.error ? { error: String(ping.error) } : {})
+        });
+      } catch (error) {
+        return { ...result, ms: Date.now() - started, error: error.message };
+      }
+      if (!result.ok) return result;
+      if (result.modelAvailable === false) return { ...result, ok: false };
+    }
+    if (!adapter) {
+      return { ...result, error: result.error ?? "The provider answered, but no adapter is attached -- save the settings to attach it." };
+    }
+    try {
+      const sampleStarted = Date.now();
+      const output = await adapter({ actor: actor ?? sampleActor(), notes: sampleNotes, systemId: typeof game !== "undefined" ? game?.system?.id : undefined });
+      const { events } = validateAdapterEvents(output);
+      result.ok = true;
+      result.sample = {
+        notes: sampleNotes,
+        ms: Date.now() - sampleStarted,
+        events: events.map((event) => ({ summary: event.summary, tags: event.tags ?? [], themes: event.themes ?? [], outcome: event.outcome }))
+      };
+      if (output?.gatewayDiagnostics?.model) result.model = output.gatewayDiagnostics.model;
+    } catch (error) {
+      result.ok = false;
+      result.error = error.message;
+    }
+    result.ms ??= Date.now() - started;
+    return result;
+  }
+
+  /**
+   * Asks the AI gateway to author a real Skill for a placeholder proposal (an emergent-theme
+   * "<Theme> Knack", or any pending proposal flagged needsAuthoring). The authored entry replaces
+   * the placeholder's entry in place (same proposal id, same evidence) once it validates; nothing is
+   * approved. If the gateway exposes a stage-2-only call (`authorProposal` on the adapter) it is
+   * used; otherwise the ordinary adapter is called with a synthetic note built from the cited
+   * evidence, and only its proposals are read (its events are NOT recorded -- they would double-count).
+   */
+  async requestProposalAuthoring(actor, proposalId) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    if (!this._proposalAdapter) throw new Error("Authoring a proposal needs a configured AI provider (Grand Design AI Gateway settings).");
+    const growth = this.getGrowth(actor);
+    const proposal = growth.proposals.find((candidate) => candidate.id === proposalId && candidate.status === "pending");
+    if (!proposal) throw new Error(`No pending proposal exists for ${proposalId}.`);
+    const gatewayCore = await loadGatewayCore();
+    const config = this.getGatewayConfig();
+    const evidenceEvents = growth.events.filter((event) => (proposal.evidence ?? []).includes(event.id));
+    const theme = proposal.theme ?? proposal.entry?.metadata?.themes?.[0] ?? null;
+    const label = theme ? themeLabel(theme, this._themeMap()) : proposal.entry?.name ?? "this activity";
+
+    let output;
+    if (typeof this._proposalAdapter.authorProposal === "function") {
+      output = await this._proposalAdapter.authorProposal({ actor, proposal, events: evidenceEvents, theme, label, systemId: game.system?.id });
+    } else {
+      output = await this._proposalAdapter({ actor, notes: buildAuthoringNotes(actor, label, theme, evidenceEvents), systemId: game.system?.id });
+    }
+    const candidates = Array.isArray(output) ? [] : Array.isArray(output?.proposals) ? output.proposals : output?.entry ? [output] : [];
+    const { accepted, skipped } = this._validateModelProposals(candidates.map((candidate) => ({ kind: "skill", ...candidate })), actor, {
+      customSynonyms: config.customSynonyms
+    });
+    const authored = accepted.find((candidate) => candidate.kind === (proposal.kind ?? "skill")) ?? accepted[0];
+    if (!authored) {
+      const reasons = skipped.map((entry) => entry.errors?.join(" ")).filter(Boolean).join(" | ");
+      throw new Error(`The AI did not return a usable Skill for "${label}".${reasons ? ` ${reasons}` : ""}`);
+    }
+    const entry = structuredClone(authored.entry);
+    entry.metadata ??= {};
+    if (theme) entry.metadata.themes = [...new Set([...(entry.metadata.themes ?? []), theme])];
+    const updated = {
+      ...proposal,
+      kind: authored.kind,
+      entry,
+      needsAuthoring: false,
+      authoredBy: "ai-gateway",
+      authoredAt: new Date().toISOString()
+    };
+    const proposals = growth.proposals.map((candidate) => (candidate.id === proposalId ? updated : candidate));
+    await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+    Hooks.callAll("grand-design-ai.proposalAuthored", actor, updated);
+    return { proposal: updated, skipped, ...(output?.gatewayDiagnostics ? { gatewayDiagnostics: output.gatewayDiagnostics } : {}) };
+  }
+
+  async recordGrowthEvent(actor, event, { observeThemes: observe = true } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
     const growth = this.getGrowth(actor);
@@ -667,11 +994,28 @@ export class GrandDesignApi {
       progress: levelProgression.progress + progressionForEvent(normalizedEvent)
     };
     const modifier = actor.system?.skills?.acrobatics?.mod ?? 0;
-    const generated = generateSkillProposals(events, this.getActorRegistry(actor), modifier, this.getConsolidations(actor), this.getTagWeights());
+    const registry = this.getActorRegistry(actor);
+    const emergentEnabled = this._emergentEnabled();
+    const themeMap = emergentEnabled ? this._themeMap() : {};
+    // The GM's theme map is applied before template matching too: a theme mapped onto a canonical
+    // tag ("beekeeping" -> nature) is then ordinary evidence for that tag's templates.
+    const mappedEvents = applyThemeMap(events, themeMap);
+    const generated = [
+      ...generateSkillProposals(mappedEvents, registry, modifier, this.getConsolidations(actor), this.getTagWeights()),
+      ...(emergentEnabled ? generateEmergentProposals(events, registry, { themeMap }) : [])
+    ];
     const known = new Map(growth.proposals.map((proposal) => [proposal.id, proposal]));
     for (const proposal of generated) {
       const existing = known.get(proposal.id);
-      if (!existing || existing.status === "pending") known.set(proposal.id, proposal);
+      if (!existing) {
+        known.set(proposal.id, proposal);
+      } else if (existing.status === "pending") {
+        // An emergent placeholder the GM already had the AI author must keep its authored entry;
+        // only its evidence list is refreshed.
+        known.set(proposal.id, existing.source === "emergent" && existing.needsAuthoring === false
+          ? { ...existing, evidence: proposal.evidence }
+          : proposal);
+      }
     }
     const proposals = [...known.values()];
     await actor.update({
@@ -679,10 +1023,10 @@ export class GrandDesignApi {
       [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
       [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: updatedProgression
     });
+    if (observe) await this._observeThemes([normalizedEvent]);
     Hooks.callAll("grand-design-ai.growthEventRecorded", actor, normalizedEvent, proposals);
     return { event: normalizedEvent, proposals };
   }
-
   async approveSkillProposal(actor, id) {
     return this.approveProposal(actor, id);
   }
@@ -821,46 +1165,91 @@ export class GrandDesignApi {
     return { kind, created };
   }
 
-  _validateModelProposals(proposals, actor) {
-    if (!Array.isArray(proposals)) throw new Error("AI gateway proposals must be an array.");
+  /**
+   * Validates AI proposals one by one. Returns { accepted, skipped }: an invalid proposal is
+   * reported in `skipped` with its errors instead of throwing for the whole batch (AI gateway v2
+   * contract -- this intentionally reverses the old fail-loud rule, because the gateway pipeline now
+   * repairs proposals first and one surviving bad proposal should not cost the GM nine good events
+   * and proposals). Tags are cleaned before validation: canonical tags stay in metadata.tags,
+   * synonyms resolve to their canonical tag, and anything unknown moves to metadata.themes.
+   */
+  _validateModelProposals(proposals, actor, { customSynonyms } = {}) {
+    const accepted = [];
+    const skipped = [];
+    if (!Array.isArray(proposals)) {
+      return { accepted, skipped: [{ proposal: proposals, errors: ["AI gateway proposals must be an array."] }] };
+    }
     const registry = this.getActorRegistry(actor);
-    return proposals.map((proposal) => {
+    for (const proposal of proposals) {
       if (!proposal || !["skill", "class"].includes(proposal.kind)) {
-        throw new Error("AI gateway proposal kind must be skill or class.");
+        skipped.push({ proposal, errors: ["AI gateway proposal kind must be skill or class."] });
+        continue;
       }
-      const validation = proposal.kind === "class"
-        ? validateClassEntry(proposal.entry)
-        : validateSkillEntry(proposal.entry);
+      if (!proposal.entry || typeof proposal.entry !== "object") {
+        skipped.push({ proposal, errors: [`Invalid AI ${proposal.kind} proposal: it has no "entry" object (got keys: ${Object.keys(proposal).join(", ")}).`] });
+        continue;
+      }
+      const entry = structuredClone(proposal.entry);
+      if (entry.metadata && typeof entry.metadata === "object" && entry.metadata.tags !== undefined) {
+        const { tags, themes } = splitTagsAndThemes(Array.isArray(entry.metadata.tags) ? entry.metadata.tags : [], { customSynonyms });
+        entry.metadata.tags = tags;
+        const existingThemes = Array.isArray(entry.metadata.themes) ? entry.metadata.themes.map(themeSlug).filter(Boolean) : [];
+        const allThemes = [...new Set([...existingThemes, ...themes])];
+        if (allThemes.length) entry.metadata.themes = allThemes;
+      }
+      const validation = proposal.kind === "class" ? validateClassEntry(entry) : validateSkillEntry(entry);
       if (!validation.valid) {
-        throw new Error(`Invalid AI ${proposal.kind} proposal: ${validation.errors.join(" ")}`);
+        skipped.push({ proposal, errors: [`Invalid AI ${proposal.kind} proposal: ${validation.errors.join(" ")}`] });
+        continue;
       }
-      this._assertAllowedEventTags([{ tags: proposal.entry.metadata?.tags ?? [] }]);
-      const registryId = `${proposal.kind}:${slugify(proposal.entry.name)}`;
+      const registryId = `${proposal.kind}:${slugify(entry.name)}`;
       const bucket = proposal.kind === "class" ? registry.classes : registry.skills;
-      if (bucket[registryId]) {
-        throw new Error(`AI proposed an already approved ${proposal.kind}: ${proposal.entry.name}.`);
+      if (bucket?.[registryId]) {
+        skipped.push({ proposal, errors: [`AI proposed an already approved ${proposal.kind}: ${entry.name}.`] });
+        continue;
       }
-
-      return {
+      accepted.push({
         id: proposal.id ?? `proposal:ai-${registryId}`,
         kind: proposal.kind,
         status: "pending",
         evidence: Array.isArray(proposal.evidence) ? proposal.evidence : [],
-        entry: proposal.entry,
+        entry,
         source: "ai-gateway"
-      };
-    });
-  }
-
-  _assertAllowedEventTags(entries) {
-    const allowedTags = new Set(GROWTH_TAXONOMY.map(([tag]) => tag));
-    for (const entry of entries) {
-      for (const tag of entry.tags ?? []) {
-        if (!allowedTags.has(tag)) throw new Error(`AI returned an unsupported gameplay tag: ${tag}.`);
-      }
+      });
     }
+    return { accepted, skipped };
   }
 
+  // Events are individually cheap and individually replaceable. A canonical tag is kept; a synonym
+  // the gateway's resolver recognizes is remapped to its canonical tag; anything else becomes an
+  // emergent THEME (AI gateway v2) rather than being dropped -- "beekeeping" is real evidence of
+  // something, just not something the fixed taxonomy anticipated. Every non-canonical tag is still
+  // reported in adapterRejectedTags so the GM can see what the model said. With emergent themes
+  // switched off, unknown tags are dropped as before, and an event left with no tag is dropped.
+  _sanitizeEventTags(events, { customSynonyms, emergentEnabled = true } = {}) {
+    const sanitized = [];
+    const rejectedTags = [];
+    for (const event of events) {
+      const rawTags = Array.isArray(event.tags) ? event.tags : [];
+      const { tags, themes, remapped } = splitTagsAndThemes(rawTags, { customSynonyms });
+      const rejected = rawTags.filter((tag) => typeof tag === "string" && !isCanonicalTag(tag.trim()));
+      const eventThemes = emergentEnabled
+        ? [...new Set([...(Array.isArray(event.themes) ? event.themes.map(themeSlug).filter(Boolean) : []), ...themes])]
+        : [];
+      if (rejected.length) {
+        rejectedTags.push({
+          summary: event.summary,
+          rejected,
+          ...(Object.keys(remapped).length ? { remapped } : {}),
+          ...(emergentEnabled && themes.length ? { movedToThemes: themes } : {})
+        });
+      }
+      if (!tags.length && !eventThemes.length) continue;
+      const { themes: _dropped, ...rest } = event;
+      sanitized.push({ ...rest, tags, ...(eventThemes.length ? { themes: eventThemes } : {}) });
+    }
+    return { events: sanitized, rejectedTags };
+  }
   async _approveEvolution(actor, kind, entry, operation) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
@@ -943,6 +1332,86 @@ export class GrandDesignApi {
       throw new Error("A Foundry Actor is required.");
     }
   }
+}
+
+// Per-actor record of the last notes analyzed (api.js-local on purpose: constants.js is shared).
+export const LAST_ANALYSIS_FLAG = "lastAnalysis";
+
+// The gateway core (scripts/ai/index.js, owned by the gateway-core agent) is loaded lazily so this
+// file -- and every plain-Node test that imports it -- keeps working even if that directory is
+// missing or fails to load; every use below degrades gracefully to null.
+let gatewayCorePromise = null;
+export function loadGatewayCore() {
+  gatewayCorePromise ??= import("./ai/index.js").catch((error) => {
+    console.warn(`${MODULE_ID} | AI gateway core unavailable; using built-in fallbacks`, error?.message ?? error);
+    return null;
+  });
+  return gatewayCorePromise;
+}
+
+function summarizeThemes(recordedEvents, newlySeen, knownThemes = {}) {
+  const counts = new Map();
+  for (const event of recordedEvents) {
+    for (const theme of event.themes ?? []) counts.set(theme, (counts.get(theme) ?? 0) + 1);
+  }
+  const fresh = new Set(newlySeen);
+  return [...counts].map(([slug, count]) => ({
+    slug,
+    label: knownThemes[slug]?.label ?? themeLabel(slug),
+    count,
+    isNew: fresh.has(slug),
+    ...(knownThemes[slug]?.mapTo ? { mapTo: knownThemes[slug].mapTo } : {}),
+    ...(knownThemes[slug]?.mergeInto ? { mergeInto: knownThemes[slug].mergeInto } : {}),
+    ...(knownThemes[slug]?.ignored ? { ignored: true } : {})
+  }));
+}
+
+/** Small, flag-safe summary of how an analysis went (the full diagnostics stay on the result). */
+export function summarizeDiagnostics({ source, gatewayDiagnostics, adapterError, localAnalysis, recorded = [], adapterSkippedEvents = [], adapterSkippedProposals = [] }) {
+  const stages = Array.isArray(gatewayDiagnostics?.stages) ? gatewayDiagnostics.stages : [];
+  return {
+    source,
+    events: recorded.length,
+    skippedEvents: adapterSkippedEvents.length,
+    skippedProposals: adapterSkippedProposals.length,
+    ...(gatewayDiagnostics
+      ? {
+          model: gatewayDiagnostics.model ?? null,
+          provider: gatewayDiagnostics.provider ?? null,
+          pipeline: gatewayDiagnostics.pipeline ?? null,
+          chunks: gatewayDiagnostics.chunks ?? null,
+          attempts: stages.reduce((sum, stage) => sum + (Number(stage.attempts) || 0), 0),
+          repairs: stages.reduce((sum, stage) => sum + (Array.isArray(stage.repairs) ? stage.repairs.length : 0), 0),
+          totalMs: gatewayDiagnostics.totalMs ?? null
+        }
+      : {}),
+    ...(adapterError ? { adapterError: String(adapterError.message ?? adapterError).slice(0, 500) } : {}),
+    ...(localAnalysis ? { sentences: localAnalysis.diagnostics.sentences, hint: localAnalysis.diagnostics.hint } : {})
+  };
+}
+
+// testAiConnection needs an actor-shaped object for buildAiGatewayRequest; nothing is written to it.
+function sampleActor() {
+  return {
+    id: "grand-design-sample",
+    name: "Sample Adventurer",
+    documentName: "Actor",
+    system: { details: { level: { value: 1 } }, skills: {} },
+    items: [],
+    getFlag: () => undefined
+  };
+}
+
+// Synthetic note for requestProposalAuthoring when the gateway has no stage-2-only entry point.
+export function buildAuthoringNotes(actor, label, theme, evidenceEvents) {
+  const lines = evidenceEvents.slice(-8).map((event) => `- ${event.quote ?? event.summary} (${event.outcome})`);
+  return [
+    `GM REQUEST: author ONE new Grand Design Skill proposal (kind "skill") for ${actor?.name ?? "this character"} `
+      + `built around the activity "${label}"${theme ? ` (emergent theme: ${theme})` : ""}. `
+      + "It is not covered by the fixed tag list; name it in-world and give it concrete, modest tier-1 or tier-2 mechanics "
+      + "that work in both PF2e and D&D 5e terms. Put the theme in metadata.themes. Evidence so far:",
+    ...lines
+  ].join("\n");
 }
 
 function mergeProposals(existing, additions) {

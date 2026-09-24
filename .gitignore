@@ -9,3 +9,10 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# nlp-scale harness run artefacts (reports are regenerated; the .md summaries are worth keeping)
+foundry-module/tools/nlp-scale/reports/*.json
+foundry-module/tools/nlp-scale/reports/*.log
+foundry-module/tools/nlp-scale/reports/*.out
+foundry-module/tools/nlp-scale/queue/done/
+foundry-module/tools/nlp-scale/queue/runner.alive

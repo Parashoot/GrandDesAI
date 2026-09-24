@@ -615,11 +615,22 @@ export class GrandDesignApi {
     // still sitting unanalyzed in the textarea. Now the adapter's failure is caught, the local
     // keyword analyzer runs instead, and the result says exactly what happened (source
     // "local-fallback" plus adapterError) so the fallback is never mistaken for a working AI path.
+    //
+    // A held-out pass on the AI path (2026-09-02) found that this only covered TRANSPORT failures.
+    // A provider that answers but with a malformed body -- not an array, no `events` key, the kind
+    // of thing an LLM produces far more often than a dropped connection -- used to throw out of
+    // validateAdapterEvents() *outside* this try/catch, which crashed analyzeSessionNotes entirely
+    // and lost the notes exactly like the original "Failed to fetch" bug this file's history is
+    // about fixing. Parsing the adapter's output now happens inside the same try/catch as the call
+    // itself, so a nonsense body falls back to the local analyzer the same way a dead connection
+    // does, instead of being a second, unfixed way to hit the bug this file exists to prevent.
     let adapterOutput = null;
     let adapterError = null;
+    let adapterEvents = null; // { events, skipped } once the adapter has produced a usable shape
     if (this._proposalAdapter) {
       try {
         adapterOutput = await this._proposalAdapter({ actor, notes });
+        adapterEvents = validateAdapterEvents(adapterOutput);
       } catch (error) {
         adapterError = error;
         console.warn(`${MODULE_ID} | AI provider failed; falling back to local note analysis`, error);
@@ -633,25 +644,38 @@ export class GrandDesignApi {
     // believed was configured silently never attached and they have been running the local
     // keyword matcher the whole time.
     const localAnalysis = usedAdapter ? null : explainSessionNotes(notes);
-    const candidateEvents = usedAdapter ? validateAdapterEvents(adapterOutput) : localAnalysis.events;
-    this._assertAllowedEventTags(candidateEvents);
+    // Individual malformed events inside an otherwise well-shaped adapter response (one bad
+    // `outcome` value, an empty summary) are skipped rather than treated as a reason to discard the
+    // whole batch -- validateAdapterEvents() already separated those out. A model is more likely to
+    // get one field wrong in a large response than to fail outright, and discarding nine good events
+    // over a tenth bad one would be a worse failure mode than the one this module already fixed for
+    // the local analyzer (session-notes.js#explainSessionNotes keeps every sentence it can read).
+    const { events: taggedEvents, rejectedTags } = usedAdapter
+      ? this._sanitizeEventTags(adapterEvents.events)
+      : { events: localAnalysis.events, rejectedTags: [] };
     const recorded = [];
     let eventProposals = this.getGrowth(actor).proposals;
-    for (const event of candidateEvents) {
+    for (const event of taggedEvents) {
       const result = await this.recordGrowthEvent(actor, event);
       recorded.push(result.event);
       eventProposals = result.proposals;
     }
+    // Proposals are validated more strictly (see _validateModelProposals): a malformed proposal
+    // still fails the whole batch loudly, on purpose, because a wrong SHAPE there tends to mean a
+    // systemic prompt/schema regression a GM needs to notice, not a one-off hallucinated field.
     const modelProposals = usedAdapter ? this._validateModelProposals(adapterOutput?.proposals ?? [], actor) : [];
     const proposals = mergeProposals(eventProposals, modelProposals);
     await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+    const adapterSkippedEvents = usedAdapter ? adapterEvents.skipped : [];
     return {
       source,
       adapterConfigured: this.hasProposalAdapter(),
       events: recorded,
       proposals,
       ...(adapterError ? { adapterError: adapterError.message } : {}),
-      ...(localAnalysis ? { diagnostics: localAnalysis.diagnostics } : {})
+      ...(localAnalysis ? { diagnostics: localAnalysis.diagnostics } : {}),
+      ...(adapterSkippedEvents.length ? { adapterSkippedEvents } : {}),
+      ...(rejectedTags.length ? { adapterRejectedTags: rejectedTags } : {})
     };
   }
 
@@ -834,7 +858,7 @@ export class GrandDesignApi {
       if (!validation.valid) {
         throw new Error(`Invalid AI ${proposal.kind} proposal: ${validation.errors.join(" ")}`);
       }
-      this._assertAllowedEventTags([{ tags: proposal.entry.metadata?.tags ?? [] }]);
+      this._assertAllowedProposalTags(proposal.entry.metadata?.tags ?? []);
       const registryId = `${proposal.kind}:${slugify(proposal.entry.name)}`;
       const bucket = proposal.kind === "class" ? registry.classes : registry.skills;
       if (bucket[registryId]) {
@@ -852,13 +876,35 @@ export class GrandDesignApi {
     });
   }
 
-  _assertAllowedEventTags(entries) {
+  // Proposals stay fail-loud: an unsupported tag on a whole Skill/Class entry is the same class of
+  // shape problem as a missing required field (see _validateModelProposals's own comment), so this
+  // throws exactly as before.
+  _assertAllowedProposalTags(tags) {
     const allowedTags = new Set(GROWTH_TAXONOMY.map(([tag]) => tag));
-    for (const entry of entries) {
-      for (const tag of entry.tags ?? []) {
-        if (!allowedTags.has(tag)) throw new Error(`AI returned an unsupported gameplay tag: ${tag}.`);
-      }
+    for (const tag of tags) {
+      if (!allowedTags.has(tag)) throw new Error(`AI returned an unsupported gameplay tag: ${tag}.`);
     }
+  }
+
+  // Events are individually cheap and individually replaceable -- unlike a proposal, a single event
+  // is one sentence's worth of evidence, not a whole mechanical entry. So an unsupported/hallucinated
+  // tag on one event's tag list is dropped from that event rather than discarding the event (there
+  // may be other, valid tags alongside it) or the whole batch. An event that loses every one of its
+  // tags this way is dropped entirely, on the same "no gameplay tag, no evidence" logic
+  // session-notes.js already applies to the local analyzer.
+  _sanitizeEventTags(events) {
+    const allowedTags = new Set(GROWTH_TAXONOMY.map(([tag]) => tag));
+    const sanitized = [];
+    const rejectedTags = [];
+    for (const event of events) {
+      const tags = Array.isArray(event.tags) ? event.tags : [];
+      const kept = tags.filter((tag) => allowedTags.has(tag));
+      const rejected = tags.filter((tag) => !allowedTags.has(tag));
+      if (rejected.length) rejectedTags.push({ summary: event.summary, rejected });
+      if (!kept.length) continue;
+      sanitized.push({ ...event, tags: kept });
+    }
+    return { events: sanitized, rejectedTags };
   }
 
   async _approveEvolution(actor, kind, entry, operation) {

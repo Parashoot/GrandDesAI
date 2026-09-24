@@ -15,7 +15,7 @@
 //     system and the grand-design-ai module active.
 //   - Unless FOUNDRY_AI_PROVIDER=disabled, an AI provider is reachable from that Foundry server's
 //     browser context -- for the default "ollama" provider, that means Ollama is running locally
-//     (http://127.0.0.1:11434) with the configured model pulled (default mistral-small3.1:24b).
+//     (http://127.0.0.1:11434) with the configured model pulled (default qwen3.8:27b).
 //   - Playwright's browser binaries are installed: npx playwright install chromium
 //
 // Credentials are READ FROM ENVIRONMENT VARIABLES ONLY. Nothing here hardcodes, logs, or echoes
@@ -106,6 +106,11 @@ async function main() {
     const report = await page.evaluate(() => game.modules.get("grand-design-ai").api.runAiTestScenario());
 
     printReport(report);
+
+    if (consoleErrors.length) {
+      console.warn(`\n${consoleErrors.length} browser console error(s) were logged so far:`);
+      for (const error of consoleErrors) console.warn(`  - ${error}`);
+    }
 
     console.log("Cleaning up test documents...");
     await page.evaluate(() => game.modules.get("grand-design-ai").api.clearAiTestScenario());

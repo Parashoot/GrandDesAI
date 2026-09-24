@@ -65,7 +65,10 @@ export function normalizeEntry(kind, entry, registry, operation = "origin") {
       // used it as a source. Only carried through when actually present, so a standard entry's
       // normalized metadata stays exactly as before (no stray `polarity: undefined` field).
       ...(metadata.polarity !== undefined ? { polarity: metadata.polarity } : {}),
-      ...(metadata.malignance !== undefined ? { malignance: metadata.malignance } : {})
+      ...(metadata.malignance !== undefined ? { malignance: metadata.malignance } : {}),
+      // Emergent themes (emergent-themes.js) must survive approval the same way polarity does, or an
+      // approved [Apiarist's Calm] forgets it was ever about beekeeping.
+      ...(Array.isArray(metadata.themes) && metadata.themes.length ? { themes: [...new Set(metadata.themes)] } : {})
     }
   };
 }

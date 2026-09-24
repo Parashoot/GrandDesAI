@@ -3,13 +3,15 @@ import { defaultAtlasAssetPath, isLegacyGithubAtlasPath } from "./atlas.js";
 import { MODULE_ID } from "./constants.js";
 import { openGrowthManager } from "./growth-ui.js";
 import { openPopulate, runPopulateAndAnnounce } from "./populate-ui.js";
-import { createConfiguredAiAdapter, registerAiProviderSettings } from "./ai-provider-config.js";
+import { createConfiguredAiAdapter, getGatewayConfig, registerAiProviderSettings } from "./ai-provider-config.js";
+import { createEmergentThemeStore, registerEmergentThemeSettings } from "./emergent-themes-settings.js";
 import { registerTagWeightingSettings, getConfiguredTagWeights } from "./tag-weighting-settings.js";
 import { isSupportedSystem, supportedSystemIds } from "./systems/index.js";
 
 Hooks.once("init", () => {
   registerAiProviderSettings();
   registerTagWeightingSettings();
+  registerEmergentThemeSettings();
   game.settings.register(MODULE_ID, "atlasAssetPath", {
     name: "Grand Design Atlas Asset",
     hint: "Path to a licensed world-map image or SVG to use as the Foundry scene background.",
@@ -28,6 +30,11 @@ Hooks.once("init", () => {
   });
   game.modules.get(MODULE_ID).api = new GrandDesignApi();
   game.modules.get(MODULE_ID).api.setTagWeightsProvider(getConfiguredTagWeights);
+  // AI gateway v2: the api reads the merged client+world gateway config fresh on every call (so a
+  // settings change applies to the next analysis without a reload), and keeps the world's seen
+  // emergent themes in the `emergentThemes` world setting.
+  game.modules.get(MODULE_ID).api.setGatewayConfigProvider(getGatewayConfig);
+  game.modules.get(MODULE_ID).api.setEmergentThemeStore(createEmergentThemeStore());
 });
 
 Hooks.once("ready", async () => {
@@ -43,10 +50,13 @@ Hooks.once("ready", async () => {
   }
   if (game.user.isGM) {
     try {
+      // createConfiguredAiAdapter builds the v2 adapter via ai-gateway.js#createGatewayAdapter
+      // from the full normalized gateway config (null when the provider is "disabled").
       const adapter = createConfiguredAiAdapter();
       if (adapter) game.modules.get(MODULE_ID).api.setProposalAdapter(adapter);
     } catch (error) {
       console.warn(`${MODULE_ID} | AI provider is not configured`, error);
+      ui.notifications.warn(`Grand Design AI Gateway is not ready (${error.message}) -- notes will be read by the local analyzer until it is fixed in the module settings.`);
     }
   }
   if (game.user.isGM && game.settings.get(MODULE_ID, "runTestScenarioOnLaunch")) {

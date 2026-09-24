@@ -344,8 +344,18 @@ export function validateGrowthEvent(event) {
   const errors = [];
   if (!isRecord(event)) errors.push("Growth event must be an object.");
   if (!isNonEmptyString(event?.summary)) errors.push("Growth event summary is required.");
-  if (!Array.isArray(event?.tags) || event.tags.length === 0 || event.tags.some((tag) => !isNonEmptyString(tag))) {
-    errors.push("Growth event tags must contain at least one non-empty tag.");
+  // Emergent themes (AI gateway v2, 2026-09-23): an event is evidence if it carries at least one
+  // canonical gameplay tag OR at least one emergent theme slug ("beekeeping", "gambling") -- the
+  // activities a 38-tag taxonomy can never anticipate. `tags` may be [] (or omitted) when themes
+  // carry the event; canonical-tag evidence math is unchanged either way.
+  const tagsValid = event?.tags === undefined || (Array.isArray(event.tags) && event.tags.every(isNonEmptyString));
+  const themesValid = event?.themes === undefined || (Array.isArray(event.themes) && event.themes.every(isNonEmptyString));
+  if (!tagsValid) errors.push("Growth event tags must be an array of non-empty strings.");
+  if (!themesValid) errors.push("Growth event themes must be an array of non-empty strings.");
+  const tagCount = Array.isArray(event?.tags) ? event.tags.length : 0;
+  const themeCount = Array.isArray(event?.themes) ? event.themes.length : 0;
+  if (tagsValid && themesValid && tagCount === 0 && themeCount === 0) {
+    errors.push("Growth event tags must contain at least one non-empty tag (or themes at least one emergent theme).");
   }
   if (!Object.prototype.hasOwnProperty.call(GROWTH_EVENT_OUTCOME_WEIGHTS, event?.outcome)) {
     errors.push(`Growth event outcome must be one of: ${Object.keys(GROWTH_EVENT_OUTCOME_WEIGHTS).join(", ")}.`);
@@ -362,15 +372,29 @@ export function validateGrowthEvent(event) {
 export function normalizeGrowthEvent(event, index) {
   const validation = validateGrowthEvent(event);
   if (!validation.valid) throw new Error(validation.errors.join(" "));
+  const themes = uniqueStrings(event.themes ?? []).map((theme) => theme.toLowerCase()).filter(Boolean);
+  const optionalText = (value, max) => (isNonEmptyString(value) ? value.trim().slice(0, max) : undefined);
+  const quote = optionalText(event.quote, MAX_QUOTE_LENGTH);
+  const language = optionalText(event.language, 16);
+  const actorName = optionalText(event.actorName, 120);
+  const source = GROWTH_EVENT_SOURCES.has(event.source) ? event.source : undefined;
   return {
     id: event.id ?? `event:${Date.now()}-${index}`,
     summary: event.summary.trim(),
-    tags: uniqueStrings(event.tags),
+    tags: uniqueStrings(event.tags ?? []),
     outcome: event.outcome,
     occurredAt: event.occurredAt ?? new Date().toISOString(),
-    ...(event.dangerGap !== undefined ? { dangerGap: event.dangerGap } : {})
+    ...(event.dangerGap !== undefined ? { dangerGap: event.dangerGap } : {}),
+    ...(themes.length ? { themes: [...new Set(themes)] } : {}),
+    ...(quote ? { quote } : {}),
+    ...(language ? { language } : {}),
+    ...(actorName ? { actorName } : {}),
+    ...(source ? { source } : {})
   };
 }
+
+const MAX_QUOTE_LENGTH = 400;
+const GROWTH_EVENT_SOURCES = new Set(["adapter", "local"]);
 
 /**
  * `consolidations` (see constants.js#CONSOLIDATIONS_FLAG, api.js#setConsolidation) is an array of

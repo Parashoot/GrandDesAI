@@ -1,7 +1,15 @@
 import { GROWTH_TAXONOMY } from "./growth-taxonomy.js";
-import { CLASS_EVOLUTION_LEVELS, DANGER_GAP_MULTIPLIERS, GROWTH_EVENT_OUTCOME_WEIGHTS, LEVEL_PROGRESSION_FLAG, MODULE_ID, SPELL_SCHOOLS } from "./constants.js";
+import { CLASS_EVOLUTION_LEVELS, DANGER_GAP_MULTIPLIERS, GROWTH_EVENT_OUTCOME_WEIGHTS, GROWTH_EVENTS_FLAG, LEVEL_PROGRESSION_FLAG, MODULE_ID, SPELL_SCHOOLS } from "./constants.js";
 import { getSystemAdapter } from "./systems/index.js";
 import { VICE_TAGS } from "./vice-taxonomy.js";
+import { validateClassEntry, validateSkillEntry } from "./validator.js";
+import { AiProviderUnreachableError, AiProviderTimeoutError, assertSafeEndpoint, createTransport } from "./ai/transport.js";
+import { normalizeGatewayConfig } from "./ai/gateway-config.js";
+import { runGatewayPipeline } from "./ai/pipeline.js";
+
+// Backward-compatible re-exports: these used to be defined in this file.
+export { AiProviderUnreachableError, AiProviderTimeoutError };
+export { LEGACY_PROPOSAL_SYSTEM_PROMPT as PROPOSAL_SYSTEM_PROMPT } from "./ai/prompts.js";
 
 export function createAiGatewayAdapter({ endpoint, getHeaders = () => ({}) }) {
   assertSafeEndpoint(endpoint);
@@ -19,108 +27,104 @@ export function createAiGatewayAdapter({ endpoint, getHeaders = () => ({}) }) {
   };
 }
 
-// A browser `fetch` that cannot reach its target rejects with a bare TypeError whose message is
-// the famously unhelpful "Failed to fetch" -- no URL, no cause, nothing a GM can act on. Since
-// these two functions hold the only fetch calls in the module's normal runtime path, that string
-// was ALSO the only thing a GM saw when the Growth dialog's "Analyze Notes" button hit a provider
-// that wasn't running: a red toast reading "Failed to fetch" with no hint that it was about AI at
-// all, let alone which endpoint or why. Everything actionable is spelled out here instead.
-export class AiProviderUnreachableError extends Error {
-  constructor(endpoint, cause) {
-    const { hostname, port } = safeUrlParts(endpoint);
-    // The origin that must be allowed is the page MAKING the request (this Foundry server), not
-    // the endpoint's own -- getting these backwards is exactly the mistake that makes a CORS
-    // misconfiguration hard to diagnose.
-    const callerOrigin = typeof location !== "undefined" && location?.origin ? location.origin : "this Foundry server's origin";
-    super(
-      `Could not reach the AI provider at ${endpoint}. Nothing was sent and no notes were lost. `
-        + `Check that: (1) the provider is actually running and listening on ${hostname}:${port} `
-        + `-- for Ollama, \`ollama serve\`, then \`ollama list\` to confirm the model is pulled; `
-        + `(2) it allows browser requests from ${callerOrigin} -- Ollama gates this with the `
-        + `OLLAMA_ORIGINS environment variable, which must include that origin; and (3) the endpoint `
-        + `in Grand Design's AI Provider Setup matches the port the provider is really on.`
-    );
-    this.name = "AiProviderUnreachableError";
-    this.endpoint = endpoint;
-    this.cause = cause;
-  }
-}
-
+// A browser `fetch` that cannot reach its target rejects with a bare "Failed to fetch". The error
+// class that turns that into something a GM can act on now lives in scripts/ai/transport.js (the
+// one place that makes provider HTTP calls); it is re-exported here because existing callers and
+// tests import it from this module.
 async function fetchOrExplain(endpoint, init) {
   try {
     return await fetch(endpoint, init);
   } catch (error) {
     // Only a genuine transport failure lands here; an HTTP error status resolves normally and is
-    // handled by the response.ok checks above.
+    // handled by the response.ok check in createAiGatewayAdapter.
     throw new AiProviderUnreachableError(endpoint, error);
   }
 }
 
-function safeUrlParts(endpoint) {
-  try {
-    const url = new URL(endpoint);
-    return { hostname: url.hostname, port: url.port || (url.protocol === "https:" ? "443" : "80") };
-  } catch {
-    return { hostname: "the configured host", port: "its port" };
-  }
+function activeSystemId() {
+  return typeof game !== "undefined" && game?.system?.id ? game.system.id : "pf2e";
 }
 
-const PROPOSAL_SYSTEM_PROMPT = "Return only valid JSON matching the requested events and proposals schema. "
-  + "Log failed attempts as events too, not just successes -- outcome may be criticalSuccess, success, criticalFailure, or failure; "
-  + "see requirements.eventOutcomePhilosophy for exactly how to weigh and use failed attempts as evidence. "
-  + "Name every generated proposal so it reads as belonging to the character's own class, not a generic label -- "
-  + "see requirements.namingConvention for the exact naming pattern and worked examples. "
-  + "A small minority of proposals may be metadata.polarity: \"red\" (taboo/vile origins) instead of the "
-  + "default \"standard\" -- see requirements.polarityGuidance for exactly when that applies and what it requires. "
-  + "Every tags array (on an event and on a proposal entry's metadata.tags) may ONLY contain values that appear verbatim in the allowedTags array in this request -- "
-  + "never invent, pluralize, or reword a tag (for example, allowedTags has \"martial\" and \"defense\", not \"melee\" or \"defensive\"). "
-  + "If nothing in allowedTags genuinely fits, use fewer tags or an empty array rather than inventing one; a proposal is rejected outright if any tag isn't in allowedTags. "
-  + "Return {\"events\":[],\"proposals\":[]} when the evidence is insufficient. Do not grant, approve, or claim to create any item. "
-  + "Every field is REQUIRED unless requirements.proposalSchema marks it optional -- never omit a required field, even if you think it is implied. "
-  + "Always include, on every proposal's entry: name, mechanics.effect, mechanics.frequency {max, per}, gameItem.kind, and metadata.tags (only tags from allowedTags). "
-  + "A skill entry also always needs tier (1, 2, or 3) and system_equivalent. A class entry also always needs level, power_tier, is_primary, is_secondary, and system_chassis. "
-  + "Beyond that, requirements.requiredFieldsByKind lists the exact extra fields required for whichever gameItem.kind you choose -- check it every time, per kind, before answering. "
-  + "requirements.exampleByKind has one complete, valid, fully-fielded example proposal for every kind (feat, action, reaction, free, passive, spell, weapon, and one class example) -- "
-  + "find the entry matching your chosen kind and match its exact field set, changing only the content to fit these notes.";
+/**
+ * The v2 gateway adapter (see docs/ai-gateway-v2-contract.md). Takes a full gateway config
+ * (scripts/ai/gateway-config.js keys), builds a transport, and runs the extraction/proposal pipeline.
+ *
+ * The returned adapter keeps the long-standing signature `async ({ actor, notes, systemId? })` and
+ * resolves to `{ events, proposals, themes, skippedEvents, skippedProposals, gatewayDiagnostics }`,
+ * which still satisfies session-notes.js#validateAdapterEvents. It only rejects on a TOTAL failure
+ * (provider unreachable, or nothing parseable after every repair turn) -- the single path on which
+ * api.js#analyzeSessionNotes falls back to the local keyword analyzer.
+ *
+ * For G2's "Test connection" button the adapter also carries `adapter.ping()`,
+ * `adapter.listModels()` and `adapter.config` (the normalized config, apiKey redacted).
+ */
+export function createGatewayAdapter(config = {}, { validators, transportFactory = createTransport } = {}) {
+  const cfg = normalizeGatewayConfig(config);
+  assertSafeEndpoint(cfg.endpoint);
+  if (typeof cfg.model !== "string" || !cfg.model.trim()) throw new Error("An AI model name is required.");
+  const transport = transportFactory({
+    provider: cfg.provider,
+    endpoint: cfg.endpoint,
+    model: cfg.model,
+    apiKey: cfg.apiKey,
+    timeoutMs: cfg.timeoutMs,
+    fetchImpl: cfg.fetchImpl,
+    getHeaders: cfg.getHeaders,
+    extraBody: cfg.extraBody,
+    sleep: cfg.sleep,
+    maxRetries: cfg.maxRetries,
+    ollamaOptions: { num_ctx: cfg.numCtx, num_predict: cfg.numPredict }
+  });
+  const injected = validators ?? { validateSkillEntry, validateClassEntry };
+  const adapter = async ({ actor, notes, systemId } = {}) => {
+    const sys = systemId ?? cfg.systemId ?? activeSystemId();
+    const request = buildAiGatewayRequest(actor, notes, sys);
+    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys });
+    return {
+      events: result.events,
+      proposals: result.proposals,
+      themes: result.themes,
+      skippedEvents: result.skippedEvents,
+      skippedProposals: result.skippedProposals,
+      gatewayDiagnostics: result.diagnostics
+    };
+  };
+  adapter.ping = () => transport.ping();
+  adapter.listModels = () => transport.listModels();
+  adapter.transport = transport;
+  adapter.config = Object.freeze({ ...cfg, apiKey: cfg.apiKey ? "********" : "", fetchImpl: undefined, getHeaders: undefined, sleep: undefined });
+  return adapter;
+}
 
-// `transport: "openai"` (default) posts to an OpenAI-compatible /v1/chat/completions endpoint.
-// `transport: "ollama-native"` posts to Ollama's own /api/chat instead. This distinction matters
-// for a concrete, previously-undiagnosed bug: Ollama's OpenAI-compatibility shim silently ignores
-// an `options` object (including `num_ctx`) on /v1/chat/completions -- the model stays loaded at
-// whatever context size it last had (4096 by default, far too small for this module's large
-// schema/example request body), so every response was truncated mid-JSON and every call silently
-// fell back to the local heuristic analyzer. Ollama's native /api/chat DOES honor `options.num_ctx`
-// (verified: `ollama ps` shows the requested context size only after a native-endpoint call), so
-// the default Ollama preset uses that transport instead. See ai-provider-config.js for where
-// `OLLAMA_INFERENCE_OPTIONS` is set and why 16384 was chosen.
-export function createChatCompletionsAdapter({ endpoint, model, getHeaders = () => ({}), requestOptions = {}, transport = "openai" }) {
+// Legacy factory, kept for existing callers (ai-provider-config.js) and tests. Its old options map
+// onto the v2 gateway config:
+//   transport "ollama-native" -> provider "ollama"; "openai" (default) -> provider "openaiCompatible"
+//   requestOptions.options.{num_ctx,num_predict} -> numCtx/numPredict; any other requestOptions keys
+//   are merged into every request body verbatim (e.g. { think:false }).
+// It defaults to pipeline "single" -- ONE provider call per note chunk, exactly like the old
+// adapter -- because callers of this factory were written against one-call semantics. New code
+// should use createGatewayAdapter(config), whose default is the more robust "two-stage" pipeline.
+//
+// History: `transport: "ollama-native"` exists because Ollama's OpenAI-compatibility shim silently
+// ignores an `options` object (including `num_ctx`) on /v1/chat/completions, so every response was
+// truncated mid-JSON at the 4096-token default and silently fell back to the local analyzer. The v2
+// transport goes further and rewrites an Ollama /v1 endpoint to the native /api/chat automatically.
+export function createChatCompletionsAdapter({ endpoint, model, getHeaders = () => ({}), requestOptions = {}, transport = "openai", ...rest } = {}) {
   assertSafeEndpoint(endpoint);
   if (typeof model !== "string" || !model.trim()) throw new Error("An AI model name is required.");
   if (typeof getHeaders !== "function") throw new Error("getHeaders must be a function.");
-  return async ({ actor, notes }) => {
-    const request = buildAiGatewayRequest(actor, notes, typeof game !== "undefined" ? game.system.id : "pf2e");
-    const messages = [
-      { role: "system", content: PROPOSAL_SYSTEM_PROMPT },
-      { role: "user", content: JSON.stringify(request) }
-    ];
-    const body = transport === "ollama-native"
-      ? { model, messages, format: "json", stream: false, ...requestOptions }
-      : { model, messages, response_format: { type: "json_object" }, temperature: 0.2, ...requestOptions };
-    const response = await fetchOrExplain(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...getHeaders() },
-      body: JSON.stringify(body)
-    });
-    if (!response.ok) throw new Error(`AI provider returned HTTP ${response.status}.`);
-    const payload = await response.json();
-    const content = payload?.choices?.[0]?.message?.content ?? payload?.message?.content;
-    if (typeof content !== "string") throw new Error("AI provider did not return a JSON chat-completion message.");
-    try {
-      return JSON.parse(content);
-    } catch {
-      throw new Error("AI provider returned malformed JSON.");
-    }
-  };
+  const { options: ollamaOpts, ...extraBody } = requestOptions && typeof requestOptions === "object" ? requestOptions : {};
+  return createGatewayAdapter({
+    pipeline: "single",
+    ...rest,
+    provider: transport === "ollama-native" ? "ollama" : (rest.provider ?? "openaiCompatible"),
+    endpoint,
+    model,
+    getHeaders,
+    extraBody,
+    ...(ollamaOpts?.num_ctx ? { numCtx: ollamaOpts.num_ctx } : {}),
+    ...(ollamaOpts?.num_predict ? { numPredict: ollamaOpts.num_predict } : {})
+  });
 }
 
 // systemId defaults to "pf2e" (a plain literal, never `game.system.id`) so this function stays
@@ -163,6 +167,7 @@ export function buildAiGatewayRequest(actor, notes, systemId = "pf2e") {
           + "criticalFailure, e.g. repeatedly getting hurt attempting something dangerous -- can justify a proposal "
           + "shaped by what was actually learned from failing (caution, resistance, a defensive reflex) instead of only "
           + "a mastery-flavored proposal for succeeding at it.",
+      rulesVocabulary: adapter.rulesVocabulary,
       namingConvention:
         "Generated names should read as belonging to the character's own class, not as a generic label. For a Skill "
           + "proposal, prefer \"{class motif}: {concept}\" -- e.g. for a \"Spearmaster\" class, an Undead-Slayer-style "
@@ -263,8 +268,24 @@ export function buildAiGatewayRequest(actor, notes, systemId = "pf2e") {
         weapon: ["mechanics.roll.kind (string)", "mechanics.roll.formula (dice formula)", "gameItem.damage (dice formula, e.g. 1d6+2)", "gameItem.damageType (string, e.g. piercing)"]
       },
       exampleByKind: buildExampleByKind(adapter)
-    }
+    },
+    // v2 addition: weighted evidence already on the actor, so the pipeline's "when-earned" proposal
+    // mode can tell whether this batch pushes any tag or emergent theme over the threshold without
+    // shipping the whole event history to the model.
+    growthHistory: summarizeGrowthHistory(actor.getFlag(MODULE_ID, GROWTH_EVENTS_FLAG))
   };
+}
+
+function summarizeGrowthHistory(events) {
+  const tagEvidence = {};
+  const themeEvidence = {};
+  const list = Array.isArray(events) ? events : [];
+  for (const event of list) {
+    const weight = GROWTH_EVENT_OUTCOME_WEIGHTS[event?.outcome] ?? 0;
+    for (const tag of Array.isArray(event?.tags) ? event.tags : []) tagEvidence[tag] = (tagEvidence[tag] ?? 0) + weight;
+    for (const theme of Array.isArray(event?.themes) ? event.themes : []) themeEvidence[theme] = (themeEvidence[theme] ?? 0) + weight;
+  }
+  return { eventCount: list.length, tagEvidence, themeEvidence };
 }
 
 function buildExampleByKind(adapter) {
@@ -322,7 +343,7 @@ function buildExampleByKind(adapter) {
       name: "Silt Hook", tier: 1, system_equivalent: `Simple melee weapon${equivalentSuffix}`,
       gameItem: { kind: "weapon", damage: "1d6+2", damageType: "piercing", category: "simple", group: "knife", traits: ["agile"] },
       mechanics: { effect: "Make a melee Strike with a hooked canal tool.", duration: "instant", frequency: { max: 1, per: "round" }, actions: 1, roll: { kind: "Melee attack", formula: "1d20+6" } },
-      tags: ["weapon", "tool", "melee"], rationale: "Adapted a salvaged tool into a reliable close-range weapon."
+      tags: ["martial", "craft"], rationale: "Adapted a salvaged tool into a reliable close-range weapon."
     }),
     class: {
       kind: "class",
@@ -331,18 +352,9 @@ function buildExampleByKind(adapter) {
         system_chassis: `Alchemist${equivalentSuffix}`,
         gameItem: { kind: "passive" },
         mechanics: { effect: "During daily preparations, create one temporary meal. The first ally who eats it gains 2 temporary Hit Points for 8 hours.", duration: "8 hours", frequency: { max: 1, per: "day" } },
-        metadata: { tags: ["craft", "food", "flood-support"], lineage: { operation: "origin", sources: [], rationale: "Only ever proposed when actor.grandDesign.classEvolutionAvailable is true." } }
+        metadata: { tags: ["craft", "support", "water"], themes: ["cooking"], lineage: { operation: "origin", sources: [], rationale: "Only ever proposed when actor.grandDesign.classEvolutionAvailable is true." } }
       },
       evidence: ["Session note analysis"]
     }
   };
-}
-
-function assertSafeEndpoint(endpoint) {
-  if (typeof endpoint !== "string") throw new Error("The AI gateway endpoint must be a URL.");
-  const url = new URL(endpoint);
-  const local = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
-  if (url.protocol !== "https:" && !(url.protocol === "http:" && local)) {
-    throw new Error("AI endpoints must use HTTPS, except a local localhost or loopback server.");
-  }
 }

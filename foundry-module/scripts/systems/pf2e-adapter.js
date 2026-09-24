@@ -5,6 +5,10 @@
 
 export const SYSTEM_ID = "pf2e";
 export const SYSTEM_LABEL = "Pathfinder Second Edition";
+// Handed to the AI gateway's proposal prompt so generated mechanics read like this system's rules.
+export const RULES_VOCABULARY = "Pathfinder 2e terms: Strike, actions (1-3) and reactions, circumstance/status/item bonuses and penalties, "
+  + "the four degrees of success (critical success / success / failure / critical failure), DC, off-guard, resistance N, "
+  + "skill actions (Treat Wounds, Demoralize, Recall Knowledge), spell rank, traits, frequency per round/minute/hour/day.";
 
 export function buildItemSourcePf2e(kind, entry) {
   const type = itemTypeFor(entry.gameItem.kind);

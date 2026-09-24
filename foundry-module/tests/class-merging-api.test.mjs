@@ -77,6 +77,11 @@ test("buildClassMergePreview + combineClasses fuse two of the actor's own approv
     // class-merging.js's math has something to read.
     assert.equal(registryBefore.classes["class:spearmaster"].power_tier, "elevated");
 
+    // This test predates Off-classing, which (by design) caps a merge made while the ACTOR is off a
+    // CLASS_EVOLUTION_LEVELS checkpoint (20/30/50) at its sources' own tier. The mock actor used to
+    // sit at Grand Design level 0, so the merge could no longer reach prestige or its comma-joined
+    // name. Put the actor on a checkpoint so this still exercises the on-cadence path it was written for.
+    actor.getFlag = ((original) => (module, key) => (key === "levelProgression" ? { ...(original(module, key) ?? {}), level: 30 } : original(module, key)))(actor.getFlag.bind(actor));
     const preview = api.buildClassMergePreview(actor, {
       sourceIds: ["class:spearmaster", "class:horizon-s-edge"],
       level: 25,

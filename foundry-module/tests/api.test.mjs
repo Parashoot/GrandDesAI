@@ -117,10 +117,12 @@ test("analyzeSessionNotes accepts a schema-shaped AI-gateway proposal ({kind, en
 });
 
 // The mirror-image case: if the adapter returns the OLD, incorrect shape ({kind, skillEntry})
-// that the prompt used to document, GrandDesignApi must reject it clearly rather than silently
-// dropping the proposal -- this is what would have happened against a real, schema-compliant
-// Ollama reply before the prompt in ai-gateway.js was fixed to say "entry".
-test("analyzeSessionNotes rejects a {kind, skillEntry} proposal shape with a clear error", async () => {
+// that the prompt used to document, GrandDesignApi must not silently drop it. Until 2026-09-23 this
+// threw for the whole batch; the AI gateway v2 contract (docs/ai-gateway-v2-contract.md) made
+// proposals tolerant per proposal -- the gateway pipeline repairs proposals before they get here --
+// so it is now SKIPPED AND REPORTED in adapterSkippedProposals with a clear reason, and the rest of
+// the analysis (events, other proposals) still lands.
+test("analyzeSessionNotes skips and reports a {kind, skillEntry} proposal shape with a clear reason", async () => {
   const originalGame = globalThis.game;
   const originalHooks = globalThis.Hooks;
   globalThis.game = { user: { isGM: true }, system: { id: "pf2e" } };
@@ -129,15 +131,18 @@ test("analyzeSessionNotes rejects a {kind, skillEntry} proposal shape with a cle
   try {
     const api = new GrandDesignApi();
     api.setProposalAdapter(async () => ({
-      events: [],
+      events: [{ summary: "Ari dashed across the hot canal grates.", tags: ["mobility"], outcome: "success" }],
       proposals: [{ kind: "skill", skillEntry: emberStepSkillEntry(), evidence: ["Session note analysis"] }]
     }));
     const actor = createMockActor();
 
-    await assert.rejects(
-      () => api.analyzeSessionNotes(actor, "Ari dashed across the hot canal grates to reach the sluice gate."),
-      /Invalid AI skill proposal/
-    );
+    const result = await api.analyzeSessionNotes(actor, "Ari dashed across the hot canal grates to reach the sluice gate.");
+
+    assert.equal(result.source, "adapter");
+    assert.equal(result.events.length, 1, "the good event still lands");
+    assert.equal(result.proposals.filter((proposal) => proposal.source === "ai-gateway").length, 0);
+    assert.equal(result.adapterSkippedProposals.length, 1);
+    assert.match(result.adapterSkippedProposals[0].errors.join(" "), /Invalid AI skill proposal.*entry/);
   } finally {
     globalThis.game = originalGame;
     globalThis.Hooks = originalHooks;

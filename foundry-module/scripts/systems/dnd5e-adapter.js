@@ -18,6 +18,12 @@
 
 export const SYSTEM_ID = "dnd5e";
 export const SYSTEM_LABEL = "Dungeons & Dragons Fifth Edition (2024 rules)";
+// Handed to the AI gateway's proposal prompt. Without it the model copies the Pathfinder-flavoured
+// examples ("Strike", "circumstance bonus", "resistance 2", "per encounter") into 5e entries.
+export const RULES_VOCABULARY = "D&D 5e (2024) terms: attack roll, action / bonus action / reaction, advantage and disadvantage, "
+  + "ability checks and saving throws against a DC, proficiency bonus, resistance to a damage type (halves it, never a number), "
+  + "temporary hit points, conditions (Prone, Frightened, Grappled, ...), spell level and spell slots, uses per short rest / long rest or per turn. "
+  + "Never use Pathfinder terms such as Strike, circumstance bonus, off-guard / flat-footed, 'resistance 2' or 'per encounter'.";
 
 // Grand Design's own gameItem.kind -> dnd5e activation.type. Round out with "special" for a
 // generic passive fallback since dnd5e's "none" activation still shows an (unusable) Use button;

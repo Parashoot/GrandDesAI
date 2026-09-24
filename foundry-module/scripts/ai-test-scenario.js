@@ -1,4 +1,5 @@
 import { MODULE_ID } from "./constants.js";
+import { createConfiguredAiAdapter, getGatewayConfig } from "./ai-provider-config.js";
 
 // Distinct from TEST_SCENARIO_FLAG ("The First Steam") on purpose: that campaign is deterministic
 // fixture data and can be wiped automatically on every world launch (runTestScenarioOnLaunch).
@@ -55,12 +56,25 @@ export async function runAiTestScenario(api) {
   };
 
   let subject;
+  const previousAdapter = api.getProposalAdapter?.() ?? null;
   try {
     if (!api.hasProposalAdapter()) {
       throw new Error(
         "No AI provider is configured. Open Configure Settings -> Grand Design AI -> Configure AI Provider "
           + "and select Ollama (or another provider) before running the AI test campaign."
       );
+    }
+
+    // The v2 gateway only proposes "when earned" (a tag/theme reaching the evidence threshold), and
+    // these six beats deliberately carry six different tags, so under the GM's normal settings the
+    // proposal stage would never open and the "produced a validated entry" assertion could only
+    // fail. The campaign exists to prove the provider can author a valid entry, so run stage 2 in
+    // "always" mode for its duration and restore the GM's adapter afterwards. Outside Foundry
+    // (unit tests) getGatewayConfig() is empty and the scripted adapter is kept as-is.
+    const gatewayConfig = getGatewayConfig();
+    if (gatewayConfig?.provider && gatewayConfig.provider !== "disabled") {
+      const campaignAdapter = createConfiguredAiAdapter({ ...gatewayConfig, proposalMode: "always" });
+      if (campaignAdapter) api.setProposalAdapter(campaignAdapter);
     }
 
     subject = await Actor.create({
@@ -132,6 +146,8 @@ export async function runAiTestScenario(api) {
   } catch (error) {
     report.failed.push(`Unexpected AI test campaign error: ${error.message}`);
     console.error(`${MODULE_ID} | AI test campaign failed`, error);
+  } finally {
+    if (api.getProposalAdapter?.() !== previousAdapter) api.setProposalAdapter(previousAdapter);
   }
 
   report.expectedAssertions = report.passed.length + report.failed.length;
