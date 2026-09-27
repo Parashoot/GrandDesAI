@@ -19,7 +19,13 @@ node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --
 node tools/nlp-scale/run.mjs --sim --fault-rate 0.3                    # offline, simulated model
 node tools/nlp-scale/build-browser.mjs --check                         # one-file browser bundle
 powershell -ExecutionPolicy Bypass -File ..\tools\deploy-foundry-module.ps1   # deploy to Foundry
+node tools/playtest/playtest.mjs status --campaign <name>                # playtest campaigns (see skill)
+node ../tools/board.mjs                     # the shared board (docs/board.json)
+node ../tools/vault-export.mjs              # docs/spec/board/playtests -> Obsidian vault
 ```
+Project management, the dev team and DM playtests: the `grand-design-pm` skill (`.claude/skills/grand-design-pm/`).
+The Obsidian vault copy lives in `~/vault/MandoAI/Grand Design AI/` (generated `Context/`, owner's `Notes/`);
+rerun the export after any docs, board or playtest change.
 Reports land in `tools/nlp-scale/reports/<timestamp>-<model>.{json,md}`; the `.md` lists the worst 15
 items with the model's real output.
 

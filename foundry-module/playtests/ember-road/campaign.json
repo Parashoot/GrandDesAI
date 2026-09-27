@@ -1,0 +1,2052 @@
+{
+ "name": "ember-road",
+ "system": "dnd5e",
+ "created": "2026-09-27T17:40:04.800Z",
+ "sessionsPlayed": 1,
+ "gateway": {},
+ "party": [
+  {
+   "name": "Brakka",
+   "className": "Fighter",
+   "level": 3,
+   "persona": "the-tank",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790531051706-1",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.",
+      "tags": [
+       "defense",
+       "leadership"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.706Z",
+      "dangerGap": "severe",
+      "themes": [
+       "holding-a-line",
+       "crowd-control"
+      ],
+      "quote": "Held the bridge, troll ran off, kept the goblins in line till the watch took them.",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051707-2",
+      "summary": "Brakka won two fights in the pit but lost the third to the champion.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.707Z",
+      "themes": [
+       "brawling",
+       "gambling"
+      ],
+      "quote": "Won two in the pit, lost the third to the champ",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051707-3",
+      "summary": "Wick rode an ox into a fight with a troll.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.707Z",
+      "dangerGap": "severe",
+      "themes": [
+       "horsemanship"
+      ],
+      "quote": "bro rode an ox into a troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051707-4",
+      "summary": "Wick lost his dagger to the river.",
+      "tags": [
+       "water"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:44:11.707Z",
+      "themes": [
+       "losing-equipment"
+      ],
+      "quote": "lost my dagger to the river",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051707-5",
+      "summary": "Wick's ox, Steve, lost a race by sitting down.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:44:11.707Z",
+      "themes": [
+       "animal-racing"
+      ],
+      "quote": "Steve the ox lost a race by sitting down",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051707-6",
+      "summary": "Wick was banned from a pie tent.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:44:11.707Z",
+      "themes": [
+       "social-conflict"
+      ],
+      "quote": "I got banned from a pie tent",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051707-7",
+      "summary": "Maren rooted three out of four goblins in place with entangle.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.707Z",
+      "quote": "rooted 3/4 goblins in place with entangle",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051707-8",
+      "summary": "Maren healed Brakka.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.707Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "healed brakka back up",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051707-9",
+      "summary": "Maren thorn-whipped the last goblin into the burning railing.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.707Z",
+      "quote": "thorn-whipped the last goblin into the burning railing",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-10",
+      "summary": "Maren treated the surrendered goblins.",
+      "tags": [
+       "medicine"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "themes": [
+       "first-aid"
+      ],
+      "quote": "patched up the surrendered goblins anyway bc soft heart",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-11",
+      "summary": "Maren sold out of honey.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "themes": [
+       "trading"
+      ],
+      "quote": "sold out of honey",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-12",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "themes": [
+       "baking",
+       "competition"
+      ],
+      "quote": "got 2nd place in the bake-off with a lavender honey loaf",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-13",
+      "summary": "Maren adopted a stable cat.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "themes": [
+       "petkeeping"
+      ],
+      "quote": "adopted a stable cat",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-14",
+      "summary": "Tovin torched a troll.",
+      "tags": [
+       "fire",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "dangerGap": "severe",
+      "quote": "torched a troll",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-15",
+      "summary": "Tovin lost a bet in the pit.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "themes": [
+       "gambling"
+      ],
+      "quote": "lost my pit bet",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-16",
+      "summary": "Tovin quietly dealt with a loose end on the bridge.",
+      "tags": [
+       "deception"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "themes": [
+       "secret-action"
+      ],
+      "quote": "quietly tidied up a loose end on the bridge",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-17",
+      "summary": "Luz healed Brakka to full health after the troll fight.",
+      "tags": [
+       "divine",
+       "spellcasting",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "Luz heal Brakka full HP after the troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-18",
+      "summary": "Luz confronted Tovin for killing a surrendering goblin.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "themes": [
+       "confrontation"
+      ],
+      "quote": "catch Tovin killing a goblin that was surrender, not happy about that at all",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531051708-19",
+      "summary": "Luz led the dawn blessing at the temple, causing the whole square to kneel.",
+      "tags": [
+       "divine",
+       "religion",
+       "leadership"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:11.708Z",
+      "themes": [
+       "ritual"
+      ],
+      "quote": "Luz lead the dawn blessing at the temple and whole square kneel",
+      "language": "en",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [],
+    "levelProgression": {
+     "level": 3,
+     "progress": 87.5,
+     "grantAllowances": 3,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T17:44:11.709Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
+     "at": "2026-09-27T17:44:11.709Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790531051706-1",
+      "event:1790531051707-2",
+      "event:1790531051707-3",
+      "event:1790531051707-4",
+      "event:1790531051707-5",
+      "event:1790531051707-6",
+      "event:1790531051707-7",
+      "event:1790531051707-8",
+      "event:1790531051707-9",
+      "event:1790531051708-10",
+      "event:1790531051708-11",
+      "event:1790531051708-12",
+      "event:1790531051708-13",
+      "event:1790531051708-14",
+      "event:1790531051708-15",
+      "event:1790531051708-16",
+      "event:1790531051708-17",
+      "event:1790531051708-18",
+      "event:1790531051708-19"
+     ],
+     "proposalIds": [],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 19,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 1,
+      "attempts": 2,
+      "repairs": 0,
+      "totalMs": 36150
+     }
+    }
+   },
+   "items": []
+  },
+  {
+   "name": "Wick",
+   "className": "Rogue",
+   "level": 3,
+   "persona": "chaos-gremlin",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790531071619-1",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.",
+      "tags": [
+       "defense",
+       "leadership"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.619Z",
+      "dangerGap": "severe",
+      "themes": [
+       "holding-a-line",
+       "commanding"
+      ],
+      "quote": "Held the bridge, troll ran off, kept the goblins in line till the watch took them.",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071619-2",
+      "summary": "Brakka won two fights in the pit but lost the third to the champion.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.619Z",
+      "themes": [
+       "brawling"
+      ],
+      "quote": "Won two in the pit, lost the third to the champ",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071619-3",
+      "summary": "Wick rode an ox into a fight with a troll.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.619Z",
+      "dangerGap": "severe",
+      "themes": [
+       "mounting"
+      ],
+      "quote": "bro rode an ox into a troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071619-4",
+      "summary": "Wick lost his dagger to the river.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:44:31.619Z",
+      "themes": [
+       "losing-equipment"
+      ],
+      "quote": "lost my dagger to the river",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071619-5",
+      "summary": "Steve the ox lost a race by sitting down.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:44:31.619Z",
+      "themes": [
+       "racing"
+      ],
+      "quote": "Steve the ox lost a race by sitting down",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071619-6",
+      "summary": "Wick was banned from a pie tent.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:44:31.619Z",
+      "themes": [
+       "social-mishap"
+      ],
+      "quote": "I got banned from a pie tent",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-7",
+      "summary": "Maren rooted three out of four goblins in place with entangle.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "quote": "rooted 3/4 goblins in place with entangle",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-8",
+      "summary": "Maren healed Brakka.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "healed brakka back up",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-9",
+      "summary": "Maren thorn-whipped the last goblin into the burning railing.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "quote": "thorn-whipped the last goblin into the burning railing",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-10",
+      "summary": "Maren patched up the surrendered goblins.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "themes": [
+       "first-aid"
+      ],
+      "quote": "patched up the surrendered goblins anyway bc soft heart",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-11",
+      "summary": "Maren sold out of honey.",
+      "tags": [],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "themes": [
+       "trading"
+      ],
+      "quote": "sold out of honey",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-12",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "themes": [
+       "baking"
+      ],
+      "quote": "got 2nd place in the bake-off with a lavender honey loaf",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-13",
+      "summary": "Maren adopted a stable cat.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "themes": [
+       "petkeeping"
+      ],
+      "quote": "adopted a stable cat",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-14",
+      "summary": "Tovin torched a troll.",
+      "tags": [
+       "fire"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "dangerGap": "severe",
+      "themes": [
+       "fire-magic"
+      ],
+      "quote": "torched a troll",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-15",
+      "summary": "Tovin lost a bet in the pit.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "themes": [
+       "gambling"
+      ],
+      "quote": "lost my pit bet",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-16",
+      "summary": "Tovin quietly dealt with a loose end on the bridge.",
+      "tags": [
+       "deception"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "themes": [
+       "secret-action"
+      ],
+      "quote": "quietly tidied up a loose end on the bridge",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071620-17",
+      "summary": "Luz healed Brakka to full health after the troll fight.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.620Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "Luz heal Brakka full HP after the troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531071621-18",
+      "summary": "Luz led the dawn blessing at the temple.",
+      "tags": [
+       "religion"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:44:31.621Z",
+      "themes": [
+       "ritual"
+      ],
+      "quote": "Luz lead the dawn blessing at the temple",
+      "language": "en",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [
+     {
+      "id": "proposal:field-triage",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "event:1790531071620-8",
+       "event:1790531071620-10",
+       "event:1790531071620-17"
+      ],
+      "entry": {
+       "name": "Field Triage",
+       "tier": 1,
+       "system_equivalent": "Medicine support action",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt to Treat Wounds on one adjacent living creature. On a success, it regains 1d8 Hit Points.",
+        "duration": "10 minutes",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Medicine check",
+         "formula": "1d20+0",
+         "dc": 15
+        }
+       },
+       "metadata": {
+        "tags": [
+         "medicine",
+         "support"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Generated after 3 tagged event(s), weighted evidence 3.00 (successes count for more than failures, but persistence through failure counts too): event:1790531071620-8, event:1790531071620-10, event:1790531071620-17. GM approval is required."
+        }
+       }
+      }
+     }
+    ],
+    "levelProgression": {
+     "level": 3,
+     "progress": 62.5,
+     "grantAllowances": 3,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T17:44:31.621Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
+     "at": "2026-09-27T17:44:31.621Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790531071619-1",
+      "event:1790531071619-2",
+      "event:1790531071619-3",
+      "event:1790531071619-4",
+      "event:1790531071619-5",
+      "event:1790531071619-6",
+      "event:1790531071620-7",
+      "event:1790531071620-8",
+      "event:1790531071620-9",
+      "event:1790531071620-10",
+      "event:1790531071620-11",
+      "event:1790531071620-12",
+      "event:1790531071620-13",
+      "event:1790531071620-14",
+      "event:1790531071620-15",
+      "event:1790531071620-16",
+      "event:1790531071620-17",
+      "event:1790531071621-18"
+     ],
+     "proposalIds": [],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 18,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 1,
+      "attempts": 2,
+      "repairs": 0,
+      "totalMs": 19904
+     }
+    }
+   },
+   "items": []
+  },
+  {
+   "name": "Maren",
+   "className": "Druid",
+   "level": 3,
+   "persona": "cottagecore",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790531105711-1",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.",
+      "tags": [
+       "defense",
+       "leadership"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "dangerGap": "severe",
+      "themes": [
+       "holding-a-line",
+       "crowd-control"
+      ],
+      "quote": "Held the bridge, troll ran off, kept the goblins in line till the watch took them.",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-2",
+      "summary": "Brakka won two fights in the pit and lost the third to the champion.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "themes": [
+       "brawling"
+      ],
+      "quote": "Won two in the pit, lost the third to the champ",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-3",
+      "summary": "Wick rode an ox into a fight with a troll.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "dangerGap": "severe",
+      "themes": [
+       "horsemanship"
+      ],
+      "quote": "bro rode an ox into a troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-4",
+      "summary": "Wick lost his dagger to the river.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "themes": [
+       "losing-equipment"
+      ],
+      "quote": "lost my dagger to the river",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-5",
+      "summary": "Steve the ox lost a race by sitting down.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "themes": [
+       "animal-racing"
+      ],
+      "quote": "Steve the ox lost a race by sitting down",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-6",
+      "summary": "Wick was banned from a pie tent.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "themes": [
+       "social-mishap"
+      ],
+      "quote": "I got banned from a pie tent",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-7",
+      "summary": "Maren rooted three out of four goblins in place with entangle.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "themes": [
+       "plant-magic"
+      ],
+      "quote": "rooted 3/4 goblins in place with entangle",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-8",
+      "summary": "Maren healed Brakka.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "healed brakka back up",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-9",
+      "summary": "Maren thorn-whipped the last goblin into the burning railing.",
+      "tags": [
+       "primal",
+       "fire",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "themes": [
+       "thorn-magic"
+      ],
+      "quote": "thorn-whipped the last goblin into the burning railing",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-10",
+      "summary": "Maren treated the surrendered goblins.",
+      "tags": [
+       "medicine"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "themes": [
+       "first-aid"
+      ],
+      "quote": "patched up the surrendered goblins anyway bc soft heart",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105711-11",
+      "summary": "Maren sold out of honey.",
+      "tags": [],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.711Z",
+      "themes": [
+       "trading"
+      ],
+      "quote": "sold out of honey",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105712-12",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.712Z",
+      "themes": [
+       "baking"
+      ],
+      "quote": "got 2nd place in the bake-off with a lavender honey loaf",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105712-13",
+      "summary": "Maren adopted a stable cat.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.712Z",
+      "themes": [
+       "petkeeping"
+      ],
+      "quote": "adopted a stable cat",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105712-14",
+      "summary": "Tovin torched a troll.",
+      "tags": [
+       "fire"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.712Z",
+      "dangerGap": "severe",
+      "themes": [
+       "fire-magic"
+      ],
+      "quote": "torched a troll",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105712-15",
+      "summary": "Tovin lost a bet in the pit.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:05.712Z",
+      "themes": [
+       "gambling"
+      ],
+      "quote": "lost my pit bet",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105712-16",
+      "summary": "Tovin quietly dealt with a loose end on the bridge.",
+      "tags": [
+       "stealth"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.712Z",
+      "themes": [
+       "cleanup"
+      ],
+      "quote": "quietly tidied up a loose end on the bridge",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105712-17",
+      "summary": "Luz healed Brakka to full health after the troll fight.",
+      "tags": [
+       "divine",
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.712Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "Luz heal Brakka full HP after the troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105712-18",
+      "summary": "Luz confronted Tovin for killing a surrendering goblin.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.712Z",
+      "themes": [
+       "confrontation"
+      ],
+      "quote": "she catch Tovin killing a goblin that was surrender, not happy about that at all",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531105712-19",
+      "summary": "Luz led the dawn blessing at the temple, causing the whole square to kneel.",
+      "tags": [
+       "divine",
+       "religion"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:05.712Z",
+      "themes": [
+       "ritual",
+       "blessing"
+      ],
+      "quote": "Luz lead the dawn blessing at the temple and whole square kneel",
+      "language": "en",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:verdant-snare",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren rooted three out of four goblins in place with entangle",
+       "Maren thorn-whipped the last goblin into the burning railing"
+      ],
+      "entry": {
+       "name": "Verdant Snare",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "When you cast a spell that uses plant magic or thorn magic to restrain or damage a creature, you can use your reaction to extend the effect. If the spell targets multiple creatures, you can choose one additional creature within 5 feet of a target to be affected by the restraining or damaging portion of the effect, even if it was not originally in range or targeted.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "primal",
+         "spellcasting",
+         "defense"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a specific tactical application of primal plant magic, using entangle to root enemies and thorn magic to finish them off, showing a refined control over vegetation in combat."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Druidic feature or feat enhancing plant control spells (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:compassionate-mender",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren healed Brakka",
+       "Maren treated the surrendered goblins"
+      ],
+      "entry": {
+       "name": "Compassionate Mender",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you use a healing spell or a Medicine check to treat a wounded creature, if the target is an ally or a surrendered enemy, they gain temporary hit points equal to half the amount of hit points they regained (rounded down). This reflects the stabilizing effect of Maren's calm and caring demeanor.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "while active"
+       },
+       "metadata": {
+        "tags": [
+         "medicine",
+         "support",
+         "divine"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren consistently healed allies and even treated surrendered enemies, demonstrating a deep commitment to care and healing that goes beyond simple mechanics, providing a stabilizing effect."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Passive healing bonus or feature (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:honeyed-artisan",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren sold out of honey",
+       "Maren placed second in a bake-off with a lavender honey loaf"
+      ],
+      "entry": {
+       "name": "Honeyed Artisan",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "You gain proficiency in the Craft (Cooking) skill. When you succeed on a Craft check to create food or drink, you can use your bonus action to create a small amount of honey or a simple baked good. These items can be sold for a higher price than usual, or used to gain a +1 bonus to Persuasion checks when interacting with creatures who appreciate fine food.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "craft",
+         "society"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated skill in baking and selling honey, showing a talent for artisanal food preparation and commerce that can be leveraged for social and economic benefits."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Craft proficiency and social bonus feature (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     }
+    ],
+    "levelProgression": {
+     "level": 3,
+     "progress": 87.5,
+     "grantAllowances": 3,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T17:45:05.712Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
+     "at": "2026-09-27T17:45:05.712Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790531105711-1",
+      "event:1790531105711-2",
+      "event:1790531105711-3",
+      "event:1790531105711-4",
+      "event:1790531105711-5",
+      "event:1790531105711-6",
+      "event:1790531105711-7",
+      "event:1790531105711-8",
+      "event:1790531105711-9",
+      "event:1790531105711-10",
+      "event:1790531105711-11",
+      "event:1790531105712-12",
+      "event:1790531105712-13",
+      "event:1790531105712-14",
+      "event:1790531105712-15",
+      "event:1790531105712-16",
+      "event:1790531105712-17",
+      "event:1790531105712-18",
+      "event:1790531105712-19"
+     ],
+     "proposalIds": [
+      "proposal:ai-skill:verdant-snare",
+      "proposal:ai-skill:compassionate-mender",
+      "proposal:ai-skill:honeyed-artisan"
+     ],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 19,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 1,
+      "attempts": 2,
+      "repairs": 0,
+      "totalMs": 34088
+     }
+    }
+   },
+   "items": []
+  },
+  {
+   "name": "Tovin",
+   "className": "Warlock",
+   "level": 3,
+   "persona": "dark-path",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790531125102-1",
+      "summary": "Brakka held the bridge against a troll and controlled the goblins until the watch arrived.",
+      "tags": [
+       "defense",
+       "leadership"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.102Z",
+      "dangerGap": "severe",
+      "themes": [
+       "holding-a-line",
+       "crowd-control"
+      ],
+      "quote": "Held the bridge, troll ran off, kept the goblins in line till the watch took them.",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125102-2",
+      "summary": "Brakka won two fights in the pit but lost the third to the champion.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.102Z",
+      "themes": [
+       "brawling"
+      ],
+      "quote": "Won two in the pit, lost the third to the champ",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125102-3",
+      "summary": "Wick rode an ox into a fight with a troll.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.102Z",
+      "dangerGap": "severe",
+      "themes": [
+       "mount-combat"
+      ],
+      "quote": "bro rode an ox into a troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125102-4",
+      "summary": "Steve the ox lost a race by sitting down.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:25.102Z",
+      "themes": [
+       "animal-racing"
+      ],
+      "quote": "Steve the ox lost a race by sitting down",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125102-5",
+      "summary": "Wick was banned from a pie tent.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:25.102Z",
+      "themes": [
+       "social-mishap"
+      ],
+      "quote": "I got banned from a pie tent",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125102-6",
+      "summary": "Maren rooted three out of four goblins in place using entangle.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.102Z",
+      "quote": "rooted 3/4 goblins in place with entangle",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125102-7",
+      "summary": "Maren healed Brakka.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.102Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "healed brakka back up",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125102-8",
+      "summary": "Maren thorn-whipped the last goblin into a burning railing.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.102Z",
+      "quote": "thorn-whipped the last goblin into the burning railing",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125102-9",
+      "summary": "Maren treated the surrendered goblins.",
+      "tags": [
+       "medicine"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.102Z",
+      "themes": [
+       "first-aid"
+      ],
+      "quote": "patched up the surrendered goblins anyway bc soft heart",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125103-10",
+      "summary": "Maren sold out of her honey stock.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.103Z",
+      "themes": [
+       "trading"
+      ],
+      "quote": "sold out of honey",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125103-11",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.103Z",
+      "themes": [
+       "baking"
+      ],
+      "quote": "got 2nd place in the bake-off with a lavender honey loaf",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125103-12",
+      "summary": "Maren adopted a stable cat.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.103Z",
+      "themes": [
+       "pet-adoption"
+      ],
+      "quote": "adopted a stable cat",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125103-13",
+      "summary": "Tovin torched a troll.",
+      "tags": [
+       "fire",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.103Z",
+      "dangerGap": "severe",
+      "themes": [
+       "fire-magic"
+      ],
+      "quote": "torched a troll",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125103-14",
+      "summary": "Tovin lost a bet in the pit.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:25.103Z",
+      "themes": [
+       "gambling"
+      ],
+      "quote": "lost my pit bet",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125103-15",
+      "summary": "Tovin quietly dealt with a loose end on the bridge.",
+      "tags": [
+       "stealth"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.103Z",
+      "themes": [
+       "secret-action"
+      ],
+      "quote": "quietly tidied up a loose end on the bridge",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125103-16",
+      "summary": "Luz healed Brakka to full health after the troll fight.",
+      "tags": [
+       "medicine",
+       "divine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.103Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "Luz heal Brakka full HP after the troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531125103-17",
+      "summary": "Luz led the dawn blessing at the temple.",
+      "tags": [
+       "religion"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:25.103Z",
+      "themes": [
+       "ritual"
+      ],
+      "quote": "Luz lead the dawn blessing at the temple",
+      "language": "en",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [],
+    "levelProgression": {
+     "level": 3,
+     "progress": 56.25,
+     "grantAllowances": 3,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T17:45:25.104Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
+     "at": "2026-09-27T17:45:25.104Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790531125102-1",
+      "event:1790531125102-2",
+      "event:1790531125102-3",
+      "event:1790531125102-4",
+      "event:1790531125102-5",
+      "event:1790531125102-6",
+      "event:1790531125102-7",
+      "event:1790531125102-8",
+      "event:1790531125102-9",
+      "event:1790531125103-10",
+      "event:1790531125103-11",
+      "event:1790531125103-12",
+      "event:1790531125103-13",
+      "event:1790531125103-14",
+      "event:1790531125103-15",
+      "event:1790531125103-16",
+      "event:1790531125103-17"
+     ],
+     "proposalIds": [],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 17,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 1,
+      "attempts": 2,
+      "repairs": 0,
+      "totalMs": 19388
+     }
+    }
+   },
+   "items": []
+  },
+  {
+   "name": "Luz",
+   "className": "Cleric",
+   "level": 3,
+   "persona": "non-native",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790531147259-1",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.",
+      "tags": [
+       "defense",
+       "leadership"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.259Z",
+      "dangerGap": "severe",
+      "themes": [
+       "holding-a-line",
+       "commanding"
+      ],
+      "quote": "Held the bridge, troll ran off, kept the goblins in line till the watch took them",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147259-2",
+      "summary": "Brakka won two fights in the pit and lost the third to the champion.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.259Z",
+      "themes": [
+       "brawling"
+      ],
+      "quote": "Won two in the pit, lost the third to the champ",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147259-3",
+      "summary": "Wick rode an ox into a fight with a troll.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.259Z",
+      "dangerGap": "severe",
+      "themes": [
+       "mounting-an-ox"
+      ],
+      "quote": "bro rode an ox into a troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147259-4",
+      "summary": "Wick lost his dagger to the river.",
+      "tags": [
+       "water"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:47.259Z",
+      "themes": [
+       "losing-equipment"
+      ],
+      "quote": "lost my dagger to the river",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147259-5",
+      "summary": "Steve the ox lost a race by sitting down.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:47.259Z",
+      "themes": [
+       "ox-racing"
+      ],
+      "quote": "Steve the ox lost a race by sitting down",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147259-6",
+      "summary": "Wick was banned from a pie tent.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:47.259Z",
+      "themes": [
+       "social-conflict"
+      ],
+      "quote": "I got banned from a pie tent",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147259-7",
+      "summary": "Maren rooted three out of four goblins in place with entangle.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.259Z",
+      "quote": "rooted 3/4 goblins in place with entangle",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147259-8",
+      "summary": "Maren healed Brakka.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.259Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "healed brakka back up",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-9",
+      "summary": "Maren thorn-whipped the last goblin into the burning railing.",
+      "tags": [
+       "primal",
+       "fire",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "quote": "thorn-whipped the last goblin into the burning railing",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-10",
+      "summary": "Maren treated the surrendered goblins.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "themes": [
+       "first-aid"
+      ],
+      "quote": "patched up the surrendered goblins anyway",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-11",
+      "summary": "Maren sold out of honey.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "themes": [
+       "trading"
+      ],
+      "quote": "sold out of honey",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-12",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "themes": [
+       "baking"
+      ],
+      "quote": "got 2nd place in the bake-off with a lavender honey loaf",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-13",
+      "summary": "Maren adopted a stable cat.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "themes": [
+       "pet-ownership"
+      ],
+      "quote": "adopted a stable cat",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-14",
+      "summary": "Tovin torched a troll.",
+      "tags": [
+       "fire",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "dangerGap": "severe",
+      "themes": [
+       "fire-magic"
+      ],
+      "quote": "torched a troll",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-15",
+      "summary": "Tovin lost a bet in the pit.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "themes": [
+       "gambling"
+      ],
+      "quote": "lost my pit bet",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-16",
+      "summary": "Tovin quietly resolved a loose end on the bridge.",
+      "tags": [
+       "stealth"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "themes": [
+       "cleanup"
+      ],
+      "quote": "quietly tidied up a loose end on the bridge",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-17",
+      "summary": "Luz healed Brakka to full health after the troll fight.",
+      "tags": [
+       "divine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "Luz heal Brakka full HP after the troll fight",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-18",
+      "summary": "Luz witnessed Tovin killing a surrendering goblin.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "themes": [
+       "killing-a-prisoner"
+      ],
+      "quote": "she catch Tovin killing a goblin that was surrender",
+      "language": "en",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790531147260-19",
+      "summary": "Luz led the dawn blessing at the temple.",
+      "tags": [
+       "religion"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T17:45:47.260Z",
+      "themes": [
+       "ritual"
+      ],
+      "quote": "Luz lead the dawn blessing at the temple",
+      "language": "en",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [],
+    "levelProgression": {
+     "level": 3,
+     "progress": 87.5,
+     "grantAllowances": 3,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T17:45:47.260Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
+     "at": "2026-09-27T17:45:47.260Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790531147259-1",
+      "event:1790531147259-2",
+      "event:1790531147259-3",
+      "event:1790531147259-4",
+      "event:1790531147259-5",
+      "event:1790531147259-6",
+      "event:1790531147259-7",
+      "event:1790531147259-8",
+      "event:1790531147260-9",
+      "event:1790531147260-10",
+      "event:1790531147260-11",
+      "event:1790531147260-12",
+      "event:1790531147260-13",
+      "event:1790531147260-14",
+      "event:1790531147260-15",
+      "event:1790531147260-16",
+      "event:1790531147260-17",
+      "event:1790531147260-18",
+      "event:1790531147260-19"
+     ],
+     "proposalIds": [],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 19,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 1,
+      "attempts": 2,
+      "repairs": 0,
+      "totalMs": 22154
+     }
+    }
+   },
+   "items": []
+  }
+ ],
+ "emergentThemes": {
+  "themes": {
+   "holding-a-line": {
+    "count": 5,
+    "label": "Holding A Line",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "crowd-control": {
+    "count": 3,
+    "label": "Crowd Control",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:25.103Z"
+   },
+   "brawling": {
+    "count": 5,
+    "label": "Brawling",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "gambling": {
+    "count": 6,
+    "label": "Gambling",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "horsemanship": {
+    "count": 2,
+    "label": "Horsemanship",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:05.712Z"
+   },
+   "losing-equipment": {
+    "count": 4,
+    "label": "Losing Equipment",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "animal-racing": {
+    "count": 3,
+    "label": "Animal Racing",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:25.103Z"
+   },
+   "social-conflict": {
+    "count": 2,
+    "label": "Social Conflict",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "healing": {
+    "count": 10,
+    "label": "Healing",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "first-aid": {
+    "count": 5,
+    "label": "First Aid",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "trading": {
+    "count": 5,
+    "label": "Trading",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "baking": {
+    "count": 5,
+    "label": "Baking",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "competition": {
+    "count": 1,
+    "label": "Competition",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:44:11.708Z"
+   },
+   "petkeeping": {
+    "count": 3,
+    "label": "Petkeeping",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:05.712Z"
+   },
+   "secret-action": {
+    "count": 3,
+    "label": "Secret Action",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:25.103Z"
+   },
+   "confrontation": {
+    "count": 2,
+    "label": "Confrontation",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:05.712Z"
+   },
+   "ritual": {
+    "count": 5,
+    "label": "Ritual",
+    "firstSeen": "2026-09-27T17:44:11.708Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "commanding": {
+    "count": 2,
+    "label": "Commanding",
+    "firstSeen": "2026-09-27T17:44:31.621Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "mounting": {
+    "count": 1,
+    "label": "Mounting",
+    "firstSeen": "2026-09-27T17:44:31.621Z",
+    "lastSeen": "2026-09-27T17:44:31.621Z"
+   },
+   "racing": {
+    "count": 1,
+    "label": "Racing",
+    "firstSeen": "2026-09-27T17:44:31.621Z",
+    "lastSeen": "2026-09-27T17:44:31.621Z"
+   },
+   "social-mishap": {
+    "count": 3,
+    "label": "Social Mishap",
+    "firstSeen": "2026-09-27T17:44:31.621Z",
+    "lastSeen": "2026-09-27T17:45:25.103Z"
+   },
+   "fire-magic": {
+    "count": 4,
+    "label": "Fire Magic",
+    "firstSeen": "2026-09-27T17:44:31.621Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "plant-magic": {
+    "count": 1,
+    "label": "Plant Magic",
+    "firstSeen": "2026-09-27T17:45:05.712Z",
+    "lastSeen": "2026-09-27T17:45:05.712Z"
+   },
+   "thorn-magic": {
+    "count": 1,
+    "label": "Thorn Magic",
+    "firstSeen": "2026-09-27T17:45:05.712Z",
+    "lastSeen": "2026-09-27T17:45:05.712Z"
+   },
+   "cleanup": {
+    "count": 2,
+    "label": "Cleanup",
+    "firstSeen": "2026-09-27T17:45:05.712Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "blessing": {
+    "count": 1,
+    "label": "Blessing",
+    "firstSeen": "2026-09-27T17:45:05.712Z",
+    "lastSeen": "2026-09-27T17:45:05.712Z"
+   },
+   "mount-combat": {
+    "count": 1,
+    "label": "Mount Combat",
+    "firstSeen": "2026-09-27T17:45:25.103Z",
+    "lastSeen": "2026-09-27T17:45:25.103Z"
+   },
+   "pet-adoption": {
+    "count": 1,
+    "label": "Pet Adoption",
+    "firstSeen": "2026-09-27T17:45:25.103Z",
+    "lastSeen": "2026-09-27T17:45:25.103Z"
+   },
+   "mounting-an-ox": {
+    "count": 1,
+    "label": "Mounting An Ox",
+    "firstSeen": "2026-09-27T17:45:47.260Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "ox-racing": {
+    "count": 1,
+    "label": "Ox Racing",
+    "firstSeen": "2026-09-27T17:45:47.260Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "pet-ownership": {
+    "count": 1,
+    "label": "Pet Ownership",
+    "firstSeen": "2026-09-27T17:45:47.260Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   },
+   "killing-a-prisoner": {
+    "count": 1,
+    "label": "Killing A Prisoner",
+    "firstSeen": "2026-09-27T17:45:47.260Z",
+    "lastSeen": "2026-09-27T17:45:47.260Z"
+   }
+  }
+ }
+}

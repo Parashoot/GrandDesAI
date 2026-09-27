@@ -1,0 +1,186 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "id": "40f4431d",
+   "title": "Residual event over-splits on 15 hard corpus items (bl-005, cs-es-04, rd-003...)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "scale 2026-09-24",
+   "created": 1790530789.995,
+   "updated": 1790530789.995
+  },
+  {
+   "id": "9f591a25",
+   "title": "Red polarity misses: rd-006 life bargain, rd-008 kill trophies, rd-010 raising the dead",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "red",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "scale 2026-09-24",
+   "created": 1790530790.04,
+   "updated": 1790530790.04
+  },
+  {
+   "id": "99b7c053",
+   "title": "Stage-2 latency ~9 s p50 when proposing",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "scale 2026-09-24",
+   "created": 1790530790.086,
+   "updated": 1790530790.086
+  },
+  {
+   "id": "25576f78",
+   "title": "Re-run live PF2e Foundry check when the server is free",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "pf2e",
+    "qa"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "cli",
+   "created": 1790530790.132,
+   "updated": 1790530790.132
+  },
+  {
+   "id": "137fb08b",
+   "title": "analyzeSessionNotes credits every PC with every event in party-wide notes (no actorName filter)",
+   "status": "todo",
+   "notes": [
+    "CONFIRMED in playtest ember-road s1: same party notes analysed for 5 PCs -> each got 17-19 events incl. everyone else's (Tovin credited with Maren's bake-off, Wick's ox ride...). All five hit GD level 3 from one session. Fix: filter/attribute by actorName vs actor.name (+aliases), or analyse once per party and split."
+   ],
+   "tags": [
+    "integration",
+    "gateway"
+   ],
+   "severity": "critical",
+   "owner": "",
+   "source": "code read 2026-09-27",
+   "created": 1790530790.177,
+   "updated": 1790531179.977
+  },
+  {
+   "id": "a48d97c0",
+   "title": "Party-wide analysis costs 20-36 s per PC (2+ min for 5): analyse notes once per party, then attribute events per character",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway",
+    "integration",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road-s1",
+   "created": 1790531180.022,
+   "updated": 1790531180.022
+  },
+  {
+   "id": "6ca3c8e7",
+   "title": "Dark deed stated in ANOTHER player's line is dropped: Luz 'catch Tovin killing a goblin that was surrender' -> no Tovin event; Tovin's coy 'tidied up a loose end' became stealth success, no red signal",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway",
+    "red"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "ember-road-s1",
+   "created": 1790531180.068,
+   "updated": 1790531180.068
+  },
+  {
+   "id": "92539102",
+   "title": "Wick (never healed anyone) got a 'Field Triage' template proposal: PF2e 'Treat Wounds' wording in dnd5e, source undefined (progression tag-template, not AI)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "progression",
+    "dnd5e",
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "ember-road-s1",
+   "created": 1790531180.113,
+   "updated": 1790531180.113
+  },
+  {
+   "id": "ea4012f6",
+   "title": "After a long rest Brakka/Tovin/Luz have 3 grant allowances and zero proposals to spend them on - offer 'suggest proposals now' (runs stage 2 with mustPropose)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "ui",
+    "qol",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road-s1",
+   "created": 1790531180.16,
+   "updated": 1790531180.16
+  },
+  {
+   "id": "c284b5ec",
+   "title": "Missed events from the chat recap: Wick's 'lost the party's 40g rigging dice' (cheating failure) and 'lost my dagger to the river' not recorded",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road-s1",
+   "created": 1790531180.204,
+   "updated": 1790531180.204
+  },
+  {
+   "id": "8549eb33",
+   "title": "Verify progression pacing: every PC reached GD level 3 from ONE session (inflated by the credit bug; re-measure after fix)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "progression"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road-s1",
+   "created": 1790531180.252,
+   "updated": 1790531180.252
+  },
+  {
+   "id": "a04b7348",
+   "title": "Maren's 'Honeyed Artisan' grants 'Craft (Cooking) skill' - not a 5e skill (cook's utensils tool proficiency)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "dnd5e",
+    "systems"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "ember-road-s1",
+   "created": 1790531180.298,
+   "updated": 1790531180.298
+  }
+ ]
+}

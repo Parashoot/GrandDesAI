@@ -1,0 +1,198 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Luz - Growth (ember-road)</title><style>body{font-family:system-ui,sans-serif;max-width:860px;margin:24px auto;padding:0 16px;background:#f4f1ea;color:#222}.grand-design-import .fa-sparkles {
+  color: #e0b75f;
+}
+
+.grand-design-conversion textarea[name="conversion"] {
+  min-height: 20rem;
+  font-family: monospace;
+}
+
+.grand-design-growth textarea[name="growth-notes"] {
+  min-height: 12rem;
+  resize: vertical;
+}
+
+.grand-design-growth ul {
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+/* --- Growth dialog v2 (AI gateway v2, 2026-09-23) ------------------------------------------- */
+.grand-design-growth .gd-growth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.grand-design-growth .gd-status {
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.85em;
+  white-space: nowrap;
+  border: 1px solid currentColor;
+}
+.grand-design-growth .gd-status-ai { color: #2e7d4f; background: rgba(46, 125, 79, 0.1); }
+.grand-design-growth .gd-status-fallback { color: #b35c00; background: rgba(179, 92, 0, 0.12); }
+.grand-design-growth .gd-status-local { color: #5a5a6e; background: rgba(90, 90, 110, 0.1); }
+.grand-design-growth .gd-hint { font-size: 0.9em; opacity: 0.85; }
+.grand-design-growth ul.gd-interpretation,
+.grand-design-growth ul.gd-proposals,
+.grand-design-growth details.gd-history ul {
+  list-style: none;
+  padding-left: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+.grand-design-growth .gd-event-row {
+  padding: 0.2rem 0;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.12);
+}
+.grand-design-growth .gd-outcome { display: inline-block; width: 1.3em; text-align: center; }
+.grand-design-growth .gd-outcome-criticalSuccess { color: #c99a06; }
+.grand-design-growth .gd-outcome-success { color: #2e7d4f; }
+.grand-design-growth .gd-outcome-failure { color: #8a6d3b; }
+.grand-design-growth .gd-outcome-criticalFailure { color: #a12a2a; }
+.grand-design-growth .gd-danger { color: #d9480f; margin-right: 0.25em; }
+.grand-design-growth .gd-who { font-weight: bold; }
+.grand-design-growth .gd-chips { display: inline-flex; flex-wrap: wrap; gap: 0.2rem; margin-left: 0.3rem; }
+.grand-design-growth .gd-chip {
+  display: inline-block;
+  border-radius: 0.6rem;
+  padding: 0 0.45rem;
+  font-size: 0.8em;
+  background: rgba(0, 0, 0, 0.08);
+}
+.grand-design-growth .gd-tag { background: rgba(46, 90, 160, 0.15); color: #1f4e8c; }
+.grand-design-growth .gd-theme { background: rgba(140, 60, 170, 0.15); color: #6b2c86; border: 1px dashed rgba(107, 44, 134, 0.5); }
+.grand-design-growth .gd-ai { background: rgba(46, 125, 79, 0.15); color: #2e7d4f; }
+.grand-design-growth .gd-capstone { background: rgba(201, 154, 6, 0.2); color: #7a5d00; }
+.grand-design-growth .gd-new { color: #d9480f; font-size: 0.85em; text-transform: uppercase; }
+.grand-design-growth .gd-needs-authoring { font-size: 0.85em; color: #6b2c86; }
+.grand-design-growth details.gd-quote { display: inline-block; margin-left: 0.3rem; font-size: 0.85em; }
+.grand-design-growth details.gd-quote blockquote { margin: 0.2rem 0 0.2rem 1rem; font-style: italic; }
+.grand-design-growth details.gd-under-the-hood { margin-top: 0.4rem; font-size: 0.9em; }
+.grand-design-growth details.gd-under-the-hood h4 { margin: 0.4rem 0 0.1rem; }
+
+/* --- AI Gateway settings --------------------------------------------------------------------- */
+.grand-design-gateway-settings fieldset { margin-bottom: 0.6rem; }
+.grand-design-gateway-settings legend { font-weight: bold; }
+.grand-design-gateway-settings .gd-row { display: flex; gap: 0.4rem; align-items: center; }
+.grand-design-gateway-settings .gd-row > input,
+.grand-design-gateway-settings .gd-row > select { flex: 1; }
+/* Radios/checkboxes must not stretch like text inputs, or the creativity choices spread across the row. */
+.grand-design-gateway-settings .gd-row > input[type="radio"],
+.grand-design-gateway-settings .gd-row > input[type="checkbox"] { flex: 0 0 auto; margin: 0 0.3rem 0 0; }
+.grand-design-gateway-settings .form-group.stacked .gd-row { justify-content: flex-start; text-align: left; }
+.grand-design-gateway-settings .gd-help { font-size: 0.85em; opacity: 0.8; margin: 0.1rem 0 0.4rem; }
+.grand-design-gateway-settings textarea { width: 100%; font-family: monospace; min-height: 5rem; }
+.grand-design-gateway-settings .gd-error { color: #a12a2a; font-size: 0.85em; white-space: pre-wrap; }
+.grand-design-gateway-settings .gd-ok { color: #2e7d4f; font-size: 0.9em; white-space: pre-wrap; }
+.grand-design-gateway-settings .gd-test-result { border: 1px solid rgba(0, 0, 0, 0.15); border-radius: 4px; padding: 0.4rem; margin-top: 0.3rem; }
+.grand-design-gateway-settings output { min-width: 2.5rem; display: inline-block; text-align: right; }
+
+/* --- Emergent themes settings ---------------------------------------------------------------- */
+.grand-design-emergent-themes table { width: 100%; border-collapse: collapse; }
+.grand-design-emergent-themes th, .grand-design-emergent-themes td { padding: 0.2rem; border-bottom: 1px solid rgba(0, 0, 0, 0.1); vertical-align: middle; }
+.grand-design-emergent-themes input[type="text"], .grand-design-emergent-themes select { width: 100%; }
+.grand-design-emergent-themes .gd-slug { font-family: monospace; font-size: 0.9em; }
+.grand-design-emergent-themes .gd-ignored td { opacity: 0.55; }
+
+/* Stated payoff of a growth event ("no guest was lost"), shown after its summary. */
+.gd-consequence { opacity: 0.8; font-style: italic; }
+</style></head><body><h2>Luz - Grand Design Growth</h2><form class="grand-design-growth">
+    <header class="gd-growth-header">
+      <h3>Grand Design Level 3/100</h3>
+      <span class="gd-status gd-status-ai" title="Notes are read by qwen3.8:27b via ollama."><i class="fas fa-brain"></i> AI: qwen3.8:27b</span>
+    </header>
+    <p><strong>87 progression</strong> toward the next level; <strong>3</strong> level-up grant allowance(s) available.</p>
+    <div class="form-group"><label>Resolve progression at rest</label><select name="growth-rest-type"><option value="short">Short Rest</option><option value="long">Long Rest</option></select></div>
+    <hr>
+    <div class="form-group stacked"><label>Session Notes</label><textarea name="growth-notes" rows="8" placeholder="Write however you like — any language, bullet points, shorthand, typos are fine.&#10;- Kesh parried the captain, nat 20!&#10;- Mira kept the bees calm and harvested honey&#10;- Torv tried to pick the lock, it broke"></textarea></div>
+    <p class="gd-hint">Successes and honest failed attempts both count. Things the tag list doesn't cover (beekeeping, gambling, map-making...) become <em>themes</em> and can grow into brand-new Skills. Approval is always yours. Last notes analyzed 9/27/2026, 12:45:47 PM — use <strong>Re-analyze</strong> to read them again.</p>
+    <hr><h3>How your last notes were read</h3><ul class="gd-interpretation"><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span><span class="gd-danger" title="Danger gap: severe (counter-leveling bonus)"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+    <span class="gd-summary">Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">defense</span><span class="gd-chip gd-tag">leadership</span><span class="gd-chip gd-theme" title="Emergent theme">holding-a-line</span><span class="gd-chip gd-theme" title="Emergent theme">commanding</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>Held the bridge, troll ran off, kept the goblins in line till the watch took them</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Brakka won two fights in the pit and lost the third to the champion.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">martial</span><span class="gd-chip gd-theme" title="Emergent theme">brawling</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>Won two in the pit, lost the third to the champ</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span><span class="gd-danger" title="Danger gap: severe (counter-leveling bonus)"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+    <span class="gd-summary">Wick rode an ox into a fight with a troll.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">nature</span><span class="gd-chip gd-theme" title="Emergent theme">mounting-an-ox <b class="gd-new">new!</b></span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>bro rode an ox into a troll fight</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-failure" title="Failure (still counts as practice)"><i class="fa-solid fa-xmark"></i></span>
+    <span class="gd-summary">Wick lost his dagger to the river.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">water</span><span class="gd-chip gd-theme" title="Emergent theme">losing-equipment</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>lost my dagger to the river</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-failure" title="Failure (still counts as practice)"><i class="fa-solid fa-xmark"></i></span>
+    <span class="gd-summary">Steve the ox lost a race by sitting down.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">nature</span><span class="gd-chip gd-theme" title="Emergent theme">ox-racing <b class="gd-new">new!</b></span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>Steve the ox lost a race by sitting down</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-failure" title="Failure (still counts as practice)"><i class="fa-solid fa-xmark"></i></span>
+    <span class="gd-summary">Wick was banned from a pie tent.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">diplomacy</span><span class="gd-chip gd-theme" title="Emergent theme">social-conflict</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>I got banned from a pie tent</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren rooted three out of four goblins in place with entangle.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">primal</span><span class="gd-chip gd-tag">spellcasting</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>rooted 3/4 goblins in place with entangle</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren healed Brakka.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">medicine</span><span class="gd-chip gd-tag">support</span><span class="gd-chip gd-theme" title="Emergent theme">healing</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>healed brakka back up</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren thorn-whipped the last goblin into the burning railing.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">primal</span><span class="gd-chip gd-tag">fire</span><span class="gd-chip gd-tag">spellcasting</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>thorn-whipped the last goblin into the burning railing</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren treated the surrendered goblins.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">medicine</span><span class="gd-chip gd-tag">support</span><span class="gd-chip gd-theme" title="Emergent theme">first-aid</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>patched up the surrendered goblins anyway</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren sold out of honey.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">nature</span><span class="gd-chip gd-theme" title="Emergent theme">trading</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>sold out of honey</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren placed second in a bake-off with a lavender honey loaf.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">craft</span><span class="gd-chip gd-theme" title="Emergent theme">baking</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>got 2nd place in the bake-off with a lavender honey loaf</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren adopted a stable cat.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">nature</span><span class="gd-chip gd-theme" title="Emergent theme">pet-ownership <b class="gd-new">new!</b></span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>adopted a stable cat</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span><span class="gd-danger" title="Danger gap: severe (counter-leveling bonus)"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+    <span class="gd-summary">Tovin torched a troll.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">fire</span><span class="gd-chip gd-tag">spellcasting</span><span class="gd-chip gd-theme" title="Emergent theme">fire-magic</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>torched a troll</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-failure" title="Failure (still counts as practice)"><i class="fa-solid fa-xmark"></i></span>
+    <span class="gd-summary">Tovin lost a bet in the pit.</span>
+    <span class="gd-chips"><span class="gd-chip gd-theme" title="Emergent theme">gambling</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>lost my pit bet</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Tovin quietly resolved a loose end on the bridge.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">stealth</span><span class="gd-chip gd-theme" title="Emergent theme">cleanup</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>quietly tidied up a loose end on the bridge</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Luz healed Brakka to full health after the troll fight.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">divine</span><span class="gd-chip gd-tag">support</span><span class="gd-chip gd-theme" title="Emergent theme">healing</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>Luz heal Brakka full HP after the troll fight</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Luz witnessed Tovin killing a surrendering goblin.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">martial</span><span class="gd-chip gd-theme" title="Emergent theme">killing-a-prisoner <b class="gd-new">new!</b></span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>she catch Tovin killing a goblin that was surrender</blockquote></details></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Luz led the dawn blessing at the temple.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">religion</span><span class="gd-chip gd-theme" title="Emergent theme">ritual</span></span><details class="gd-quote"><summary>original (en)</summary><blockquote>Luz lead the dawn blessing at the temple</blockquote></details></li></ul><details class="gd-under-the-hood"><summary><i class="fas fa-gears"></i> Under the hood</summary>
+    <ul><li><strong>Read by:</strong> adapter</li><li><strong>Model:</strong> qwen3.8:27b</li><li><strong>Provider:</strong> ollama</li><li><strong>Pipeline:</strong> two-stage</li><li><strong>Chunks:</strong> 1</li><li><strong>Attempts:</strong> 2</li><li><strong>Repairs:</strong> 0</li><li><strong>Total time (ms):</strong> 22154</li></ul>
+    <h4>Stages</h4><ul><li>extract #0: 1 attempt(s), 19651 ms</li><li>propose #: 1 attempt(s), 2501 ms</li></ul>
+    
+    
+    
+    
+  </details>
+    <hr><h3>Pending Proposals</h3><select name="growth-proposal"><option value="">No pending proposals</option></select><ul class="gd-proposals"><li>No proposal has enough evidence yet.</li></ul>
+    <hr><details class="gd-history"><summary>Recorded Evidence (19)</summary><ul><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Luz led the dawn blessing at the temple.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">religion</span><span class="gd-chip gd-theme" title="Emergent theme">ritual</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Luz witnessed Tovin killing a surrendering goblin.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">martial</span><span class="gd-chip gd-theme" title="Emergent theme">killing-a-prisoner</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Luz healed Brakka to full health after the troll fight.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">divine</span><span class="gd-chip gd-tag">support</span><span class="gd-chip gd-theme" title="Emergent theme">healing</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Tovin quietly resolved a loose end on the bridge.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">stealth</span><span class="gd-chip gd-theme" title="Emergent theme">cleanup</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-failure" title="Failure (still counts as practice)"><i class="fa-solid fa-xmark"></i></span>
+    <span class="gd-summary">Tovin lost a bet in the pit.</span>
+    <span class="gd-chips"><span class="gd-chip gd-theme" title="Emergent theme">gambling</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span><span class="gd-danger" title="Danger gap: severe (counter-leveling bonus)"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+    <span class="gd-summary">Tovin torched a troll.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">fire</span><span class="gd-chip gd-tag">spellcasting</span><span class="gd-chip gd-theme" title="Emergent theme">fire-magic</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren adopted a stable cat.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">nature</span><span class="gd-chip gd-theme" title="Emergent theme">pet-ownership</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren placed second in a bake-off with a lavender honey loaf.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">craft</span><span class="gd-chip gd-theme" title="Emergent theme">baking</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren sold out of honey.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">nature</span><span class="gd-chip gd-theme" title="Emergent theme">trading</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren treated the surrendered goblins.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">medicine</span><span class="gd-chip gd-tag">support</span><span class="gd-chip gd-theme" title="Emergent theme">first-aid</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren thorn-whipped the last goblin into the burning railing.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">primal</span><span class="gd-chip gd-tag">fire</span><span class="gd-chip gd-tag">spellcasting</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren healed Brakka.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">medicine</span><span class="gd-chip gd-tag">support</span><span class="gd-chip gd-theme" title="Emergent theme">healing</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Maren rooted three out of four goblins in place with entangle.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">primal</span><span class="gd-chip gd-tag">spellcasting</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-failure" title="Failure (still counts as practice)"><i class="fa-solid fa-xmark"></i></span>
+    <span class="gd-summary">Wick was banned from a pie tent.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">diplomacy</span><span class="gd-chip gd-theme" title="Emergent theme">social-conflict</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-failure" title="Failure (still counts as practice)"><i class="fa-solid fa-xmark"></i></span>
+    <span class="gd-summary">Steve the ox lost a race by sitting down.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">nature</span><span class="gd-chip gd-theme" title="Emergent theme">ox-racing</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-failure" title="Failure (still counts as practice)"><i class="fa-solid fa-xmark"></i></span>
+    <span class="gd-summary">Wick lost his dagger to the river.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">water</span><span class="gd-chip gd-theme" title="Emergent theme">losing-equipment</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span><span class="gd-danger" title="Danger gap: severe (counter-leveling bonus)"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+    <span class="gd-summary">Wick rode an ox into a fight with a troll.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">nature</span><span class="gd-chip gd-theme" title="Emergent theme">mounting-an-ox</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span>
+    <span class="gd-summary">Brakka won two fights in the pit and lost the third to the champion.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">martial</span><span class="gd-chip gd-theme" title="Emergent theme">brawling</span></span></li><li class="gd-event-row"><span class="gd-outcome gd-outcome-success" title="Success"><i class="fa-solid fa-check"></i></span><span class="gd-danger" title="Danger gap: severe (counter-leveling bonus)"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+    <span class="gd-summary">Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.</span>
+    <span class="gd-chips"><span class="gd-chip gd-tag">defense</span><span class="gd-chip gd-tag">leadership</span><span class="gd-chip gd-theme" title="Emergent theme">holding-a-line</span><span class="gd-chip gd-theme" title="Emergent theme">commanding</span></span></li></ul></details>
+  </form></body></html>
