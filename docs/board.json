@@ -170,17 +170,94 @@
   {
    "id": "a04b7348",
    "title": "Maren's 'Honeyed Artisan' grants 'Craft (Cooking) skill' - not a 5e skill (cook's utensils tool proficiency)",
-   "status": "todo",
-   "notes": [],
+   "status": "doing",
+   "notes": [
+    "dnd5e RULES_VOCABULARY now lists the 18 real 5e skills and says crafts are tool proficiencies; test added. Re-check in the next playtest."
+   ],
    "tags": [
     "dnd5e",
     "systems"
    ],
    "severity": "low",
-   "owner": "",
+   "owner": "pm",
    "source": "ember-road-s1",
    "created": 1790531180.298,
-   "updated": 1790531180.298
+   "updated": 1790531404.018
+  },
+  {
+   "id": "c61ef1a8",
+   "title": "C1 cloud: party-recap corpus + per-character gold scoring (docs/cloud-work.md)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "cloud",
+    "harness"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "cli",
+   "created": 1790531510.815,
+   "updated": 1790531510.815
+  },
+  {
+   "id": "d5814c1e",
+   "title": "C2 cloud: playtest scenario pack, 8 sessions pf2e/dnd5e (docs/cloud-work.md)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "cloud",
+    "playtest"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "cli",
+   "created": 1790531510.858,
+   "updated": 1790531510.858
+  },
+  {
+   "id": "3785ed76",
+   "title": "C3 cloud: GM guide docs/gm-guide.md (docs/cloud-work.md)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "cloud",
+    "docs"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "cli",
+   "created": 1790531510.903,
+   "updated": 1790531510.903
+  },
+  {
+   "id": "92dfc0b7",
+   "title": "C4 cloud: test coverage for non-AI progression rules (docs/cloud-work.md)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "cloud",
+    "harness"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "cli",
+   "created": 1790531510.948,
+   "updated": 1790531510.948
+  },
+  {
+   "id": "c829f2a7",
+   "title": "C5 cloud: cold review of the AI pipeline, findings as todo tests (docs/cloud-work.md)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "cloud",
+    "gateway"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "cli",
+   "created": 1790531510.992,
+   "updated": 1790531510.992
   }
  ]
 }

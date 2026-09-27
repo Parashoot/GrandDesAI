@@ -120,3 +120,10 @@ test("proposalSchemaCapped caps the array and keeps the OpenAI schema name", asy
   assert.equal(JSON.stringify(capped).includes("cappedOf"), false);
   assert.equal(PROPOSAL_SCHEMA.properties.proposals.maxItems, undefined);
 });
+
+test("dnd5e rules vocabulary lists the real 5e skills and treats crafts as tool proficiencies", async () => {
+  const { RULES_VOCABULARY } = await import("../scripts/systems/dnd5e-adapter.js");
+  assert.match(RULES_VOCABULARY, /Sleight of Hand/);
+  assert.match(RULES_VOCABULARY, /Cook's Utensils/);
+  assert.match(RULES_VOCABULARY, /never a "Craft" skill/);
+});

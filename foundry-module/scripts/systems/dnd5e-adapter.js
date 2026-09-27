@@ -23,6 +23,10 @@ export const SYSTEM_LABEL = "Dungeons & Dragons Fifth Edition (2024 rules)";
 export const RULES_VOCABULARY = "D&D 5e (2024) terms: attack roll, action / bonus action / reaction, advantage and disadvantage, "
   + "ability checks and saving throws against a DC, proficiency bonus, resistance to a damage type (halves it, never a number), "
   + "temporary hit points, conditions (Prone, Frightened, Grappled, ...), spell level and spell slots, uses per short rest / long rest or per turn. "
+  // Playtest ember-road s1: a proposal granted "Craft (Cooking) skill", which 5e does not have.
+  + "Skills are only: Acrobatics, Animal Handling, Arcana, Athletics, Deception, History, Insight, Intimidation, Investigation, Medicine, "
+  + "Nature, Perception, Performance, Persuasion, Religion, Sleight of Hand, Stealth, Survival. Crafts are tool proficiencies "
+  + "(Cook's Utensils, Smith's Tools, Brewer's Supplies, Thieves' Tools...), never a \"Craft\" skill. "
   + "Never use Pathfinder terms such as Strike, circumstance bonus, off-guard / flat-footed, 'resistance 2' or 'per encounter'.";
 
 // Grand Design's own gameItem.kind -> dnd5e activation.type. Round out with "special" for a
