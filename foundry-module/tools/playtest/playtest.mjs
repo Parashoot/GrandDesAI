@@ -16,6 +16,7 @@
 //   node tools/playtest/playtest.mjs analyze --campaign ember-road --session 1 [--notes file]
 //        [--for all|Brakka,Wick] [--rest short|long|none] [--approve none|first|all]
 //        [--proposal-mode when-earned|always|never] [--model qwen3.8:27b] [--sim]
+//   node tools/playtest/playtest.mjs suggest --campaign ember-road --actor Maren[,Tovin]   ("Suggest proposals")
 //   node tools/playtest/playtest.mjs approve --campaign ember-road --actor Wick --proposal <id|name>
 //   node tools/playtest/playtest.mjs status  --campaign ember-road [--json]
 //
@@ -106,6 +107,13 @@ function makeActor(record, systemId) {
       id: source._id,
       getFlag: (scope, key) => source.flags?.[scope]?.[key],
       update: async (changes) => Object.assign(source, changes),
+      // dnd5e 4+ Items get their activities after creation (systems/dnd5e-adapter.js postCreate).
+      createActivity: async (type, data = {}) => {
+        const id = `act${Math.random().toString(36).slice(2, 10)}`;
+        source.system ??= {};
+        source.system.activities = { ...(source.system.activities ?? {}), [id]: { _id: id, type, ...structuredClone(data) } };
+        return source.system.activities[id];
+      },
       delete: async () => {
         record.items = record.items.filter((item) => item._id !== source._id);
       }
@@ -276,6 +284,35 @@ function cmdApprove(flags) {
   })();
 }
 
+// The Growth dialog's "Suggest proposals" button (api.requestGrowthProposals): what a GM clicks when a
+// grant allowance is waiting and nothing is pending. Real model; prints what the GM would read.
+async function cmdSuggest(flags) {
+  const campaign = loadCampaign(flags.campaign);
+  const names = String(flags.actor ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const pcs = campaign.party.filter((p) => names.includes(p.name.toLowerCase()));
+  if (!pcs.length) throw new Error("usage: suggest --campaign <name> --actor Name[,Name]");
+  const { api } = await buildApi(campaign, flags);
+  for (const pc of pcs) {
+    const actor = makeActor(pc, campaign.system);
+    const started = Date.now();
+    try {
+      const result = await api.requestGrowthProposals(actor);
+      const created = result?.added ?? [];
+      console.log(`${pc.name}: ${created.length} new proposal(s) (${((Date.now() - started) / 1000).toFixed(1)}s)`);
+      if (flags.debug) console.log(JSON.stringify({ skipped: result?.skipped, diag: result?.gatewayDiagnostics }, null, 1).slice(0, 4000));
+    } catch (e) {
+      console.log(`${pc.name}: ERROR ${e.message}`);
+    }
+    saveCampaign(campaign);
+    for (const p of api.getGrowth(actor).proposals.filter((x) => x.status === "pending")) {
+      const md = p.entry?.metadata ?? {};
+      console.log(`  * ${p.entry?.name} [${p.kind ?? ""}/${p.entry?.gameItem?.kind ?? ""}, tier ${p.entry?.tier ?? "-"}]${md.polarity === "red" ? ` RED ${md.malignance?.vice}: ${md.malignance?.drawback}` : ""}`);
+      console.log(`      ${p.entry?.mechanics?.effect ?? ""} (${JSON.stringify(p.entry?.mechanics?.frequency ?? {})})`);
+      console.log(`      evidence: ${(p.evidence ?? []).join(" / ")}`);
+    }
+  }
+}
+
 async function cmdStatus(flags) {
   const campaign = loadCampaign(flags.campaign);
   const { api } = await buildApi(campaign, { ...flags, sim: true });
@@ -402,9 +439,10 @@ try {
   if (cmd === "init") cmdInit(flags);
   else if (cmd === "analyze") await cmdAnalyze(flags);
   else if (cmd === "approve") await cmdApprove(flags);
+  else if (cmd === "suggest") await cmdSuggest(flags);
   else if (cmd === "status") await cmdStatus(flags);
   else {
-    console.error("commands: init | analyze | approve | status  (see the header of this file)");
+    console.error("commands: init | analyze | suggest | approve | status  (see the header of this file)");
     process.exit(1);
   }
 } catch (error) {

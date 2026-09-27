@@ -253,17 +253,17 @@
   {
    "id": "92dfc0b7",
    "title": "C4 cloud: test coverage for non-AI progression rules (docs/cloud-work.md)",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "cloud",
     "harness"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-harness",
    "source": "cli",
    "created": 1790531510.948,
-   "updated": 1790531510.948
+   "updated": 1790547489.795
   },
   {
    "id": "c829f2a7",
@@ -327,6 +327,23 @@
    "source": "ember-road s1 re-run 2026-09-27",
    "created": 1790543771.568,
    "updated": 1790543771.568
+  },
+  {
+   "id": "d96d85c6",
+   "title": "Suggest proposals returned nothing: stage 1 read the 'GM REQUEST' wrapper as OOC -> 0 events -> 0 proposals",
+   "status": "done",
+   "notes": [
+    "Fix: adapter/pipeline accept presetEvents (recorded events) and skip stage 1; api.requestGrowthProposals passes events: ownEvents.slice(-15). Real model, Maren: 0 -> 3 proposals (26 s), each citing her own events. Tests: presetEvents skip extraction; api passes events (both systems). npm test 667/667."
+   ],
+   "tags": [
+    "gateway",
+    "integration"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "ember-road s2 prep 2026-09-27",
+   "created": 1790547721.162,
+   "updated": 1790547730.342
   }
  ]
 }

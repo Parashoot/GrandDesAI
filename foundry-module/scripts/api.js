@@ -1040,7 +1040,9 @@ export class GrandDesignApi {
     const adapter = this._alwaysProposeAdapter();
     let output;
     try {
-      output = await adapter({ actor, notes: buildSuggestionNotes(actor, ownEvents), systemId, proposalMode: "always" });
+      // `events` lets the v2 gateway propose from the recorded events directly (stage 1 read the GM-request
+      // wrapper as out-of-character and found nothing); `notes` stays for any other adapter.
+      output = await adapter({ actor, notes: buildSuggestionNotes(actor, ownEvents), events: ownEvents.slice(-15), systemId, proposalMode: "always" });
     } catch (error) {
       throw new Error(`The AI provider could not suggest proposals: ${error.message}`);
     }

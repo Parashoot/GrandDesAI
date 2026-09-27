@@ -195,3 +195,16 @@ test("stage 2 only sees the analysed character's events: Tovin's kill never reac
   assert.equal(result.events.length, 3, "the returned events stay whole; api.js attributes them");
   assert.deepEqual(result.diagnostics.proposalEvents, { own: 2, total: 3 });
 });
+
+test("presetEvents (Suggest proposals) skip stage 1 and propose from the recorded events", async () => {
+  const transport = countingTransport((args) => {
+    assert.ok(!args.schema?.properties?.events, "no extraction call");
+    return { redCheck: [], proposals: [] };
+  });
+  const recorded = [ev("Maren healed Brakka.", "Maren"), ev("Maren sold out of honey.", "Maren")];
+  const adapter = createGatewayAdapter({ proposalMode: "always" }, { transportFactory: () => transport });
+  const out = await adapter({ actor: actor("Maren"), notes: "GM REQUEST: suggest proposals for Maren now.", events: recorded, systemId: "dnd5e" });
+  assert.equal(transport.calls.length, 1);
+  assert.deepEqual(JSON.parse(transport.calls[0].messages[1].content).newEvents.map((e) => e.summary), ["Maren healed Brakka.", "Maren sold out of honey."]);
+  assert.equal(out.gatewayDiagnostics.extractionCache, "preset");
+});

@@ -246,6 +246,18 @@ for (const systemId of SYSTEMS) {
     assert.deepEqual(seen, [false, true]);
   }));
 
+  test(`[${systemId}] Suggest proposals hands the adapter the recorded events, not just a notes wrapper`, () => withFoundry(systemId, async () => {
+    const api = new GrandDesignApi();
+    let seen = null;
+    api.setProposalAdapter(async (args) => { seen = args; return { events: [ev("Maren fought.", ["martial"])], proposals: [] }; });
+    const actor = createMockActor(systemId);
+    await api.analyzeSessionNotes(actor, "Maren fought.");
+    seen = null;
+    await api.requestGrowthProposals(actor);
+    assert.deepEqual(seen.events.map((e) => e.summary), ["Maren fought."]);
+    assert.match(seen.notes, /GM REQUEST/);
+  }));
+
   test(`[${systemId}] emergentThemes disabled in the gateway config: themes dropped, flagged on the result`, () => withFoundry(systemId, async () => {
     const api = new GrandDesignApi();
     api.setGatewayConfigProvider(() => ({ emergentThemes: false }));

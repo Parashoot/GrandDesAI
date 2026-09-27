@@ -83,10 +83,11 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
     ? createExtractionCache({ maxEntries: cfg.extractionCacheEntries, ttlMs: cfg.extractionCacheTtlMs })
     : null;
   // `fresh: true` (a GM's explicit "re-analyze") reads the notes again instead of reusing the cache.
-  const adapter = async ({ actor, notes, systemId, fresh = false } = {}) => {
+  // `events`: already-recorded events to propose from directly (api.requestGrowthProposals); stage 1 is skipped.
+  const adapter = async ({ actor, notes, systemId, fresh = false, events = null } = {}) => {
     const sys = systemId ?? cfg.systemId ?? activeSystemId();
     const request = buildAiGatewayRequest(actor, notes, sys);
-    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys, extractionCache, refreshExtraction: fresh === true });
+    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys, extractionCache, refreshExtraction: fresh === true, presetEvents: Array.isArray(events) ? events : null });
     return {
       events: result.events,
       proposals: result.proposals,

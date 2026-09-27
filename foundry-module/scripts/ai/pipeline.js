@@ -648,9 +648,10 @@ function summarizeRejections(rejected) {
  * @param {string} [args.systemId]
  * @param {ReturnType<typeof createExtractionCache>} [args.extractionCache] share stage 1 across calls
  * @param {boolean} [args.refreshExtraction] ignore (and replace) a cached stage-1 reading
+ * @param {object[]} [args.presetEvents] already-recorded events: skip stage 1 and propose from these
  * @returns {Promise<{events, proposals, themes, skippedEvents, skippedProposals, diagnostics}>}
  */
-export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep, extractionCache = null, refreshExtraction = false } = {}) {
+export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep, extractionCache = null, refreshExtraction = false, presetEvents = null } = {}) {
   const started = nowMs();
   const cfg = normalizeGatewayConfig(config);
   const sysId = systemId ?? cfg.systemId ?? request?.actor?.system ?? "pf2e";
@@ -680,13 +681,19 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
   let events = [];
   const proposalBatches = [];
 
-  if (!chunks.length) {
+  if (!chunks.length && !Array.isArray(presetEvents)) {
     diagnostics.totalMs = Math.round(nowMs() - started);
     return { events: [], proposals: [], themes: [], skippedEvents, skippedProposals, diagnostics };
   }
 
   // ---- extraction (or single combined call) per chunk ----
-  if (cfg.pipeline === "single") {
+  if (Array.isArray(presetEvents)) {
+    // "Suggest proposals": the events are already recorded and validated. Re-reading them as notes
+    // made stage 1 treat the "GM REQUEST" wrapper as out-of-character and return no events at all
+    // (ember-road s2 prep, 2026-09-27), so stage 2 proposed nothing.
+    events = presetEvents.filter((event) => event && typeof event.summary === "string" && event.summary.trim()).map((event) => ({ ...event }));
+    diagnostics.extractionCache = "preset";
+  } else if (cfg.pipeline === "single") {
     // One combined call per chunk also writes this actor's proposals, so it can never be shared.
     const extracted = await extractAllChunks(chunks, ctx, sleepFn);
     events = extracted.events;
@@ -724,7 +731,7 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
 
   // ---- proposals ----
   let proposals = [];
-  if (cfg.pipeline === "single") {
+  if (cfg.pipeline === "single" && !Array.isArray(presetEvents)) {
     diagnostics.proposalStage = { ran: true, reason: "single-pipeline" };
     const valid = [];
     for (const batch of proposalBatches) {
