@@ -1,6 +1,6 @@
 # ember-road - session 1 - module report
 
-System **dnd5e**, model `qwen3.8:27b`, proposals `when-earned`, analysed 2026-09-27 17:45. The played scene is in `transcript.md`.
+System **dnd5e**, model `qwen3.8:27b`, proposals `when-earned`, analysed 2026-09-27 18:05. The played scene is in `transcript.md`.
 
 ## Session notes (as the DM wrote them)
 
@@ -20,33 +20,16 @@ System **dnd5e**, model `qwen3.8:27b`, proposals `when-earned`, analysed 2026-09
 
 ## Brakka the Fighter (player: the-tank)
 
-- Read by: **adapter** in 36.2s
-- Grand Design level 0 -> 3, progress 0 -> 88, grant allowances 3
-- Long rest: reached Grand Design level 1, 2, 3
+- Read by: **adapter** in 21.0s
+- Grand Design level 0 -> 0, progress 0 -> 88, grant allowances 0
+- Long rest: no level gained
 
-### What the module read (19 events)
+### What the module read (2 events)
 
-- Brakka held the bridge against a troll and kept the goblins in line until the watch arrived. — `success` (danger: severe) [defense, leadership, ~holding-a-line, ~crowd-control]
-- Brakka won two fights in the pit but lost the third to the champion. — `success` [martial, ~brawling, ~gambling]
-- Wick rode an ox into a fight with a troll. — `success` (danger: severe) [nature, ~horsemanship]
-- Wick lost his dagger to the river. — `failure` [water, ~losing-equipment]
-- Wick's ox, Steve, lost a race by sitting down. — `failure` [nature, ~animal-racing]
-- Wick was banned from a pie tent. — `failure` [diplomacy, ~social-conflict]
-- Maren rooted three out of four goblins in place with entangle. — `success` [primal, spellcasting]
-- Maren healed Brakka. — `success` [medicine, support, ~healing]
-- Maren thorn-whipped the last goblin into the burning railing. — `success` [primal, spellcasting]
-- Maren treated the surrendered goblins. — `success` [medicine, ~first-aid]
-- Maren sold out of honey. — `success` [craft, ~trading]
-- Maren placed second in a bake-off with a lavender honey loaf. — `success` [craft, ~baking, ~competition]
-- Maren adopted a stable cat. — `success` [nature, ~petkeeping]
-- Tovin torched a troll. — `success` (danger: severe) [fire, spellcasting]
-- Tovin lost a bet in the pit. — `failure` [~gambling]
-- Tovin quietly dealt with a loose end on the bridge. — `success` [deception, ~secret-action]
-- Luz healed Brakka to full health after the troll fight. — `success` [divine, spellcasting, support, ~healing]
-- Luz confronted Tovin for killing a surrendering goblin. — `success` [diplomacy, ~confrontation]
-- Luz led the dawn blessing at the temple, causing the whole square to kneel. — `success` [divine, religion, leadership, ~ritual]
+- **Brakka:** Brakka held the bridge against a troll and kept the goblins in line until the watch arrived. — `success` (danger: severe) [defense, leadership, ~holding-a-line, ~crowd-control]
+- **Brakka:** Brakka won two fights in the pit and lost the third to the champion. — `success` [martial, ~arena-fighting]
 
-New emergent themes: holding-a-line, crowd-control, brawling, gambling, horsemanship, losing-equipment, animal-racing, social-conflict, healing, first-aid, trading, baking, competition, petkeeping, secret-action, confrontation, ritual
+New emergent themes: holding-a-line, crowd-control, arena-fighting
 
 ### Proposals waiting for the GM (0)
 
@@ -56,112 +39,62 @@ GM screen: `gm-view-brakka.html`
 
 ## Wick the Rogue (player: chaos-gremlin)
 
-- Read by: **adapter** in 19.9s
-- Grand Design level 0 -> 3, progress 0 -> 63, grant allowances 3
-- Long rest: reached Grand Design level 1, 2, 3
+- Read by: **adapter** in 20.9s
+- Grand Design level 0 -> 0, progress 0 -> 81, grant allowances 0
+- Long rest: no level gained
 
-### What the module read (18 events)
+### What the module read (4 events)
 
-- Brakka held the bridge against a troll and kept the goblins in line until the watch arrived. — `success` (danger: severe) [defense, leadership, ~holding-a-line, ~commanding]
-- Brakka won two fights in the pit but lost the third to the champion. — `success` [martial, ~brawling]
-- Wick rode an ox into a fight with a troll. — `success` (danger: severe) [nature, ~mounting]
-- Wick lost his dagger to the river. — `failure` [~losing-equipment]
-- Steve the ox lost a race by sitting down. — `failure` [nature, ~racing]
-- Wick was banned from a pie tent. — `failure` [~social-mishap]
-- Maren rooted three out of four goblins in place with entangle. — `success` [primal, spellcasting]
-- Maren healed Brakka. — `success` [medicine, support, ~healing]
-- Maren thorn-whipped the last goblin into the burning railing. — `success` [primal, spellcasting]
-- Maren patched up the surrendered goblins. — `success` [medicine, support, ~first-aid]
-- Maren sold out of honey. — `success` [~trading]
-- Maren placed second in a bake-off with a lavender honey loaf. — `success` [craft, ~baking]
-- Maren adopted a stable cat. — `success` [nature, ~petkeeping]
-- Tovin torched a troll. — `success` (danger: severe) [fire, ~fire-magic]
-- Tovin lost a bet in the pit. — `failure` [~gambling]
-- Tovin quietly dealt with a loose end on the bridge. — `success` [deception, ~secret-action]
-- Luz healed Brakka to full health after the troll fight. — `success` [medicine, support, ~healing]
-- Luz led the dawn blessing at the temple. — `success` [religion, ~ritual]
+- **Wick:** Wick rode an ox into a fight with a troll. — `success` (danger: severe) [nature, ~mounting, ~combat]
+- **Wick:** Wick lost his dagger to the river. — `failure` [~losing-gear]
+- **Wick:** Steve the ox lost a race by sitting down. — `failure` [~racing]
+- **Wick:** Wick was banned from a pie tent. — `failure` [~social-conflict]
 
-New emergent themes: commanding, mounting, racing, social-mishap, fire-magic
+New emergent themes: mounting, combat, losing-gear, racing, social-conflict
 
-### Proposals waiting for the GM (1)
+### Proposals waiting for the GM (0)
 
-- **Field Triage** (action, tier 1, ?)
-  - Attempt to Treat Wounds on one adjacent living creature. On a success, it regains 1d8 Hit Points.
-  - 1/hour · ≈ Medicine support action
+_None._
 
 GM screen: `gm-view-wick.html`
 
 ## Maren the Druid (player: cottagecore)
 
-- Read by: **adapter** in 34.1s
-- Grand Design level 0 -> 3, progress 0 -> 88, grant allowances 3
-- Long rest: reached Grand Design level 1, 2, 3
+- Read by: **adapter** in 20.4s
+- Grand Design level 0 -> 1, progress 0 -> 75, grant allowances 1
+- Long rest: reached Grand Design level 1
 
-### What the module read (19 events)
+### What the module read (7 events)
 
-- Brakka held the bridge against a troll and kept the goblins in line until the watch arrived. — `success` (danger: severe) [defense, leadership, ~holding-a-line, ~crowd-control]
-- Brakka won two fights in the pit and lost the third to the champion. — `success` [martial, ~brawling]
-- Wick rode an ox into a fight with a troll. — `success` (danger: severe) [nature, ~horsemanship]
-- Wick lost his dagger to the river. — `failure` [~losing-equipment]
-- Steve the ox lost a race by sitting down. — `failure` [~animal-racing]
-- Wick was banned from a pie tent. — `failure` [~social-mishap]
-- Maren rooted three out of four goblins in place with entangle. — `success` [primal, spellcasting, ~plant-magic]
-- Maren healed Brakka. — `success` [medicine, support, ~healing]
-- Maren thorn-whipped the last goblin into the burning railing. — `success` [primal, fire, spellcasting, ~thorn-magic]
-- Maren treated the surrendered goblins. — `success` [medicine, ~first-aid]
-- Maren sold out of honey. — `success` [~trading]
-- Maren placed second in a bake-off with a lavender honey loaf. — `success` [craft, ~baking]
-- Maren adopted a stable cat. — `success` [nature, ~petkeeping]
-- Tovin torched a troll. — `success` (danger: severe) [fire, ~fire-magic]
-- Tovin lost a bet in the pit. — `failure` [~gambling]
-- Tovin quietly dealt with a loose end on the bridge. — `success` [stealth, ~cleanup]
-- Luz healed Brakka to full health after the troll fight. — `success` [divine, medicine, support, ~healing]
-- Luz confronted Tovin for killing a surrendering goblin. — `success` [diplomacy, ~confrontation]
-- Luz led the dawn blessing at the temple, causing the whole square to kneel. — `success` [divine, religion, ~ritual, ~blessing]
+- **Maren:** Maren rooted three out of four goblins in place with entangle. — `success` [primal, spellcasting, ~crowd-control]
+- **Maren:** Maren healed Brakka. — `success` [medicine, support, ~healing]
+- **Maren:** Maren thorn-whipped the last goblin into the burning railing. — `success` [primal, fire, spellcasting, ~combat]
+- **Maren:** Maren patched up the surrendered goblins. — `success` [medicine, support, ~first-aid]
+- **Maren:** Maren sold out of honey. — `success` [~trading]
+- **Maren:** Maren placed second in the bake-off with a lavender honey loaf. — `success` [craft, ~baking, ~competition]
+- **Maren:** Maren adopted a stable cat. — `success` [nature, ~pet-adoption]
 
-New emergent themes: plant-magic, thorn-magic, cleanup, blessing
+New emergent themes: healing, first-aid, trading, baking, competition, pet-adoption
 
-### Proposals waiting for the GM (3)
+### Proposals waiting for the GM (0)
 
-- **Verdant Snare** (feat, tier 1, ai-gateway)
-  - When you cast a spell that uses plant magic or thorn magic to restrain or damage a creature, you can use your reaction to extend the effect. If the spell targets multiple creatures, you can choose one additional creature within 5 feet of a target to be affected by the restraining or damaging portion of the effect, even if it was not originally in range or targeted.
-  - 1/encounter · ≈ Druidic feature or feat enhancing plant control spells (Dungeons & Dragons Fifth Edition (2024 rules))
-- **Compassionate Mender** (passive, tier 1, ai-gateway)
-  - When you use a healing spell or a Medicine check to treat a wounded creature, if the target is an ally or a surrendered enemy, they gain temporary hit points equal to half the amount of hit points they regained (rounded down). This reflects the stabilizing effect of Maren's calm and caring demeanor.
-  - 1/unlimited · ≈ Passive healing bonus or feature (Dungeons & Dragons Fifth Edition (2024 rules))
-- **Honeyed Artisan** (feat, tier 1, ai-gateway)
-  - You gain proficiency in the Craft (Cooking) skill. When you succeed on a Craft check to create food or drink, you can use your bonus action to create a small amount of honey or a simple baked good. These items can be sold for a higher price than usual, or used to gain a +1 bonus to Persuasion checks when interacting with creatures who appreciate fine food.
-  - 1/day · ≈ Craft proficiency and social bonus feature (Dungeons & Dragons Fifth Edition (2024 rules))
+_None._
 
 GM screen: `gm-view-maren.html`
 
 ## Tovin the Warlock (player: dark-path)
 
-- Read by: **adapter** in 19.4s
-- Grand Design level 0 -> 3, progress 0 -> 56, grant allowances 3
-- Long rest: reached Grand Design level 1, 2, 3
+- Read by: **adapter** in 20.3s
+- Grand Design level 0 -> 0, progress 0 -> 94, grant allowances 0
+- Long rest: no level gained
 
-### What the module read (17 events)
+### What the module read (3 events)
 
-- Brakka held the bridge against a troll and controlled the goblins until the watch arrived. — `success` (danger: severe) [defense, leadership, ~holding-a-line, ~crowd-control]
-- Brakka won two fights in the pit but lost the third to the champion. — `success` [martial, ~brawling]
-- Wick rode an ox into a fight with a troll. — `success` (danger: severe) [nature, ~mount-combat]
-- Steve the ox lost a race by sitting down. — `failure` [nature, ~animal-racing]
-- Wick was banned from a pie tent. — `failure` [~social-mishap]
-- Maren rooted three out of four goblins in place using entangle. — `success` [primal, spellcasting]
-- Maren healed Brakka. — `success` [medicine, support, ~healing]
-- Maren thorn-whipped the last goblin into a burning railing. — `success` [primal, spellcasting]
-- Maren treated the surrendered goblins. — `success` [medicine, ~first-aid]
-- Maren sold out of her honey stock. — `success` [nature, ~trading]
-- Maren placed second in a bake-off with a lavender honey loaf. — `success` [craft, ~baking]
-- Maren adopted a stable cat. — `success` [nature, ~pet-adoption]
-- Tovin torched a troll. — `success` (danger: severe) [fire, spellcasting, ~fire-magic]
-- Tovin lost a bet in the pit. — `failure` [~gambling]
-- Tovin quietly dealt with a loose end on the bridge. — `success` [stealth, ~secret-action]
-- Luz healed Brakka to full health after the troll fight. — `success` [medicine, divine, support, ~healing]
-- Luz led the dawn blessing at the temple. — `success` [religion, ~ritual]
+- **Tovin:** Tovin torched a troll. — `success` (danger: severe) [fire, ~burning, ~combat]
+- **Tovin:** Tovin lost a bet in the pit. — `failure` [~gambling]
+- **Tovin:** Tovin quietly eliminated a loose end on the bridge. — `success` [deception, ~cover-up, ~secret-action]
 
-New emergent themes: mount-combat, pet-adoption
+New emergent themes: burning, gambling, cover-up, secret-action
 
 ### Proposals waiting for the GM (0)
 
@@ -171,33 +104,17 @@ GM screen: `gm-view-tovin.html`
 
 ## Luz the Cleric (player: non-native)
 
-- Read by: **adapter** in 22.2s
-- Grand Design level 0 -> 3, progress 0 -> 88, grant allowances 3
-- Long rest: reached Grand Design level 1, 2, 3
+- Read by: **adapter** in 21.8s
+- Grand Design level 0 -> 0, progress 0 -> 75, grant allowances 0
+- Long rest: no level gained
 
-### What the module read (19 events)
+### What the module read (3 events)
 
-- Brakka held the bridge against a troll and kept the goblins in line until the watch arrived. — `success` (danger: severe) [defense, leadership, ~holding-a-line, ~commanding]
-- Brakka won two fights in the pit and lost the third to the champion. — `success` [martial, ~brawling]
-- Wick rode an ox into a fight with a troll. — `success` (danger: severe) [nature, ~mounting-an-ox]
-- Wick lost his dagger to the river. — `failure` [water, ~losing-equipment]
-- Steve the ox lost a race by sitting down. — `failure` [nature, ~ox-racing]
-- Wick was banned from a pie tent. — `failure` [diplomacy, ~social-conflict]
-- Maren rooted three out of four goblins in place with entangle. — `success` [primal, spellcasting]
-- Maren healed Brakka. — `success` [medicine, support, ~healing]
-- Maren thorn-whipped the last goblin into the burning railing. — `success` [primal, fire, spellcasting]
-- Maren treated the surrendered goblins. — `success` [medicine, support, ~first-aid]
-- Maren sold out of honey. — `success` [nature, ~trading]
-- Maren placed second in a bake-off with a lavender honey loaf. — `success` [craft, ~baking]
-- Maren adopted a stable cat. — `success` [nature, ~pet-ownership]
-- Tovin torched a troll. — `success` (danger: severe) [fire, spellcasting, ~fire-magic]
-- Tovin lost a bet in the pit. — `failure` [~gambling]
-- Tovin quietly resolved a loose end on the bridge. — `success` [stealth, ~cleanup]
-- Luz healed Brakka to full health after the troll fight. — `success` [divine, support, ~healing]
-- Luz witnessed Tovin killing a surrendering goblin. — `success` [martial, ~killing-a-prisoner]
-- Luz led the dawn blessing at the temple. — `success` [religion, ~ritual]
+- **Luz:** Luz healed Brakka to full health after the troll fight. — `success` [medicine, divine, support, spellcasting, ~healing]
+- **Luz:** Luz witnessed Tovin killing a surrendering goblin. — `success` [lore, ~witnessing, ~moral-conflict]
+- **Luz:** Luz led the dawn blessing at the temple. — `success` [religion, divine, leadership, ~ritual]
 
-New emergent themes: mounting-an-ox, ox-racing, pet-ownership, killing-a-prisoner
+New emergent themes: witnessing, moral-conflict, ritual
 
 ### Proposals waiting for the GM (0)
 

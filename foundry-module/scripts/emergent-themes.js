@@ -163,10 +163,11 @@ export function themeEvidence(events) {
  * A VALID placeholder Skill entry (passes validator.js#validateSkillEntry) for a theme. It is
  * deliberately modest -- tier 1, passive, a +1 to checks that are clearly this activity -- and is
  * flagged needsAuthoring on its proposal so the GM can ask the AI gateway to write the real thing
- * ("[Apiarist's Calm]") with actual mechanics. System-neutral wording: "a +1 bonus" reads correctly
- * in both PF2e (where the GM applies it as a circumstance bonus) and dnd5e.
+ * ("[Apiarist's Calm]") with actual mechanics. "a +1 bonus" reads correctly in both systems; the
+ * PF2e-only aside "(a circumstance bonus)" is added only when `systemId` is pf2e (the default, for
+ * callers that predate the option), so a dnd5e table never reads a Pathfinder term.
  */
-export function buildEmergentSkillEntry(slug, { label, evidenceIds = [], weight = 0 } = {}) {
+export function buildEmergentSkillEntry(slug, { label, evidenceIds = [], weight = 0, systemId = "pf2e" } = {}) {
   const name = `${label || titleCaseTheme(slug)} Knack`;
   const activity = (label || titleCaseTheme(slug)).toLowerCase();
   return {
@@ -175,8 +176,8 @@ export function buildEmergentSkillEntry(slug, { label, evidenceIds = [], weight 
     system_equivalent: "Placeholder emergent Skill (GM review) -- use \"Author with AI\" to write real mechanics",
     gameItem: { kind: "passive" },
     mechanics: {
-      effect: `When you attempt a check whose purpose is clearly ${activity}, you gain a +1 bonus to that check `
-        + "(a circumstance bonus in PF2e). The GM decides which checks qualify.",
+      effect: `When you attempt a check whose purpose is clearly ${activity}, you gain a +1 bonus to that check`
+        + `${systemId === "dnd5e" ? "" : " (a circumstance bonus)"}. The GM decides which checks qualify.`,
       duration: `while practicing ${activity}`,
       frequency: { max: 1, per: "unlimited" }
     },
@@ -208,7 +209,7 @@ function registrySlug(value) {
  * placeholder proposal. The GM's theme map is applied first, so an ignored theme never proposes,
  * a merged one proposes under its merge target, and a mapped one has become a canonical tag.
  */
-export function generateEmergentProposals(events, registry, { themeMap = {}, threshold = EMERGENT_THEME_EVIDENCE_THRESHOLD } = {}) {
+export function generateEmergentProposals(events, registry, { themeMap = {}, threshold = EMERGENT_THEME_EVIDENCE_THRESHOLD, systemId = "pf2e" } = {}) {
   const mapped = applyThemeMap(Array.isArray(events) ? events : [], themeMap);
   const evidence = themeEvidence(mapped);
   const proposals = [];
@@ -218,7 +219,7 @@ export function generateEmergentProposals(events, registry, { themeMap = {}, thr
     const evidenceIds = mapped
       .filter((event) => Array.isArray(event.themes) && event.themes.includes(slug) && event.id)
       .map((event) => event.id);
-    const entry = buildEmergentSkillEntry(slug, { label, evidenceIds, weight });
+    const entry = buildEmergentSkillEntry(slug, { label, evidenceIds, weight, systemId });
     if (registryHasTheme(registry, slug, entry.name)) continue;
     proposals.push({
       id: `${EMERGENT_PROPOSAL_PREFIX}${slug}`,

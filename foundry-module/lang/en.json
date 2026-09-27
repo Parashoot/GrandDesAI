@@ -18,6 +18,8 @@
       "Author": "Author with AI",
       "Approve": "Approve",
       "ResolveRest": "Resolve Rest",
+      "SuggestProposals": "Suggest proposals",
+      "SuggestProposalsBusy": "Asking the AI for proposals... (about 10 s)",
       "NotesPlaceholder": "Write however you like — any language, bullet points, shorthand, typos are fine.",
       "UnderTheHood": "Under the hood",
       "StatusLocal": "Local",

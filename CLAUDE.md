@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 617 unit tests, ~30 s, no network
+npm test                                    # 649 unit tests, ~30 s, no network
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -45,30 +45,26 @@ Contract + change log: `docs/ai-gateway-v2-contract.md` (read it first).
 - Harness: `tools/nlp-scale/` — 322-item labeled corpus (13 categories, 14 languages), scoring,
   consistency metrics, simulated fault-injecting model.
 
-## Status (2026-09-24, evening) and open work
-Default model **`qwen3.8:27b`** (both `GATEWAY_DEFAULTS.model` and `DEFAULT_OLLAMA_MODEL`).
-Full corpus, extraction only (322 x 3, `--proposal-mode never`), `reports/2026-09-24T22-31-09-168Z-qwen3.8_27b.md`:
-score 97.6%, fallback 0%, traps 100%, tag recall 99.5%, event-count 96.2% (novel 88.6%, red 73.3%),
-tag Jaccard 0.92, outcome agreement 0.99, ~0.9 s/item.
-Stage 2, `--proposal-mode always` on novel/long/red/counter-leveling (86 items),
-`reports/2026-09-24T22-49-34-327Z-qwen3.8_27b.md`: every item got a proposal, 4 validator skips of 120,
-red on red-worthy items 70%, red false positives 1.3%, no names built from the personal name.
-Live Foundry check (`npm run test:live-ai`) passed 8/8 on dnd5e today. PF2e last passed live on
-2026-09-24 morning; it was not re-run because a user was connected to the dnd5e world. Switching worlds
-means `game.shutDown()` and clicking the world card's `[data-action="worldLaunch"]` on `/setup`, which
-kicks connected users, so only do it when nobody is on.
+## Status (2026-09-27) and open work
+Default model **`qwen3.8:27b`**. Scale numbers: see the 2026-09-24 entries in the contract change log and
+`Scale Test Results` in the vault (extraction 97.6%, count 96.2%, traps 100%, fallback 0%).
 
-How the event over-splitting was fixed: the model declares `continuesPrevious` per event (schema),
-and `pipeline.js#mergeFollowUpEvents` folds only those into the event before them, keeping the payoff
-as `consequence`. World setting "Fold follow-up lines into one event" (`mergeFollowUps`) turns it off.
-Prompt-only attempts and a theme-based merge were tried first and failed (see the contract change log).
+**New process: the `grand-design-pm` skill** (board `node tools/board.mjs`, playtests
+`foundry-module/tools/playtest/playtest.mjs`, dev team in worktrees, vault export). Push main before
+spawning worktree agents or cloud sessions: they start from `origin/main`. Cloud-safe packets C1-C5 are in
+`docs/cloud-work.md` (board tag `cloud`).
 
-Harness note: `makeHarnessActor` has a pending grant allowance, so in `when-earned` mode every rep also
-runs stage 2 and writes proposals (~9 s/rep). Use `--proposal-mode never` for extraction regressions.
+First playtest **ember-road** (dnd5e, 5 player agents), session 1: transcript, notes, report, review in
+`foundry-module/playtests/ember-road/sessions/01/` (`report-before.md` = before the fixes). Fixed and
+verified with the real model: party notes no longer credit every character with every event
+(per-PC events 17-19 -> 2-7), template proposals are system-correct and sourced, and a "Suggest proposals"
+button plus `api.requestGrowthProposals(actor)` covers grant allowances with nothing to approve.
 
-1. **Residual over-splits** (15 of the 40 hard items, e.g. bl-005 "bought rope" after haggling,
-   cs-es-04 climb/jump/grab, rd-003). Some of these are arguably fair splits; consider loosening gold.
-2. **Red misses**: rd-006 (a year of life for a spell), rd-008 (trophies from kills), rd-010 (raising
-   the dead without consent) still come out standard. Only false positive: nv-009 compulsive gambling.
-3. **Stage-2 latency**: ~9 s p50 per analysis when proposing (1 extraction + 1 proposal call).
-4. Re-run the live PF2e check when the server is free.
+Open, in order (see the board):
+1. **Gateway attribution** (6ca3c8e7, high): a deed reported in another player's line ("Luz saw Tovin kill
+   the surrendered goblin") is not extracted for the doer; Tovin's coy line reads as "eliminated a loose end".
+   Partial work on branch `worktree-agent-a731ff0e1fe12d515` (stopped by a rate limit, untested).
+2. Missed recap events (c284b5ec) and one extraction per party instead of per PC (a48d97c0, ~20 s/PC).
+3. Playtest sessions 2-3 of ember-road (approve proposals, use them in play), then a PF2e campaign.
+4. Live Foundry: click "Suggest proposals" on both worlds; the PF2e live check is still pending.
+5. Cloud packets C1-C5.

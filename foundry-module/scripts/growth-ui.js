@@ -26,7 +26,10 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
     const pending = (growth.proposals ?? []).filter((proposal) => proposal?.status === "pending");
     const lastAnalysis = safe(() => api.getLastAnalysis(actor), null);
     const status = statusBadge(safe(() => api.getGatewayConfig(), {}), lastResult ?? lastAnalysis, api.hasProposalAdapter());
-    content = renderGrowthContent({ growth, progression, pending, lastAnalysis, lastResult, status, draftNotes });
+    // Feature-detected: an older module API has no on-demand proposal stage, and the dialog must
+    // still open (without the button) rather than offer an action that cannot run.
+    const canSuggest = typeof api.requestGrowthProposals === "function";
+    content = renderGrowthContent({ growth, progression, pending, lastAnalysis, lastResult, status, draftNotes, canSuggest });
   } catch (error) {
     console.error(`${MODULE_ID} | growth dialog render failed`, error);
     content = `<p>Grand Design could not render this actor's growth history: ${escapeHtml(error.message)}</p>`;
@@ -45,10 +48,46 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
     }
   };
 
-  new Dialog(
+  // "Suggest proposals" lives in the dialog body, not the footer: footer buttons close a v1 Dialog
+  // before their callback runs, and this call takes ~10 s with a local model, so the GM needs to see
+  // it working in place. The dialog is then reopened so the new proposals render.
+  let suggesting = false;
+  const suggest = async (root, button) => {
+    if (suggesting) return;
+    if (typeof api.requestGrowthProposals !== "function") {
+      ui.notifications.warn("This version of Grand Design cannot suggest proposals on demand.");
+      return;
+    }
+    const typed = String(root?.querySelector?.('textarea[name="growth-notes"]')?.value ?? "");
+    suggesting = true;
+    setSuggestBusy(root, button, true);
+    try {
+      const { level, message } = describeSuggestResult(await api.requestGrowthProposals(actor));
+      ui.notifications[level](message);
+    } catch (error) {
+      // Covers "no AI provider configured": the API's own message tells the GM what to set up.
+      console.error(`${MODULE_ID} | proposal suggestion failed`, error);
+      ui.notifications.error(error?.message || "Grand Design could not suggest proposals.");
+    }
+    suggesting = false;
+    await safe(() => dialog.close(), null);
+    openGrowthManager(actor, { lastResult, draftNotes: typed });
+  };
+
+  const dialog = new Dialog(
     {
       title: `Grand Design Growth: ${actor.name}`,
       content,
+      render: (html) => {
+        // Dialog v1 hands over jQuery on V12/V13; accept a bare element too.
+        const root = html?.[0] ?? html;
+        root?.querySelectorAll?.('[data-action="gd-suggest-proposals"]').forEach((button) => {
+          button.addEventListener("click", (event) => {
+            event.preventDefault();
+            suggest(root, button);
+          });
+        });
+      },
       buttons: {
         analyze: {
           icon: '<i class="fas fa-wand-magic-sparkles"></i>',
@@ -123,7 +162,58 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
       default: "analyze"
     },
     { width: 720, height: "auto", resizable: true, classes: ["dialog", "grand-design-growth-dialog"] }
-  ).render(true);
+  );
+  dialog.render(true);
+}
+
+const SUGGEST_LABEL = "Suggest proposals";
+const SUGGEST_BUSY_LABEL = "Asking the AI for proposals... (about 10 s)";
+
+// Busy state for the in-body Suggest button. Every suggest button and the footer buttons are
+// disabled so the GM cannot approve or re-analyze against a proposal list that is about to change.
+function setSuggestBusy(root, clicked, busy) {
+  const scope = root?.closest?.(".app, .application, .window-app") ?? root;
+  scope?.querySelectorAll?.('[data-action="gd-suggest-proposals"], .dialog-buttons button, .dialog-button').forEach((button) => {
+    button.disabled = busy;
+  });
+  root?.querySelector?.(".grand-design-growth")?.classList.toggle("gd-busy", busy);
+  if (!clicked) return;
+  clicked.setAttribute("aria-busy", busy ? "true" : "false");
+  const label = clicked.querySelector(".gd-suggest-label");
+  const icon = clicked.querySelector("i");
+  if (label) label.textContent = busy ? SUGGEST_BUSY_LABEL : SUGGEST_LABEL;
+  if (icon) icon.className = busy ? "fas fa-spinner fa-spin" : "fas fa-lightbulb";
+}
+
+/**
+ * { level: "info"|"warn", message } for a requestGrowthProposals result -- pure, exported for tests.
+ * `added` is accepted as a count or as the list of added proposals, so the notification stays right
+ * whichever shape the API settles on.
+ */
+export function describeSuggestResult(result) {
+  const added = Array.isArray(result?.added) ? result.added.length : Math.max(0, Math.floor(Number(result?.added) || 0));
+  if (added > 0) {
+    return { level: "info", message: `${added} new proposal${added === 1 ? "" : "s"} -- pick one and Approve to spend a grant allowance.` };
+  }
+  return {
+    level: "warn",
+    message: "The AI found nothing new to propose from this character's recorded evidence yet. Analyze more session notes and try again."
+  };
+}
+
+/**
+ * The header's "what now?" line, as HTML (no user data in it). Approving a non-capstone proposal is
+ * what spends a grant allowance (progression.js#spendGrantAllowance), so the hint says exactly that.
+ * With nothing pending it points at Suggest proposals, but only when that button exists.
+ */
+export function allowanceHint(progression, pendingCount, canSuggest = true) {
+  const allowances = Math.max(0, Math.floor(Number(progression?.grantAllowances) || 0));
+  if (!allowances) return "";
+  const noun = `${allowances} grant allowance${allowances === 1 ? "" : "s"} to spend`;
+  if (pendingCount > 0) return `${noun} -- approve a proposal to use one.`;
+  return canSuggest
+    ? `${noun}, but no proposals yet -- use <strong>${SUGGEST_LABEL}</strong> below.`
+    : `${noun}; proposals appear here once the recorded evidence supports one.`;
 }
 
 /**
@@ -170,8 +260,13 @@ export function statusBadge(config, lastRun, adapterAttached) {
   return { kind: "ai", text: `AI: ${model}`, title: `Notes are read by ${model} via ${provider}.` };
 }
 
-export function renderGrowthContent({ growth, progression, pending, lastAnalysis, lastResult, status, draftNotes = "" }) {
+export function renderGrowthContent({ growth, progression, pending, lastAnalysis, lastResult, status, draftNotes = "", canSuggest = true }) {
   const events = Array.isArray(growth?.events) ? growth.events : [];
+  pending = Array.isArray(pending) ? pending : [];
+  const allowances = Math.max(0, Math.floor(Number(progression?.grantAllowances) || 0));
+  // The stuck state found in the ember-road playtest: level-ups earned at rest, nothing to spend them on.
+  const stuck = allowances > 0 && !pending.length;
+  const hint = allowanceHint(progression, pending.length, canSuggest);
   const options = pending.length
     ? pending
         .map((proposal) => {
@@ -183,7 +278,10 @@ export function renderGrowthContent({ growth, progression, pending, lastAnalysis
     : '<option value="">No pending proposals</option>';
   const evidence = pending.length
     ? pending.map((proposal) => renderProposal(proposal)).join("")
-    : "<li>No proposal has enough evidence yet.</li>";
+    : stuck && canSuggest
+      ? "" // the callout below explains the empty list and offers the way out
+      : "<li>No proposal has enough evidence yet.</li>";
+  const suggest = canSuggest ? renderSuggest({ stuck, allowances, status }) : "";
   const eventList = events.length
     ? events.slice(-40).reverse().map((event) => `<li class="gd-event-row">${renderEventLine(event)}</li>`).join("")
     : "<li>No recorded growth events.</li>";
@@ -192,17 +290,31 @@ export function renderGrowthContent({ growth, progression, pending, lastAnalysis
   return `<form class="grand-design-growth">
     <header class="gd-growth-header">
       <h3>Grand Design Level ${Number(progression?.level) || 0}/100</h3>
-      <span class="gd-status gd-status-${escapeHtml(status.kind)}" title="${escapeHtml(status.title)}"><i class="fas ${status.kind === "ai" ? "fa-brain" : status.kind === "fallback" ? "fa-triangle-exclamation" : "fa-book"}"></i> ${escapeHtml(status.text)}</span>
+      <span class="gd-status gd-status-${escapeHtml(status?.kind)}" title="${escapeHtml(status?.title)}"><i class="fas ${status?.kind === "ai" ? "fa-brain" : status?.kind === "fallback" ? "fa-triangle-exclamation" : "fa-book"}"></i> ${escapeHtml(status?.text)}</span>
     </header>
-    <p><strong>${Math.floor(Number(progression?.progress) || 0)} progression</strong> toward the next level; <strong>${Number(progression?.grantAllowances) || 0}</strong> level-up grant allowance(s) available.</p>
+    <p><strong>${Math.floor(Number(progression?.progress) || 0)} progression</strong> toward the next level; <strong>${allowances}</strong> level-up grant allowance(s) available.</p>
+    ${hint ? `<p class="gd-allowance-hint"><i class="fas fa-gift"></i> ${hint}</p>` : ""}
     <div class="form-group"><label>Resolve progression at rest</label><select name="growth-rest-type"><option value="short">Short Rest</option><option value="long">Long Rest</option></select></div>
     <hr>
     <div class="form-group stacked"><label>Session Notes</label><textarea name="growth-notes" rows="8" placeholder="Write however you like — any language, bullet points, shorthand, typos are fine.&#10;- Kesh parried the captain, nat 20!&#10;- Mira kept the bees calm and harvested honey&#10;- Torv tried to pick the lock, it broke">${escapeHtml(draftNotes ?? "")}</textarea></div>
     <p class="gd-hint">Successes and honest failed attempts both count. Things the tag list doesn't cover (beekeeping, gambling, map-making...) become <em>themes</em> and can grow into brand-new Skills. Approval is always yours.${hasLast ? ` Last notes analyzed ${escapeHtml(formatWhen(lastAnalysis.at))} — use <strong>Re-analyze</strong> to read them again.` : ""}</p>
     ${renderInterpretation(events, lastAnalysis, lastResult)}
-    <hr><h3>Pending Proposals</h3><select name="growth-proposal">${options}</select><ul class="gd-proposals">${evidence}</ul>
+    <hr><h3>Pending Proposals</h3>${stuck ? suggest : ""}<select name="growth-proposal">${options}</select>${evidence ? `<ul class="gd-proposals">${evidence}</ul>` : ""}${stuck ? "" : suggest}
     <hr><details class="gd-history"><summary>Recorded Evidence (${events.length})</summary><ul>${eventList}</ul></details>
   </form>`;
+}
+
+// Prominent call-to-action when allowances wait with nothing to spend them on; otherwise a small
+// secondary button under the list (more ideas are still useful when the pending list is stale).
+function renderSuggest({ stuck, allowances, status }) {
+  const button = (variant) => `<button type="button" class="gd-suggest ${variant}" data-action="gd-suggest-proposals" aria-busy="false"><i class="fas fa-lightbulb"></i> <span class="gd-suggest-label">${SUGGEST_LABEL}</span></button>`;
+  const needsProvider = status?.kind === "local"
+    ? " It needs an AI provider (set one in <em>Grand Design AI Gateway</em> settings)."
+    : "";
+  if (stuck) {
+    return `<div class="gd-suggest-callout"><p>${allowances} grant allowance${allowances === 1 ? " is" : "s are"} waiting, but no proposal has enough evidence yet. Ask the AI to suggest Skills or Classes now from everything already recorded; it takes about 10 seconds with a local model.${needsProvider}</p>${button("gd-suggest-primary")}</div>`;
+  }
+  return `<p class="gd-suggest-secondary">${button("gd-suggest-quiet")} <span class="gd-hint">Ask the AI for more proposals from the recorded evidence.${needsProvider}</span></p>`;
 }
 
 function renderInterpretation(events, lastAnalysis, lastResult) {

@@ -73,6 +73,24 @@
 .grand-design-growth details.gd-under-the-hood { margin-top: 0.4rem; font-size: 0.9em; }
 .grand-design-growth details.gd-under-the-hood h4 { margin: 0.4rem 0 0.1rem; }
 
+/* "Suggest proposals" (board ea4012f6): a callout when grant allowances wait with nothing pending,
+   a quiet secondary button otherwise. */
+.grand-design-growth .gd-allowance-hint { color: #7a5d00; font-size: 0.9em; margin-top: -0.2rem; }
+.grand-design-growth .gd-suggest-callout {
+  border: 1px solid rgba(201, 154, 6, 0.55);
+  background: rgba(201, 154, 6, 0.1);
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+  margin: 0.3rem 0 0.5rem;
+}
+.grand-design-growth .gd-suggest-callout p { margin: 0 0 0.4rem; }
+.grand-design-growth .gd-suggest { width: auto; display: inline-flex; align-items: center; gap: 0.35rem; line-height: 1.6; }
+.grand-design-growth .gd-suggest-primary { font-weight: bold; padding: 0.15rem 0.9rem; }
+.grand-design-growth .gd-suggest-quiet { font-size: 0.85em; padding: 0 0.5rem; opacity: 0.85; }
+.grand-design-growth .gd-suggest-secondary { margin: 0.3rem 0 0; }
+.grand-design-growth .gd-suggest[aria-busy="true"] { cursor: progress; opacity: 0.75; }
+.grand-design-growth.gd-busy { cursor: progress; }
+
 /* --- AI Gateway settings --------------------------------------------------------------------- */
 .grand-design-gateway-settings fieldset { margin-bottom: 0.6rem; }
 .grand-design-gateway-settings legend { font-weight: bold; }

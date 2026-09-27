@@ -40,8 +40,8 @@ import {
   spendCapstoneAllowance,
   spendGrantAllowance
 } from "./progression.js";
-import { explainSessionNotes, validateAdapterEvents } from "./session-notes.js";
-import { createAiGatewayAdapter } from "./ai-gateway.js";
+import { attributeEventsToActor, classifyActorName, explainSessionNotes, proposalCitesOnlyOthers, validateAdapterEvents } from "./session-notes.js";
+import { createAiGatewayAdapter, createGatewayAdapter } from "./ai-gateway.js";
 import {
   applyThemeMap,
   generateEmergentProposals,
@@ -752,9 +752,15 @@ export class GrandDesignApi {
     // "0 events" must never come back unexplained.
     const localAnalysis = usedAdapter ? null : explainSessionNotes(notes);
     const emergentEnabled = this._emergentEnabled();
-    const { events: taggedEvents, rejectedTags } = usedAdapter
+    const { events: sanitizedEvents, rejectedTags } = usedAdapter
       ? this._sanitizeEventTags(adapterEvents.events, { customSynonyms: config.customSynonyms, emergentEnabled })
       : { events: localAnalysis.events, rejectedTags: [] };
+    // Party-wide notes are analysed once per character, so only this character's events are
+    // recorded here (session-notes.js#attributeEventsToActor): an event naming someone else goes to
+    // `attributedToOthers` instead of inflating this sheet (playtest ember-road s1: five PCs each
+    // credited with all ~18 party events and Grand Design level 0 -> 3 from one session).
+    const actorNames = this._actorNames(actor);
+    const { kept: taggedEvents, dropped: otherEvents, attributedToOthers } = attributeEventsToActor(sanitizedEvents, actorNames, { notes });
 
     // Re-analysis: drop the events the previous run of these same notes recorded (and their progress)
     // before recording the new interpretation, so re-running never double-counts evidence.
@@ -770,9 +776,20 @@ export class GrandDesignApi {
     // A re-analysis of the same notes registers any newly noticed theme but does not re-count old ones.
     const newlySeenThemes = await this._observeThemes(recorded, { countExisting: !replaceEventIds.length });
 
-    const { accepted: modelProposals, skipped: invalidProposals } = usedAdapter
+    const { accepted: validProposals, skipped: invalidProposals } = usedAdapter
       ? this._validateModelProposals(adapterOutput?.proposals ?? [], actor, { customSynonyms: config.customSynonyms })
       : { accepted: [], skipped: [] };
+    // The gateway's stage 2 sees every event in the notes, so it can build a proposal for this
+    // character purely out of someone else's deeds; one whose evidence cites only other characters
+    // is skipped (and reported) rather than offered.
+    const modelProposals = [];
+    for (const proposal of validProposals) {
+      if (proposalCitesOnlyOthers(proposal, { actorNames, ownEvents: taggedEvents, otherEvents })) {
+        invalidProposals.push({ proposal, errors: [`Evidence cites only other characters' actions, not ${actor.name ?? "this character"}'s.`], reason: "attributed-to-others" });
+      } else {
+        modelProposals.push(proposal);
+      }
+    }
     const proposals = mergeProposals(eventProposals, modelProposals);
 
     const adapterSkippedEvents = usedAdapter
@@ -792,7 +809,10 @@ export class GrandDesignApi {
       source,
       eventIds: recorded.map((event) => event.id),
       proposalIds: modelProposals.map((proposal) => proposal.id),
-      diagnostics: summarizeDiagnostics({ source, gatewayDiagnostics, adapterError, localAnalysis, recorded, adapterSkippedEvents, adapterSkippedProposals })
+      diagnostics: summarizeDiagnostics({ source, gatewayDiagnostics, adapterError, localAnalysis, recorded, adapterSkippedEvents, adapterSkippedProposals, attributedToOthers }),
+      // Kept short (flag-safe): who else the notes were about, so the Growth dialog can say
+      // "12 events belonged to other characters" and list them.
+      ...(attributedToOthers.length ? { attributedToOthers: attributedToOthers.slice(0, 50) } : {})
     };
     await actor.update({
       [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
@@ -804,6 +824,7 @@ export class GrandDesignApi {
       events: recorded,
       proposals,
       themes,
+      attributedToOthers,
       ...(adapterError ? { adapterError: adapterError.message } : {}),
       ...(localAnalysis ? { diagnostics: localAnalysis.diagnostics } : {}),
       ...(gatewayDiagnostics ? { gatewayDiagnostics } : {}),
@@ -982,6 +1003,94 @@ export class GrandDesignApi {
     return { proposal: updated, skipped, ...(output?.gatewayDiagnostics ? { gatewayDiagnostics: output.gatewayDiagnostics } : {}) };
   }
 
+  /**
+   * "Suggest proposals" (Growth dialog button): runs the AI gateway's proposal stage for this actor
+   * NOW, from the growth this character has already recorded, with proposalMode "always" semantics
+   * -- for the case the ember-road playtest hit, where a long rest left grant allowances and nothing
+   * to spend them on. New proposals are merged into the pending list (nothing is approved, no event
+   * is recorded). Returns { proposals (the full list), added (the new ones), skipped }.
+   *
+   * The gateway adapter only takes notes, so the character's own recorded events are replayed as a
+   * short synthetic note (buildSuggestionNotes); the events it re-extracts from that note are
+   * discarded (recording them would double-count). A v2 gateway adapter whose configured mode is not
+   * "always" is re-wrapped around the SAME transport with proposalMode "always"; any other adapter
+   * gets `proposalMode: "always"` in its arguments and the explicit GM request in the note.
+   */
+  async requestGrowthProposals(actor) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    if (!this._proposalAdapter) {
+      throw new Error(
+        "Suggesting proposals needs a configured AI provider (Grand Design AI Gateway settings). Without one, "
+          + "Grand Design only proposes its built-in templates once enough tagged evidence is recorded."
+      );
+    }
+    const growth = this.getGrowth(actor);
+    const actorNames = this._actorNames(actor);
+    // Events recorded before per-character attribution existed may name other characters; they are
+    // not this character's evidence.
+    const ownEvents = growth.events.filter((event) => classifyActorName(event.actorName, actorNames) !== "other");
+    if (!ownEvents.length) {
+      throw new Error(`${actor.name ?? "This character"} has no recorded growth yet -- analyze some session notes first.`);
+    }
+    const config = this.getGatewayConfig();
+    const systemId = game.system?.id;
+    const adapter = this._alwaysProposeAdapter();
+    let output;
+    try {
+      output = await adapter({ actor, notes: buildSuggestionNotes(actor, ownEvents), systemId, proposalMode: "always" });
+    } catch (error) {
+      throw new Error(`The AI provider could not suggest proposals: ${error.message}`);
+    }
+    const candidates = Array.isArray(output) ? [] : Array.isArray(output?.proposals) ? output.proposals : [];
+    const { accepted, skipped } = this._validateModelProposals(candidates, actor, { customSynonyms: config.customSynonyms });
+    const pendingNames = new Set(growth.proposals.filter((proposal) => proposal.status === "pending").map((proposal) => slugify(proposal.entry?.name ?? "")));
+    const known = new Set(growth.proposals.map((proposal) => proposal.id));
+    const added = [];
+    for (const proposal of accepted) {
+      const key = slugify(proposal.entry.name);
+      if (known.has(proposal.id) || pendingNames.has(key)) {
+        skipped.push({ proposal, errors: [`A pending proposal named ${proposal.entry.name} already exists.`], reason: "duplicate" });
+        continue;
+      }
+      known.add(proposal.id);
+      pendingNames.add(key);
+      added.push({ ...proposal, requestedAt: new Date().toISOString() });
+    }
+    const proposals = mergeProposals(growth.proposals, added);
+    if (added.length) {
+      await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+      Hooks.callAll("grand-design-ai.growthProposalsSuggested", actor, added);
+    }
+    const adapterSkipped = Array.isArray(output?.skippedProposals) ? output.skippedProposals : [];
+    return {
+      proposals,
+      added,
+      ...(skipped.length || adapterSkipped.length ? { skipped: [...adapterSkipped, ...skipped] } : {}),
+      ...(output?.gatewayDiagnostics ? { gatewayDiagnostics: output.gatewayDiagnostics } : {})
+    };
+  }
+
+  // A v2 gateway adapter (ai-gateway.js#createGatewayAdapter exposes .config and .transport) built
+  // with proposalMode "when-earned"/"never" would skip stage 2 for a character with no allowance, so
+  // it is rebuilt around the same transport (which holds the real API key; .config's is redacted)
+  // with proposalMode "always". Anything else is used as-is.
+  _alwaysProposeAdapter() {
+    const adapter = this._proposalAdapter;
+    if (!adapter?.config || !adapter?.transport || adapter.config.proposalMode === "always") return adapter;
+    try {
+      return createGatewayAdapter({ ...adapter.config, apiKey: "", proposalMode: "always" }, { transportFactory: () => adapter.transport });
+    } catch (error) {
+      console.warn(`${MODULE_ID} | could not force proposalMode "always"; using the configured adapter`, error);
+      return adapter;
+    }
+  }
+
+  // Every name the notes might use for this character: the actor name and its token name.
+  _actorNames(actor) {
+    return [actor?.name, actor?.prototypeToken?.name].filter((name) => typeof name === "string" && name.trim());
+  }
+
   async recordGrowthEvent(actor, event, { observeThemes: observe = true } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
@@ -993,7 +1102,8 @@ export class GrandDesignApi {
       ...levelProgression,
       progress: levelProgression.progress + progressionForEvent(normalizedEvent)
     };
-    const modifier = actor.system?.skills?.acrobatics?.mod ?? 0;
+    const modifier = rollModifier(actor);
+    const systemId = game.system?.id;
     const registry = this.getActorRegistry(actor);
     const emergentEnabled = this._emergentEnabled();
     const themeMap = emergentEnabled ? this._themeMap() : {};
@@ -1001,8 +1111,8 @@ export class GrandDesignApi {
     // tag ("beekeeping" -> nature) is then ordinary evidence for that tag's templates.
     const mappedEvents = applyThemeMap(events, themeMap);
     const generated = [
-      ...generateSkillProposals(mappedEvents, registry, modifier, this.getConsolidations(actor), this.getTagWeights()),
-      ...(emergentEnabled ? generateEmergentProposals(events, registry, { themeMap }) : [])
+      ...generateSkillProposals(mappedEvents, registry, modifier, this.getConsolidations(actor), this.getTagWeights(), { systemId }),
+      ...(emergentEnabled ? generateEmergentProposals(events, registry, { themeMap, systemId }) : [])
     ];
     const known = new Map(growth.proposals.map((proposal) => [proposal.id, proposal]));
     for (const proposal of generated) {
@@ -1087,9 +1197,9 @@ export class GrandDesignApi {
     if (result.capstoneLevelsUnlocked.length) {
       const growth = this.getGrowth(actor);
       const registry = this.getActorRegistry(actor);
-      const modifier = actor.system?.skills?.acrobatics?.mod ?? 0;
+      const modifier = rollModifier(actor);
       capstoneProposals = result.capstoneLevelsUnlocked.map((level) =>
-        generateCapstoneProposal(level, growth.events, registry, modifier)
+        generateCapstoneProposal(level, growth.events, registry, modifier, { systemId: game.system?.id })
       );
       updates[`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`] = mergeProposals(growth.proposals, capstoneProposals);
     }
@@ -1367,11 +1477,12 @@ function summarizeThemes(recordedEvents, newlySeen, knownThemes = {}) {
 }
 
 /** Small, flag-safe summary of how an analysis went (the full diagnostics stay on the result). */
-export function summarizeDiagnostics({ source, gatewayDiagnostics, adapterError, localAnalysis, recorded = [], adapterSkippedEvents = [], adapterSkippedProposals = [] }) {
+export function summarizeDiagnostics({ source, gatewayDiagnostics, adapterError, localAnalysis, recorded = [], adapterSkippedEvents = [], adapterSkippedProposals = [], attributedToOthers = [] }) {
   const stages = Array.isArray(gatewayDiagnostics?.stages) ? gatewayDiagnostics.stages : [];
   return {
     source,
     events: recorded.length,
+    attributedToOthers: attributedToOthers.length,
     skippedEvents: adapterSkippedEvents.length,
     skippedProposals: adapterSkippedProposals.length,
     ...(gatewayDiagnostics
@@ -1412,6 +1523,31 @@ export function buildAuthoringNotes(actor, label, theme, evidenceEvents) {
       + "that work in both PF2e and D&D 5e terms. Put the theme in metadata.themes. Evidence so far:",
     ...lines
   ].join("\n");
+}
+
+// Synthetic note for requestGrowthProposals: the character's own most recent growth, as evidence
+// lines the proposal stage can cite verbatim. Summaries (not quotes) because a quote from party notes
+// can be first-person ("lost my dagger") and would lose who did it.
+export function buildSuggestionNotes(actor, events, { limit = 15 } = {}) {
+  const name = actor?.name ?? "this character";
+  const lines = events.slice(-limit).map((event) => {
+    const themes = Array.isArray(event.themes) && event.themes.length ? `; themes: ${event.themes.join(", ")}` : "";
+    return `- ${event.summary} (${event.outcome}; tags: ${(event.tags ?? []).join(", ") || "none"}${themes})`;
+  });
+  return [
+    `GM REQUEST: suggest new Grand Design proposals for ${name} now. Every line below is something ${name} `
+      + `personally did (already recorded). Build proposals only from these deeds, cite the lines you used as evidence, `
+      + "and use this game system's own rules terms.",
+    ...lines
+  ].join("\n");
+}
+
+// The roll modifier baked into generated entries. PF2e keys the skill "acrobatics"; dnd5e keys it
+// "acr" -- reading only the PF2e key gave every dnd5e template a flat 1d20+0.
+function rollModifier(actor) {
+  const skills = actor?.system?.skills ?? {};
+  const mod = skills.acrobatics?.mod ?? skills.acr?.mod ?? skills.acr?.total ?? 0;
+  return Number.isFinite(Number(mod)) ? Number(mod) : 0;
 }
 
 function mergeProposals(existing, additions) {

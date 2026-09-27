@@ -188,3 +188,199 @@ export function validateAdapterEvents(output) {
   }
   return { events: valid, skipped };
 }
+
+// --- Per-character attribution ------------------------------------------------------------------
+//
+// Playtest ember-road s1: one set of party notes ("Brakka: held the bridge... / Maren: healed
+// brakka...") was analysed once per PC, and every PC was credited with all 17-19 events -- Tovin
+// "placed second in a bake-off" because Maren did -- so all five jumped Grand Design level 0 -> 3
+// from one session. The rule (agreed with the gateway side): an event whose actorName names a
+// DIFFERENT character is not this actor's; an event with no actorName is kept (single-character
+// notes rarely repeat the name); a group actor ("the party", "we") belongs to everyone.
+
+// Words that name the whole group (or the note-writer) rather than one character. A GM/DM line is
+// table-level narration ("they still drove the troll off"), so it counts as the whole party too.
+const GROUP_ACTOR_WORDS = new Set([
+  "party", "group", "team", "crew", "company", "everyone", "everybody", "all", "both", "we", "us", "our",
+  "ourselves", "i", "me", "myself", "you", "they", "them", "pcs", "pc", "players", "player", "heroes",
+  "adventurers", "gm", "dm", "narrator", "whole", "members", "rest", "nosotros", "todos", "grupo", "equipo",
+  "nous", "tous", "wir", "alle", "gruppe", "noi", "tutti", "nos"
+]);
+// Tokens that never identify a character on their own ("Kellin the Undercutter", "GD AI Test - X").
+const NAME_STOPWORDS = new Set([
+  "the", "of", "a", "an", "and", "gd", "ai", "test", "sir", "lady", "lord", "dame", "de", "del", "von", "van",
+  "la", "le", "el", "da", "di", "du", "mr", "mrs", "ms", "dr", "npc"
+]);
+// "Maren and Tovin", "Brakka, Wick", "Luz y Tovin": a list is this actor's if any member is.
+const NAME_LIST_SEPARATOR = /\s*(?:,|&|\+|\/|;|\band\b|\by\b|\bund\b|\bet\b)\s*/iu;
+
+function nameTokens(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}+/gu, "")
+    .toLowerCase()
+    .replace(/['’]s\b/g, "")
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+}
+
+function significantTokens(value) {
+  return nameTokens(value).filter((token) => !NAME_STOPWORDS.has(token));
+}
+
+function ownTokens(actorNames) {
+  return (Array.isArray(actorNames) ? actorNames : [actorNames]).flatMap(significantTokens);
+}
+
+// Exact token match, or a nickname prefix ("Brak" for "Brakka") when the shorter side has 4+ letters.
+function tokensMatch(a, b) {
+  if (a === b) return true;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  return short.length >= 4 && long.startsWith(short);
+}
+
+/**
+ * Classifies an event's actorName against this actor's names: "self" (this character, or a list
+ * that includes them), "group" (the party / "we" / GM narration), "other" (only other characters)
+ * or "unknown" (no name given). Only "other" is dropped by attributeEventsToActor.
+ */
+export function classifyActorName(eventActorName, actorNames) {
+  const raw = String(eventActorName ?? "").trim();
+  if (!raw) return "unknown";
+  const own = ownTokens(actorNames);
+  let sawGroup = false;
+  let sawOther = false;
+  for (const part of raw.split(NAME_LIST_SEPARATOR)) {
+    const tokens = significantTokens(part);
+    if (!tokens.length) continue;
+    if (tokens.some((token) => own.some((mine) => tokensMatch(token, mine)))) return "self";
+    if (tokens.every((token) => GROUP_ACTOR_WORDS.has(token))) sawGroup = true;
+    else sawOther = true;
+  }
+  if (sawGroup) return "group";
+  return sawOther ? "other" : "unknown";
+}
+
+// "Brakka: held the bridge..." -- a speaker label of one to three words before a colon. Party recaps
+// pasted from a group chat look exactly like this; the label then owns every following line up to
+// the next label or blank line.
+const SPEAKER_LABEL = /^\s*(?:[-*•]\s*)?(?:\*\*|__)?([\p{L}][\p{L}\p{M}'’.-]*(?:\s+[\p{L}][\p{L}\p{M}'’.-]*){0,2})(?:\*\*|__)?\s*[:：]\s*(.*)$/u;
+
+// Labels that head a topic, not a speaker ("Loot: 40 gp", "Day 3: ...", "Note: ..."). A line under
+// one of these is not attributed to anyone.
+const NEUTRAL_LABEL_WORDS = new Set([
+  "note", "notes", "loot", "combat", "fight", "battle", "day", "night", "morning", "evening", "session", "recap",
+  "summary", "later", "meanwhile", "downtime", "travel", "quest", "quests", "xp", "exp", "reward", "rewards",
+  "npc", "npcs", "location", "scene", "todo", "next", "reminder", "reminders", "also", "edit", "update", "ps",
+  "tldr", "result", "results", "outcome", "status", "rules", "question", "q", "a", "treasure", "gold", "shopping",
+  "chapter", "part", "act", "tonight", "today", "yesterday", "highlights", "lowlights", "mvp", "misc", "other"
+]);
+
+function compact(value) {
+  return nameTokens(value).join(" ");
+}
+
+function isSpeakerLabel(label) {
+  const tokens = significantTokens(label);
+  return tokens.length > 0 && !tokens.some((token) => NEUTRAL_LABEL_WORDS.has(token));
+}
+
+/** Splits notes into [{ label, text }] segments by speaker label (label null when none). */
+export function speakerSegments(notes) {
+  const segments = [];
+  let current = null;
+  for (const line of String(notes ?? "").replace(/\r\n?/g, "\n").split("\n")) {
+    if (!line.trim()) {
+      current = null;
+      continue;
+    }
+    const match = SPEAKER_LABEL.exec(line);
+    if (match) {
+      current = { label: isSpeakerLabel(match[1]) ? match[1].trim() : null, text: compact(match[2]) };
+      segments.push(current);
+    } else if (current) {
+      current.text += ` ${compact(line)}`;
+    } else {
+      segments.push({ label: null, text: compact(line) });
+    }
+  }
+  return segments;
+}
+
+/**
+ * When the model left actorName empty, recover it from the notes' own structure: the speaker label
+ * of the one segment that contains the event's quote, else the one label the summary opens with
+ * ("Brakka held the bridge"). Returns "" when that is not unambiguous -- the event is then kept.
+ */
+export function inferEventActorName(event, segments) {
+  const labelled = segments.filter((segment) => segment.label);
+  if (!labelled.length) return "";
+  const quote = compact(event?.quote).slice(0, 60);
+  if (quote.length >= 8) {
+    const labels = new Set(segments.filter((segment) => segment.text.includes(quote)).map((segment) => segment.label));
+    if (labels.size === 1) return [...labels][0] ?? "";
+    if (labels.size > 1) return "";
+  }
+  const lead = significantTokens(event?.summary)[0];
+  if (!lead) return "";
+  const byLead = new Set(labelled
+    .filter((segment) => significantTokens(segment.label).some((token) => tokensMatch(token, lead)))
+    .map((segment) => segment.label));
+  return byLead.size === 1 ? [...byLead][0] : "";
+}
+
+/**
+ * Splits events into the ones this actor should be credited with (`kept`) and the ones that belong
+ * to someone else (`attributedToOthers`: [{ actorName, summary }]). `actorNames` is the actor's
+ * name plus any aliases (token name). With `notes`, an empty actorName is first inferred from a
+ * speaker label (inferEventActorName) and written onto the kept event.
+ */
+export function attributeEventsToActor(events, actorNames, { notes } = {}) {
+  // Speaker labels are only trusted as a roster when the notes really are "one line per character":
+  // at least two distinct speakers, or this actor is one of them. A lone "Kesh: ..." heading in a
+  // single-character log must not make every unlabelled event someone else's.
+  const allSegments = typeof notes === "string" ? speakerSegments(notes) : [];
+  const labels = new Set(allSegments.map((segment) => segment.label).filter(Boolean));
+  const selfIsSpeaker = [...labels].some((label) => classifyActorName(label, actorNames) === "self");
+  const segments = labels.size >= 2 || selfIsSpeaker ? allSegments : [];
+  const kept = [];
+  const dropped = [];
+  const attributedToOthers = [];
+  for (const event of Array.isArray(events) ? events : []) {
+    const given = typeof event?.actorName === "string" ? event.actorName.trim() : "";
+    const actorName = given || inferEventActorName(event, segments);
+    const resolved = actorName && !given ? { ...event, actorName } : event;
+    if (classifyActorName(actorName, actorNames) === "other") {
+      dropped.push(resolved);
+      attributedToOthers.push({ actorName, summary: String(event?.summary ?? "").slice(0, 240) });
+      continue;
+    }
+    kept.push(resolved);
+  }
+  // `dropped` = the other characters' events themselves (actorName resolved), for evidence checks.
+  return { kept, dropped, attributedToOthers };
+}
+
+/**
+ * True when every evidence line of a model proposal points at another character's event (it
+ * matches one of `otherEvents`, or names one of their actors and not this one). A proposal with no
+ * evidence, or with any evidence that is this actor's own or unclear, is kept.
+ */
+export function proposalCitesOnlyOthers(proposal, { actorNames, ownEvents = [], otherEvents = [] } = {}) {
+  const evidence = Array.isArray(proposal?.evidence) ? proposal.evidence.filter((line) => typeof line === "string" && line.trim()) : [];
+  if (!evidence.length || !otherEvents.length) return false;
+  const texts = (events) => events.flatMap((event) => [compact(event.summary), compact(event.quote)]).filter((text) => text.length >= 12);
+  const own = texts(ownEvents);
+  const others = texts(otherEvents);
+  const mine = ownTokens(actorNames);
+  const otherNameTokens = otherEvents.flatMap((event) => significantTokens(event.actorName));
+  const overlaps = (line, text) => line.includes(text) || text.includes(line);
+  return evidence.every((raw) => {
+    const line = compact(raw);
+    const tokens = nameTokens(raw);
+    if (line.length >= 12 && own.some((text) => overlaps(line, text))) return false;
+    if (line.length >= 12 && others.some((text) => overlaps(line, text))) return true;
+    if (tokens.some((token) => mine.some((name) => tokensMatch(token, name)))) return false;
+    return tokens.some((token) => otherNameTokens.includes(token));
+  });
+}

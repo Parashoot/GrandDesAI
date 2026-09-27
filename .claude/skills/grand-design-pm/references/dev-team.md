@@ -1,7 +1,13 @@
 # The dev team
 
 Spawn with the Agent tool, one agent per role that has work, in parallel, each with
-`isolation: "worktree"` so edits never collide. Only give a role files it owns; if a fix spans two
+`isolation: "worktree"` so edits never collide.
+
+**Before spawning: commit, then `git push origin main`** (or tell each agent to run
+`git merge --ff-only main` first). Worktrees and cloud sessions start from GitHub's `origin/main`,
+not the local branch: on 2026-09-27 the dev team's worktrees came up two commits stale (no board,
+no skill, no playtests) because main had not been pushed. Cloud work packets live in
+`docs/cloud-work.md` (board tag `cloud`) for sessions that cannot reach Ollama or Foundry. Only give a role files it owns; if a fix spans two
 roles, split it into two board items or give it to one role and name the other role's file as a
 read-only dependency.
 

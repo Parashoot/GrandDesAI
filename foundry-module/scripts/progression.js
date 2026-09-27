@@ -249,6 +249,142 @@ const PROPOSAL_TEMPLATES = [
   }
 ];
 
+// dnd5e wording for every tag-triggered template. Playtest ember-road s1 (a dnd5e world) showed a
+// template proposal reading "Attempt to Treat Wounds..." -- a PF2e-only activity -- because the
+// templates above were written in PF2e terms only. Each variant replaces the PF2e entry's
+// system_equivalent/gameItem/mechanics wholesale rather than patching words, so no PF2e term
+// (Strike, Stride, circumstance bonus, "resistance 2", Treat Wounds, daily preparations, concealed,
+// Follow the Expert, rank-N spell) can leak through. Frequencies stay inside FREQUENCY_PERIODS:
+// "encounter" is mapped by systems/dnd5e-adapter.js to a short-rest recovery and never appears in
+// the text a GM reads.
+const DND5E_TEMPLATE_VARIANTS = {
+  "canal-step": {
+    system_equivalent: "Athletics or Acrobatics movement (bonus action)",
+    gameItem: { kind: "free" },
+    mechanics: {
+      effect: "As a bonus action, move up to half your speed. On a successful Strength (Athletics) check, shallow water doesn't count as difficult terrain for that movement.",
+      duration: "instant",
+      frequency: { max: 1, per: "round" },
+      actions: 1,
+      roll: { kind: "Strength (Athletics) check", formula: "", dc: 15 }
+    }
+  },
+  "field-ration": {
+    system_equivalent: "Cook's utensils tool feature",
+    gameItem: { kind: "passive" },
+    mechanics: {
+      effect: "When you finish a long rest, you prepare one special ration. The first ally who eats it before your next long rest gains 1 temporary hit point that lasts 8 hours.",
+      duration: "8 hours",
+      frequency: { max: 1, per: "day" }
+    }
+  },
+  "measured-strike": {
+    system_equivalent: "Fighting-style-scale martial feature",
+    gameItem: { kind: "action" },
+    mechanics: {
+      effect: "When you hit a creature with a melee weapon attack, you can deal an extra 1d6 damage of the weapon's type to it (once per turn).",
+      duration: "instant",
+      frequency: { max: 1, per: "round" },
+      actions: 1,
+      roll: { kind: "Melee weapon attack", formula: "", dc: 13 }
+    }
+  },
+  "ember-pulse": {
+    system_equivalent: "1st-level evocation spell",
+    gameItem: { kind: "spell", rank: 1, tradition: "arcane", school: "evo" },
+    mechanics: {
+      effect: "Make a ranged spell attack against one creature within 30 feet. On a hit, it takes 2d6 fire damage.",
+      duration: "instant",
+      frequency: { max: 2, per: "encounter" },
+      actions: 1,
+      roll: { kind: "Ranged spell attack", formula: "", dc: 13 }
+    }
+  },
+  "field-triage": {
+    system_equivalent: "Healer's-kit style Medicine action",
+    gameItem: { kind: "action" },
+    mechanics: {
+      effect: "As an action, tend one creature within 5 feet of you that has at least 1 hit point. Make a Wisdom (Medicine) check; on a success, it regains 1d8 hit points.",
+      duration: "instant",
+      frequency: { max: 1, per: "hour" },
+      actions: 1,
+      roll: { kind: "Wisdom (Medicine) check", formula: "", dc: 12 }
+    }
+  },
+  "shadow-thread": {
+    system_equivalent: "Stealth reaction",
+    gameItem: { kind: "reaction" },
+    mechanics: {
+      effect: "Move up to 5 feet into cover or a lightly obscured space. On a successful Dexterity (Stealth) check, the triggering ranged attack has disadvantage.",
+      duration: "instant",
+      frequency: { max: 1, per: "round" },
+      trigger: "A creature you can see makes a ranged attack roll against you while you are in cover or lightly obscured.",
+      roll: { kind: "Dexterity (Stealth) check", formula: "", dc: 14 }
+    }
+  },
+  "rallying-call": {
+    system_equivalent: "Leadership bonus action",
+    gameItem: { kind: "free" },
+    mechanics: {
+      effect: "As a bonus action, choose one ally within 30 feet who can hear you. It gains a +1 bonus to its next saving throw made before the start of your next turn.",
+      duration: "until the start of your next turn",
+      frequency: { max: 1, per: "round" },
+      actions: 1,
+      roll: { kind: "Charisma (Persuasion) check", formula: "", dc: 14 }
+    }
+  },
+  "warden-brace": {
+    system_equivalent: "Martial defense reaction",
+    gameItem: { kind: "reaction" },
+    mechanics: {
+      effect: "Reduce the triggering bludgeoning, piercing, or slashing damage by 1d6 + your proficiency bonus. On a successful Strength (Athletics) check, the reduction also applies to an ally within 5 feet hit by the same attack.",
+      duration: "instant",
+      frequency: { max: 1, per: "round" },
+      trigger: "You or an ally within 5 feet of you is hit by a weapon attack.",
+      roll: { kind: "Strength (Athletics) check", formula: "", dc: 14 }
+    }
+  },
+  "trail-sense": {
+    system_equivalent: "Survival exploration feature",
+    gameItem: { kind: "passive" },
+    mechanics: {
+      effect: "While you guide the group through natural terrain, you and one ally have advantage on Wisdom (Survival) checks to avoid becoming lost.",
+      duration: "while traveling through natural terrain",
+      frequency: { max: 1, per: "unlimited" }
+    }
+  },
+  "winter-veil": {
+    system_equivalent: "1st-level evocation spell",
+    gameItem: { kind: "spell", rank: 1, tradition: "primal", school: "evo" },
+    mechanics: {
+      effect: "Make a ranged spell attack against one creature within 30 feet. On a hit, it takes 2d6 cold damage and has disadvantage on attack rolls against you until the start of your next turn.",
+      duration: "until the start of your next turn",
+      frequency: { max: 2, per: "encounter" },
+      actions: 1,
+      roll: { kind: "Ranged spell attack", formula: "", dc: 13 }
+    }
+  },
+  "storm-arc": {
+    system_equivalent: "1st-level evocation spell",
+    gameItem: { kind: "spell", rank: 1, tradition: "arcane", school: "evo" },
+    mechanics: {
+      effect: "Make a ranged spell attack against one creature within 30 feet. On a hit, it takes 2d6 lightning damage.",
+      duration: "instant",
+      frequency: { max: 2, per: "encounter" },
+      actions: 1,
+      roll: { kind: "Ranged spell attack", formula: "", dc: 13 }
+    }
+  }
+};
+
+/** The template's entry in the active system's terms (PF2e entries are the originals). */
+function templateEntryForSystem(template, systemId) {
+  const entry = structuredClone(template.entry);
+  const variant = systemId === "dnd5e" ? DND5E_TEMPLATE_VARIANTS[template.id] : null;
+  if (!variant) return entry;
+  return { ...entry, ...structuredClone(variant), metadata: entry.metadata };
+}
+
 // Canon guarantees a rare Skill at every 10th Grand Design level, distinct from the tag-triggered
 // PROPOSAL_TEMPLATES above (which need specific evidence to unlock) and distinct from the 20/30/50
 // class-evolution checkpoints (CLASS_EVOLUTION_LEVELS, which are about a Class evolving, not a new
@@ -270,10 +406,10 @@ export function isCapstoneLevel(level) {
  * canApproveGeneratedProposal/spendCapstoneAllowance route it through its own allowance track
  * instead of the ordinary per-rest grant allowance an evidence-triggered proposal uses.
  */
-export function generateCapstoneProposal(level, events, existingRegistry, modifier = 0) {
+export function generateCapstoneProposal(level, events, existingRegistry, modifier = 0, { systemId = "pf2e" } = {}) {
   const weighableEvents = events.filter((event) => Object.prototype.hasOwnProperty.call(GROWTH_EVENT_OUTCOME_WEIGHTS, event.outcome));
   const topTag = topWeightedTag(weighableEvents);
-  const entry = buildCapstoneEntry(level, topTag, modifier);
+  const entry = buildCapstoneEntry(level, topTag, modifier, systemId);
   const registryId = `skill:${slugify(entry.name)}`;
   // Disambiguate if a same-named capstone (e.g. the same top tag recurring at a later level) was
   // already approved, so this proposal doesn't collide with an existing registry entry.
@@ -284,6 +420,8 @@ export function generateCapstoneProposal(level, events, existingRegistry, modifi
     id: `proposal:capstone-${level}`,
     kind: "skill",
     status: "pending",
+    source: "capstone",
+    systemId,
     isCapstone: true,
     evidence: topTag ? weighableEvents.filter((event) => event.tags.includes(topTag)).map((event) => event.id) : [],
     entry
@@ -309,9 +447,11 @@ function topWeightedTag(events) {
   return topTag;
 }
 
-function buildCapstoneEntry(level, topTag, modifier) {
+function buildCapstoneEntry(level, topTag, modifier, systemId = "pf2e") {
   const themeLabel = topTag ? titleCase(topTag) : "Growth";
   const rollFormula = `1d20${modifier >= 0 ? "+" : ""}${modifier}`;
+  // "circumstance bonus" is a PF2e term; dnd5e reads the same boost as advantage plus a flat +2.
+  const boost = systemId === "dnd5e" ? "with advantage and a +2 bonus" : "with a +4 circumstance bonus";
   return {
     name: `Capstone: ${themeLabel}`,
     tier: 3,
@@ -319,10 +459,11 @@ function buildCapstoneEntry(level, topTag, modifier) {
     gameItem: { kind: "action" },
     mechanics: {
       effect: `A rare, exceptional expression of this character's ${topTag ? `${topTag}-driven` : "hard-won"} growth. `
-        + "Make a check relevant to that discipline with a +4 circumstance bonus; on a critical success, the GM should also apply one additional narratively-appropriate benefit scaled to a tier-3 capstone ability. The specific signature effect is left to the GM to flesh out to fit the character.",
+        + `Make a check relevant to that discipline ${boost}; ${systemId === "dnd5e" ? "if the result beats the DC by 10 or more" : "on a critical success"}, the GM should also apply one additional narratively-appropriate benefit scaled to a tier-3 capstone ability. The specific signature effect is left to the GM to flesh out to fit the character.`,
       duration: "instant",
       frequency: { max: 1, per: "day" },
-      actions: 2,
+      // PF2e's two-action activity; in dnd5e the adapter reads `actions` as the activation count.
+      actions: systemId === "dnd5e" ? 1 : 2,
       roll: { kind: `${themeLabel} check`, formula: rollFormula, dc: 10 + level }
     },
     metadata: {
@@ -416,7 +557,13 @@ const GROWTH_EVENT_SOURCES = new Set(["adapter", "local"]);
  * forever. Omit it (default {}) and every tag weighs exactly as it always has -- this keeps every
  * existing caller that predates this feature completely unaffected.
  */
-export function generateSkillProposals(events, existingRegistry, modifier = 0, consolidations = [], tagWeights = {}) {
+/**
+ * `options.systemId` ("pf2e" default | "dnd5e") picks the wording of the generated entry: the
+ * templates are written in PF2e terms and carry a dnd5e variant (DND5E_TEMPLATE_VARIANTS). Every
+ * proposal is stamped `source: "template"` so the GM (and the Growth dialog) can tell a fixed
+ * tag-template from an AI-written or emergent-theme proposal.
+ */
+export function generateSkillProposals(events, existingRegistry, modifier = 0, consolidations = [], tagWeights = {}, { systemId = "pf2e" } = {}) {
   // Every recognized outcome is usable evidence now, not just success/criticalSuccess -- genuine
   // repeated effort (including failure) counts, just at a lower weight (GROWTH_EVENT_OUTCOME_WEIGHTS).
   const weighableEvents = events.filter((event) => Object.prototype.hasOwnProperty.call(GROWTH_EVENT_OUTCOME_WEIGHTS, event.outcome));
@@ -424,7 +571,7 @@ export function generateSkillProposals(events, existingRegistry, modifier = 0, c
   const existingSkills = new Set(Object.keys(existingRegistry?.skills ?? {}));
   return PROPOSAL_TEMPLATES
     .filter((template) => template.requiredTags.every((tag) => taggedEvidenceWeight(consolidatedEvents, tag, tagWeights) >= MINIMUM_EVIDENCE))
-    .map((template) => buildProposal(template, consolidatedEvents, modifier, tagWeights))
+    .map((template) => buildProposal(template, consolidatedEvents, modifier, tagWeights, systemId))
     .filter((proposal) => !existingSkills.has(`skill:${slugify(proposal.entry.name)}`));
 }
 
@@ -462,7 +609,7 @@ export function proposalId(proposal) {
   return `proposal:${slugify(proposal.entry.name)}`;
 }
 
-function buildProposal(template, events, modifier, tagWeights = {}) {
+function buildProposal(template, events, modifier, tagWeights = {}, systemId = "pf2e") {
   const evidenceEvents = events.filter((event) => template.requiredTags.some((tag) => event.tags.includes(tag)));
   const evidence = evidenceEvents.map((event) => event.id);
   // An event can match more than one of a template's required tags; when a GM has reweighted them
@@ -472,7 +619,7 @@ function buildProposal(template, events, modifier, tagWeights = {}) {
     const multiplier = Math.max(...matchedTags.map((tag) => weightForTag(tagWeights, tag)));
     return sum + GROWTH_EVENT_OUTCOME_WEIGHTS[event.outcome] * multiplier;
   }, 0);
-  const entry = structuredClone(template.entry);
+  const entry = templateEntryForSystem(template, systemId);
   if (entry.mechanics.roll) {
     entry.mechanics.roll.formula = `1d20${modifier >= 0 ? "+" : ""}${modifier}`;
   }
@@ -483,6 +630,8 @@ function buildProposal(template, events, modifier, tagWeights = {}) {
     id: `proposal:${template.id}`,
     kind: "skill",
     status: "pending",
+    source: "template",
+    systemId,
     evidence,
     entry
   };
