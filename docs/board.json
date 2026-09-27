@@ -253,8 +253,10 @@
   {
    "id": "92dfc0b7",
    "title": "C4 cloud: test coverage for non-AI progression rules (docs/cloud-work.md)",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "102 tests added across 7 new files (rules-class-erosion, rules-horror-rank, rules-revival-penalty, rules-combination-skills, rules-skill-evolution, rules-lineage, rules-class-merging .test.mjs). Covers: class-erosion session-threshold/neverSeen math; horror-rank threshold-crossing docking + red-exclusion; revival-penalty one-shot docking (including red targets); combination-skills resonance/band/power/naming/malignance-contagion (previously 0 tests); skill-evolution defining-moment/evidence-weight/tier-climb/naming (previously 0 tests); lineage normalizeEntry error paths + class/title registerEntry fields + createTitleSource/createCombinationSource on both pf2e and dnd5e (previously untested); class-merging off-classing (offCycle cap) which was only exercised incidentally via the api test. npm test: 766/766 green, no todo/skip -- no bugs found, only test gaps."
+   ],
    "tags": [
     "cloud",
     "harness"
@@ -263,22 +265,24 @@
    "owner": "dev-harness",
    "source": "cli",
    "created": 1790531510.948,
-   "updated": 1790547489.795
+   "updated": 1790548217.082
   },
   {
    "id": "c829f2a7",
    "title": "C5 cloud: cold review of the AI pipeline, findings as todo tests (docs/cloud-work.md)",
-   "status": "todo",
-   "notes": [],
+   "status": "blocked",
+   "notes": [
+    "2026-09-27: reviewer agent stopped by the session limit before writing anything (worktree agent-ae0b36baa42de76bf, empty). Restart on a cheaper model."
+   ],
    "tags": [
     "cloud",
     "gateway"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "reviewer",
    "source": "cli",
    "created": 1790531510.992,
-   "updated": 1790531510.992
+   "updated": 1790550862.815
   },
   {
    "id": "72dbac48",
@@ -344,6 +348,49 @@
    "source": "ember-road s2 prep 2026-09-27",
    "created": 1790547721.162,
    "updated": 1790547730.342
+  },
+  {
+   "id": "0cd50d30",
+   "title": "s2: Maren's use of her approved Skill (Thorn Lash pinned the thrall at the wagon) not extracted as her event; 'maren thorn lash ... wick finished it off' became only Wick's kill",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "ember-road s2",
+   "created": 1790550835.426,
+   "updated": 1790550835.426
+  },
+  {
+   "id": "649aeb9f",
+   "title": "s2: two spells in one line merged into one event with one outcome: 'luz sanctuary on Oren (shrugged off), sacred flame, guiding bolt missed' -> 'Luz cast Sacred Flame and Guiding Bolt' failure (Sacred Flame hit)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s2",
+   "created": 1790550835.466,
+   "updated": 1790550835.466
+  },
+  {
+   "id": "40d30e3d",
+   "title": "s2: Maren's baking with Oren (amazing bread, drew out his testimony) not extracted; cottagecore downtime is the persona's growth",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway",
+    "themes"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s2",
+   "created": 1790550835.509,
+   "updated": 1790550835.509
   }
  ]
 }

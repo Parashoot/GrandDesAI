@@ -1,8 +1,8 @@
 {
  "name": "ember-road",
  "system": "dnd5e",
- "created": "2026-09-27T17:40:04.800Z",
- "sessionsPlayed": 1,
+ "created": "2026-09-27T22:18:20.225Z",
+ "sessionsPlayed": 2,
  "gateway": {},
  "party": [
   {
@@ -13,14 +13,14 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532270806-1",
+      "id": "event:1790547524669-1",
       "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.",
       "tags": [
        "defense",
        "leadership"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:04:30.806Z",
+      "occurredAt": "2026-09-27T22:18:44.669Z",
       "dangerGap": "severe",
       "themes": [
        "holding-a-line",
@@ -32,122 +32,375 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532270807-2",
-      "summary": "Brakka won two fights in the pit and lost the third to the champion.",
+      "id": "event:1790547524670-2",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion.",
       "tags": [
        "martial"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:04:30.807Z",
+      "occurredAt": "2026-09-27T22:18:44.670Z",
       "themes": [
-       "arena-fighting"
+       "brawling",
+       "competition"
       ],
       "quote": "Won two in the pit, lost the third to the champ",
       "language": "en",
       "actorName": "Brakka",
       "source": "adapter"
+     },
+     {
+      "id": "event:1790550799263-3",
+      "summary": "Brakka tied his own wrists and offered himself as a hostage.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.263Z",
+      "themes": [
+       "hostage-offer"
+      ],
+      "quote": "brakka tied his own wrists w/ rope and offered to go",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-4",
+      "summary": "Brakka tried to get in front of Tovin but slipped.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "themes": [
+       "movement"
+      ],
+      "quote": "brakka tried to get in front of tovin, slipped on the cobbles",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-5",
+      "summary": "Brakka held the stone lip to control the thralls' approach and killed one.",
+      "tags": [
+       "martial",
+       "defense"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "dangerGap": "moderate",
+      "themes": [
+       "holding-the-line"
+      ],
+      "quote": "brakka held the stone lip so they came one at a time, hacked one down",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-6",
+      "summary": "Brakka lassoed the Toll King.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "dangerGap": "moderate",
+      "themes": [
+       "lassoing"
+      ],
+      "quote": "brakka lassoed him",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-7",
+      "summary": "Brakka repaired the fort's gate.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "themes": [
+       "repairing"
+      ],
+      "quote": "brakka fixed the gate",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-8",
+      "summary": "Brakka stood watch outside Maren's room.",
+      "tags": [
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "themes": [
+       "guarding"
+      ],
+      "quote": "stood watch outside maren's room",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-9",
+      "summary": "Brakka searched for Steve.",
+      "tags": [
+       "survival"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "themes": [
+       "searching"
+      ],
+      "quote": "couldn't find steve",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:shieldwall-bottleneck",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Brakka held the stone lip to control the thralls' approach and killed one.",
+       "Brakka lassoed the Toll King.",
+       "Brakka tried to get in front of Tovin but slipped."
+      ],
+      "entry": {
+       "name": "Shieldwall: Bottleneck",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you are in a narrow passage or holding a chokepoint, you gain advantage on attack rolls against creatures within 5 feet of you. Additionally, you can use your reaction to impose disadvantage on the next attack roll made against an ally within 5 feet of you.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "passive"
+       },
+       "metadata": {
+        "tags": [
+         "martial",
+         "defense"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeatedly used terrain to control enemy movement and protect allies, including a failed attempt to intercept an attack."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Passive combat advantage feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:warden-s-duty-gatekeeper",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Brakka repaired the fort's gate.",
+       "Brakka stood watch outside Maren's room."
+      ],
+      "entry": {
+       "name": "Warden's Duty: Gatekeeper",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Use your action to repair a simple mechanical or structural object (like a gate or door) that is not destroyed, or to set up a watch position. On a success, the object functions normally or you gain a +2 bonus to Perception checks while on watch.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "duration": "10 minutes",
+        "actions": 2,
+        "roll": {
+         "kind": "Athletics check",
+         "formula": "1d20+5"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "craft",
+         "support"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated practical maintenance and protective vigilance in a fort setting."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Crafting and Perception support action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     }
+    ],
     "levelProgression": {
-     "level": 0,
-     "progress": 87.5,
-     "grantAllowances": 0,
+     "level": 2,
+     "progress": 11,
+     "grantAllowances": 2,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:04:30.807Z",
+     "lastRestAt": "2026-09-27T23:13:19.266Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:04:30.807Z",
+     "notes": "s2 - toll king\n\n- cinderford east gate, rain. toll king's collectors (capt Vesk) want 100g \"bridge-breaker's tax\" or a hostage\n- brakka tied his own wrists w/ rope and offered to go, vesk backed off a bit\n- wick stole the writ right off her glove (lol) - it just says \"bring the one who fed the Silent One\", no gold at all. he also accused the bell lady of working w/ vesk, she laughed at him\n- luz tried the blessing token thing, got laughed at. later held up her symbol in front of the crowd and made it too public for vesk to draw\n- maren NAT 20 persuasion, talked vesk down, no fight at the gate\n- tovin took the rag-market woman's deal for real this time - gave her a year of his dreams. she told him the Silent One is a drowned god under the toll-fort and the toll king feeds it people who surrender\n- brakka tried to get in front of tovin, slipped on the cobbles\n\n- greyhook toll-fort: toll king + 4 drowned thralls out of the pool, hostage guard (Oren) tied up by the water\n- brakka held the stone lip so they came one at a time, hacked one down\n- maren entangle only got 1 of 4. then Thorn Lash on the one going for the wagon, pinned it, wick finished it off\n- toll king drowned maren's lungs w/ pool water, she went down to half. luz healing word'd her\n- wick cut Oren loose and hid him behind the wagon. cut steve loose to charge a thrall, steve just ran away\n- tovin nat20 eldritch blast for 3 dmg 💀. then he told everyone the guard was \"his coin\", creepy\n- wick yelled at vesk until she switched sides, collectors killed the other 2 thralls\n- luz sanctuary on Oren (toll king shrugged it off), sacred flame, guiding bolt missed\n- end: toll king offered tovin his crown. brakka lassoed him, maren thorn-whipped him out of the pool, wick threw a dagger through his hand\n- tovin took the crown and made his patron EAT the silent one?? pool drained. toll king gave up, vesk arrested him. tovin kept the crown\n\n- 2 days at the fort\n- brakka fixed the gate, stood watch outside maren's room. couldn't find steve\n- maren found steve in an orchard. her turnips in the pool silt rotted. bread w/ Oren was amazing, he told us the toll king fed 31 people to the pool. she got vesk to pay for fixing the shrine\n- luz read all 31 names at the shrine, didn't work (yet). she's watching tovin\n- wick found a hidden ledger page -> \"the Lantern House in Varrow\". also pocketed 30g. licked the shrine\n- tovin got caught stealing old coins by vesk. crown just hums, toll king won't talk to him\n\nnext time: varrow / lantern house. who's bringing snacks. also can maren's thorn lash crit?? ask at start",
+     "at": "2026-09-27T23:13:19.266Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532270806-1",
-      "event:1790532270807-2"
+      "event:1790550799263-3",
+      "event:1790550799264-4",
+      "event:1790550799264-5",
+      "event:1790550799264-6",
+      "event:1790550799264-7",
+      "event:1790550799264-8",
+      "event:1790550799264-9"
      ],
-     "proposalIds": [],
+     "proposalIds": [
+      "proposal:ai-skill:shieldwall-bottleneck",
+      "proposal:ai-skill:warden-s-duty-gatekeeper"
+     ],
      "diagnostics": {
       "source": "adapter",
-      "events": 2,
-      "attributedToOthers": 17,
+      "events": 7,
+      "attributedToOthers": 29,
       "skippedEvents": 0,
       "skippedProposals": 0,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
-      "attempts": 2,
+      "chunks": 2,
+      "attempts": 3,
       "repairs": 0,
-      "totalMs": 20979
+      "totalMs": 59123
      },
      "attributedToOthers": [
       {
        "actorName": "Wick",
-       "summary": "Wick rode an ox into a fight with a troll."
+       "summary": "Wick stole the writ from the collector's glove."
       },
       {
        "actorName": "Wick",
-       "summary": "Wick lost his dagger to the river."
+       "summary": "Wick accused the bell lady of working with Vesk."
       },
       {
-       "actorName": "Wick",
-       "summary": "Wick lost the party's 40g rigging dice."
+       "actorName": "Luz",
+       "summary": "Luz tried to use a blessing token."
       },
       {
-       "actorName": "Wick",
-       "summary": "Steve the ox lost a race by sitting down."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick was banned from a pie tent."
+       "actorName": "Luz",
+       "summary": "Luz held up her symbol in front of the crowd to prevent Vesk from drawing her weapon."
       },
       {
        "actorName": "Maren",
-       "summary": "Maren rooted three out of four goblins in place with entangle."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren healed Brakka."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren thorn-whipped the last goblin into the burning railing."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren patched up the surrendered goblins."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren sold out of honey."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren got second place in the bake-off with a lavender honey loaf."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren adopted a stable cat."
+       "summary": "Maren persuaded Vesk to stand down."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin torched a troll."
+       "summary": "Tovin gave the rag-market woman a year of his dreams."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren cast Entangle on the thralls."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick killed the pinned thrall."
+      },
+      {
+       "actorName": "Toll King",
+       "summary": "The Toll King drowned Maren's lungs with pool water."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz healed Maren."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick cut Oren loose and hid him behind the wagon."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick cut Steve loose to charge a thrall."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin lost his bet in the pit."
+       "summary": "Tovin cast Eldritch Blast."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick yelled at Vesk until she switched sides."
       },
       {
        "actorName": "Luz",
-       "summary": "Tovin killed a goblin that was surrendering."
+       "summary": "Luz cast Sanctuary on Oren."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz healed Brakka to full health after the troll fight."
+       "summary": "Luz cast Sacred Flame and Guiding Bolt."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren thorn-whipped the Toll King out of the pool."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick threw a dagger through the Toll King's hand."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin took the crown and made his patron consume the Silent One."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren found Steve in an orchard."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren's turnips rotted in the pool silt."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren persuaded Vesk to pay for the shrine's repairs."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz led the dawn blessing at the temple."
+       "summary": "Luz read the 31 names at the shrine."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz is keeping watch on Tovin."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick discovered a hidden ledger page."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick stole 30 gold pieces."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick licked the shrine."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to steal old coins."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to communicate with the Toll King."
       }
      ]
     }
@@ -162,29 +415,29 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532291714-1",
+      "id": "event:1790547524678-1",
       "summary": "Wick rode an ox into a fight with a troll.",
       "tags": [
        "nature"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:04:51.714Z",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
       "dangerGap": "severe",
       "themes": [
-       "mounting",
+       "horsemanship",
        "combat"
       ],
-      "quote": "bro rode an ox into a troll fight",
+      "quote": "rode an ox into a troll fight",
       "language": "en",
       "actorName": "Wick",
       "source": "adapter"
      },
      {
-      "id": "event:1790532291714-2",
+      "id": "event:1790547524678-2",
       "summary": "Wick lost his dagger to the river.",
       "tags": [],
       "outcome": "failure",
-      "occurredAt": "2026-09-27T18:04:51.714Z",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
       "themes": [
        "losing-gear"
       ],
@@ -194,13 +447,15 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532291714-3",
-      "summary": "Steve the ox lost a race by sitting down.",
-      "tags": [],
+      "id": "event:1790547524678-3",
+      "summary": "Wick's ox, Steve, lost a race by sitting down.",
+      "tags": [
+       "nature"
+      ],
       "outcome": "failure",
-      "occurredAt": "2026-09-27T18:04:51.714Z",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
       "themes": [
-       "racing"
+       "animal-racing"
       ],
       "quote": "Steve the ox lost a race by sitting down",
       "language": "en",
@@ -208,15 +463,192 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532291714-4",
+      "id": "event:1790547524678-4",
       "summary": "Wick was banned from a pie tent.",
       "tags": [],
       "outcome": "failure",
-      "occurredAt": "2026-09-27T18:04:51.714Z",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
       "themes": [
-       "social-conflict"
+       "social-mishap"
       ],
       "quote": "I got banned from a pie tent",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547524678-5",
+      "summary": "Wick tried to cheat at dice by rigging them.",
+      "tags": [
+       "deception",
+       "thievery"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
+      "themes": [
+       "gambling",
+       "cheating"
+      ],
+      "quote": "lost the party's 40g rigging dice",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799275-6",
+      "summary": "Wick stole the writ from the collector's glove.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.275Z",
+      "themes": [
+       "pickpocketing"
+      ],
+      "quote": "wick stole the writ right off her glove",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799275-7",
+      "summary": "Wick accused the bell lady of working with Vesk.",
+      "tags": [
+       "deception"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:19.275Z",
+      "themes": [
+       "accusation"
+      ],
+      "quote": "he also accused the bell lady of working w/ vesk",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799275-8",
+      "summary": "Wick killed the pinned thrall.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.275Z",
+      "themes": [
+       "melee"
+      ],
+      "quote": "wick finished it off",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799275-9",
+      "summary": "Wick cut Oren loose and hid him behind the wagon.",
+      "tags": [
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.275Z",
+      "themes": [
+       "rescue"
+      ],
+      "quote": "wick cut Oren loose and hid him behind the wagon",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-10",
+      "summary": "Wick cut Steve loose to charge a thrall.",
+      "tags": [
+       "support"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "rescue"
+      ],
+      "quote": "cut steve loose to charge a thrall, steve just ran away",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-11",
+      "summary": "Wick yelled at Vesk until she switched sides.",
+      "tags": [
+       "intimidation"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "coercion"
+      ],
+      "quote": "wick yelled at vesk until she switched sides",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-12",
+      "summary": "Wick threw a dagger through the Toll King's hand.",
+      "tags": [
+       "ranged"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "dangerGap": "moderate",
+      "themes": [
+       "throwing"
+      ],
+      "quote": "wick threw a dagger through his hand",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-13",
+      "summary": "Wick discovered a hidden ledger page.",
+      "tags": [
+       "lore"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "investigation"
+      ],
+      "quote": "wick found a hidden ledger page",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-14",
+      "summary": "Wick stole 30 gold pieces.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "pickpocketing"
+      ],
+      "quote": "also pocketed 30g",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-15",
+      "summary": "Wick licked the shrine.",
+      "tags": [],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "eccentricity"
+      ],
+      "quote": "licked the shrine",
       "language": "en",
       "actorName": "Wick",
       "source": "adapter"
@@ -224,98 +656,148 @@
     ],
     "growthProposals": [],
     "levelProgression": {
-     "level": 0,
-     "progress": 81.25,
-     "grantAllowances": 0,
+     "level": 2,
+     "progress": 73.5,
+     "grantAllowances": 2,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:04:51.714Z",
+     "lastRestAt": "2026-09-27T23:13:19.277Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:04:51.714Z",
+     "notes": "s2 - toll king\n\n- cinderford east gate, rain. toll king's collectors (capt Vesk) want 100g \"bridge-breaker's tax\" or a hostage\n- brakka tied his own wrists w/ rope and offered to go, vesk backed off a bit\n- wick stole the writ right off her glove (lol) - it just says \"bring the one who fed the Silent One\", no gold at all. he also accused the bell lady of working w/ vesk, she laughed at him\n- luz tried the blessing token thing, got laughed at. later held up her symbol in front of the crowd and made it too public for vesk to draw\n- maren NAT 20 persuasion, talked vesk down, no fight at the gate\n- tovin took the rag-market woman's deal for real this time - gave her a year of his dreams. she told him the Silent One is a drowned god under the toll-fort and the toll king feeds it people who surrender\n- brakka tried to get in front of tovin, slipped on the cobbles\n\n- greyhook toll-fort: toll king + 4 drowned thralls out of the pool, hostage guard (Oren) tied up by the water\n- brakka held the stone lip so they came one at a time, hacked one down\n- maren entangle only got 1 of 4. then Thorn Lash on the one going for the wagon, pinned it, wick finished it off\n- toll king drowned maren's lungs w/ pool water, she went down to half. luz healing word'd her\n- wick cut Oren loose and hid him behind the wagon. cut steve loose to charge a thrall, steve just ran away\n- tovin nat20 eldritch blast for 3 dmg 💀. then he told everyone the guard was \"his coin\", creepy\n- wick yelled at vesk until she switched sides, collectors killed the other 2 thralls\n- luz sanctuary on Oren (toll king shrugged it off), sacred flame, guiding bolt missed\n- end: toll king offered tovin his crown. brakka lassoed him, maren thorn-whipped him out of the pool, wick threw a dagger through his hand\n- tovin took the crown and made his patron EAT the silent one?? pool drained. toll king gave up, vesk arrested him. tovin kept the crown\n\n- 2 days at the fort\n- brakka fixed the gate, stood watch outside maren's room. couldn't find steve\n- maren found steve in an orchard. her turnips in the pool silt rotted. bread w/ Oren was amazing, he told us the toll king fed 31 people to the pool. she got vesk to pay for fixing the shrine\n- luz read all 31 names at the shrine, didn't work (yet). she's watching tovin\n- wick found a hidden ledger page -> \"the Lantern House in Varrow\". also pocketed 30g. licked the shrine\n- tovin got caught stealing old coins by vesk. crown just hums, toll king won't talk to him\n\nnext time: varrow / lantern house. who's bringing snacks. also can maren's thorn lash crit?? ask at start",
+     "at": "2026-09-27T23:13:19.277Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532291714-1",
-      "event:1790532291714-2",
-      "event:1790532291714-3",
-      "event:1790532291714-4"
+      "event:1790550799275-6",
+      "event:1790550799275-7",
+      "event:1790550799275-8",
+      "event:1790550799275-9",
+      "event:1790550799276-10",
+      "event:1790550799276-11",
+      "event:1790550799276-12",
+      "event:1790550799276-13",
+      "event:1790550799276-14",
+      "event:1790550799276-15"
      ],
      "proposalIds": [],
      "diagnostics": {
       "source": "adapter",
-      "events": 4,
-      "attributedToOthers": 15,
+      "events": 10,
+      "attributedToOthers": 26,
       "skippedEvents": 0,
       "skippedProposals": 0,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
+      "chunks": 2,
       "attempts": 2,
       "repairs": 0,
-      "totalMs": 20900
+      "totalMs": 1
      },
      "attributedToOthers": [
       {
        "actorName": "Brakka",
-       "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+       "summary": "Brakka tied his own wrists and offered himself as a hostage."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz tried to use a blessing token."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz held up her symbol in front of the crowd to prevent Vesk from drawing her weapon."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren persuaded Vesk to stand down."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin gave the rag-market woman a year of his dreams."
       },
       {
        "actorName": "Brakka",
-       "summary": "Brakka won two fights in the pit and lost the third to the champion."
+       "summary": "Brakka tried to get in front of Tovin but slipped."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka held the stone lip to control the thralls' approach and killed one."
       },
       {
        "actorName": "Maren",
-       "summary": "Maren rooted three out of four goblins in place with entangle."
+       "summary": "Maren cast Entangle on the thralls."
       },
       {
-       "actorName": "Maren",
-       "summary": "Maren healed Brakka."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren thorn-whipped the last goblin into the burning railing."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren treated the surrendered goblins."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren sold out of honey."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren placed second in a bake-off with a lavender honey loaf."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren adopted a stable cat."
-      },
-      {
-       "actorName": "Tovin",
-       "summary": "Tovin torched a troll."
-      },
-      {
-       "actorName": "Tovin",
-       "summary": "Tovin lost a bet in the pit."
-      },
-      {
-       "actorName": "Tovin",
-       "summary": "Tovin quietly dealt with a loose end on the bridge."
+       "actorName": "Toll King",
+       "summary": "The Toll King drowned Maren's lungs with pool water."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz healed Brakka to full health after the troll fight."
+       "summary": "Luz healed Maren."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin cast Eldritch Blast."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz confronted Tovin for killing a surrendering goblin."
+       "summary": "Luz cast Sanctuary on Oren."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz led the dawn blessing at the temple."
+       "summary": "Luz cast Sacred Flame and Guiding Bolt."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka lassoed the Toll King."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren thorn-whipped the Toll King out of the pool."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin took the crown and made his patron consume the Silent One."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka repaired the fort's gate."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka stood watch outside Maren's room."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka searched for Steve."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren found Steve in an orchard."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren's turnips rotted in the pool silt."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren persuaded Vesk to pay for the shrine's repairs."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz read the 31 names at the shrine."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz is keeping watch on Tovin."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to steal old coins."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to communicate with the Toll King."
       }
      ]
     }
@@ -330,14 +812,14 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532312126-1",
-      "summary": "Maren rooted three out of four goblins in place with entangle.",
+      "id": "event:1790547524680-1",
+      "summary": "Maren used entangle to root three of four goblins in place.",
       "tags": [
        "primal",
        "spellcasting"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.126Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "crowd-control"
       ],
@@ -347,14 +829,14 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-2",
+      "id": "event:1790547524680-2",
       "summary": "Maren healed Brakka.",
       "tags": [
        "medicine",
        "support"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "healing"
       ],
@@ -364,15 +846,14 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-3",
+      "id": "event:1790547524680-3",
       "summary": "Maren thorn-whipped the last goblin into the burning railing.",
       "tags": [
        "primal",
-       "fire",
        "spellcasting"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "combat"
       ],
@@ -382,14 +863,13 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-4",
-      "summary": "Maren patched up the surrendered goblins.",
+      "id": "event:1790547524680-4",
+      "summary": "Maren treated the surrendered goblins.",
       "tags": [
-       "medicine",
-       "support"
+       "medicine"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "first-aid"
       ],
@@ -399,11 +879,11 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-5",
+      "id": "event:1790547524680-5",
       "summary": "Maren sold out of honey.",
       "tags": [],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "trading"
       ],
@@ -413,13 +893,13 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-6",
-      "summary": "Maren placed second in the bake-off with a lavender honey loaf.",
+      "id": "event:1790547524680-6",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf.",
       "tags": [
        "craft"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "baking",
        "competition"
@@ -430,108 +910,545 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-7",
+      "id": "event:1790547524680-7",
       "summary": "Maren adopted a stable cat.",
       "tags": [
        "nature"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
-       "pet-adoption"
+       "pet-ownership"
       ],
       "quote": "adopted a stable cat",
       "language": "en",
       "actorName": "Maren",
       "source": "adapter"
+     },
+     {
+      "id": "event:1790550807565-8",
+      "summary": "Maren persuaded Vesk to stand down.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-27T23:13:27.565Z",
+      "themes": [
+       "persuasion"
+      ],
+      "quote": "maren NAT 20 persuasion, talked vesk down",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-9",
+      "summary": "Maren cast Entangle on the thralls.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "quote": "maren entangle only got 1 of 4 ... then Thorn Lash on the one going for the wagon, pinned it",
+      "language": "en",
+      "actorName": "Maren",
+      "consequence": "Maren used Thorn Lash to pin the thrall attacking the wagon.",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-10",
+      "summary": "Maren thorn-whipped the Toll King out of the pool.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "dangerGap": "moderate",
+      "quote": "maren thorn-whipped him out of the pool",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-11",
+      "summary": "Maren found Steve in an orchard.",
+      "tags": [
+       "survival"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "themes": [
+       "searching"
+      ],
+      "quote": "maren found steve in an orchard",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-12",
+      "summary": "Maren's turnips rotted in the pool silt.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "themes": [
+       "farming"
+      ],
+      "quote": "her turnips in the pool silt rotted",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-13",
+      "summary": "Maren persuaded Vesk to pay for the shrine's repairs.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "themes": [
+       "negotiating"
+      ],
+      "quote": "she got vesk to pay for fixing the shrine",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:verdant-snare-thorn-lash",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Maren used entangle to root three of four goblins in place.",
+       "Maren thorn-whipped the last goblin into the burning railing."
+      ],
+      "entry": {
+       "name": "Verdant Snare: Thorn Lash",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a spell attack roll against one creature within 30 feet. On a hit, the target takes 2d6 piercing damage and is Restrained until the end of your next turn. If the target is already Restrained, it instead takes an additional 1d6 piercing damage and is pushed 10 feet away from you.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Spell attack",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "primal",
+         "spellcasting",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a distinct combat style combining crowd control (entangle) with aggressive repositioning (thorn-whipping into hazards), suggesting a specialized use of plant magic for battlefield control."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Druid spell action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-27T22:21:23.987Z",
+      "approvedAt": "2026-09-27T22:22:27.331Z"
+     },
+     {
+      "id": "proposal:ai-skill:grovekeeper-field-triage",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren healed Brakka.",
+       "Maren treated the surrendered goblins."
+      ],
+      "entry": {
+       "name": "Grovekeeper: Field Triage",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt a Medicine check to treat one adjacent creature. On a success, the target regains 1d8 Hit Points. If the target is an animal or a humanoid who has surrendered or is not hostile, you gain advantage on the check.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Medicine check",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "medicine",
+         "support",
+         "nature"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren consistently provided medical aid to allies and even surrendered enemies, showing a dedicated and compassionate approach to healing that goes beyond simple spellcasting."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Medicine skill action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-27T22:21:23.988Z"
+     },
+     {
+      "id": "proposal:ai-skill:honeycomb-artisan-s-trade",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren sold out of honey.",
+       "Maren placed second in a bake-off with a lavender honey loaf."
+      ],
+      "entry": {
+       "name": "Honeycomb: Artisan's Trade",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "You gain proficiency with Cook's Utensils and Brewer's Supplies. When you sell or trade goods you have crafted or gathered (such as honey or baked goods), you can add your proficiency bonus to the DC for any Persuasion or Deception check made to negotiate a better price, and you earn 10% more gold from such sales.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "craft",
+         "diplomacy"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren's success in selling honey and competing in a bake-off indicates a strong aptitude for artisanal production and commerce, which can be formalized as a craft and social skill."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Dungeons & Dragons Fifth Edition (2024 rules) feat (GM review)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-27T22:21:23.988Z"
+     },
+     {
+      "id": "proposal:ai-skill:verdant-snare-warden-s-bargain",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren persuaded Vesk to stand down (criticalSuccess)",
+       "Maren persuaded Vesk to pay for the shrine's repairs (success)"
+      ],
+      "entry": {
+       "name": "Verdant Snare: Warden's Bargain",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "When you succeed on a Persuasion check to convince a creature to stand down or pay a debt, you can use your reaction to grant that creature advantage on its next saving throw against a fear effect or a condition that would restrict its movement, representing the lingering weight of your authority.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "1 round"
+       },
+       "metadata": {
+        "tags": [
+         "diplomacy",
+         "leadership"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a consistent ability to de-escalate conflicts and negotiate favorable terms with powerful entities like Vesk, showing a mastery of social control that complements her druidic authority."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Feat granting a reactive social benefit (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     }
+    ],
     "levelProgression": {
-     "level": 1,
-     "progress": 75,
+     "level": 2,
+     "progress": 76,
      "grantAllowances": 1,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:05:12.127Z",
+     "lastRestAt": "2026-09-27T23:13:27.567Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:05:12.127Z",
+     "notes": "s2 - toll king\n\n- cinderford east gate, rain. toll king's collectors (capt Vesk) want 100g \"bridge-breaker's tax\" or a hostage\n- brakka tied his own wrists w/ rope and offered to go, vesk backed off a bit\n- wick stole the writ right off her glove (lol) - it just says \"bring the one who fed the Silent One\", no gold at all. he also accused the bell lady of working w/ vesk, she laughed at him\n- luz tried the blessing token thing, got laughed at. later held up her symbol in front of the crowd and made it too public for vesk to draw\n- maren NAT 20 persuasion, talked vesk down, no fight at the gate\n- tovin took the rag-market woman's deal for real this time - gave her a year of his dreams. she told him the Silent One is a drowned god under the toll-fort and the toll king feeds it people who surrender\n- brakka tried to get in front of tovin, slipped on the cobbles\n\n- greyhook toll-fort: toll king + 4 drowned thralls out of the pool, hostage guard (Oren) tied up by the water\n- brakka held the stone lip so they came one at a time, hacked one down\n- maren entangle only got 1 of 4. then Thorn Lash on the one going for the wagon, pinned it, wick finished it off\n- toll king drowned maren's lungs w/ pool water, she went down to half. luz healing word'd her\n- wick cut Oren loose and hid him behind the wagon. cut steve loose to charge a thrall, steve just ran away\n- tovin nat20 eldritch blast for 3 dmg 💀. then he told everyone the guard was \"his coin\", creepy\n- wick yelled at vesk until she switched sides, collectors killed the other 2 thralls\n- luz sanctuary on Oren (toll king shrugged it off), sacred flame, guiding bolt missed\n- end: toll king offered tovin his crown. brakka lassoed him, maren thorn-whipped him out of the pool, wick threw a dagger through his hand\n- tovin took the crown and made his patron EAT the silent one?? pool drained. toll king gave up, vesk arrested him. tovin kept the crown\n\n- 2 days at the fort\n- brakka fixed the gate, stood watch outside maren's room. couldn't find steve\n- maren found steve in an orchard. her turnips in the pool silt rotted. bread w/ Oren was amazing, he told us the toll king fed 31 people to the pool. she got vesk to pay for fixing the shrine\n- luz read all 31 names at the shrine, didn't work (yet). she's watching tovin\n- wick found a hidden ledger page -> \"the Lantern House in Varrow\". also pocketed 30g. licked the shrine\n- tovin got caught stealing old coins by vesk. crown just hums, toll king won't talk to him\n\nnext time: varrow / lantern house. who's bringing snacks. also can maren's thorn lash crit?? ask at start",
+     "at": "2026-09-27T23:13:27.567Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532312126-1",
-      "event:1790532312127-2",
-      "event:1790532312127-3",
-      "event:1790532312127-4",
-      "event:1790532312127-5",
-      "event:1790532312127-6",
-      "event:1790532312127-7"
+      "event:1790550807565-8",
+      "event:1790550807566-9",
+      "event:1790550807566-10",
+      "event:1790550807566-11",
+      "event:1790550807566-12",
+      "event:1790550807566-13"
      ],
-     "proposalIds": [],
+     "proposalIds": [
+      "proposal:ai-skill:verdant-snare-warden-s-bargain"
+     ],
      "diagnostics": {
       "source": "adapter",
-      "events": 7,
-      "attributedToOthers": 11,
+      "events": 6,
+      "attributedToOthers": 30,
       "skippedEvents": 0,
       "skippedProposals": 0,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
-      "attempts": 2,
+      "chunks": 2,
+      "attempts": 3,
       "repairs": 0,
-      "totalMs": 20411
+      "totalMs": 8287
      },
      "attributedToOthers": [
       {
        "actorName": "Brakka",
-       "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+       "summary": "Brakka tied his own wrists and offered himself as a hostage."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick stole the writ from the collector's glove."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick accused the bell lady of working with Vesk."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz tried to use a blessing token."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz held up her symbol in front of the crowd to prevent Vesk from drawing her weapon."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin gave the rag-market woman a year of his dreams."
       },
       {
        "actorName": "Brakka",
-       "summary": "Brakka won two fights in the pit but lost the third to the champion."
+       "summary": "Brakka tried to get in front of Tovin but slipped."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka held the stone lip to control the thralls' approach and killed one."
       },
       {
        "actorName": "Wick",
-       "summary": "Wick rode an ox into a fight with a troll."
+       "summary": "Wick killed the pinned thrall."
+      },
+      {
+       "actorName": "Toll King",
+       "summary": "The Toll King drowned Maren's lungs with pool water."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz healed Maren."
       },
       {
        "actorName": "Wick",
-       "summary": "Wick lost his dagger to the river."
+       "summary": "Wick cut Oren loose and hid him behind the wagon."
       },
       {
        "actorName": "Wick",
-       "summary": "Steve the ox lost a race by sitting down."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick was banned from a pie tent."
+       "summary": "Wick cut Steve loose to charge a thrall."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin torched a troll."
+       "summary": "Tovin cast Eldritch Blast."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick yelled at Vesk until she switched sides."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz cast Sanctuary on Oren."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz cast Sacred Flame and Guiding Bolt."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka lassoed the Toll King."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick threw a dagger through the Toll King's hand."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin lost a bet in the pit."
+       "summary": "Tovin took the crown and made his patron consume the Silent One."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka repaired the fort's gate."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka stood watch outside Maren's room."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka searched for Steve."
       },
       {
        "actorName": "Luz",
-       "summary": "Tovin killed a goblin that was surrendering."
+       "summary": "Luz read the 31 names at the shrine."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz healed Brakka to full health after the troll fight."
+       "summary": "Luz is keeping watch on Tovin."
       },
       {
-       "actorName": "Luz",
-       "summary": "Luz led the dawn blessing at the temple."
+       "actorName": "Wick",
+       "summary": "Wick discovered a hidden ledger page."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick stole 30 gold pieces."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick licked the shrine."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to steal old coins."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to communicate with the Toll King."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:verdant-snare-thorn-lash": {
+       "name": "Verdant Snare: Thorn Lash",
+       "itemId": "ptlxaev6nvhd",
+       "approvedAt": "2026-09-27T22:22:27.330Z",
+       "metadata": {
+        "id": "skill:verdant-snare-thorn-lash",
+        "tags": [
+         "primal",
+         "spellcasting",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a distinct combat style combining crowd control (entangle) with aggressive repositioning (thorn-whipping into hazards), suggesting a specialized use of plant magic for battlefield control."
+        }
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a spell attack roll against one creature within 30 feet. On a hit, the target takes 2d6 piercing damage and is Restrained until the end of your next turn. If the target is already Restrained, it instead takes an additional 1d6 piercing damage and is pushed 10 feet away from you.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Spell attack",
+         "formula": "1d20+3"
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Druid spell action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Verdant Snare: Thorn Lash] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Druid spell action (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> Make a spell attack roll against one creature within 30 feet. On a hit, the target takes 2d6 piercing damage and is Restrained until the end of your next turn. If the target is already Restrained, it instead takes an additional 1d6 piercing damage and is pushed 10 feet away from you.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Resolution:</strong> Spell attack — [[/r 1d20+3]]</p><p><strong>Tags:</strong> primal, spellcasting, martial</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Maren demonstrated a distinct combat style combining crowd control (entangle) with aggressive repositioning (thorn-whipping into hazards), suggesting a specialized use of plant magic for battlefield control.</p>"
+      },
+      "activities": {
+       "actm6lrwks9": {
+        "_id": "actm6lrwks9",
+        "type": "attack",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:verdant-snare-thorn-lash",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:verdant-snare-thorn-lash",
+        "tags": [
+         "primal",
+         "spellcasting",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a distinct combat style combining crowd control (entangle) with aggressive repositioning (thorn-whipping into hazards), suggesting a specialized use of plant magic for battlefield control."
+        }
+       }
+      }
+     },
+     "_id": "ptlxaev6nvhd"
+    }
+   ]
   },
   {
    "name": "Tovin",
@@ -541,16 +1458,16 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532332409-1",
+      "id": "event:1790547524682-1",
       "summary": "Tovin torched a troll.",
       "tags": [
-       "fire"
+       "fire",
+       "spellcasting"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:32.409Z",
+      "occurredAt": "2026-09-27T22:18:44.682Z",
       "dangerGap": "severe",
       "themes": [
-       "burning",
        "combat"
       ],
       "quote": "torched a troll",
@@ -559,11 +1476,11 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532332409-2",
+      "id": "event:1790547524682-2",
       "summary": "Tovin lost a bet in the pit.",
       "tags": [],
       "outcome": "failure",
-      "occurredAt": "2026-09-27T18:05:32.409Z",
+      "occurredAt": "2026-09-27T22:18:44.682Z",
       "themes": [
        "gambling"
       ],
@@ -573,18 +1490,94 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532332409-3",
-      "summary": "Tovin quietly eliminated a loose end on the bridge.",
+      "id": "event:1790547524682-3",
+      "summary": "Tovin killed a goblin that was surrendering on the bridge.",
       "tags": [
-       "deception"
+       "martial"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:32.409Z",
+      "occurredAt": "2026-09-27T22:18:44.682Z",
       "themes": [
-       "cover-up",
-       "secret-action"
+       "killing-the-surrendered"
       ],
-      "quote": "quietly tidied up a loose end on the bridge",
+      "quote": "I may have quietly tidied up a loose end on the bridge",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810398-4",
+      "summary": "Tovin gave the rag-market woman a year of his dreams.",
+      "tags": [
+       "occult"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:30.398Z",
+      "themes": [
+       "dream-sacrifice"
+      ],
+      "quote": "tovin took the rag-market woman's deal for real this time - gave her a year of his dreams",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810398-5",
+      "summary": "Tovin cast Eldritch Blast.",
+      "tags": [
+       "occult",
+       "spellcasting"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-27T23:13:30.398Z",
+      "quote": "tovin nat20 eldritch blast for 3 dmg",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810398-6",
+      "summary": "Tovin took the crown and made his patron consume the Silent One.",
+      "tags": [
+       "occult",
+       "summoning"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:30.398Z",
+      "dangerGap": "severe",
+      "quote": "tovin took the crown and made his patron EAT the silent one",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810398-7",
+      "summary": "Tovin tried to steal old coins.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:30.398Z",
+      "themes": [
+       "pickpocketing"
+      ],
+      "quote": "tovin got caught stealing old coins by vesk",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810399-8",
+      "summary": "Tovin tried to communicate with the Toll King.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:30.399Z",
+      "themes": [
+       "negotiating"
+      ],
+      "quote": "toll king won't talk to him",
       "language": "en",
       "actorName": "Tovin",
       "source": "adapter"
@@ -592,97 +1585,163 @@
     ],
     "growthProposals": [],
     "levelProgression": {
-     "level": 0,
-     "progress": 93.75,
-     "grantAllowances": 0,
+     "level": 1,
+     "progress": 133.75,
+     "grantAllowances": 1,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:05:32.410Z",
+     "lastRestAt": "2026-09-27T23:13:30.399Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:05:32.410Z",
+     "notes": "s2 - toll king\n\n- cinderford east gate, rain. toll king's collectors (capt Vesk) want 100g \"bridge-breaker's tax\" or a hostage\n- brakka tied his own wrists w/ rope and offered to go, vesk backed off a bit\n- wick stole the writ right off her glove (lol) - it just says \"bring the one who fed the Silent One\", no gold at all. he also accused the bell lady of working w/ vesk, she laughed at him\n- luz tried the blessing token thing, got laughed at. later held up her symbol in front of the crowd and made it too public for vesk to draw\n- maren NAT 20 persuasion, talked vesk down, no fight at the gate\n- tovin took the rag-market woman's deal for real this time - gave her a year of his dreams. she told him the Silent One is a drowned god under the toll-fort and the toll king feeds it people who surrender\n- brakka tried to get in front of tovin, slipped on the cobbles\n\n- greyhook toll-fort: toll king + 4 drowned thralls out of the pool, hostage guard (Oren) tied up by the water\n- brakka held the stone lip so they came one at a time, hacked one down\n- maren entangle only got 1 of 4. then Thorn Lash on the one going for the wagon, pinned it, wick finished it off\n- toll king drowned maren's lungs w/ pool water, she went down to half. luz healing word'd her\n- wick cut Oren loose and hid him behind the wagon. cut steve loose to charge a thrall, steve just ran away\n- tovin nat20 eldritch blast for 3 dmg 💀. then he told everyone the guard was \"his coin\", creepy\n- wick yelled at vesk until she switched sides, collectors killed the other 2 thralls\n- luz sanctuary on Oren (toll king shrugged it off), sacred flame, guiding bolt missed\n- end: toll king offered tovin his crown. brakka lassoed him, maren thorn-whipped him out of the pool, wick threw a dagger through his hand\n- tovin took the crown and made his patron EAT the silent one?? pool drained. toll king gave up, vesk arrested him. tovin kept the crown\n\n- 2 days at the fort\n- brakka fixed the gate, stood watch outside maren's room. couldn't find steve\n- maren found steve in an orchard. her turnips in the pool silt rotted. bread w/ Oren was amazing, he told us the toll king fed 31 people to the pool. she got vesk to pay for fixing the shrine\n- luz read all 31 names at the shrine, didn't work (yet). she's watching tovin\n- wick found a hidden ledger page -> \"the Lantern House in Varrow\". also pocketed 30g. licked the shrine\n- tovin got caught stealing old coins by vesk. crown just hums, toll king won't talk to him\n\nnext time: varrow / lantern house. who's bringing snacks. also can maren's thorn lash crit?? ask at start",
+     "at": "2026-09-27T23:13:30.399Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532332409-1",
-      "event:1790532332409-2",
-      "event:1790532332409-3"
+      "event:1790550810398-4",
+      "event:1790550810398-5",
+      "event:1790550810398-6",
+      "event:1790550810398-7",
+      "event:1790550810399-8"
      ],
      "proposalIds": [],
      "diagnostics": {
       "source": "adapter",
-      "events": 3,
-      "attributedToOthers": 15,
+      "events": 5,
+      "attributedToOthers": 31,
       "skippedEvents": 0,
       "skippedProposals": 0,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
-      "attempts": 2,
+      "chunks": 2,
+      "attempts": 3,
       "repairs": 0,
-      "totalMs": 20281
+      "totalMs": 2830
      },
      "attributedToOthers": [
       {
        "actorName": "Brakka",
-       "summary": "Brakka held the bridge against a troll and goblins until the watch arrived."
+       "summary": "Brakka tied his own wrists and offered himself as a hostage."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick stole the writ from the collector's glove."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick accused the bell lady of working with Vesk."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz tried to use a blessing token."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz held up her symbol in front of the crowd to prevent Vesk from drawing her weapon."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren persuaded Vesk to stand down."
       },
       {
        "actorName": "Brakka",
-       "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+       "summary": "Brakka tried to get in front of Tovin but slipped."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka held the stone lip to control the thralls' approach and killed one."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren cast Entangle on the thralls."
       },
       {
        "actorName": "Wick",
-       "summary": "Wick rode an ox into a fight with a troll."
+       "summary": "Wick killed the pinned thrall."
       },
       {
-       "actorName": "Wick",
-       "summary": "Wick lost his dagger to the river."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Steve the ox lost a race by sitting down."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick was banned from a pie tent."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren used entangle to root three of four goblins in place."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren healed Brakka."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren thorn-whipped the last goblin into a burning railing."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren treated the surrendered goblins."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren sold out of honey."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren placed second in a bake-off with a lavender honey loaf."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren adopted a stable cat."
+       "actorName": "Toll King",
+       "summary": "The Toll King drowned Maren's lungs with pool water."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz healed Brakka to full health after the troll fight."
+       "summary": "Luz healed Maren."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick cut Oren loose and hid him behind the wagon."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick cut Steve loose to charge a thrall."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick yelled at Vesk until she switched sides."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz led the dawn blessing at the temple."
+       "summary": "Luz cast Sanctuary on Oren."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz cast Sacred Flame and Guiding Bolt."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka lassoed the Toll King."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren thorn-whipped the Toll King out of the pool."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick threw a dagger through the Toll King's hand."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka repaired the fort's gate."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka stood watch outside Maren's room."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka searched for Steve."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren found Steve in an orchard."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren's turnips rotted in the pool silt."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren persuaded Vesk to pay for the shrine's repairs."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz read the 31 names at the shrine."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz is keeping watch on Tovin."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick discovered a hidden ledger page."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick stole 30 gold pieces."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick licked the shrine."
       }
      ]
     }
@@ -697,16 +1756,15 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532354230-1",
+      "id": "event:1790547524684-1",
       "summary": "Luz healed Brakka to full health after the troll fight.",
       "tags": [
        "medicine",
        "divine",
-       "support",
-       "spellcasting"
+       "support"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:54.230Z",
+      "occurredAt": "2026-09-27T22:18:44.684Z",
       "themes": [
        "healing"
       ],
@@ -716,36 +1774,129 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532354230-2",
-      "summary": "Luz witnessed Tovin killing a surrendering goblin.",
+      "id": "event:1790547524684-2",
+      "summary": "Luz led the dawn blessing at the temple.",
       "tags": [
-       "lore"
+       "religion"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:54.230Z",
+      "occurredAt": "2026-09-27T22:18:44.684Z",
       "themes": [
-       "witnessing",
-       "moral-conflict"
+       "ritual",
+       "prayer"
       ],
-      "quote": "she catch Tovin killing a goblin that was surrender",
+      "quote": "Luz lead the dawn blessing at the temple",
       "language": "en",
       "actorName": "Luz",
       "source": "adapter"
      },
      {
-      "id": "event:1790532354230-3",
-      "summary": "Luz led the dawn blessing at the temple.",
+      "id": "event:1790550812224-3",
+      "summary": "Luz tried to use a blessing token.",
       "tags": [
-       "religion",
+       "divine"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:32.224Z",
+      "themes": [
+       "blessing"
+      ],
+      "quote": "luz tried the blessing token thing, got laughed at",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812224-4",
+      "summary": "Luz held up her symbol in front of the crowd to prevent Vesk from drawing her weapon.",
+      "tags": [
        "divine",
-       "leadership"
+       "intimidation"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:54.230Z",
+      "occurredAt": "2026-09-27T23:13:32.224Z",
+      "themes": [
+       "public-display"
+      ],
+      "quote": "later held up her symbol in front of the crowd and made it too public for vesk to draw",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812224-5",
+      "summary": "Luz healed Maren.",
+      "tags": [
+       "divine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:32.224Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "luz healing word'd her",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812225-6",
+      "summary": "Luz cast Sanctuary on Oren.",
+      "tags": [
+       "divine",
+       "support",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:32.225Z",
+      "quote": "luz sanctuary on Oren",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812225-7",
+      "summary": "Luz cast Sacred Flame and Guiding Bolt.",
+      "tags": [
+       "divine",
+       "spellcasting"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:32.225Z",
+      "quote": "sacred flame, guiding bolt missed",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812225-8",
+      "summary": "Luz read the 31 names at the shrine.",
+      "tags": [
+       "occultism"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:32.225Z",
       "themes": [
        "ritual"
       ],
-      "quote": "Luz lead the dawn blessing at the temple",
+      "quote": "luz read all 31 names at the shrine, didn't work (yet)",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812225-9",
+      "summary": "Luz is keeping watch on Tovin.",
+      "tags": [
+       "stealth"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:32.225Z",
+      "themes": [
+       "surveillance"
+      ],
+      "quote": "she's watching tovin",
       "language": "en",
       "actorName": "Luz",
       "source": "adapter"
@@ -753,101 +1904,157 @@
     ],
     "growthProposals": [],
     "levelProgression": {
-     "level": 0,
-     "progress": 75,
-     "grantAllowances": 0,
+     "level": 1,
+     "progress": 68.75,
+     "grantAllowances": 1,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:05:54.231Z",
+     "lastRestAt": "2026-09-27T23:13:32.225Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:05:54.230Z",
+     "notes": "s2 - toll king\n\n- cinderford east gate, rain. toll king's collectors (capt Vesk) want 100g \"bridge-breaker's tax\" or a hostage\n- brakka tied his own wrists w/ rope and offered to go, vesk backed off a bit\n- wick stole the writ right off her glove (lol) - it just says \"bring the one who fed the Silent One\", no gold at all. he also accused the bell lady of working w/ vesk, she laughed at him\n- luz tried the blessing token thing, got laughed at. later held up her symbol in front of the crowd and made it too public for vesk to draw\n- maren NAT 20 persuasion, talked vesk down, no fight at the gate\n- tovin took the rag-market woman's deal for real this time - gave her a year of his dreams. she told him the Silent One is a drowned god under the toll-fort and the toll king feeds it people who surrender\n- brakka tried to get in front of tovin, slipped on the cobbles\n\n- greyhook toll-fort: toll king + 4 drowned thralls out of the pool, hostage guard (Oren) tied up by the water\n- brakka held the stone lip so they came one at a time, hacked one down\n- maren entangle only got 1 of 4. then Thorn Lash on the one going for the wagon, pinned it, wick finished it off\n- toll king drowned maren's lungs w/ pool water, she went down to half. luz healing word'd her\n- wick cut Oren loose and hid him behind the wagon. cut steve loose to charge a thrall, steve just ran away\n- tovin nat20 eldritch blast for 3 dmg 💀. then he told everyone the guard was \"his coin\", creepy\n- wick yelled at vesk until she switched sides, collectors killed the other 2 thralls\n- luz sanctuary on Oren (toll king shrugged it off), sacred flame, guiding bolt missed\n- end: toll king offered tovin his crown. brakka lassoed him, maren thorn-whipped him out of the pool, wick threw a dagger through his hand\n- tovin took the crown and made his patron EAT the silent one?? pool drained. toll king gave up, vesk arrested him. tovin kept the crown\n\n- 2 days at the fort\n- brakka fixed the gate, stood watch outside maren's room. couldn't find steve\n- maren found steve in an orchard. her turnips in the pool silt rotted. bread w/ Oren was amazing, he told us the toll king fed 31 people to the pool. she got vesk to pay for fixing the shrine\n- luz read all 31 names at the shrine, didn't work (yet). she's watching tovin\n- wick found a hidden ledger page -> \"the Lantern House in Varrow\". also pocketed 30g. licked the shrine\n- tovin got caught stealing old coins by vesk. crown just hums, toll king won't talk to him\n\nnext time: varrow / lantern house. who's bringing snacks. also can maren's thorn lash crit?? ask at start",
+     "at": "2026-09-27T23:13:32.225Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532354230-1",
-      "event:1790532354230-2",
-      "event:1790532354230-3"
+      "event:1790550812224-3",
+      "event:1790550812224-4",
+      "event:1790550812224-5",
+      "event:1790550812225-6",
+      "event:1790550812225-7",
+      "event:1790550812225-8",
+      "event:1790550812225-9"
      ],
      "proposalIds": [],
      "diagnostics": {
       "source": "adapter",
-      "events": 3,
-      "attributedToOthers": 16,
+      "events": 7,
+      "attributedToOthers": 29,
       "skippedEvents": 0,
       "skippedProposals": 0,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
-      "attempts": 2,
+      "chunks": 2,
+      "attempts": 3,
       "repairs": 0,
-      "totalMs": 21819
+      "totalMs": 1824
      },
      "attributedToOthers": [
       {
        "actorName": "Brakka",
-       "summary": "Brakka held the bridge against a troll and controlled the goblins until the watch arrived."
+       "summary": "Brakka tied his own wrists and offered himself as a hostage."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick stole the writ from the collector's glove."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick accused the bell lady of working with Vesk."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren persuaded Vesk to stand down."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin gave the rag-market woman a year of his dreams."
       },
       {
        "actorName": "Brakka",
-       "summary": "Brakka won two fights in the pit and lost the third to the champion."
+       "summary": "Brakka tried to get in front of Tovin but slipped."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka held the stone lip to control the thralls' approach and killed one."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren cast Entangle on the thralls."
       },
       {
        "actorName": "Wick",
-       "summary": "Wick rode an ox into a fight with a troll."
+       "summary": "Wick killed the pinned thrall."
+      },
+      {
+       "actorName": "Toll King",
+       "summary": "The Toll King drowned Maren's lungs with pool water."
       },
       {
        "actorName": "Wick",
-       "summary": "Wick lost his dagger to the river."
+       "summary": "Wick cut Oren loose and hid him behind the wagon."
       },
       {
        "actorName": "Wick",
-       "summary": "Steve the ox lost a race by sitting down."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick was banned from a pie tent."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren rooted three out of four goblins in place with entangle."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren healed Brakka."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren thorn-whipped the last goblin into a burning railing."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren treated the surrendered goblins."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren sold out of her honey at the festival."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren placed second in a bake-off with a lavender honey loaf."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren adopted a stable cat."
+       "summary": "Wick cut Steve loose to charge a thrall."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin torched a troll."
+       "summary": "Tovin cast Eldritch Blast."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick yelled at Vesk until she switched sides."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka lassoed the Toll King."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren thorn-whipped the Toll King out of the pool."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick threw a dagger through the Toll King's hand."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin lost a bet in the pit."
+       "summary": "Tovin took the crown and made his patron consume the Silent One."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka repaired the fort's gate."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka stood watch outside Maren's room."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka searched for Steve."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren found Steve in an orchard."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren's turnips rotted in the pool silt."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren persuaded Vesk to pay for the shrine's repairs."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick discovered a hidden ledger page."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick stole 30 gold pieces."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick licked the shrine."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin quietly dealt with a loose end on the bridge."
+       "summary": "Tovin tried to steal old coins."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to communicate with the Toll King."
       }
      ]
     }
@@ -860,128 +2067,248 @@
    "holding-a-line": {
     "count": 1,
     "label": "Holding A Line",
-    "firstSeen": "2026-09-27T18:04:30.807Z",
-    "lastSeen": "2026-09-27T18:04:30.807Z"
+    "firstSeen": "2026-09-27T22:18:44.670Z",
+    "lastSeen": "2026-09-27T22:18:44.670Z"
    },
    "crowd-control": {
     "count": 2,
     "label": "Crowd Control",
-    "firstSeen": "2026-09-27T18:04:30.807Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "firstSeen": "2026-09-27T22:18:44.670Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
    },
-   "arena-fighting": {
+   "brawling": {
     "count": 1,
-    "label": "Arena Fighting",
-    "firstSeen": "2026-09-27T18:04:30.807Z",
-    "lastSeen": "2026-09-27T18:04:30.807Z"
+    "label": "Brawling",
+    "firstSeen": "2026-09-27T22:18:44.670Z",
+    "lastSeen": "2026-09-27T22:18:44.670Z"
    },
-   "mounting": {
+   "competition": {
+    "count": 2,
+    "label": "Competition",
+    "firstSeen": "2026-09-27T22:18:44.670Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
+   },
+   "horsemanship": {
     "count": 1,
-    "label": "Mounting",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:04:51.714Z"
+    "label": "Horsemanship",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
    },
    "combat": {
     "count": 3,
     "label": "Combat",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.682Z"
    },
    "losing-gear": {
     "count": 1,
     "label": "Losing Gear",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:04:51.714Z"
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
    },
-   "racing": {
+   "animal-racing": {
     "count": 1,
-    "label": "Racing",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:04:51.714Z"
+    "label": "Animal Racing",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
    },
-   "social-conflict": {
+   "social-mishap": {
     "count": 1,
-    "label": "Social Conflict",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:04:51.714Z"
+    "label": "Social Mishap",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
+   },
+   "gambling": {
+    "count": 2,
+    "label": "Gambling",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.682Z"
+   },
+   "cheating": {
+    "count": 1,
+    "label": "Cheating",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
    },
    "healing": {
-    "count": 2,
+    "count": 3,
     "label": "Healing",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:54.230Z"
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-27T23:13:32.225Z"
    },
    "first-aid": {
     "count": 1,
     "label": "First Aid",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
    },
    "trading": {
     "count": 1,
     "label": "Trading",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
    },
    "baking": {
     "count": 1,
     "label": "Baking",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
    },
-   "competition": {
+   "pet-ownership": {
     "count": 1,
-    "label": "Competition",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "label": "Pet Ownership",
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
    },
-   "pet-adoption": {
+   "killing-the-surrendered": {
     "count": 1,
-    "label": "Pet Adoption",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
-   },
-   "burning": {
-    "count": 1,
-    "label": "Burning",
-    "firstSeen": "2026-09-27T18:05:32.409Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
-   },
-   "gambling": {
-    "count": 1,
-    "label": "Gambling",
-    "firstSeen": "2026-09-27T18:05:32.409Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
-   },
-   "cover-up": {
-    "count": 1,
-    "label": "Cover Up",
-    "firstSeen": "2026-09-27T18:05:32.409Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
-   },
-   "secret-action": {
-    "count": 1,
-    "label": "Secret Action",
-    "firstSeen": "2026-09-27T18:05:32.409Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
-   },
-   "witnessing": {
-    "count": 1,
-    "label": "Witnessing",
-    "firstSeen": "2026-09-27T18:05:54.230Z",
-    "lastSeen": "2026-09-27T18:05:54.230Z"
-   },
-   "moral-conflict": {
-    "count": 1,
-    "label": "Moral Conflict",
-    "firstSeen": "2026-09-27T18:05:54.230Z",
-    "lastSeen": "2026-09-27T18:05:54.230Z"
+    "label": "Killing The Surrendered",
+    "firstSeen": "2026-09-27T22:18:44.682Z",
+    "lastSeen": "2026-09-27T22:18:44.682Z"
    },
    "ritual": {
-    "count": 1,
+    "count": 2,
     "label": "Ritual",
-    "firstSeen": "2026-09-27T18:05:54.230Z",
-    "lastSeen": "2026-09-27T18:05:54.230Z"
+    "firstSeen": "2026-09-27T22:18:44.684Z",
+    "lastSeen": "2026-09-27T23:13:32.225Z"
+   },
+   "prayer": {
+    "count": 1,
+    "label": "Prayer",
+    "firstSeen": "2026-09-27T22:18:44.684Z",
+    "lastSeen": "2026-09-27T22:18:44.684Z"
+   },
+   "hostage-offer": {
+    "count": 1,
+    "label": "Hostage Offer",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "movement": {
+    "count": 1,
+    "label": "Movement",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "holding-the-line": {
+    "count": 1,
+    "label": "Holding The Line",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "lassoing": {
+    "count": 1,
+    "label": "Lassoing",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "repairing": {
+    "count": 1,
+    "label": "Repairing",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "guarding": {
+    "count": 1,
+    "label": "Guarding",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "searching": {
+    "count": 2,
+    "label": "Searching",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:27.566Z"
+   },
+   "pickpocketing": {
+    "count": 3,
+    "label": "Pickpocketing",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:30.399Z"
+   },
+   "accusation": {
+    "count": 1,
+    "label": "Accusation",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "melee": {
+    "count": 1,
+    "label": "Melee",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "rescue": {
+    "count": 2,
+    "label": "Rescue",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "coercion": {
+    "count": 1,
+    "label": "Coercion",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "throwing": {
+    "count": 1,
+    "label": "Throwing",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "investigation": {
+    "count": 1,
+    "label": "Investigation",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "eccentricity": {
+    "count": 1,
+    "label": "Eccentricity",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "persuasion": {
+    "count": 1,
+    "label": "Persuasion",
+    "firstSeen": "2026-09-27T23:13:27.566Z",
+    "lastSeen": "2026-09-27T23:13:27.566Z"
+   },
+   "farming": {
+    "count": 1,
+    "label": "Farming",
+    "firstSeen": "2026-09-27T23:13:27.566Z",
+    "lastSeen": "2026-09-27T23:13:27.566Z"
+   },
+   "negotiating": {
+    "count": 2,
+    "label": "Negotiating",
+    "firstSeen": "2026-09-27T23:13:27.566Z",
+    "lastSeen": "2026-09-27T23:13:30.399Z"
+   },
+   "dream-sacrifice": {
+    "count": 1,
+    "label": "Dream Sacrifice",
+    "firstSeen": "2026-09-27T23:13:30.399Z",
+    "lastSeen": "2026-09-27T23:13:30.399Z"
+   },
+   "blessing": {
+    "count": 1,
+    "label": "Blessing",
+    "firstSeen": "2026-09-27T23:13:32.225Z",
+    "lastSeen": "2026-09-27T23:13:32.225Z"
+   },
+   "public-display": {
+    "count": 1,
+    "label": "Public Display",
+    "firstSeen": "2026-09-27T23:13:32.225Z",
+    "lastSeen": "2026-09-27T23:13:32.225Z"
+   },
+   "surveillance": {
+    "count": 1,
+    "label": "Surveillance",
+    "firstSeen": "2026-09-27T23:13:32.225Z",
+    "lastSeen": "2026-09-27T23:13:32.225Z"
    }
   }
  }

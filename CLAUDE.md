@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 664 unit tests, ~30 s, no network
+npm test                                    # 769 unit tests, ~30 s, no network
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -71,8 +71,14 @@ Consequence: in "when-earned" mode a PC no longer earns proposals from party-mat
 nothing until "Suggest proposals" / a grant allowance). Cost: count accuracy on an 89-item slice 89.9% ->
 87.6% (1 rep, noise-level; see 40f4431d).
 
+ember-road s1 re-run on the fixed code, s2 played (transcript/notes/report in `sessions/02/`): Maren approved
+and used Thorn Lash; per-PC credit clean on s2. "Suggest proposals" was broken (stage 1 read the GM-request wrapper
+as OOC) and is fixed (`presetEvents`). C4 landed (102 rules tests, 769 total). Player agents: use `model: "haiku"`.
+
 Open, in order (see the board):
-1. Playtest sessions 2-3 of ember-road (approve proposals, use them in play), then a PF2e campaign.
+1. ember-road: GM approvals for s2 (Brakka x2, Wick x2, Maren, Tovin, Luz have allowances - use `playtest.mjs suggest`),
+   write the s2 review, play s3; then a PF2e campaign. s2 findings: an approved Skill used in play not extracted, two
+   spells merged into one event, Maren's baking dropped.
 2. Proposal quality: duplicates of class features (3962a001), rd-008 kill trophies still standard (9f591a25),
    residual over-splits (40f4431d).
 3. Live Foundry: click "Suggest proposals" on both worlds; the PF2e live check is still pending.
