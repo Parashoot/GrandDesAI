@@ -236,6 +236,16 @@ for (const systemId of SYSTEMS) {
     assert.equal(api.getLevelProgression(actor).progress, progressBefore);
   }));
 
+  test(`[${systemId}] re-analyze asks the gateway for a fresh reading; a normal analysis may share one`, () => withFoundry(systemId, async () => {
+    const api = new GrandDesignApi();
+    const seen = [];
+    api.setProposalAdapter(async (args) => { seen.push(args.fresh === true); return { events: [ev("Maren fought.", ["martial"])], proposals: [] }; });
+    const actor = createMockActor(systemId);
+    await api.analyzeSessionNotes(actor, "Maren fought.");
+    await api.reanalyzeLastNotes(actor);
+    assert.deepEqual(seen, [false, true]);
+  }));
+
   test(`[${systemId}] emergentThemes disabled in the gateway config: themes dropped, flagged on the result`, () => withFoundry(systemId, async () => {
     const api = new GrandDesignApi();
     api.setGatewayConfigProvider(() => ({ emergentThemes: false }));

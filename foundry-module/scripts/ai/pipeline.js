@@ -16,6 +16,8 @@
 import { parseModelJson, ModelJsonError } from "./json-repair.js";
 import { coerceEvent, eventDedupeKey, resolveTag, slugifyTheme, CANONICAL_TAGS } from "./normalize.js";
 import { EVENT_EXTRACTION_SCHEMA, COMBINED_SCHEMA, proposalSchemaCapped } from "./schemas.js";
+// Pure (no Foundry globals): the same per-character credit rule api.js applies to the events.
+import { attributeEventsToActor } from "../session-notes.js";
 import { buildExtractionMessages, buildProposalMessages, buildSingleMessages, buildRepairMessage, creativityTemperature } from "./prompts.js";
 import { normalizeGatewayConfig } from "./gateway-config.js";
 import { AiProviderUnreachableError, AiProviderHttpError, AiProviderTimeoutError } from "./transport.js";
@@ -514,6 +516,89 @@ export function repairProposal(proposal, { systemId = "pf2e", actorLevel, grandD
 }
 
 // ---------------------------------------------------------------------------------------------
+// Extraction cache
+// ---------------------------------------------------------------------------------------------
+
+// Why: a GM pastes ONE party recap into every character's sheet (and the playtest runner does the
+// same), and stage 1 used to re-read the identical notes per character -- 20-36 s each, over two
+// minutes for a party of five on ember-road s1. Extraction does not depend on which character is
+// being analysed (prompts.js no longer names them), so it runs once and only stage 2, which IS per
+// character, runs again. Bounded (LRU + TTL) because notes are large and a long session produces
+// many; in-memory only, because a stale reading must never outlive a reload.
+
+/**
+ * @param {{maxEntries?:number, ttlMs?:number, now?:() => number}} [opts]
+ * @returns {{ run(key:string, produce:() => Promise<object>): Promise<{value:object, hit:boolean}>, delete(key:string):void, clear():void, readonly size:number }}
+ */
+export function createExtractionCache({ maxEntries = 20, ttlMs = 30 * 60 * 1000, now = () => Date.now() } = {}) {
+  const entries = new Map(); // key -> { promise, expires }
+  const evict = () => {
+    const t = now();
+    for (const [key, entry] of entries) if (entry.expires <= t) entries.delete(key);
+    while (entries.size > maxEntries) entries.delete(entries.keys().next().value);
+  };
+  return {
+    // Concurrent callers with the same key share ONE in-flight extraction (two sheets analysed at
+    // once must not both pay for it). A failed or uncacheable extraction is dropped so the next
+    // caller retries instead of inheriting the failure.
+    async run(key, produce) {
+      evict();
+      const existing = entries.get(key);
+      if (existing) {
+        entries.delete(key);
+        entries.set(key, existing); // refresh LRU position
+        return { value: structuredClone(await existing.promise), hit: true };
+      }
+      const promise = Promise.resolve().then(produce);
+      entries.set(key, { promise, expires: now() + ttlMs });
+      evict();
+      let value;
+      try {
+        value = await promise;
+      } catch (error) {
+        if (entries.get(key)?.promise === promise) entries.delete(key);
+        throw error;
+      }
+      if (value?.cacheable === false && entries.get(key)?.promise === promise) entries.delete(key);
+      return { value: structuredClone(value), hit: false };
+    },
+    delete(key) { entries.delete(key); },
+    clear() { entries.clear(); },
+    get size() { evict(); return entries.size; }
+  };
+}
+
+/**
+ * Everything the stage-1 result depends on, and nothing it does not (the actor, proposalMode,
+ * creativity, maxProposals, namingStyle and allowRed only shape stage 2). The system id is included
+ * although the extraction prompt is system-neutral today, so a future system-specific hint can never
+ * serve one system's reading to the other.
+ */
+export function extractionCacheKey({ notes, systemId, cfg, transportInfo = {} }) {
+  return JSON.stringify([
+    "extract-v1",
+    systemId ?? "",
+    transportInfo.provider ?? cfg.provider,
+    transportInfo.endpoint ?? cfg.endpoint,
+    transportInfo.model ?? cfg.model,
+    cfg.pipeline,
+    cfg.chunkChars,
+    cfg.temperature,
+    cfg.numCtx,
+    cfg.numPredict,
+    cfg.maxRepairAttempts,
+    cfg.outputLanguage,
+    cfg.houseRules,
+    cfg.toneHints,
+    cfg.extractionExamples,
+    cfg.customSynonyms,
+    cfg.emergentThemes,
+    cfg.mergeFollowUps,
+    preprocessNotes(notes)
+  ]);
+}
+
+// ---------------------------------------------------------------------------------------------
 // Pipeline
 // ---------------------------------------------------------------------------------------------
 
@@ -561,9 +646,11 @@ function summarizeRejections(rejected) {
  * @param {object} args.config gateway config (normalized here)
  * @param {{validateSkillEntry?:Function, validateClassEntry?:Function}} [args.validators]
  * @param {string} [args.systemId]
+ * @param {ReturnType<typeof createExtractionCache>} [args.extractionCache] share stage 1 across calls
+ * @param {boolean} [args.refreshExtraction] ignore (and replace) a cached stage-1 reading
  * @returns {Promise<{events, proposals, themes, skippedEvents, skippedProposals, diagnostics}>}
  */
-export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep } = {}) {
+export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep, extractionCache = null, refreshExtraction = false } = {}) {
   const started = nowMs();
   const cfg = normalizeGatewayConfig(config);
   const sysId = systemId ?? cfg.systemId ?? request?.actor?.system ?? "pf2e";
@@ -599,6 +686,100 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
   }
 
   // ---- extraction (or single combined call) per chunk ----
+  if (cfg.pipeline === "single") {
+    // One combined call per chunk also writes this actor's proposals, so it can never be shared.
+    const extracted = await extractAllChunks(chunks, ctx, sleepFn);
+    events = extracted.events;
+    skippedEvents.push(...extracted.skippedEvents);
+    proposalBatches.push(...extracted.proposalBatches);
+    diagnostics.extractionCache = "off";
+  } else {
+    // Stage 1 runs in its own diagnostics scope so a cache hit can replay exactly what the original
+    // reading recorded (stages, coercions, warnings), marked as cached.
+    const produce = async () => {
+      const scope = { stages: [], coercions: [], warnings: [] };
+      const extracted = await extractAllChunks(chunks, { ...ctx, diagnostics: scope }, sleepFn);
+      return { ...extracted, proposalBatches: [], diagnostics: scope, cacheable: extracted.chunkFailures === 0 };
+    };
+    let extracted;
+    if (extractionCache) {
+      const key = extractionCacheKey({ notes, systemId: sysId, cfg, transportInfo: transport?.info });
+      // "Re-analyze" means read it again: drop the old reading, and store the new one for the rest
+      // of the party.
+      if (refreshExtraction) extractionCache.delete(key);
+      const { value, hit } = await extractionCache.run(key, produce);
+      extracted = value;
+      diagnostics.extractionCache = hit ? "hit" : "miss";
+    } else {
+      extracted = await produce();
+      diagnostics.extractionCache = "off";
+    }
+    const hit = diagnostics.extractionCache === "hit";
+    diagnostics.stages.push(...extracted.diagnostics.stages.map((stage) => (hit ? { ...stage, cached: true } : stage)));
+    diagnostics.coercions.push(...extracted.diagnostics.coercions);
+    diagnostics.warnings.push(...extracted.diagnostics.warnings);
+    events = extracted.events;
+    skippedEvents.push(...extracted.skippedEvents);
+  }
+
+  // ---- proposals ----
+  let proposals = [];
+  if (cfg.pipeline === "single") {
+    diagnostics.proposalStage = { ran: true, reason: "single-pipeline" };
+    const valid = [];
+    for (const batch of proposalBatches) {
+      const checked = await validateProposals(batch.items, batch.conversation, ctx);
+      valid.push(...checked.accepted);
+      skippedProposals.push(...checked.skipped);
+    }
+    const gated = gateProposals(valid, ctx);
+    proposals = gated.final;
+    skippedProposals.push(...gated.skipped);
+  } else {
+    // Stage 2 is per character: it sees only the events credited to THIS character (or the party, or
+    // unnamed). Fed the whole party recap, Luz's proposal stage red-flagged Tovin's kill (ember-road
+    // s1 re-run) -- one step from proposing Luz a red Skill for someone else's deed. The returned
+    // events stay whole; api.js attributes them per character with the same rule.
+    const ownEvents = request?.actor?.name ? attributeEventsToActor(events, [request.actor.name], { notes: String(request.notes ?? notes) }).kept : events;
+    if (ownEvents.length !== events.length) diagnostics.proposalEvents = { own: ownEvents.length, total: events.length };
+    const decision = shouldPropose(ownEvents, request, cfg);
+    diagnostics.proposalStage = { ran: decision.run, reason: decision.reason };
+    if (decision.run) {
+      try {
+        const result = await proposeStage(ownEvents, decision, ctx);
+        proposals = result.accepted;
+        skippedProposals.push(...result.skipped);
+      } catch (error) {
+        // Never lose good events because the optional proposal stage failed.
+        if (error instanceof AiProviderUnreachableError || error instanceof AiProviderTimeoutError) diagnostics.warnings.push(`proposal stage failed: ${error.message}`);
+        skippedProposals.push({ reason: "proposal-stage-failed", error: error.message });
+      }
+    }
+  }
+
+  const themes = summarizeThemes(events);
+  diagnostics.coercions = diagnostics.coercions.slice(0, 300);
+  diagnostics.totalMs = Math.round(nowMs() - started);
+  if (transport?.compat) diagnostics.transportCompat = transport.compat;
+  return {
+    events: events.map((event) => ({ ...event, source: "adapter" })),
+    proposals,
+    themes,
+    skippedEvents,
+    skippedProposals,
+    diagnostics
+  };
+}
+
+/**
+ * Extract (or, for pipeline "single", extract + propose) every chunk. Throws only on a total or
+ * fatal failure. Returns deduped events; diagnostics go to ctx.diagnostics.
+ */
+async function extractAllChunks(chunks, ctx, sleepFn) {
+  const { cfg, diagnostics } = ctx;
+  const events = [];
+  const skippedEvents = [];
+  const proposalBatches = [];
   const failures = [];
   const queue = chunks.map((text, index) => ({ text, index, depth: 0 }));
   let succeeded = 0;
@@ -644,50 +825,7 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
   if (failures.length) {
     skippedEvents.push(...failures.map(({ chunk, error }) => ({ chunk, reason: "chunk-failed", error: error.message, text: chunks[chunk]?.slice(0, 400) })));
   }
-
-  events = dedupeEvents(events);
-
-  // ---- proposals ----
-  let proposals = [];
-  if (cfg.pipeline === "single") {
-    diagnostics.proposalStage = { ran: true, reason: "single-pipeline" };
-    const valid = [];
-    for (const batch of proposalBatches) {
-      const checked = await validateProposals(batch.items, batch.conversation, ctx);
-      valid.push(...checked.accepted);
-      skippedProposals.push(...checked.skipped);
-    }
-    const gated = gateProposals(valid, ctx);
-    proposals = gated.final;
-    skippedProposals.push(...gated.skipped);
-  } else {
-    const decision = shouldPropose(events, request, cfg);
-    diagnostics.proposalStage = { ran: decision.run, reason: decision.reason };
-    if (decision.run) {
-      try {
-        const result = await proposeStage(events, decision, ctx);
-        proposals = result.accepted;
-        skippedProposals.push(...result.skipped);
-      } catch (error) {
-        // Never lose good events because the optional proposal stage failed.
-        if (error instanceof AiProviderUnreachableError || error instanceof AiProviderTimeoutError) diagnostics.warnings.push(`proposal stage failed: ${error.message}`);
-        skippedProposals.push({ reason: "proposal-stage-failed", error: error.message });
-      }
-    }
-  }
-
-  const themes = summarizeThemes(events);
-  diagnostics.coercions = diagnostics.coercions.slice(0, 300);
-  diagnostics.totalMs = Math.round(nowMs() - started);
-  if (transport?.compat) diagnostics.transportCompat = transport.compat;
-  return {
-    events: events.map((event) => ({ ...event, source: "adapter" })),
-    proposals,
-    themes,
-    skippedEvents,
-    skippedProposals,
-    diagnostics
-  };
+  return { events: dedupeEvents(events), skippedEvents, proposalBatches, chunkFailures: failures.length };
 }
 
 function dedupeEvents(events) {
@@ -736,7 +874,7 @@ export function mergeFollowUpEvents(events) {
   let merged = 0;
   for (const event of events) {
     const prev = out[out.length - 1];
-    if (prev && event.continuesPrevious === true && !marksNewOccasion(event)) {
+    if (prev && event.continuesPrevious === true && !marksNewOccasion(event) && !differentActors(prev, event)) {
       prev.tags = [...new Set([...prev.tags, ...event.tags])].slice(0, 4);
       prev.themes = [...new Set([...(prev.themes ?? []), ...(event.themes ?? [])])].slice(0, 4);
       const followUp = [event.summary, event.consequence].filter(Boolean).join(" ");
@@ -763,6 +901,21 @@ export function mergeFollowUpEvents(events) {
 const NEW_OCCASION = /\b(again|later|next|another|afterwards?|the following|meanwhile|every|each|mon|tues|wednes|thurs|fri|satur|sun)(day)?\b|\bday \d|\b(d[ií]a|jour|tag|giorno)\b/i;
 function marksNewOccasion(event) {
   return NEW_OCCASION.test(`${event.quote ?? ""} ${event.summary ?? ""}`);
+}
+
+// A payoff is the same person's. Folding "Tovin killed the goblin" into the line before it because
+// the model flagged it as a follow-up of Luz's heal would hand Tovin's deed to Luz -- exactly the
+// per-character credit this field now carries. Unnamed events can still fold into anyone's.
+// A result the group shares ("the party got the camp location") or one that lands on someone the
+// previous event already names ("Brin carried Holt" -> "Holt's fever broke") is still that event's
+// payoff: with actorName required the model names those too, and blocking them re-split exactly
+// the consequences the fold exists for (2026-09-27 A/B: rd-007, bl-018).
+function differentActors(prev, event) {
+  const a = String(prev.actorName ?? "").trim().toLowerCase();
+  const b = String(event.actorName ?? "").trim().toLowerCase();
+  if (!a || !b || a === b || b === "the party") return false;
+  const named = `${prev.summary ?? ""} ${prev.quote ?? ""}`.toLowerCase();
+  return !b.split(/\s+/).some((token) => token.length >= 3 && named.includes(token));
 }
 
 function coerceAll(items, ctx, chunkIndex) {
@@ -939,6 +1092,15 @@ export function shouldPropose(events, request, cfg) {
   return { ...base, run: false, reason: "not-yet-earned" };
 }
 
+/** The events the model marked with a vice in its redCheck (see schemas.js#RED_CHECK_SCHEMA). */
+export function readRedCheck(value) {
+  const list = isPlainObject(value) && Array.isArray(value.redCheck) ? value.redCheck : [];
+  return list
+    .filter((item) => isPlainObject(item) && VICE_TAGS.has(String(item.vice ?? "").toLowerCase().trim()))
+    .map((item) => ({ event: String(item.event ?? "").slice(0, 200), vice: String(item.vice).toLowerCase().trim() }))
+    .slice(0, 20);
+}
+
 async function proposeStage(events, decision, ctx) {
   const { transport, request, cfg, diagnostics } = ctx;
   const stage = { stage: "propose", chunk: null, attempts: 0, ms: 0, repairs: [], errors: [] };
@@ -947,10 +1109,11 @@ async function proposeStage(events, decision, ctx) {
   const messages = buildProposalMessages({ request, config: cfg, events, themeEvidence: decision.themeEvidence, tagEvidence: decision.tagEvidence, allowClass: decision.allowClass, mustPropose });
   const temperature = creativityTemperature(cfg);
   let items = null;
+  let redFlags = [];
   let lastContent = "";
   for (let attempt = 0; attempt <= cfg.maxRepairAttempts; attempt += 1) {
     stage.attempts += 1;
-    const response = await transport.chat({ messages, schema: proposalSchemaCapped(cfg.maxProposals), temperature, maxTokens: cfg.numPredict });
+    const response = await transport.chat({ messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: cfg.allowRed }), temperature, maxTokens: cfg.numPredict });
     stage.ms += Math.round(response.ms ?? 0);
     lastContent = response.content;
     let parsed;
@@ -971,6 +1134,7 @@ async function proposeStage(events, decision, ctx) {
       continue;
     }
     items = located.items;
+    redFlags = readRedCheck(parsed.value);
     messages.push(assistantEcho(response.content));
     break;
   }
@@ -979,6 +1143,14 @@ async function proposeStage(events, decision, ctx) {
   }
   const checked = await validateProposals(items, { messages, stage, temperature }, ctx);
   const gated = gateProposals(checked.accepted, ctx);
+  // Surface the model's own red verdicts, and say so when it flagged a deed but still wrote nothing
+  // red: the GM should know a dark act went unanswered rather than find out from the players.
+  if (redFlags.length) {
+    diagnostics.redCheck = redFlags;
+    if (gated.final.length && !gated.final.some((p) => p.entry?.metadata?.polarity === "red")) {
+      diagnostics.warnings.push(`red check flagged ${redFlags.map((f) => `"${f.event}" (${f.vice})`).join(", ")} but no red proposal was written`);
+    }
+  }
   return { accepted: gated.final, skipped: [...checked.skipped, ...gated.skipped] };
 }
 
@@ -1021,7 +1193,7 @@ async function validateProposals(items, conversation, ctx) {
     invalid = [];
     try {
       conversation.stage.attempts += 1;
-      const response = await transport.chat({ messages: conversation.messages, schema: proposalSchemaCapped(cfg.maxProposals), temperature: conversation.temperature, maxTokens: cfg.numPredict });
+      const response = await transport.chat({ messages: conversation.messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: cfg.allowRed }), temperature: conversation.temperature, maxTokens: cfg.numPredict });
       conversation.stage.ms += Math.round(response.ms ?? 0);
       const parsed = parseModelJson(response.content);
       const located = locateProposals(parsed.value);

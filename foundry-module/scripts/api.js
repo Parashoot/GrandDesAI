@@ -722,7 +722,7 @@ export class GrandDesignApi {
    * The invariant is unchanged: any adapter failure -> local analysis with a stated reason; the GM's
    * notes are never lost.
    */
-  async analyzeSessionNotes(actor, notes, { replaceEventIds = [] } = {}) {
+  async analyzeSessionNotes(actor, notes, { replaceEventIds = [], fresh = false } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
     if (typeof notes !== "string" || !notes.trim()) {
@@ -739,7 +739,9 @@ export class GrandDesignApi {
     let adapterEvents = null; // { events, skipped } once the adapter has produced a usable shape
     if (this._proposalAdapter) {
       try {
-        adapterOutput = await this._proposalAdapter({ actor, notes, systemId: game.system?.id });
+        // `fresh`: skip the gateway's shared reading of these notes (one reading serves the whole
+        // party; see pipeline.js#createExtractionCache) -- a GM who asks to re-analyze wants a new one.
+        adapterOutput = await this._proposalAdapter({ actor, notes, systemId: game.system?.id, ...(fresh ? { fresh: true } : {}) });
         adapterEvents = validateAdapterEvents(adapterOutput);
       } catch (error) {
         adapterError = error;
@@ -855,7 +857,7 @@ export class GrandDesignApi {
       const proposals = this.getGrowth(actor).proposals.filter((proposal) => !(stale.has(proposal.id) && proposal.status === "pending"));
       await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
     }
-    return this.analyzeSessionNotes(actor, last.notes, { replaceEventIds: replace ? last.eventIds ?? [] : [] });
+    return this.analyzeSessionNotes(actor, last.notes, { replaceEventIds: replace ? last.eventIds ?? [] : [], fresh: true });
   }
 
   async _removeRecordedEvents(actor, eventIds) {

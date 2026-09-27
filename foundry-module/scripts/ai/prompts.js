@@ -84,7 +84,7 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
     events: [
       { quote: "mira nat20 persuasion w/ the guard captain", summary: "Mira persuaded the guard captain brilliantly.", actorName: "Mira", tags: ["diplomacy"], themes: ["persuasion"], outcome: "criticalSuccess", dangerGap: "none", language: "en" },
       { quote: "torv rolled a 3 on stealth vs DC 15, got spotted", summary: "Torv tried to sneak past.", consequence: "He was spotted.", actorName: "Torv", tags: ["stealth"], themes: ["sneaking"], outcome: "failure", dangerGap: "none", language: "en" },
-      { quote: "ogre almost tpk'd us lol, we ran", summary: "The party fled from an ogre that nearly killed them all.", actorName: "", tags: ["mobility"], themes: ["escape"], outcome: "success", dangerGap: "severe", language: "en" }
+      { quote: "ogre almost tpk'd us lol, we ran", summary: "The party fled from an ogre that nearly killed them all.", actorName: "the party", tags: ["mobility"], themes: ["escape"], outcome: "success", dangerGap: "severe", language: "en" }
     ]
   },
   {
@@ -113,12 +113,32 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
       { quote: "Bram kept the monastery's beehives", summary: "Bram tended the monastery's beehives.", actorName: "Bram", tags: ["nature"], themes: ["beekeeping"], outcome: "success", dangerGap: "none", language: "en" },
       { quote: "sold the honey at market for a good price", summary: "Bram sold honey at the market for a good price.", actorName: "Bram", tags: [], themes: ["trading", "beekeeping"], outcome: "success", dangerGap: "none", language: "en" }
     ]
+  },
+  // A pasted group-chat recap (ember-road s1). Three things the model got wrong there, each shown once:
+  // "I/my" in a "Name:" line is Name; a deed one player reports about another is the DOER's event,
+  // in plain words (it had become nobody's event, or "dealt with a loose end"); and "lost 30g
+  // rigging cards" is a cheating attempt that failed, not an item that went missing (the model
+  // said so when asked why it skipped "lost the party's 40g rigging dice").
+  {
+    notes: [
+      "Rook: snuck us past the cultists 😎 and I may have 'handled' the old priest, don't ask",
+      "Sable: Sable see Rook push the old priest off the tower when he already give up. very bad. I pray for him after",
+      "Ivo: lost 30g of the party's money rigging cards lol (i was so close)",
+      "GM: next week the catacombs, someone bring snacks"
+    ].join("\n"),
+    events: [
+      { quote: "snuck us past the cultists", summary: "Rook sneaked the party past the cultists.", actorName: "Rook", tags: ["stealth", "support"], themes: ["sneaking"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "Sable see Rook push the old priest off the tower when he already give up", summary: "Rook pushed the old priest off the tower after the priest had surrendered.", actorName: "Rook", tags: ["athletics"], themes: ["killing-the-surrendered"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "I pray for him after", summary: "Sable prayed for the old priest.", actorName: "Sable", tags: ["religion"], themes: ["prayer"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "lost 30g of the party's money rigging cards", summary: "Ivo tried to cheat at cards by rigging them.", consequence: "He lost 30 gold of the party's money.", actorName: "Ivo", tags: ["deception", "thievery"], themes: ["gambling", "cheating"], outcome: "failure", dangerGap: "none", language: "en" }
+    ]
   }
 ];
 
 // Examples show the ideal, already-merged answer, so every example event is continuesPrevious:false.
+// Key order mirrors EVENT_ITEM_SCHEMA (quote, actorName, continuesPrevious first).
 function exampleBlock(examples) {
-  const shaped = (events) => events.map(({ quote, ...rest }) => ({ quote, continuesPrevious: false, ...rest }));
+  const shaped = (events) => events.map(({ quote, actorName = "", ...rest }) => ({ quote, actorName, continuesPrevious: false, ...rest }));
   return examples
     .map((ex, i) => `Example ${i + 1} notes:\n${ex.notes}\nExample ${i + 1} output:\n${JSON.stringify({ events: shaped(ex.events) })}`)
     .join("\n\n");
@@ -134,16 +154,19 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     "",
     "An EVENT is one thing a character actually attempted or did, whether it worked or not. One event per distinct action -- split compound sentences with several actions, and do not repeat the same action twice.",
     "An event INCLUDES its result. Whatever came of the action goes in that event's consequence field and outcome, NEVER in a new event: they got hurt, stung or knocked out; the crowd cheered or cried; the goods sold out or someone bought one; they were thrown out, moved on or offered a job; nobody was lost; the animal finally let them near; a fever broke; visions came; they learned the secret; the crit landed on the final blow; they won 2 of 3. A second line or bullet that only states such a result belongs to the event above it. Also no event that just restates or elaborates the same activity by the same person (\"brewed the ale\" + \"adjusted the malt\" is one brewing event).",
-    "Do not add a scene-level event (\"the party fought the warband\") when you also list what each character did in it. Something that merely happens TO a character (attacked, scared off, knocked down) is not their event.",
+    "Do not add a scene-level event (\"the party fought the warband\") when you also list what each character did in it. Something that merely happens TO a character (attacked, scared off, knocked down, read or sized up by someone, offered a deal, told a secret) is not their event. But money or gear lost BY DOING something is that doing, as a failure: \"lost 40g rigging dice\" = cheated at dice and lost 40g.",
+    "",
+    "WHO DID IT. Notes are often a group chat pasted together, one \"Name: text\" line per player. In such a line I/me/my means Name. A line can also report what ANOTHER character did (\"Sable saw Rook push the priest\", \"she catch Tovin killing...\"): that event belongs to the DOER (Rook, Tovin), not to the one who saw or tells it, and it is recorded even though the doer never mentioned it. We/us/the party acting together = \"the party\". Leave actorName \"\" only when the notes truly do not say who.",
+    "Write what was done in plain words. Never soften a deed: killing a prisoner or someone who surrendered stays exactly that in the summary, not \"dealt with a threat\" or \"tidied up a loose end\". When one line is coy (\"I may have handled a loose end\") and another line says what it was, record the deed ONCE, in the plain words, quoting the line that says it plainly (not the coy one).",
     "Habitual or ongoing actions count (\"has started taking trophies\", \"keeps sneaking out\", \"every night he prays\"), and so does an action mentioned only as a cause or aside (\"people hate us because Rhys threatened the priest\" -> Rhys threatened the priest).",
     "NOT events: intentions or plans (\"wanted to\", \"was going to\", \"plans to\", \"next session\"), questions, attempts that explicitly never happened (\"didn't even try\", \"never got around to it\"), doing nothing, pure scenery or weather, rumours and legends, and anything out of character: reminders, notes-to-self, shopping lists, scheduling, rules questions, talk about the real players.",
     "",
     "For every event give:",
     "- quote: the exact source fragment, copied verbatim in its original language (keep it short).",
+    "- actorName: the name of the character who DID it (see WHO DID IT), \"the party\" for a group action, else \"\".",
     "- continuesPrevious: true ONLY when this entry is just the result, payoff or an elaboration of the entry right before it (same person, same occasion: \"didn't lose a single guest\", \"the owner offered her a slot\", \"he adjusted the malt\"). false for any new action, even one of the same kind on another occasion.",
     `- summary: one short third-person sentence in ${lang} saying who did what.`,
     `- consequence: what came of it, if the notes say (one short ${lang} sentence), else "".`,
-    "- actorName: who did it, if the notes say (else \"\").",
     "- tags: 0-3 tags from ALLOWED TAGS that genuinely fit. Only these exact words.",
     "- themes: 1-3 short lowercase English slugs naming the SPECIFIC activity (e.g. lockpicking, beekeeping, innkeeping, gambling, cartography, brewing, poetry, haggling). Always give themes. If no tag fits, still record the event with tags [] and themes -- never drop an activity because no tag fits.",
     "- outcome: criticalSuccess | success | failure | criticalFailure. Failures are valuable evidence: always record them. criticalSuccess ONLY for nat 20 / crit / an explicitly spectacular result (a plain win with a nice payoff is just success). nat 1 / fumble / crit fail / badly hurt / backfired = criticalFailure. \"almost\"/\"nearly\" ... but = failure. A low roll or missed DC = failure. Attacked but got beaten, knocked out or flattened = failure. No outcome stated = success.",
@@ -161,9 +184,14 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     "Output exactly {\"events\":[...]}. If nothing happened, output {\"events\":[]}."
   ].join("\n");
 
-  const actorName = request?.actor?.name ? `The notes are for the character "${request.actor.name}"${request.actor.systemLabel ? ` (${request.actor.systemLabel})` : ""}. Record actions by other characters too, with their actorName.\n` : "";
+  // Deliberately NOT naming the character being analysed. It used to say "The notes are for the
+  // character X", which (a) made the same party recap produce a different extraction per character,
+  // so it had to be re-run for every sheet (20-36 s each, ember-road s1), and (b) nudged the model to
+  // credit unnamed or first-person lines to X. Reading the notes is the same job whoever's sheet they
+  // were pasted into; per-character credit is decided afterwards from actorName. `request` is still
+  // accepted (unused) so callers need not change.
   const chunkLine = chunkCount > 1 ? `This is part ${chunkIndex + 1} of ${chunkCount} of the notes.\n` : "";
-  const user = `${actorName}${chunkLine}NOTES:\n<<<\n${notesChunk}\n>>>`;
+  const user = `${chunkLine}NOTES:\n<<<\n${notesChunk}\n>>>`;
   return [
     { role: "system", content: system },
     { role: "user", content: user }
@@ -215,7 +243,7 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     // The guidance alone ("almost every proposal is standard") made the model pick standard even
     // for "broke the captured scout's will over three days" (3 of 8 red-worthy items were red).
     // A per-proposal check with the vice list as the match key makes the decision explicit.
-    ...(config.allowRed ? [`Red check, for EVERY proposal before you write it: compare its evidence (read the quotes) with this list. If one clearly matches, the proposal MUST be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- a matching pattern written up as a clean standard ability is wrong. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} If nothing matches, stay standard.`] : []),
+    ...(config.allowRed ? [`Red check, BEFORE any proposal: fill "redCheck" with one entry per newEvent, in order: { event: its summary, vice: the key from this list that it clearly matches (read the quote), else "none" }. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} Killing someone who surrendered or was helpless, torture, and breaking a captive's will always match. Ordinary fighting, stealing, lying and bargaining are "none". Then, if any event has a vice and you propose anything, one proposal MUST cite that event in its evidence and be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- that deed written up as a clean standard ability, or left out, is wrong. Every other proposal stays standard.`] : []),
     `Failures: ${req.eventOutcomePhilosophy ?? ""}`,
     `Class rule: ${req.classProposalRule ?? ""}${allowClass ? "" : " (Class evolution is NOT available right now: skills only.)"}`,
     `Creativity: ${CREATIVITY_WORDING[config.creativity] ?? CREATIVITY_WORDING.balanced}`,

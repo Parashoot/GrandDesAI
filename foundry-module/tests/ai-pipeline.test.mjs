@@ -114,7 +114,8 @@ test("two-stage: extract then propose, returning validated events and proposals"
   // looping model stops at the cap instead of emitting 15+ proposals.
   assert.deepEqual(transport.calls[1].schema.properties.proposals.items, PROPOSAL_SCHEMA.properties.proposals.items);
   assert.equal(transport.calls[1].schema.properties.proposals.maxItems, 3);
-  assert.deepEqual(transport.calls[1].schema.required, PROPOSAL_SCHEMA.required);
+  // allowRed is on by default, so the per-event red verdict is required before the proposals.
+  assert.deepEqual(transport.calls[1].schema.required, ["redCheck", ...PROPOSAL_SCHEMA.required]);
 });
 
 test("the extraction prompt carries the notes verbatim and the allowed tag list", async () => {

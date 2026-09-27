@@ -5,7 +5,7 @@ import { VICE_TAGS } from "./vice-taxonomy.js";
 import { validateClassEntry, validateSkillEntry } from "./validator.js";
 import { AiProviderUnreachableError, AiProviderTimeoutError, assertSafeEndpoint, createTransport } from "./ai/transport.js";
 import { normalizeGatewayConfig } from "./ai/gateway-config.js";
-import { runGatewayPipeline } from "./ai/pipeline.js";
+import { createExtractionCache, runGatewayPipeline } from "./ai/pipeline.js";
 
 // Backward-compatible re-exports: these used to be defined in this file.
 export { AiProviderUnreachableError, AiProviderTimeoutError };
@@ -76,10 +76,17 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
     ollamaOptions: { num_ctx: cfg.numCtx, num_predict: cfg.numPredict }
   });
   const injected = validators ?? { validateSkillEntry, validateClassEntry };
-  const adapter = async ({ actor, notes, systemId } = {}) => {
+  // One stage-1 reading per distinct notes/config, shared by every character this adapter analyses:
+  // the same party recap pasted into five sheets used to cost five extractions (ember-road s1).
+  // Lives on the adapter, so saving new gateway settings (which builds a new adapter) starts clean.
+  const extractionCache = cfg.extractionCacheEntries > 0 && cfg.extractionCacheTtlMs > 0
+    ? createExtractionCache({ maxEntries: cfg.extractionCacheEntries, ttlMs: cfg.extractionCacheTtlMs })
+    : null;
+  // `fresh: true` (a GM's explicit "re-analyze") reads the notes again instead of reusing the cache.
+  const adapter = async ({ actor, notes, systemId, fresh = false } = {}) => {
     const sys = systemId ?? cfg.systemId ?? activeSystemId();
     const request = buildAiGatewayRequest(actor, notes, sys);
-    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys });
+    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys, extractionCache, refreshExtraction: fresh === true });
     return {
       events: result.events,
       proposals: result.proposals,
@@ -92,6 +99,7 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
   adapter.ping = () => transport.ping();
   adapter.listModels = () => transport.listModels();
   adapter.transport = transport;
+  adapter.clearExtractionCache = () => extractionCache?.clear();
   adapter.config = Object.freeze({ ...cfg, apiKey: cfg.apiKey ? "********" : "", fetchImpl: undefined, getHeaders: undefined, sleep: undefined });
   return adapter;
 }

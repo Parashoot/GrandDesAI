@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 649 unit tests, ~30 s, no network
+npm test                                    # 664 unit tests, ~30 s, no network
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -60,11 +60,20 @@ verified with the real model: party notes no longer credit every character with 
 (per-PC events 17-19 -> 2-7), template proposals are system-correct and sourced, and a "Suggest proposals"
 button plus `api.requestGrowthProposals(actor)` covers grant allowances with nothing to approve.
 
+2026-09-27 (later): attribution + red, verified with the real model on an ember-road s1 re-run
+(`sessions/01/rerun-2026-09-27/`). `actorName` is now required and early in the event schema (it had been
+empty on every event); the extraction prompt no longer names the analysed PC; a deed reported in another
+player's line goes to the doer, in plain words (Tovin "killed a goblin that was surrendering", not "tidied
+up a loose end"). Identical notes are read once per adapter (`pipeline.js#createExtractionCache`; 5 PCs
+62 s instead of 2+ min; "Re-analyze" passes `fresh: true`). Stage 2 sees only the analysed PC's events and
+fills a required per-event `redCheck` first: Tovin now gets a red cruelty Skill, red-slice redAcc 70% -> 90%.
+Consequence: in "when-earned" mode a PC no longer earns proposals from party-mates' events (s1 now proposes
+nothing until "Suggest proposals" / a grant allowance). Cost: count accuracy on an 89-item slice 89.9% ->
+87.6% (1 rep, noise-level; see 40f4431d).
+
 Open, in order (see the board):
-1. **Gateway attribution** (6ca3c8e7, high): a deed reported in another player's line ("Luz saw Tovin kill
-   the surrendered goblin") is not extracted for the doer; Tovin's coy line reads as "eliminated a loose end".
-   Partial work on branch `worktree-agent-a731ff0e1fe12d515` (stopped by a rate limit, untested).
-2. Missed recap events (c284b5ec) and one extraction per party instead of per PC (a48d97c0, ~20 s/PC).
-3. Playtest sessions 2-3 of ember-road (approve proposals, use them in play), then a PF2e campaign.
-4. Live Foundry: click "Suggest proposals" on both worlds; the PF2e live check is still pending.
-5. Cloud packets C1-C5.
+1. Playtest sessions 2-3 of ember-road (approve proposals, use them in play), then a PF2e campaign.
+2. Proposal quality: duplicates of class features (3962a001), rd-008 kill trophies still standard (9f591a25),
+   residual over-splits (40f4431d).
+3. Live Foundry: click "Suggest proposals" on both worlds; the PF2e live check is still pending.
+4. Cloud packets C1-C5 (push main first).

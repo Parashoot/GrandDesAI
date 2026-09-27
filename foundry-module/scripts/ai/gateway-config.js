@@ -39,7 +39,11 @@ export const GATEWAY_DEFAULTS = Object.freeze({
   houseRules: "",
   customSynonyms: Object.freeze({}),
   toneHints: "",
-  extractionExamples: Object.freeze([])
+  extractionExamples: Object.freeze([]),
+  // Reuse one stage-1 reading of identical notes across characters (pipeline.js#createExtractionCache):
+  // a party recap pasted into five sheets is read once. 0 entries or 0 ms turns it off.
+  extractionCacheEntries: 20,
+  extractionCacheTtlMs: 30 * 60 * 1000
 });
 
 // Friendly names a GM might type into a free-text language box.
@@ -91,7 +95,9 @@ export function normalizeGatewayConfig(partial = {}) {
     houseRules: text(input.houseRules, 4000),
     customSynonyms: normalizeSynonyms(input.customSynonyms),
     toneHints: text(input.toneHints, 1000),
-    extractionExamples: normalizeExamples(input.extractionExamples)
+    extractionExamples: normalizeExamples(input.extractionExamples),
+    extractionCacheEntries: clampInt(input.extractionCacheEntries, 0, 200, d.extractionCacheEntries),
+    extractionCacheTtlMs: clampInt(input.extractionCacheTtlMs, 0, 24 * 60 * 60 * 1000, d.extractionCacheTtlMs)
   };
   // Pass-through hooks: not user settings, but the adapter/tests/harness need to inject them.
   for (const key of ["fetchImpl", "getHeaders", "sleep"]) {

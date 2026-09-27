@@ -5,7 +5,9 @@
    "id": "40f4431d",
    "title": "Residual event over-splits on 15 hard corpus items (bl-005, cs-es-04, rd-003...)",
    "status": "todo",
-   "notes": [],
+   "notes": [
+    "2026-09-27 A/B, 89 items (novel, long-multiscene, red, bullets), 1 rep: main count 89.9% / score 95.9% vs branch (actorName required + follow-up fold allowed onto the party/the named recipient) 87.6% / 95.2%; long-multiscene count 93->100%, novel 89->84%, red 80->70%. Remaining splits: 'lent out eleven books' after 'started a lending library', 'has stopped praying' after desecration."
+   ],
    "tags": [
     "gateway"
    ],
@@ -13,13 +15,15 @@
    "owner": "",
    "source": "scale 2026-09-24",
    "created": 1790530789.995,
-   "updated": 1790530789.995
+   "updated": 1790547158.233
   },
   {
    "id": "9f591a25",
    "title": "Red polarity misses: rd-006 life bargain, rd-008 kill trophies, rd-010 raising the dead",
    "status": "todo",
-   "notes": [],
+   "notes": [
+    "2026-09-27: rd-006 and rd-010 now red after 72dbac48's redCheck field; rd-008 (kill trophies) still standard."
+   ],
    "tags": [
     "red",
     "proposals"
@@ -28,7 +32,7 @@
    "owner": "",
    "source": "scale 2026-09-24",
    "created": 1790530790.04,
-   "updated": 1790530790.04
+   "updated": 1790544339.676
   },
   {
    "id": "99b7c053",
@@ -80,9 +84,10 @@
   {
    "id": "a48d97c0",
    "title": "Party-wide analysis costs 20-36 s per PC (2+ min for 5): analyse notes once per party, then attribute events per character",
-   "status": "todo",
+   "status": "done",
    "notes": [
-    "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it."
+    "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it.",
+    "2026-09-27 extraction cache (pipeline.js#createExtractionCache, per adapter, LRU 20 / TTL 30 min, fresh:true bypass). ember-road-verify s1, 5 PCs: 62 s total (35 s first PC incl. extraction, then 2.4-9 s each) vs 20-36 s per PC before."
    ],
    "tags": [
     "gateway",
@@ -93,15 +98,16 @@
    "owner": "",
    "source": "ember-road-s1",
    "created": 1790531180.022,
-   "updated": 1790532373.318
+   "updated": 1790547158.351
   },
   {
    "id": "6ca3c8e7",
    "title": "Dark deed stated in ANOTHER player's line is dropped: Luz 'catch Tovin killing a goblin that was surrender' -> no Tovin event; Tovin's coy 'tidied up a loose end' became stealth success, no red signal",
-   "status": "todo",
+   "status": "done",
    "notes": [
     "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it.",
-    "Still reproduces after the merge: Tovin's events = 'torched a troll', 'lost a bet', 'quietly eliminated a loose end' [deception]; Luz's report of the kill is not attributed to Tovin."
+    "Still reproduces after the merge: Tovin's events = 'torched a troll', 'lost a bet', 'quietly eliminated a loose end' [deception]; Luz's report of the kill is not attributed to Tovin.",
+    "2026-09-27 resumed WIP (squash of worktree-agent-a731ff0e1fe12d515) + tests (tests/ai-attribution-cache.test.mjs). Real model, fresh ember-road-verify s1: Tovin now 'killed a goblin that was surrendering on the bridge' [killing-the-surrendered], credited to Tovin only; the coy 'loose end' event is gone. Red half split into 72dbac48."
    ],
    "tags": [
     "gateway",
@@ -111,7 +117,7 @@
    "owner": "",
    "source": "ember-road-s1",
    "created": 1790531180.068,
-   "updated": 1790532373.363
+   "updated": 1790547158.273
   },
   {
    "id": "92539102",
@@ -152,9 +158,10 @@
   {
    "id": "c284b5ec",
    "title": "Missed events from the chat recap: Wick's 'lost the party's 40g rigging dice' (cheating failure) and 'lost my dagger to the river' not recorded",
-   "status": "todo",
+   "status": "done",
    "notes": [
-    "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it."
+    "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it.",
+    "2026-09-27 real model ember-road-verify s1: Wick now has 'lost his dagger to the river' (failure) and 'tried to cheat at dice by rigging them' (failure, deception/thievery, themes gambling,cheating)."
    ],
    "tags": [
     "gateway"
@@ -163,7 +170,7 @@
    "owner": "",
    "source": "ember-road-s1",
    "created": 1790531180.204,
-   "updated": 1790532373.227
+   "updated": 1790547158.312
   },
   {
    "id": "8549eb33",
@@ -272,6 +279,54 @@
    "source": "cli",
    "created": 1790531510.992,
    "updated": 1790531510.992
+  },
+  {
+   "id": "72dbac48",
+   "title": "Stage 2 ignores a red-worthy event: Tovin 'killed a goblin that was surrendering' (theme killing-the-surrendered) never cited, proposal built on 'torched a troll' + 'offered a deal' -> standard 'Infernal Pact'",
+   "status": "done",
+   "notes": [
+    "2026-09-27 fix: required stage-2 schema field redCheck [{event, vice}] before proposals (schemas.js#RED_CHECK_SCHEMA) + diagnostics.redCheck and a warning when a flagged deed got no red proposal. red-polarity slice (proposal-mode always, 1 rep): redAcc 0.70 -> 0.90 (rd-006, rd-010 now red; rd-008 still standard).",
+    "Also: stage 2 now sees only the analysed PC's events (pipeline.js, attributeEventsToActor) -- before, Luz's redCheck flagged Tovin's kill. ember-road s1 re-run (proposal-mode always, archived in sessions/01/rerun-2026-09-27): Tovin 'Hexblade: The Quiet End' red/cruelty citing the kill; Luz, and every other PC, standard and citing only their own events. npm test 664/664."
+   ],
+   "tags": [
+    "gateway",
+    "red",
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "ember-road s1 re-run 2026-09-27",
+   "created": 1790543771.492,
+   "updated": 1790547158.39
+  },
+  {
+   "id": "3962a001",
+   "title": "Proposal duplicates the class's own feature: 'Hexblade: Infernal Pact' grants Warlock Pact Magic/Eldritch Blast to a Warlock 3",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "proposals",
+    "dnd5e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s1 re-run 2026-09-27",
+   "created": 1790543771.53,
+   "updated": 1790543771.53
+  },
+  {
+   "id": "4f3192e0",
+   "title": "Things done TO a character still extracted as their event: 'Tovin was offered a deal by a woman...' (success, occultism) despite the prompt rule",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "ember-road s1 re-run 2026-09-27",
+   "created": 1790543771.568,
+   "updated": 1790543771.568
   }
  ]
 }

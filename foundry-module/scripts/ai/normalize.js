@@ -692,6 +692,19 @@ function toStringList(value) {
   return String(value).split(/\s*(?:[,;|/&+]|\band\b|\by\b|\bet\b|\bund\b|\be\b)\s*/i).map((part) => part.trim()).filter(Boolean);
 }
 
+// actorName is how per-character credit is decided downstream (api.js), so the non-names a model
+// writes when it has no name -- "I", "unknown", "n/a", "the GM" -- must read as "not stated" (""),
+// and every spelling of a group action must read as the one agreed value "the party". A pronoun
+// credited as a name would silently give the event to nobody.
+const NO_ACTOR = /^(i|me|myself|my|you|he|she|they|him|her|them|someone|somebody|nobody|no ?one|none|null|undefined|unknown|unnamed|n\/?a|-+|\?+|narrator|the narrator|gm|dm|the gm|the dm|game ?master|dungeon ?master|player|a player|character|the character|pc)$/i;
+const PARTY_ACTOR = /^(we|us|our|ourselves|party|the party|our party|whole party|the whole party|the group|group|our group|everyone|everybody|all|all of us|the team|team|the heroes|the adventurers|the pcs|pcs|la party|el grupo|nosotros|o grupo|nós|le groupe|nous|die gruppe|wir|il gruppo|noi|tayo|kami)$/i;
+export function coerceActorName(value) {
+  const name = textOf(value, 80).replace(/^["'“”‘’]+|["'“”‘’.!]+$/g, "").trim();
+  if (!name || NO_ACTOR.test(name)) return "";
+  if (PARTY_ACTOR.test(name)) return "the party";
+  return name;
+}
+
 function textOf(value, max) {
   if (value === undefined || value === null) return "";
   const text = typeof value === "string" ? value : typeof value === "object" ? (value.text ?? value.value ?? "") : String(value);
@@ -813,7 +826,7 @@ export function coerceEvent(rawEvent, opts = {}) {
   }
 
   const actorPick = pick(raw, "actorName");
-  const actorName = textOf(actorPick?.value, 80);
+  const actorName = coerceActorName(actorPick?.value);
   const language = coerceLanguage(pick(raw, "language")?.value);
 
   const event = {

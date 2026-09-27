@@ -24,6 +24,12 @@ export const EVENT_ITEM_SCHEMA = {
   type: "object",
   properties: {
     quote: { type: "string" },
+    // The DOER, decided right after the source fragment and before anything is summarized. It used to
+    // be optional and late in the object, and qwen3.8 then omitted it on every event of a party recap
+    // (ember-road s1: 0 of 18 events named) -- so per-character credit had nothing to go on. Required
+    // + early makes the model commit to "who did this" while it is looking at the quote, which is
+    // also what lets "Luz saw Tovin kill..." be recorded for Tovin rather than for the reporter.
+    actorName: { type: "string" },
     // Model-declared "this line is only the payoff/elaboration of the previous event". Prompting alone
     // never stopped the split (see pipeline.js#mergeFollowUpEvents); a flag lets the model record the
     // line AND lets us fold it deterministically. Right after quote so it is decided from the source.
@@ -33,14 +39,13 @@ export const EVENT_ITEM_SCHEMA = {
     // ("didn't lose a single guest", "the owner offered her a slot") and emits it as a second event,
     // which inflates evidence and was the main count error in the 2026-09-24 corpus run.
     consequence: { type: "string" },
-    actorName: { type: "string" },
     tags: { type: "array", items: { type: "string", enum: CANONICAL_TAGS } },
     themes: { type: "array", items: { type: "string" } },
     outcome: { type: "string", enum: OUTCOMES },
     dangerGap: { type: "string", enum: DANGER_GAP_VALUES },
     language: { type: "string" }
   },
-  required: ["quote", "continuesPrevious", "summary", "tags", "themes", "outcome", "dangerGap"]
+  required: ["quote", "actorName", "continuesPrevious", "summary", "tags", "themes", "outcome", "dangerGap"]
 };
 
 export const EVENT_EXTRACTION_SCHEMA = {
@@ -146,11 +151,26 @@ export const PROPOSAL_SCHEMA = {
 // looped out 15+ near-duplicate proposals per call (the pipeline kept 3) -- a grammar-level maxItems
 // stops the decoder at the cap instead of burning the output budget. Tagged so schemaName() still
 // recognizes it for the OpenAI json_schema name.
-export function proposalSchemaCapped(maxProposals) {
+// `redCheck: true` puts a per-event vice verdict BEFORE the proposals. The prompt-only red check
+// was skipped when the model built its proposal on other events: ember-road s1 "Tovin killed a
+// goblin that was surrendering" (theme killing-the-surrendered) was never cited, and the one
+// proposal was a clean "Infernal Pact". A required field is decided event by event, first.
+export const RED_CHECK_SCHEMA = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: { event: { type: "string" }, vice: { type: "string", enum: ["none", ...VICE_TAGS] } },
+    required: ["event", "vice"]
+  }
+};
+
+export function proposalSchemaCapped(maxProposals, { redCheck = false } = {}) {
   const max = Number.isInteger(maxProposals) && maxProposals > 0 ? maxProposals : 3;
+  const proposals = { ...PROPOSAL_SCHEMA.properties.proposals, maxItems: max };
   return {
     ...PROPOSAL_SCHEMA,
-    properties: { proposals: { ...PROPOSAL_SCHEMA.properties.proposals, maxItems: max } },
+    properties: redCheck ? { redCheck: RED_CHECK_SCHEMA, proposals } : { proposals },
+    required: redCheck ? ["redCheck", "proposals"] : PROPOSAL_SCHEMA.required,
     [CAPPED_OF]: PROPOSAL_SCHEMA
   };
 }
