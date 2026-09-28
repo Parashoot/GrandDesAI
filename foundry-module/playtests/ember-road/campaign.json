@@ -168,7 +168,7 @@
      {
       "id": "proposal:ai-skill:shieldwall-bottleneck",
       "kind": "skill",
-      "status": "pending",
+      "status": "approved",
       "evidence": [
        "Brakka held the stone lip to control the thralls' approach and killed one.",
        "Brakka lassoed the Toll King.",
@@ -201,7 +201,8 @@
        "tier": 1,
        "system_equivalent": "Passive combat advantage feat (Dungeons & Dragons Fifth Edition (2024 rules))"
       },
-      "source": "ai-gateway"
+      "source": "ai-gateway",
+      "approvedAt": "2026-09-28T18:45:42.213Z"
      },
      {
       "id": "proposal:ai-skill:warden-s-duty-gatekeeper",
@@ -249,7 +250,7 @@
     "levelProgression": {
      "level": 2,
      "progress": 11,
-     "grantAllowances": 2,
+     "grantAllowances": 1,
      "capstoneAllowances": 0,
      "lastRestAt": "2026-09-27T23:13:19.266Z",
      "lastRestType": "long"
@@ -403,9 +404,101 @@
        "summary": "Tovin tried to communicate with the Toll King."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:shieldwall-bottleneck": {
+       "name": "Shieldwall: Bottleneck",
+       "itemId": "ptccizey1pyo",
+       "approvedAt": "2026-09-28T18:45:42.212Z",
+       "metadata": {
+        "id": "skill:shieldwall-bottleneck",
+        "tags": [
+         "martial",
+         "defense"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeatedly used terrain to control enemy movement and protect allies, including a failed attempt to intercept an attack."
+        }
+       },
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you are in a narrow passage or holding a chokepoint, you gain advantage on attack rolls against creatures within 5 feet of you. Additionally, you can use your reaction to impose disadvantage on the next attack roll made against an ally within 5 feet of you.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "passive"
+       },
+       "tier": 1,
+       "system_equivalent": "Passive combat advantage feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Shieldwall: Bottleneck] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Passive combat advantage feat (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> When you are in a narrow passage or holding a chokepoint, you gain advantage on attack rolls against creatures within 5 feet of you. Additionally, you can use your reaction to impose disadvantage on the next attack roll made against an ally within 5 feet of you.</p><p><strong>Frequency:</strong> 1/unlimited</p><p><strong>Duration:</strong> passive</p><p><strong>Tags:</strong> martial, defense</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Repeatedly used terrain to control enemy movement and protect allies, including a failed attempt to intercept an attack.</p>"
+      },
+      "activities": {
+       "actpspqv7u4": {
+        "_id": "actpspqv7u4",
+        "type": "utility",
+        "activation": {
+         "type": "none",
+         "value": null,
+         "condition": ""
+        },
+        "duration": {
+         "units": "spec"
+        },
+        "uses": {
+         "max": "",
+         "recovery": []
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:shieldwall-bottleneck",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:shieldwall-bottleneck",
+        "tags": [
+         "martial",
+         "defense"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeatedly used terrain to control enemy movement and protect allies, including a failed attempt to intercept an attack."
+        }
+       }
+      }
+     },
+     "_id": "ptccizey1pyo"
+    }
+   ]
   },
   {
    "name": "Wick",
@@ -654,11 +747,129 @@
       "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:shadowfingers-sleight-of-hand",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Wick stole the writ from the collector's glove",
+       "Wick stole 30 gold pieces",
+       "Wick tried to cheat at dice by rigging them"
+      ],
+      "entry": {
+       "name": "Shadowfingers: Sleight of Hand",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in Sleight of Hand and Thieves' Tools. When you succeed on a Sleight of Hand check to pick a pocket or hide an object, you can use your bonus action to immediately attempt to pick another pocket or hide another object with advantage.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "thievery",
+         "deception"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick demonstrated repeated success in pickpocketing (writ, gold) and attempted sleight-of-hand (rigging dice), showing a clear aptitude for manual dexterity and deception."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Sleight of Hand proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:44:51.953Z"
+     },
+     {
+      "id": "proposal:ai-skill:oxwhip-animal-handling",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Wick rode an ox into a fight with a troll",
+       "Wick cut Steve loose to charge a thrall"
+      ],
+      "entry": {
+       "name": "Oxwhip: Animal Handling",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in Animal Handling. When you use an action to command a mount or beast to charge or perform a dangerous maneuver, you gain advantage on the Animal Handling check. If the beast succeeds, it deals an extra 1d6 bludgeoning damage to the target.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "nature",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used an ox in combat and attempted to use it as a tactical asset, demonstrating a unique bond and command over large beasts in dangerous situations."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Animal Handling proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:44:51.956Z",
+      "approvedAt": "2026-09-28T18:45:42.378Z"
+     },
+     {
+      "id": "proposal:ai-skill:daggerdance-thrown-weapon-expertise",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Wick threw a dagger through the Toll King's hand",
+       "Wick lost his dagger to the river"
+      ],
+      "entry": {
+       "name": "Daggerdance: Thrown Weapon Expertise",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in throwing daggers. When you hit a creature with a thrown dagger, you can use your bonus action to retrieve it if it is within 5 feet of you. If you miss, you can use your reaction to make a Dexterity (Sleight of Hand) check to catch the dagger before it hits the ground, regaining it for immediate reuse.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "ranged",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used a thrown dagger in a high-stakes moment and previously lost one, suggesting a need for and aptitude in managing thrown weapons efficiently."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Thrown weapon proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:44:51.956Z",
+      "approvedAt": "2026-09-28T18:45:42.465Z"
+     }
+    ],
     "levelProgression": {
      "level": 2,
      "progress": 73.5,
-     "grantAllowances": 2,
+     "grantAllowances": 0,
      "capstoneAllowances": 0,
      "lastRestAt": "2026-09-27T23:13:19.277Z",
      "lastRestType": "long"
@@ -800,9 +1011,191 @@
        "summary": "Tovin tried to communicate with the Toll King."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:oxwhip-animal-handling": {
+       "name": "Oxwhip: Animal Handling",
+       "itemId": "ptvc0ok10nt7",
+       "approvedAt": "2026-09-28T18:45:42.378Z",
+       "metadata": {
+        "id": "skill:oxwhip-animal-handling",
+        "tags": [
+         "nature",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used an ox in combat and attempted to use it as a tactical asset, demonstrating a unique bond and command over large beasts in dangerous situations."
+        }
+       },
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in Animal Handling. When you use an action to command a mount or beast to charge or perform a dangerous maneuver, you gain advantage on the Animal Handling check. If the beast succeeds, it deals an extra 1d6 bludgeoning damage to the target.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "tier": 1,
+       "system_equivalent": "Animal Handling proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "skill:daggerdance-thrown-weapon-expertise": {
+       "name": "Daggerdance: Thrown Weapon Expertise",
+       "itemId": "pty6qbnu1yho",
+       "approvedAt": "2026-09-28T18:45:42.464Z",
+       "metadata": {
+        "id": "skill:daggerdance-thrown-weapon-expertise",
+        "tags": [
+         "ranged",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used a thrown dagger in a high-stakes moment and previously lost one, suggesting a need for and aptitude in managing thrown weapons efficiently."
+        }
+       },
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in throwing daggers. When you hit a creature with a thrown dagger, you can use your bonus action to retrieve it if it is within 5 feet of you. If you miss, you can use your reaction to make a Dexterity (Sleight of Hand) check to catch the dagger before it hits the ground, regaining it for immediate reuse.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "tier": 1,
+       "system_equivalent": "Thrown weapon proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Oxwhip: Animal Handling] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Animal Handling proficiency feat (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> Gain proficiency in Animal Handling. When you use an action to command a mount or beast to charge or perform a dangerous maneuver, you gain advantage on the Animal Handling check. If the beast succeeds, it deals an extra 1d6 bludgeoning damage to the target.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Duration:</strong> instant</p><p><strong>Tags:</strong> nature, martial</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Wick successfully used an ox in combat and attempted to use it as a tactical asset, demonstrating a unique bond and command over large beasts in dangerous situations.</p>"
+      },
+      "activities": {
+       "actw8f93y9e": {
+        "_id": "actw8f93y9e",
+        "type": "utility",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:oxwhip-animal-handling",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:oxwhip-animal-handling",
+        "tags": [
+         "nature",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used an ox in combat and attempted to use it as a tactical asset, demonstrating a unique bond and command over large beasts in dangerous situations."
+        }
+       }
+      }
+     },
+     "_id": "ptvc0ok10nt7"
+    },
+    {
+     "name": "[Daggerdance: Thrown Weapon Expertise] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Thrown weapon proficiency feat (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> Gain proficiency in throwing daggers. When you hit a creature with a thrown dagger, you can use your bonus action to retrieve it if it is within 5 feet of you. If you miss, you can use your reaction to make a Dexterity (Sleight of Hand) check to catch the dagger before it hits the ground, regaining it for immediate reuse.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Duration:</strong> instant</p><p><strong>Tags:</strong> ranged, precision</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Wick successfully used a thrown dagger in a high-stakes moment and previously lost one, suggesting a need for and aptitude in managing thrown weapons efficiently.</p>"
+      },
+      "activities": {
+       "act5wqv7fca": {
+        "_id": "act5wqv7fca",
+        "type": "utility",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:daggerdance-thrown-weapon-expertise",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:daggerdance-thrown-weapon-expertise",
+        "tags": [
+         "ranged",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used a thrown dagger in a high-stakes moment and previously lost one, suggesting a need for and aptitude in managing thrown weapons efficiently."
+        }
+       }
+      }
+     },
+     "_id": "pty6qbnu1yho"
+    }
+   ]
   },
   {
    "name": "Maren",
@@ -1068,7 +1461,7 @@
      {
       "id": "proposal:ai-skill:grovekeeper-field-triage",
       "kind": "skill",
-      "status": "pending",
+      "status": "approved",
       "evidence": [
        "Maren healed Brakka.",
        "Maren treated the surrendered goblins."
@@ -1106,7 +1499,8 @@
        "system_equivalent": "Medicine skill action (Dungeons & Dragons Fifth Edition (2024 rules))"
       },
       "source": "ai-gateway",
-      "requestedAt": "2026-09-27T22:21:23.988Z"
+      "requestedAt": "2026-09-27T22:21:23.988Z",
+      "approvedAt": "2026-09-28T18:45:42.295Z"
      },
      {
       "id": "proposal:ai-skill:honeycomb-artisan-s-trade",
@@ -1187,7 +1581,7 @@
     "levelProgression": {
      "level": 2,
      "progress": 76,
-     "grantAllowances": 1,
+     "grantAllowances": 0,
      "capstoneAllowances": 0,
      "lastRestAt": "2026-09-27T23:13:27.567Z",
      "lastRestType": "long"
@@ -1382,6 +1776,41 @@
        },
        "tier": 1,
        "system_equivalent": "Druid spell action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "skill:grovekeeper-field-triage": {
+       "name": "Grovekeeper: Field Triage",
+       "itemId": "ptauvv8gnkxv",
+       "approvedAt": "2026-09-28T18:45:42.295Z",
+       "metadata": {
+        "id": "skill:grovekeeper-field-triage",
+        "tags": [
+         "medicine",
+         "support",
+         "nature"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren consistently provided medical aid to allies and even surrendered enemies, showing a dedicated and compassionate approach to healing that goes beyond simple spellcasting."
+        }
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt a Medicine check to treat one adjacent creature. On a success, the target regains 1d8 Hit Points. If the target is an animal or a humanoid who has surrendered or is not hostile, you gain advantage on the check.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Medicine check",
+         "formula": "1d20+3"
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Medicine skill action (Dungeons & Dragons Fifth Edition (2024 rules))"
       }
      },
      "titles": {}
@@ -1447,6 +1876,57 @@
       }
      },
      "_id": "ptlxaev6nvhd"
+    },
+    {
+     "name": "[Grovekeeper: Field Triage] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Medicine skill action (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> Attempt a Medicine check to treat one adjacent creature. On a success, the target regains 1d8 Hit Points. If the target is an animal or a humanoid who has surrendered or is not hostile, you gain advantage on the check.</p><p><strong>Frequency:</strong> 1/hour</p><p><strong>Resolution:</strong> Medicine check — [[/r 1d20+3]]</p><p><strong>Tags:</strong> medicine, support, nature</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Maren consistently provided medical aid to allies and even surrendered enemies, showing a dedicated and compassionate approach to healing that goes beyond simple spellcasting.</p>"
+      },
+      "activities": {
+       "act8p24ztgh": {
+        "_id": "act8p24ztgh",
+        "type": "utility",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "",
+         "recovery": []
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:grovekeeper-field-triage",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:grovekeeper-field-triage",
+        "tags": [
+         "medicine",
+         "support",
+         "nature"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren consistently provided medical aid to allies and even surrendered enemies, showing a dedicated and compassionate approach to healing that goes beyond simple spellcasting."
+        }
+       }
+      }
+     },
+     "_id": "ptauvv8gnkxv"
     }
    ]
   },
@@ -1583,11 +2063,141 @@
       "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:hexblade-the-hollowing",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Tovin killed a goblin that was surrendering on the bridge.",
+       "Tovin gave the rag-market woman a year of his dreams."
+      ],
+      "entry": {
+       "name": "Hexblade: The Hollowing",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you kill a creature that has surrendered or is incapacitated, you gain advantage on your next saving throw against a mental effect. However, you suffer a -2 penalty to all Persuasion and Deception checks until you complete a long rest, representing a growing detachment from mercy and social nuance.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "Until long rest"
+       },
+       "metadata": {
+        "tags": [
+         "occult",
+         "intimidation"
+        ],
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "Penalty to social skills and increased risk of being perceived as a threat by neutral factions."
+        },
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "The character explicitly killed a surrendering goblin, indicating a willingness to inflict harm beyond necessity, which aligns with the 'cruelty' vice."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Passive feature (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:06.096Z",
+      "approvedAt": "2026-09-28T18:45:42.545Z"
+     },
+     {
+      "id": "proposal:ai-skill:pact-infernal-ignition",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Tovin torched a troll.",
+       "Tovin cast Eldritch Blast."
+      ],
+      "entry": {
+       "name": "Pact: Infernal Ignition",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a spell attack against one creature within 60 feet. On a hit, deal 2d8 fire damage. If the target is a Large or larger creature, they must succeed on a DC 13 Constitution saving throw or be Frightened until the end of their next turn.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "Instant",
+        "roll": {
+         "kind": "Spell attack",
+         "formula": "1d20+4"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "fire",
+         "spellcasting",
+         "occult"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated ability to cast Eldritch Blast and use fire to kill a troll, suggesting a potent elemental magical affinity."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:06.096Z"
+     },
+     {
+      "id": "proposal:ai-skill:patron-dream-weaver-s-bargain",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Tovin gave the rag-market woman a year of his dreams."
+      ],
+      "entry": {
+       "name": "Patron: Dream Weaver's Bargain",
+       "gameItem": {
+        "kind": "free"
+       },
+       "mechanics": {
+        "effect": "You can sacrifice 1d4 hours of your own sleep (reducing your maximum Hit Points by 1d4 until you rest) to grant one ally within 30 feet advantage on their next saving throw or ability check. This represents the transfer of mental fortitude or insight drawn from your own subconscious.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "Until the ally's next turn",
+        "roll": {
+         "kind": "Arcana check",
+         "formula": "1d20+4"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "occult",
+         "support"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "The character explicitly traded a year of dreams to a market woman, indicating a unique magical ability to manipulate or sacrifice dream states for benefit."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Free Action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:06.096Z"
+     }
+    ],
     "levelProgression": {
      "level": 1,
      "progress": 133.75,
-     "grantAllowances": 1,
+     "grantAllowances": 0,
      "capstoneAllowances": 0,
      "lastRestAt": "2026-09-27T23:13:30.399Z",
      "lastRestType": "long"
@@ -1744,9 +2354,111 @@
        "summary": "Wick licked the shrine."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:hexblade-the-hollowing": {
+       "name": "Hexblade: The Hollowing",
+       "itemId": "ptgn3lzaf5y2",
+       "approvedAt": "2026-09-28T18:45:42.545Z",
+       "metadata": {
+        "id": "skill:hexblade-the-hollowing",
+        "tags": [
+         "occult",
+         "intimidation"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "The character explicitly killed a surrendering goblin, indicating a willingness to inflict harm beyond necessity, which aligns with the 'cruelty' vice."
+        },
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "Penalty to social skills and increased risk of being perceived as a threat by neutral factions."
+        }
+       },
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you kill a creature that has surrendered or is incapacitated, you gain advantage on your next saving throw against a mental effect. However, you suffer a -2 penalty to all Persuasion and Deception checks until you complete a long rest, representing a growing detachment from mercy and social nuance.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "Until long rest"
+       },
+       "tier": 1,
+       "system_equivalent": "Passive feature (Dungeons & Dragons Fifth Edition (2024 rules))"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 25,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Hexblade: The Hollowing] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Passive feature (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> When you kill a creature that has surrendered or is incapacitated, you gain advantage on your next saving throw against a mental effect. However, you suffer a -2 penalty to all Persuasion and Deception checks until you complete a long rest, representing a growing detachment from mercy and social nuance.</p><p><strong>Frequency:</strong> 1/unlimited</p><p><strong>Duration:</strong> Until long rest</p><p><strong>Tags:</strong> occult, intimidation</p><p><strong>Lineage:</strong> origin; sources: none</p><p>The character explicitly killed a surrendering goblin, indicating a willingness to inflict harm beyond necessity, which aligns with the &#039;cruelty&#039; vice.</p>"
+      },
+      "activities": {
+       "actxgtm4laq": {
+        "_id": "actxgtm4laq",
+        "type": "utility",
+        "activation": {
+         "type": "none",
+         "value": null,
+         "condition": ""
+        },
+        "duration": {
+         "units": "spec"
+        },
+        "uses": {
+         "max": "",
+         "recovery": []
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:hexblade-the-hollowing",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:hexblade-the-hollowing",
+        "tags": [
+         "occult",
+         "intimidation"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "The character explicitly killed a surrendering goblin, indicating a willingness to inflict harm beyond necessity, which aligns with the 'cruelty' vice."
+        },
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "Penalty to social skills and increased risk of being perceived as a threat by neutral factions."
+        }
+       }
+      }
+     },
+     "_id": "ptgn3lzaf5y2"
+    }
+   ]
   },
   {
    "name": "Luz",
@@ -1902,11 +2614,144 @@
       "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:sanctuary-mending-light",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Luz healed Brakka to full health after the troll fight.",
+       "Luz healed Maren.",
+       "Luz cast Sanctuary on Oren."
+      ],
+      "entry": {
+       "name": "Sanctuary: Mending Light",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "When you cast a healing spell on an ally, you may use your reaction to grant that ally 5 temporary hit points. This represents the lingering divine grace that stabilizes the target immediately after the spell takes effect.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "divine",
+         "support",
+         "medicine"
+        ],
+        "themes": [
+         "healing"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz has repeatedly demonstrated the ability to restore allies to full health and protect them from further harm, showing a consistent pattern of divine support and medical stabilization."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:19.721Z"
+     },
+     {
+      "id": "proposal:ai-skill:sanctuary-public-edict",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Luz led the dawn blessing at the temple.",
+       "Luz held up her symbol in front of the crowd to prevent Vesk from drawing her weapon."
+      ],
+      "entry": {
+       "name": "Sanctuary: Public Edict",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "As an action, you hold up your holy symbol and make a Persuasion or Intimidation check against one hostile creature within 30 feet. On a success, that creature must make a Wisdom saving throw against your spell save DC. On a failure, it is Frightened of you until the end of its next turn. On a success, it is not Frightened but is Disadvantaged on its next attack roll against you or your allies.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Persuasion or Intimidation check",
+         "formula": "1d20+2"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "divine",
+         "intimidation",
+         "diplomacy"
+        ],
+        "themes": [
+         "public-display"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz successfully used her holy symbol in a public setting to deter a hostile action, demonstrating an ability to leverage divine authority and social pressure to de-escalate conflicts."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:19.721Z",
+      "approvedAt": "2026-09-28T18:45:42.627Z"
+     },
+     {
+      "id": "proposal:ai-skill:sanctuary-vigilant-eye",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Luz is keeping watch on Tovin.",
+       "Luz read the 31 names at the shrine."
+      ],
+      "entry": {
+       "name": "Sanctuary: Vigilant Eye",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "You gain a +2 bonus to passive Perception and Investigation checks when observing a specific target or location for more than 1 minute. This reflects your ability to maintain focus and gather subtle details over time.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "while active"
+       },
+       "metadata": {
+        "tags": [
+         "stealth",
+         "survival",
+         "occultism"
+        ],
+        "themes": [
+         "surveillance"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz has shown a consistent ability to keep watch and gather information, whether by monitoring a person or reading names at a shrine, indicating a talent for sustained observation and subtle investigation."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric passive feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:19.721Z"
+     }
+    ],
     "levelProgression": {
      "level": 1,
      "progress": 68.75,
-     "grantAllowances": 1,
+     "grantAllowances": 0,
      "capstoneAllowances": 0,
      "lastRestAt": "2026-09-27T23:13:32.225Z",
      "lastRestType": "long"
@@ -2057,9 +2902,118 @@
        "summary": "Tovin tried to communicate with the Toll King."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:sanctuary-public-edict": {
+       "name": "Sanctuary: Public Edict",
+       "itemId": "pt8rcpj3u5mb",
+       "approvedAt": "2026-09-28T18:45:42.627Z",
+       "metadata": {
+        "id": "skill:sanctuary-public-edict",
+        "tags": [
+         "divine",
+         "intimidation",
+         "diplomacy"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz successfully used her holy symbol in a public setting to deter a hostile action, demonstrating an ability to leverage divine authority and social pressure to de-escalate conflicts."
+        },
+        "themes": [
+         "public-display"
+        ]
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "As an action, you hold up your holy symbol and make a Persuasion or Intimidation check against one hostile creature within 30 feet. On a success, that creature must make a Wisdom saving throw against your spell save DC. On a failure, it is Frightened of you until the end of its next turn. On a success, it is not Frightened but is Disadvantaged on its next attack roll against you or your allies.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Persuasion or Intimidation check",
+         "formula": "1d20+2"
+        },
+        "actions": 1
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Sanctuary: Public Edict] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Cleric action (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> As an action, you hold up your holy symbol and make a Persuasion or Intimidation check against one hostile creature within 30 feet. On a success, that creature must make a Wisdom saving throw against your spell save DC. On a failure, it is Frightened of you until the end of its next turn. On a success, it is not Frightened but is Disadvantaged on its next attack roll against you or your allies.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Resolution:</strong> Persuasion or Intimidation check — [[/r 1d20+2]]</p><p><strong>Tags:</strong> divine, intimidation, diplomacy</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Luz successfully used her holy symbol in a public setting to deter a hostile action, demonstrating an ability to leverage divine authority and social pressure to de-escalate conflicts.</p>"
+      },
+      "activities": {
+       "act1nj1fnma": {
+        "_id": "act1nj1fnma",
+        "type": "utility",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:sanctuary-public-edict",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:sanctuary-public-edict",
+        "tags": [
+         "divine",
+         "intimidation",
+         "diplomacy"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz successfully used her holy symbol in a public setting to deter a hostile action, demonstrating an ability to leverage divine authority and social pressure to de-escalate conflicts."
+        },
+        "themes": [
+         "public-display"
+        ]
+       }
+      }
+     },
+     "_id": "pt8rcpj3u5mb"
+    }
+   ]
   }
  ],
  "emergentThemes": {
