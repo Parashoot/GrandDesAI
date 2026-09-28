@@ -562,7 +562,9 @@
    "id": "316705b6",
    "title": "Proposals duplicate an OWNED Skill by mechanic (Luz 'Voice of Conviction' = her Public Edict); registry dedupe is by name only",
    "status": "doing",
-   "notes": [],
+   "notes": [
+    "salt-lantern s2 (pf2e): 'Roguecraft: Salt Spray' (ranged Strike, blinded) duplicates Pim's owned Improvised Blinding."
+   ],
    "tags": [
     "proposals"
    ],
@@ -570,13 +572,15 @@
    "owner": "dev-proposals",
    "source": "ember-road s3",
    "created": 1790624440.04,
-   "updated": 1790626872.077
+   "updated": 1790627998.36
   },
   {
    "id": "b81a0357",
    "title": "Pending proposals grow without limit (Tovin 5, Luz 4 pending for 1 allowance each): cap or roll up per actor",
    "status": "doing",
-   "notes": [],
+   "notes": [
+    "salt-lantern s2: after one approval each, Doro 4 / Kestrel 4 / Pim 3 / Buck 3 pending."
+   ],
    "tags": [
     "proposals",
     "qol"
@@ -585,7 +589,7 @@
    "owner": "dev-proposals",
    "source": "ember-road s3",
    "created": 1790624440.081,
-   "updated": 1790626872.126
+   "updated": 1790627998.403
   },
   {
    "id": "e8ae42d0",
@@ -673,6 +677,21 @@
    "source": "C5 review 2026-09-28",
    "created": 1790627490.291,
    "updated": 1790627490.291
+  },
+  {
+   "id": "eb3924f1",
+   "title": "s2 pf2e misread: 'doro crit the chest lock 27' -> 'Doro picked the chest lock' (lockpicking) though he smashed it; 'glafka light scout nothing' read as success",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway",
+    "pf2e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "salt-lantern s2",
+   "created": 1790627998.313,
+   "updated": 1790627998.313
   }
  ]
 }
