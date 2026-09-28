@@ -152,6 +152,11 @@ export function buildAiGatewayRequest(actor, notes, systemId = "pf2e") {
       systemLabel: adapter.label,
       level: adapter.getCharacterLevel(actor),
       systemClass: adapter.getCharacterClass?.(actor) ?? null,
+      // Board 3962a001: the actor's own native class features/proficiencies, so stage 2 can tell a
+      // proposal apart from something the character's base class already grants (buildProposalMessages,
+      // pipeline.js#findDuplicateClassFeature). Best-effort: an adapter without this, or an actor with
+      // nothing to report, contributes an empty list rather than failing the whole request.
+      ownedFeatures: adapter.getCharacterKnownFeatures?.(actor) ?? [],
       existingGrandDesign: actor.getFlag(MODULE_ID, "registry") ?? {},
       grandDesign: {
         level: grandDesignLevel,

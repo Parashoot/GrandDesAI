@@ -100,6 +100,36 @@ export function getCharacterClass5e(actor) {
   return labels.length ? labels.join(" / ") : null;
 }
 
+// The 18 5e skills (system.skills keys). Board 3962a001: a proposal must never hand the character
+// proficiency in a skill or tool they are already proficient with on the sheet.
+const SKILL_LABELS_5E = {
+  acr: "Acrobatics", ani: "Animal Handling", arc: "Arcana", ath: "Athletics", dec: "Deception",
+  his: "History", ins: "Insight", itm: "Intimidation", inv: "Investigation", med: "Medicine",
+  nat: "Nature", prc: "Perception", prf: "Performance", per: "Persuasion", rel: "Religion",
+  slt: "Sleight of Hand", ste: "Stealth", sur: "Survival"
+};
+
+// Board 3962a001: "Hexblade: Infernal Pact" handed a Warlock 3 Pact Magic and Eldritch Blast --
+// features every Warlock already has from level 1 -- because stage 2 only ever saw actor.systemClass
+// as a bare string. Returns the character's own class/subclass feature names, proficient skills, and
+// owned tool proficiency items, so the proposal prompt (and pipeline.js's deterministic backstop) can
+// see what is already on the sheet. Best-effort and additive: an actor missing any of this (a plain
+// harness object, an unusual sheet) simply contributes less, never throws.
+export function getCharacterKnownFeatures5e(actor) {
+  const names = new Set();
+  const items = typeof actor?.items?.filter === "function"
+    ? actor.items.filter((item) => ["feat", "class", "subclass", "tool"].includes(item?.type))
+    : [];
+  for (const item of items) if (typeof item?.name === "string" && item.name.trim()) names.add(item.name.trim());
+  const skills = actor?.system?.skills;
+  if (skills && typeof skills === "object") {
+    for (const [key, skill] of Object.entries(skills)) {
+      if (Number(skill?.value ?? 0) >= 1 && SKILL_LABELS_5E[key]) names.add(SKILL_LABELS_5E[key]);
+    }
+  }
+  return [...names];
+}
+
 export function equivalentLabel5e(kind, entry) {
   return kind === "class" ? entry.system_chassis ?? "Pending 5E class chassis review" : entry.system_equivalent;
 }

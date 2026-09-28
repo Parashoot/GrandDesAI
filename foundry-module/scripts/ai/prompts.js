@@ -265,6 +265,15 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       : `Propose at most ${config.maxProposals} proposals, and only where the evidence genuinely supports one (repeated effort, including repeated failures). Return {"proposals":[]} when it does not.`,
     "Every proposal is { kind: \"skill\" | \"class\", theme?: string, evidence: [short strings citing events], entry: {...} }. The entry is never nested under skillEntry/classEntry.",
     "metadata.tags may ONLY contain values from ALLOWED TAGS; put any other concept in metadata.themes instead.",
+    // Board 316705b6: "Sanctuary: Voice of Conviction" duplicated the owned "Sanctuary: Public Edict"
+    // (same Persuasion/Intimidation-vs-one-foe-then-Wisdom-save mechanic) under a new second half of
+    // the name -- the old dedupe was by name only, so it sailed through. actor.existingClassesAndSkills
+    // below carries each owned entry's effect, not just its name, specifically so this can be checked.
+    "Never propose a Skill or Class whose mechanics (what it actually lets the character do) duplicate or closely resemble one the character already owns (actor.existingClassesAndSkills, including its effect) -- not even under a new name. Build on what they have, or cover genuinely new ground.",
+    // Board 3962a001: "Hexblade: Infernal Pact" (Warlock 3) granted Pact Magic + Eldritch Blast, which
+    // every Warlock already has from level 1; "Shadowfingers: Sleight of Hand" granted a Rogue
+    // proficiency in Sleight of Hand and Thieves' Tools, which Rogues already start with.
+    "Never propose a Skill or Class that just restates a feature, spell, or proficiency the character's own base class already grants by this system's core rules (actor.systemClass) -- for example a Warlock already has Pact Magic and Eldritch Blast, a Rogue is already proficient with Thieves' Tools and its signature skills. A Grand Design proposal is something ADDITIONAL beyond that baseline chassis, never a reskin of it.",
     // The ">= 3" threshold made the model answer {"proposals":[]} for every single-event novel
     // activity even when the GM had asked for suggestions (20 of 22 empty "always" runs, 2026-09-24).
     mustPropose
@@ -273,7 +282,13 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     `Always include on every entry: name, gameItem.kind, mechanics.effect, mechanics.frequency {max >= 1, per: round|minute|hour|day|encounter|unlimited}, metadata.tags. A skill also needs tier (1, 2 or 3) and system_equivalent. A class also needs level, power_tier, is_primary, is_secondary, system_chassis.`,
     `Extra fields required per gameItem.kind: ${JSON.stringify(req.requiredFieldsByKind ?? {})}`,
     ...(req.rulesVocabulary ? [`Rules vocabulary -- write every effect, trigger and roll in THIS system's terms (the examples below only show the field shape): ${req.rulesVocabulary}`] : []),
-    `Naming: ${req.namingConvention ?? ""} Take the class motif from the character's Grand Design classes if it has any, else from actor.systemClass; never from the character's personal name. The motif is ONE evocative word you coin from that class plus this entry's own activity (for example a Ranger's trapping skill might be "Snarewright:", a Cleric's brewing skill "Altarbrew:"; never copy these example words), never the bare class name itself ("Fighter: ..." is wrong), and each proposal gets its own motif.`,
+    // Board 3962a001. Each list names the OTHER system's vocabulary plus terms that are neither
+    // system's real rules (an invented "durability system"; salt-lantern s1's "staggered", a flat
+    // round-count duration on a PF2e condition, "Craft check" for PF2e's Crafting skill).
+    request.actor?.system === "dnd5e"
+      ? "Never write: \"free action\" (that is PF2e's action economy), \"circumstance bonus\", \"off-guard\"/\"flat-footed\", \"per encounter\" (5e uses short/long rest or per turn), or an invented subsystem like a \"durability system\" this table never established."
+      : "Never write: \"bonus action\" (that is 5e's action economy), \"short rest\"/\"long rest\" (PF2e frequency is per round/minute/hour/day), \"staggered\" (not a PF2e condition), \"Craft check\" (PF2e's skill is Crafting), a PF2e condition given a flat \"for N rounds\" duration instead of its own rules (PF2e conditions run \"until the end of your next turn\" or count down a value), or an invented subsystem like a \"durability system\" this table never established.",
+    `Naming: ${req.namingConvention ?? ""} Take the class motif from the character's Grand Design classes if it has any, else from actor.systemClass; never from the character's personal name. The motif is ONE evocative word you coin from that class plus this entry's own activity (for example a Ranger's trapping skill might be "Snarewright:", a Cleric's brewing skill "Altarbrew:"; never copy these example words), never the bare class name itself or its possessive ("Fighter: ..." and "Champion's Bulwark" are both wrong), and each proposal gets its own motif.`,
     ...(config.namingStyle ? [`GM naming style (takes priority): ${config.namingStyle}`] : []),
     `Polarity: ${polarity}`,
     // The guidance alone ("almost every proposal is standard") made the model pick standard even
@@ -292,10 +307,21 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
 
   const actor = request.actor ?? {};
   const registry = actor.existingGrandDesign ?? {};
-  const existingNames = [
-    ...Object.values(registry.classes ?? {}).map((entry) => entry?.name).filter(Boolean),
-    ...Object.values(registry.skills ?? {}).map((entry) => entry?.name).filter(Boolean)
-  ];
+  // Board 316705b6: only the NAME used to travel here, so the model had no way to notice that
+  // "Sanctuary: Voice of Conviction" was the same Persuasion/Intimidation-vs-one-foe-then-Wisdom-save
+  // mechanic as the owned "Sanctuary: Public Edict" under a different second half of the name. Each
+  // owned entry's effect now travels with its name (short: this is context, not the whole entry).
+  const existingEntries = [
+    ...Object.values(registry.classes ?? {}),
+    ...Object.values(registry.skills ?? {})
+  ]
+    .filter((entry) => entry?.name)
+    .map((entry) => ({
+      name: entry.name,
+      ...(typeof entry.mechanics?.effect === "string" && entry.mechanics.effect.trim()
+        ? { effect: entry.mechanics.effect.trim().slice(0, 200) }
+        : {})
+    }));
   const payload = {
     actor: {
       name: actor.name,
@@ -303,7 +329,13 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       level: actor.level,
       ...(actor.systemClass ? { systemClass: actor.systemClass } : {}),
       grandDesign: actor.grandDesign,
-      existingClassesAndSkills: existingNames.slice(0, 40)
+      existingClassesAndSkills: existingEntries.slice(0, 40),
+      // Board 3962a001: the character's own native class features/proficiencies (from the actual
+      // character sheet, outside Grand Design) -- a Warlock 3 already has Pact Magic and Eldritch
+      // Blast, a Rogue is already proficient in Sleight of Hand and Thieves' Tools. Only present when
+      // the system adapter can read them (ai-gateway.js#buildAiGatewayRequest); the "Never propose..."
+      // rule above still applies from general class knowledge when this list is empty.
+      ...(Array.isArray(actor.ownedFeatures) && actor.ownedFeatures.length ? { ownedFeatures: actor.ownedFeatures.slice(0, 40) } : {})
     },
     // The verbatim quote travels with the summary: summaries sanitize ("broke the scout's will over
     // three days" became "interrogated the scout"), which hid exactly the cues red polarity needs.

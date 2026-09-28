@@ -56,6 +56,33 @@ export function getCharacterClassPf2e(actor) {
   return typeof found?.name === "string" && found.name.trim() ? found.name.trim() : null;
 }
 
+// Board 3962a001: a proposal must never hand the character proficiency in a skill or feat it is
+// already trained in. Returns the character's own class/ancestry/background feat names plus any
+// skill trained (rank >= 1), so the proposal prompt (and pipeline.js's deterministic backstop) can
+// see what is already on the sheet. Best-effort and additive, same as getCharacterClassPf2e above:
+// a plain harness object or an unusual sheet just contributes less, never throws.
+export function getCharacterKnownFeaturesPf2e(actor) {
+  const names = new Set();
+  const items = typeof actor?.items?.filter === "function"
+    ? actor.items.filter((item) => ["feat", "class", "background", "ancestry"].includes(item?.type))
+    : [];
+  for (const item of items) if (typeof item?.name === "string" && item.name.trim()) names.add(item.name.trim());
+  const skills = actor?.system?.skills;
+  if (skills && typeof skills === "object") {
+    for (const [key, skill] of Object.entries(skills)) {
+      const rank = Number(skill?.rank ?? 0);
+      if (rank < 1) continue;
+      const label = typeof skill?.label === "string" && skill.label.trim() ? skill.label.trim() : titleCase(key);
+      if (label) names.add(label);
+    }
+  }
+  return [...names];
+}
+
+function titleCase(value) {
+  return String(value ?? "").replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
+}
+
 export function equivalentLabelPf2e(kind, entry) {
   return kind === "class" ? entry.system_chassis ?? "Pending PF2e chassis review" : entry.system_equivalent;
 }

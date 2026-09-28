@@ -42,6 +42,7 @@ import {
 } from "./progression.js";
 import { attributeEventsToActor, classifyActorName, explainSessionNotes, proposalCitesOnlyOthers, validateAdapterEvents } from "./session-notes.js";
 import { createAiGatewayAdapter, createGatewayAdapter } from "./ai-gateway.js";
+import { pendingProposalCap } from "./ai/gateway-config.js";
 import {
   applyThemeMap,
   generateEmergentProposals,
@@ -798,14 +799,24 @@ export class GrandDesignApi {
         modelProposals.push(proposal);
       }
     }
-    const proposals = mergeProposals(eventProposals, modelProposals);
+    const mergedProposals = mergeProposals(eventProposals, modelProposals);
+    // Board b81a0357: trim to the pending-proposal cap AFTER merging, so it catches proposals that
+    // piled up on the actor from earlier analyses too, not just this batch.
+    const allowances = this.getLevelProgression(actor).grantAllowances;
+    const { proposals, dropped: cappedOutProposals, cap: pendingCap } = capPendingAiProposals(mergedProposals, config, allowances);
+    const cappedIds = new Set(proposals.map((p) => p.id));
 
     const adapterSkippedEvents = usedAdapter
       ? [...(Array.isArray(adapterOutput?.skippedEvents) ? adapterOutput.skippedEvents : []), ...adapterEvents.skipped]
       : [];
-    const adapterSkippedProposals = usedAdapter
-      ? [...(Array.isArray(adapterOutput?.skippedProposals) ? adapterOutput.skippedProposals : []), ...invalidProposals]
-      : [];
+    const adapterSkippedProposals = [
+      ...(usedAdapter ? [...(Array.isArray(adapterOutput?.skippedProposals) ? adapterOutput.skippedProposals : []), ...invalidProposals] : []),
+      ...cappedOutProposals.map((proposal) => ({
+        proposal,
+        reason: "pending-cap",
+        errors: [`${actor.name ?? "This character"} already has ${pendingCap} pending AI proposals; kept the strongest/newest.`]
+      }))
+    ];
     const gatewayDiagnostics = usedAdapter && adapterOutput && typeof adapterOutput === "object" && !Array.isArray(adapterOutput)
       ? adapterOutput.gatewayDiagnostics ?? adapterOutput.diagnostics ?? null
       : null;
@@ -816,7 +827,7 @@ export class GrandDesignApi {
       at: new Date().toISOString(),
       source,
       eventIds: recorded.map((event) => event.id),
-      proposalIds: modelProposals.map((proposal) => proposal.id),
+      proposalIds: modelProposals.map((proposal) => proposal.id).filter((id) => cappedIds.has(id)),
       diagnostics: summarizeDiagnostics({ source, gatewayDiagnostics, adapterError, localAnalysis, recorded, adapterSkippedEvents, adapterSkippedProposals, attributedToOthers }),
       // Kept short (flag-safe): who else the notes were about, so the Growth dialog can say
       // "12 events belonged to other characters" and list them.
@@ -1072,16 +1083,26 @@ export class GrandDesignApi {
       pendingNames.add(key);
       added.push({ ...proposal, requestedAt: new Date().toISOString() });
     }
-    const proposals = mergeProposals(growth.proposals, added);
-    if (added.length) {
+    const mergedProposals = mergeProposals(growth.proposals, added);
+    // Board b81a0357: same cap as analyzeSessionNotes, applied here too since "Suggest proposals" is
+    // the other place AI proposals land on the actor.
+    const { proposals, dropped: cappedOutProposals, cap: pendingCap } = capPendingAiProposals(mergedProposals, config, this.getLevelProgression(actor).grantAllowances);
+    const cappedIds = new Set(proposals.map((p) => p.id));
+    const keptAdded = added.filter((proposal) => cappedIds.has(proposal.id));
+    if (keptAdded.length) {
       await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
-      Hooks.callAll("grand-design-ai.growthProposalsSuggested", actor, added);
+      Hooks.callAll("grand-design-ai.growthProposalsSuggested", actor, keptAdded);
     }
     const adapterSkipped = Array.isArray(output?.skippedProposals) ? output.skippedProposals : [];
+    const cappedSkipped = cappedOutProposals.map((proposal) => ({
+      proposal,
+      reason: "pending-cap",
+      errors: [`${actor.name ?? "This character"} already has ${pendingCap} pending AI proposals; kept the strongest/newest.`]
+    }));
     return {
       proposals,
-      added,
-      ...(skipped.length || adapterSkipped.length ? { skipped: [...adapterSkipped, ...skipped] } : {}),
+      added: keptAdded,
+      ...(skipped.length || adapterSkipped.length || cappedSkipped.length ? { skipped: [...adapterSkipped, ...skipped, ...cappedSkipped] } : {}),
       ...(output?.gatewayDiagnostics ? { gatewayDiagnostics: output.gatewayDiagnostics } : {})
     };
   }
@@ -1607,6 +1628,36 @@ function mergeProposals(existing, additions) {
     if (!merged.has(proposal.id)) merged.set(proposal.id, proposal);
   }
   return [...merged.values()];
+}
+
+/**
+ * Board b81a0357: AI-authored pending proposals accumulated without limit (Tovin had 5 pending for a
+ * single grant allowance, Luz 4). Applied every time the pending set changes (analyzeSessionNotes,
+ * requestGrowthProposals): if the actor's pending ai-gateway proposals exceed the cap
+ * (gateway-config.js#pendingProposalCap, grantAllowances + slack), only the strongest/newest are kept
+ * and the rest are dropped, reported once with reason "pending-cap" rather than left to pile up
+ * silently. Template/emergent proposals (a different accumulation mechanism, not this board item) are
+ * untouched.
+ * @returns {{ proposals: object[], dropped: object[], cap: number }}
+ */
+function capPendingAiProposals(proposals, config, allowances) {
+  const cap = pendingProposalCap(config, allowances);
+  const pendingAi = proposals.filter((p) => p.status === "pending" && p.source === "ai-gateway");
+  if (pendingAi.length <= cap) return { proposals, dropped: [], cap };
+  const scored = pendingAi
+    .map((p, i) => ({
+      p,
+      i,
+      evidence: Array.isArray(p.evidence) ? p.evidence.length : 0,
+      at: Date.parse(p.requestedAt ?? p.approvedAt ?? "") || 0
+    }))
+    // Best (more citing evidence) first, newest first among ties, and original order as the last
+    // tiebreak so the result is stable.
+    .sort((a, b) => (b.evidence - a.evidence) || (b.at - a.at) || (b.i - a.i));
+  const keepIds = new Set(scored.slice(0, cap).map((s) => s.p.id));
+  const dropped = pendingAi.filter((p) => !keepIds.has(p.id));
+  const droppedIds = new Set(dropped.map((p) => p.id));
+  return { proposals: proposals.filter((p) => !droppedIds.has(p.id)), dropped, cap };
 }
 
 function slugify(value) {

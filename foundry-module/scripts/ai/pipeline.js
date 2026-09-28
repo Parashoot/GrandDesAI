@@ -14,7 +14,7 @@
 // Pure ESM, zero Foundry globals.
 
 import { parseModelJson, ModelJsonError } from "./json-repair.js";
-import { coerceEvent, eventDedupeKey, resolveTag, slugifyTheme, CANONICAL_TAGS } from "./normalize.js";
+import { coerceEvent, eventDedupeKey, resolveTag, slugifyTheme, stemWord, CANONICAL_TAGS } from "./normalize.js";
 import { EVENT_EXTRACTION_SCHEMA, COMBINED_SCHEMA, proposalSchemaCapped } from "./schemas.js";
 // Pure (no Foundry globals): the same per-character credit rule api.js applies to the events.
 import { attributeEventsToActor } from "../session-notes.js";
@@ -28,6 +28,196 @@ import { validateSkillEntry as defaultValidateSkill, validateClassEntry as defau
 // Same scale as progression.js MINIMUM_EVIDENCE / emergent-themes EMERGENT_THEME_EVIDENCE_THRESHOLD.
 export const EARNED_EVIDENCE_THRESHOLD = 3;
 const CANONICAL_SET = new Set(CANONICAL_TAGS);
+
+// ---------------------------------------------------------------------------------------------
+// Proposal quality backstops (board 316705b6, b81a0357, 3962a001)
+//
+// The stage-2 prompt now tells the model what the actor already owns (buildProposalMessages), but a
+// mid-sized local model does not always obey; these are the deterministic nets that catch what slips
+// through, independent of the model's own judgement.
+// ---------------------------------------------------------------------------------------------
+
+const MECHANIC_STOPWORDS = new Set([
+  "the", "a", "an", "to", "of", "and", "or", "on", "in", "with", "their", "its", "it", "then", "once",
+  "per", "using", "use", "uses", "against", "one", "that", "this", "for", "as", "is", "are", "be",
+  "can", "gain", "gains", "grant", "grants", "from", "your", "you", "they", "them", "he", "she", "his",
+  "her", "when", "if", "after", "before", "than", "into", "onto", "not", "no", "all", "any", "each",
+  "every", "own", "until", "while", "who", "which", "was", "were", "has", "have"
+]);
+
+function mechanicTokens(text) {
+  const words = String(text ?? "").toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !MECHANIC_STOPWORDS.has(w));
+  return new Set(words.map(stemWord));
+}
+
+function jaccard(a, b) {
+  if (!a.size || !b.size) return 0;
+  let intersection = 0;
+  for (const token of a) if (b.has(token)) intersection += 1;
+  return intersection / (a.size + b.size - intersection);
+}
+
+/**
+ * Board 316705b6: registry dedupe was by name only, so "Sanctuary: Voice of Conviction" sailed past
+ * "Sanctuary: Public Edict" -- same Persuasion/Intimidation-vs-one-foe-then-Wisdom-save mechanic --
+ * just because the second half of the name differed. Compares the proposal's own mechanics text and
+ * tags/themes against every owned Class/Skill's, independent of naming.
+ */
+export function findDuplicateOwnedMechanic(entry, ownedEntries, { textThreshold = 0.5, minTextTokens = 4 } = {}) {
+  const entryTokens = mechanicTokens(`${entry?.mechanics?.effect ?? ""} ${entry?.mechanics?.trigger ?? ""}`);
+  if (entryTokens.size < minTextTokens) return null; // too little text to compare meaningfully
+  const entryTags = new Set([...(entry?.metadata?.tags ?? []), ...(entry?.metadata?.themes ?? [])]);
+  for (const owned of ownedEntries) {
+    const ownedTokens = mechanicTokens(`${owned?.mechanics?.effect ?? ""} ${owned?.mechanics?.trigger ?? ""}`);
+    if (ownedTokens.size < minTextTokens) continue;
+    if (jaccard(entryTokens, ownedTokens) < textThreshold) continue;
+    const ownedTags = new Set([...(owned?.metadata?.tags ?? []), ...(owned?.metadata?.themes ?? [])]);
+    // A strong text match is already the real signal; when both sides do have tags, require some tag
+    // overlap too so a coincidental phrase match ("a short prayer" vs "a short chant") does not count.
+    if (!entryTags.size || !ownedTags.size || jaccard(entryTags, ownedTags) > 0) return owned;
+  }
+  return null;
+}
+
+// Board 3962a001: system-specific vocabulary that never belongs in the other system's entries (the
+// dnd5e RULES_VOCABULARY string already asks the model not to write these, but a repair turn still let
+// "use your free action" and "if using a durability system" through). Deliberately short and
+// unambiguous multi-word phrases only, to avoid false positives on ordinary English.
+const FORBIDDEN_SYSTEM_TERMS = {
+  dnd5e: [
+    [/\bfree action\b/i, "free action"],
+    [/\boff-?guard\b/i, "off-guard"],
+    [/\bflat-?footed\b/i, "flat-footed"],
+    [/\bper encounter\b/i, "per encounter"],
+    [/\bdurability system\b/i, "durability system"]
+  ],
+  pf2e: [
+    [/\bbonus action\b/i, "bonus action"],
+    [/\bshort rest\b/i, "short rest"],
+    [/\blong rest\b/i, "long rest"],
+    [/\bdurability system\b/i, "durability system"],
+    // salt-lantern s1 (PF2e playtest): "staggered" is a 3.5e/PF1 condition, not a PF2e one.
+    [/\bstaggered\b/i, "staggered (not a PF2e condition)"],
+    // PF2e's Craft skill is called Crafting; "Craft check"/"Craft skill" is the dnd5e/PF1 spelling.
+    [/\bcraft (check|skill)\b/i, "Craft check/skill (PF2e skill is Crafting)"],
+    // PF2e conditions run "until the end of your next turn" or count down a value; a flat "for N
+    // round(s)" duration on one is dnd5e/PF1 phrasing that slipped in (salt-lantern s1: "blinded for
+    // 1 round").
+    [/\b(blinded|deafened|dazzled|stunned|slowed|clumsy|enfeebled|stupefied|sickened|drained|frightened|fascinated|fatigued|confused|paralyzed|prone|grabbed|restrained)\s+for\s+\d+\s+rounds?\b/i, "a PF2e condition given a flat round-count duration instead of its own rules"]
+  ]
+};
+
+export function findForbiddenSystemTerm(systemId, entry) {
+  const rules = FORBIDDEN_SYSTEM_TERMS[systemId];
+  if (!rules) return null;
+  const text = [entry?.name, entry?.mechanics?.effect, entry?.mechanics?.trigger, entry?.mechanics?.duration, entry?.system_equivalent, entry?.system_chassis]
+    .filter((v) => typeof v === "string")
+    .join(" ");
+  for (const [pattern, label] of rules) if (pattern.test(text)) return label;
+  return null;
+}
+
+// Board 3962a001: a proposal that hands a character a feature or proficiency their own base class
+// already grants by the system's core rules -- a Warlock 3 "gaining" Pact Magic and Eldritch Blast, a
+// Rogue "gaining" proficiency in Sleight of Hand and Thieves' Tools -- because stage 2 only ever saw
+// actor.systemClass as a bare string with no sense of what that class already comes with. Small and
+// best-effort on purpose: a hand-picked table of each class's signature day-one features, not a
+// substitute for the prompt telling the model to never restate the character's own class chassis.
+const BASELINE_CLASS_FEATURES = {
+  dnd5e: {
+    warlock: ["pact magic", "eldritch blast", "eldritch invocations"],
+    rogue: ["sneak attack", "thieves' tools", "thieves tools", "expertise", "sleight of hand"],
+    wizard: ["arcane recovery", "spellbook", "ritual casting"],
+    cleric: ["channel divinity", "turn undead", "divine domain"],
+    fighter: ["action surge", "second wind", "extra attack"],
+    barbarian: ["rage", "unarmored defense", "danger sense"],
+    bard: ["bardic inspiration", "jack of all trades"],
+    paladin: ["divine smite", "lay on hands", "divine sense"],
+    ranger: ["favored enemy", "natural explorer", "fighting style"],
+    monk: ["ki points", "martial arts", "unarmored movement"],
+    druid: ["wild shape"],
+    sorcerer: ["sorcery points", "metamagic"]
+  },
+  pf2e: {
+    rogue: ["sneak attack", "surprise attack"],
+    fighter: ["attack of opportunity"],
+    wizard: ["arcane spellcasting", "spellbook", "arcane school"],
+    cleric: ["divine font", "channel energy", "divine spellcasting"],
+    barbarian: ["rage", "instinct"],
+    druid: ["wild shape", "wild order", "primal spellcasting"],
+    monk: ["flurry of blows"],
+    ranger: ["hunt prey"],
+    bard: ["composition spells", "occult spellcasting"],
+    sorcerer: ["bloodline", "arcane spellcasting"],
+    champion: ["champion's reaction", "divine spellcasting"]
+  }
+};
+
+export function findDuplicateClassFeature(entry, { systemClass, systemId } = {}) {
+  const table = BASELINE_CLASS_FEATURES[systemId];
+  if (!table || typeof systemClass !== "string" || !systemClass.trim()) return null;
+  const lowerClass = systemClass.toLowerCase();
+  const classKey = Object.keys(table).find((cls) => lowerClass.includes(cls));
+  if (!classKey) return null;
+  const text = `${entry?.name ?? ""} ${entry?.mechanics?.effect ?? ""}`.toLowerCase();
+  for (const feature of table[classKey]) if (text.includes(feature)) return feature;
+  return null;
+}
+
+// Board 3962a001: the same check as findDuplicateClassFeature, but against the actor's OWN sheet
+// (ai-gateway.js#buildAiGatewayRequest's ownedFeatures -- real class-feature items and proficient
+// skills, when the system adapter can read them) instead of the small hand-picked baseline table.
+// Requires a whole-word match on the full feature/skill name (>= 4 chars) to avoid a generic short
+// name coincidentally appearing inside unrelated effect text.
+export function findDuplicateOwnedFeatureText(entry, ownedFeatures) {
+  if (!Array.isArray(ownedFeatures) || !ownedFeatures.length) return null;
+  const text = `${entry?.name ?? ""} ${entry?.mechanics?.effect ?? ""}`;
+  for (const feature of ownedFeatures) {
+    if (typeof feature !== "string") continue;
+    const trimmed = feature.trim();
+    if (trimmed.length < 4) continue;
+    const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`\\b${escaped}\\b`, "i").test(text)) return trimmed;
+  }
+  return null;
+}
+
+// Board 3962a001 (salt-lantern s1, PF2e): the naming rule (prompts.js) is explicit that the motif is
+// a coined word, "never the bare class name itself", yet the model still wrote "Monk: Aerial
+// Momentum", "Ranger: Salt-Wind Shot", "Champion's Bulwark". Only matches the bare class name used AS
+// the motif (name starts with it, followed by ":" or a possessive "'s") -- a coined motif that merely
+// contains the class word elsewhere is untouched.
+export function findBareClassMotif(name, systemClass) {
+  if (typeof name !== "string" || !name.trim() || typeof systemClass !== "string" || !systemClass.trim()) return null;
+  // dnd5e multiclass reads like "Fighter 3 / Wizard 2"; strip levels and split on "/".
+  const classNames = systemClass.split("/").map((part) => part.replace(/\d+/g, "").trim()).filter(Boolean);
+  const trimmedName = name.trim();
+  for (const cls of classNames) {
+    const escaped = cls.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`^${escaped}\\s*(:|['’]s\\b)`, "i").test(trimmedName)) return cls;
+  }
+  return null;
+}
+
+// Wrong-system wording with an exact equivalent: [pattern, replacement, label]. PF2e "staggered"
+// (lose actions) is closest to slowed 1; conditions end "until the end of your next turn".
+const SYSTEM_TERM_REWRITES = {
+  pf2e: [
+    [/\bcraft (check|skill)\b/gi, "Crafting $1", "Crafting"],
+    [/\bstaggered\b/gi, "slowed 1", "slowed 1"],
+    [/\b(blinded|deafened|dazzled|stunned|slowed|clumsy|enfeebled|stupefied|sickened|drained|frightened|fascinated|fatigued|confused|paralyzed|prone|grabbed|restrained)(\s+\d)?\s+for\s+1\s+round\b/gi, "$1$2 until the end of your next turn", "condition-duration"]
+  ]
+};
+
+/** "Monk: Aquatic Flow" -> "Tidewater: Aquatic Flow" style: a motif from the entry's theme or tag. */
+export function recoinMotif(entry, className, theme) {
+  const rest = String(entry?.name ?? "").replace(new RegExp(`^${className.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*(:|['’]s\\b)\\s*`, "i"), "").trim();
+  const source = [theme, ...(entry?.metadata?.themes ?? []), ...(entry?.metadata?.tags ?? [])]
+    .find((value) => typeof value === "string" && value.trim() && value.toLowerCase() !== className.toLowerCase());
+  if (!rest || !source) return null;
+  const motif = source.split(/[^\p{L}\p{N}]+/u).filter(Boolean).map((word) => word[0].toUpperCase() + word.slice(1).toLowerCase()).join("");
+  return motif && motif.toLowerCase() !== rest.toLowerCase() ? `${motif}: ${rest}` : null;
+}
 
 // ---------------------------------------------------------------------------------------------
 // Preprocessing
@@ -327,7 +517,7 @@ export function normalizeProposalShape(raw) {
  * wrote the proposal can fill them in properly.
  * @returns {{ proposal, repairs: string[], skip?: string }}
  */
-export function repairProposal(proposal, { systemId = "pf2e", actorLevel, grandDesignLevel, systemLabel, customSynonyms = {}, allowRed = true } = {}) {
+export function repairProposal(proposal, { systemId = "pf2e", actorLevel, grandDesignLevel, systemLabel, systemClass, customSynonyms = {}, allowRed = true } = {}) {
   const repairs = [];
   const kind = proposal.kind === "class" ? "class" : "skill";
   const entry = isPlainObject(proposal.entry) ? proposal.entry : {};
@@ -509,10 +699,39 @@ export function repairProposal(proposal, { systemId = "pf2e", actorLevel, grandD
   }
 
   const evidence = Array.isArray(proposal.evidence) && proposal.evidence.length ? proposal.evidence : ["Session note analysis"];
-  return {
-    proposal: { kind, entry, evidence, ...(proposal.theme ? { theme: proposal.theme } : {}) },
-    repairs
-  };
+  const shaped = { kind, entry, evidence, ...(proposal.theme ? { theme: proposal.theme } : {}) };
+
+  // Board 3962a001: a term from the OTHER system's action economy/rest vocabulary (or an invented
+  // subsystem like "durability system") means the proposal was not actually written for this table's
+  // rules and is rejected outright rather than patched -- unlike the gap-filling above, there is no
+  // safe default term to substitute.
+  // Some wrong terms DO have an exact equivalent in this system; those are rewritten, not rejected
+  // (salt-lantern s1/s2: skipping them left a GM's "Suggest proposals" with nothing to choose from).
+  for (const [pattern, replacement, label] of SYSTEM_TERM_REWRITES[systemId] ?? []) {
+    for (const field of ["effect", "trigger", "duration"]) {
+      const value = entry.mechanics?.[field];
+      if (typeof value === "string" && pattern.test(value)) {
+        entry.mechanics[field] = value.replace(pattern, replacement);
+        note(`term->${label}`);
+      }
+    }
+  }
+  const forbiddenTerm = findForbiddenSystemTerm(systemId, entry);
+  if (forbiddenTerm) return { proposal: shaped, repairs, skip: `wrong-system-terms:${forbiddenTerm}` };
+
+  // Board 3962a001 (salt-lantern s1): the naming rule says never to use the bare class name as the
+  // motif, yet "Monk: Aerial Momentum", "Champion's Bulwark" keep coming. Skipping them emptied a whole
+  // Suggest for Buck (3 of 3 "Monk:"), so the motif is re-coined from the entry's own theme instead;
+  // only a proposal with nothing to coin from is skipped.
+  const bareMotif = findBareClassMotif(entry.name, systemClass);
+  if (bareMotif) {
+    const renamed = recoinMotif(entry, bareMotif, proposal.theme);
+    if (!renamed) return { proposal: shaped, repairs, skip: `generic-class-motif:${bareMotif}` };
+    entry.name = renamed;
+    note(`motif-recoined:${bareMotif}`);
+  }
+
+  return { proposal: shaped, repairs };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -928,9 +1147,12 @@ function differentActors(prev, event) {
   const a = String(prev.actorName ?? "").trim().toLowerCase();
   const b = String(event.actorName ?? "").trim().toLowerCase();
   if (!a || !b || a === b || b === "the party") return false;
-  const named = `${prev.summary ?? ""} ${prev.quote ?? ""}`.toLowerCase();
-  return !b.split(/\s+/).some((token) => token.length >= 3 && named.includes(token));
+  // Whole-word match on name tokens, titles and filler excluded (C5 review: "Sir Aldric stole..."
+  // folded into Tovin's event because "sir" appeared in Tovin's text).
+  const named = new Set(`${prev.summary ?? ""} ${prev.quote ?? ""}`.toLowerCase().split(/[^\p{L}\p{N}]+/u));
+  return !b.split(/[^\p{L}\p{N}]+/u).some((token) => token.length >= 3 && !ACTOR_TITLE_WORDS.has(token) && named.has(token));
 }
+const ACTOR_TITLE_WORDS = new Set(["sir", "lady", "lord", "dame", "the", "and", "master", "mistress", "captain", "brother", "sister", "father", "mother", "old", "young", "von", "van", "del"]);
 
 function coerceAll(items, ctx, chunkIndex) {
   const accepted = [];
@@ -1180,6 +1402,7 @@ async function validateProposals(items, conversation, ctx) {
     actorLevel: request?.actor?.level,
     grandDesignLevel: gd.level,
     systemLabel: request?.actor?.systemLabel,
+    systemClass: request?.actor?.systemClass,
     customSynonyms: cfg.customSynonyms,
     allowRed: cfg.allowRed
   };
@@ -1226,19 +1449,25 @@ async function validateProposals(items, conversation, ctx) {
 
 /** Class gating, dedupe against the registry and each other, and the maxProposals cap. */
 function gateProposals(accepted, ctx) {
-  const { request, cfg } = ctx;
+  const { request, cfg, sysId } = ctx;
   const gd = request?.actor?.grandDesign ?? {};
   const skipped = [];
   const registry = request?.actor?.existingGrandDesign ?? {};
-  const existing = new Set([
-    ...Object.values(registry.classes ?? {}).map((e) => slugifyTheme(e?.name)),
-    ...Object.values(registry.skills ?? {}).map((e) => slugifyTheme(e?.name))
-  ].filter(Boolean));
+  const ownedEntries = [...Object.values(registry.classes ?? {}), ...Object.values(registry.skills ?? {})].filter(Boolean);
+  const existing = new Set(ownedEntries.map((e) => slugifyTheme(e?.name)).filter(Boolean));
+  const classFeatureCtx = { systemClass: request?.actor?.systemClass, systemId: request?.actor?.system ?? sysId };
+  const ownedFeatures = Array.isArray(request?.actor?.ownedFeatures) ? request.actor.ownedFeatures : [];
   const final = [];
   for (const proposal of accepted) {
     const key = slugifyTheme(proposal.entry.name);
     if (proposal.kind === "class" && gd.classEvolutionAvailable !== true) { skipped.push({ proposal, reason: "class-evolution-not-available" }); continue; }
     if (existing.has(key)) { skipped.push({ proposal, reason: "already-exists" }); continue; }
+    const duplicateOwned = findDuplicateOwnedMechanic(proposal.entry, ownedEntries);
+    if (duplicateOwned) { skipped.push({ proposal, reason: "duplicates-owned", duplicateOf: duplicateOwned.name }); continue; }
+    const duplicateFeature = findDuplicateClassFeature(proposal.entry, classFeatureCtx);
+    if (duplicateFeature) { skipped.push({ proposal, reason: "duplicates-class-feature", duplicateOf: duplicateFeature }); continue; }
+    const duplicateOwnedFeature = findDuplicateOwnedFeatureText(proposal.entry, ownedFeatures);
+    if (duplicateOwnedFeature) { skipped.push({ proposal, reason: "duplicates-owned-proficiency", duplicateOf: duplicateOwnedFeature }); continue; }
     if (final.length >= cfg.maxProposals) { skipped.push({ proposal, reason: "over-max-proposals" }); continue; }
     existing.add(key);
     final.push(proposal);

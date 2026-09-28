@@ -855,5 +855,7 @@ export function eventDedupeKey(event) {
     // Numbers are kept even though they're short: "tended hive 1" and "tended hive 2" (or "round 1"
     // / "round 2") are different things that happened, not a duplicate to merge.
     .filter((word) => (word.length > 2 || /^\d+$/.test(word)) && !FILLER_PARTS.has(word));
-  return `${words.slice(0, 8).join("-")}|${event.outcome}`;
+  // The actor is part of identity: two PCs who each "Picked a lock." did two things (C5 review:
+  // the second PC's deed was silently dropped). Unnamed events still dedupe among themselves.
+  return `${words.slice(0, 8).join("-")}|${event.outcome}|${String(event.actorName ?? "").trim().toLowerCase()}`;
 }

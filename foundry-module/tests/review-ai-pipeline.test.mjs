@@ -44,7 +44,7 @@ function request(notes, opts = {}) {
 // letting mergeFollowUpEvents fold a genuinely different actor's event into the wrong one.
 // ---------------------------------------------------------------------------------------------
 
-test.todo("differentActors: a title word ('sir') incidentally in the previous event's text must not make two different actors look like one", () => {
+test("differentActors: a title word ('sir') incidentally in the previous event's text must not make two different actors look like one", () => {
   const events = [
     { summary: "Tovin the sir knight bowed to the king.", quote: "", tags: ["leadership"], themes: [], outcome: "success", actorName: "Tovin" },
     { summary: "Sir Aldric stole the crown jewels.", quote: "", tags: ["thievery"], themes: [], outcome: "success", actorName: "Sir Aldric", continuesPrevious: true }
@@ -74,7 +74,7 @@ test.todo("differentActors: a title word ('sir') incidentally in the previous ev
 // event -- and their only evidence in the batch -- disappears with no trace in skippedEvents.
 // ---------------------------------------------------------------------------------------------
 
-test.todo("dedupeEvents: two different actors' generically-phrased events must not collapse into one, losing the second actor's event", async () => {
+test("dedupeEvents: two different actors' generically-phrased events must not collapse into one, losing the second actor's event", async () => {
   const ev = (actorName) => ({
     quote: "picked a lock",
     summary: "Picked a lock.", // no name in the summary text itself -- actorName carries the credit

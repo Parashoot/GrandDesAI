@@ -43,7 +43,16 @@ export const GATEWAY_DEFAULTS = Object.freeze({
   // Reuse one stage-1 reading of identical notes across characters (pipeline.js#createExtractionCache):
   // a party recap pasted into five sheets is read once. 0 entries or 0 ms turns it off.
   extractionCacheEntries: 20,
-  extractionCacheTtlMs: 30 * 60 * 1000
+  extractionCacheTtlMs: 30 * 60 * 1000,
+  // Board b81a0357: AI-authored pending proposals grew without limit (Tovin 5, Luz 4 pending for one
+  // grant allowance each). The cap an actor is held to is `grantAllowances + pendingProposalCapExtra`,
+  // floored at pendingProposalCapMin so a character between allowances still gets a few ideas
+  // (api.js#capPendingAiProposals). The floor is 5, not the board's smaller example, so one
+  // legitimately eventful session (several genuinely different tagged proposals, still zero grant
+  // allowances spent) is never trimmed mid-session; it is the SUSTAINED growth across sessions no one
+  // ever approves or rejects that this actually bounds. A GM who wants a tighter table can lower it.
+  pendingProposalCapExtra: 2,
+  pendingProposalCapMin: 5
 });
 
 // Friendly names a GM might type into a free-text language box.
@@ -97,7 +106,9 @@ export function normalizeGatewayConfig(partial = {}) {
     toneHints: text(input.toneHints, 1000),
     extractionExamples: normalizeExamples(input.extractionExamples),
     extractionCacheEntries: clampInt(input.extractionCacheEntries, 0, 200, d.extractionCacheEntries),
-    extractionCacheTtlMs: clampInt(input.extractionCacheTtlMs, 0, 24 * 60 * 60 * 1000, d.extractionCacheTtlMs)
+    extractionCacheTtlMs: clampInt(input.extractionCacheTtlMs, 0, 24 * 60 * 60 * 1000, d.extractionCacheTtlMs),
+    pendingProposalCapExtra: clampInt(input.pendingProposalCapExtra, 0, 20, d.pendingProposalCapExtra),
+    pendingProposalCapMin: clampInt(input.pendingProposalCapMin, 1, 20, d.pendingProposalCapMin)
   };
   // Pass-through hooks: not user settings, but the adapter/tests/harness need to inject them.
   for (const key of ["fetchImpl", "getHeaders", "sleep"]) {
@@ -192,4 +203,17 @@ function bool(value, fallback) {
   if (value === "true" || value === 1 || value === "1") return true;
   if (value === "false" || value === 0 || value === "0") return false;
   return fallback;
+}
+
+/**
+ * Board b81a0357. `allowances` is the actor's current grant allowances (progression.js); the cap is
+ * generous when there is real spending power waiting and still non-zero (pendingProposalCapMin) when
+ * there is none, so a character between allowances is not left with nothing to consider.
+ */
+export function pendingProposalCap(config, allowances = 0) {
+  const cfg = config && typeof config === "object" ? config : {};
+  const extra = Number.isInteger(cfg.pendingProposalCapExtra) ? cfg.pendingProposalCapExtra : GATEWAY_DEFAULTS.pendingProposalCapExtra;
+  const min = Number.isInteger(cfg.pendingProposalCapMin) ? cfg.pendingProposalCapMin : GATEWAY_DEFAULTS.pendingProposalCapMin;
+  const a = Number.isInteger(allowances) && allowances > 0 ? allowances : 0;
+  return Math.max(min, a + extra);
 }

@@ -315,10 +315,11 @@
   {
    "id": "3962a001",
    "title": "Proposal duplicates the class's own feature: 'Hexblade: Infernal Pact' grants Warlock Pact Magic/Eldritch Blast to a Warlock 3",
-   "status": "doing",
+   "status": "done",
    "notes": [
     "s2 again: 'Shadowfingers: Sleight of Hand' grants Sleight of Hand + Thieves' Tools proficiency to a Rogue 3.",
-    "s3: system terms still slip - 'if using a durability system', 'use your free action' (dnd5e)."
+    "s3: system terms still slip - 'if using a durability system', 'use your free action' (dnd5e).",
+    "PM merge: wrong-system terms with an exact PF2e equivalent are now rewritten (Craft->Crafting, staggered->slowed 1, 'X for 1 round'->'until the end of your next turn'); bare class motifs re-coined from theme/tag instead of skipped. Real model on a salt-lantern copy: Buck Suggest 0 -> 3 proposals (skip had emptied it)."
    ],
    "tags": [
     "proposals",
@@ -328,7 +329,7 @@
    "owner": "dev-proposals",
    "source": "ember-road s1 re-run 2026-09-27",
    "created": 1790543771.53,
-   "updated": 1790626872.173,
+   "updated": 1790629463.251,
    "parent": "f2d3213f"
   },
   {
@@ -562,7 +563,7 @@
   {
    "id": "316705b6",
    "title": "Proposals duplicate an OWNED Skill by mechanic (Luz 'Voice of Conviction' = her Public Edict); registry dedupe is by name only",
-   "status": "doing",
+   "status": "done",
    "notes": [
     "salt-lantern s2 (pf2e): 'Roguecraft: Salt Spray' (ranged Strike, blinded) duplicates Pim's owned Improvised Blinding."
    ],
@@ -573,12 +574,12 @@
    "owner": "dev-proposals",
    "source": "ember-road s3",
    "created": 1790624440.04,
-   "updated": 1790627998.36
+   "updated": 1790629463.289
   },
   {
    "id": "b81a0357",
    "title": "Pending proposals grow without limit (Tovin 5, Luz 4 pending for 1 allowance each): cap or roll up per actor",
-   "status": "doing",
+   "status": "done",
    "notes": [
     "salt-lantern s2: after one approval each, Doro 4 / Kestrel 4 / Pim 3 / Buck 3 pending."
    ],
@@ -590,13 +591,15 @@
    "owner": "dev-proposals",
    "source": "ember-road s3",
    "created": 1790624440.081,
-   "updated": 1790627998.403
+   "updated": 1790629463.326
   },
   {
    "id": "e8ae42d0",
    "title": "pf2e naming: motif is the bare class name ('Monk: Aerial Momentum', 'Ranger: Salt-Wind Shot', 'Champion's Bulwark/Insight/Devotion') despite the naming rule",
    "status": "todo",
-   "notes": [],
+   "notes": [
+    "Bare class motifs are now re-coined (pipeline.js recoinMotif), but from a tag the result is bland ('Athletics: Iron Grip', 'Society: Coastal Scribe'); keep open for a better coinage."
+   ],
    "tags": [
     "naming",
     "pf2e"
@@ -605,12 +608,12 @@
    "owner": "",
    "source": "salt-lantern s1",
    "created": 1790627348.998,
-   "updated": 1790627348.998
+   "updated": 1790629463.475
   },
   {
    "id": "7cb2c568",
    "title": "pf2e terms in proposals: 'staggered' (not a PF2e condition), 'blinded for 1 round' (PF2e: until the end of your next turn), 'Craft check' (Crafting)",
-   "status": "todo",
+   "status": "done",
    "notes": [],
    "tags": [
     "proposals",
@@ -620,7 +623,7 @@
    "owner": "",
    "source": "salt-lantern s1",
    "created": 1790627349.04,
-   "updated": 1790627349.04
+   "updated": 1790629463.438
   },
   {
    "id": "9cda8ea5",
@@ -642,8 +645,10 @@
   {
    "id": "ef3663ee",
    "title": "dedupeEvents/eventDedupeKey ignore actorName: two PCs' events with the same summary+outcome ('Picked a lock.') collapse into one, the second PC's deed silently dropped (review test.todo)",
-   "status": "todo",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "Fixed: actorName is part of eventDedupeKey; review test promoted from todo."
+   ],
    "tags": [
     "gateway"
    ],
@@ -651,13 +656,15 @@
    "owner": "",
    "source": "C5 review 2026-09-28",
    "created": 1790627490.203,
-   "updated": 1790627490.203
+   "updated": 1790629463.362
   },
   {
    "id": "754f317e",
    "title": "differentActors (mergeFollowUpEvents) matches any shared 3+ letter word incl. titles ('Sir'): 'Sir Aldric stole...' folds into Tovin's event, Aldric's deed and credit lost; use significantTokens (review test.todo)",
-   "status": "todo",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "Fixed: whole-word token match excluding titles (sir, lady, captain...); review test promoted from todo."
+   ],
    "tags": [
     "gateway"
    ],
@@ -665,7 +672,7 @@
    "owner": "",
    "source": "C5 review 2026-09-28",
    "created": 1790627490.247,
-   "updated": 1790627490.247
+   "updated": 1790629463.399
   },
   {
    "id": "96b5beea",
