@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 792 unit tests, ~30 s, no network
+npm test                                    # 840 unit tests, ~30 s, no network
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -77,10 +77,15 @@ Landed: proposal rejection (`api.rejectProposal`, Reject button, `playtest.mjs r
 fix (`presetEvents`), s2 extraction misses (a "then" clause never folds; few-shots for listed spells and
 implied-verb downtime). s3: every approved Skill used in play was credited to its owner. 792 tests.
 
+2026-09-28 (later): first PF2e campaign **salt-lantern** (s1-s2, local players; `playtests/salt-lantern/`):
+PF2e jargon and degrees read correctly, per-PC credit clean, repeated failures earn a Skill (Buck's
+Grappler's Resilience). Landed: proposal quality gates (owned-Skill / class-feature duplicates, wrong-system
+terms rewritten or skipped, bare class motifs re-coined), pending cap, C5 review (eventDedupeKey includes the
+actor; differentActors ignores titles). 840 tests + 1 todo. Foundry was down: the PF2e live check is pending.
+
 Open, in order (see the board):
-1. Proposal quality: owned-Skill duplicates by mechanic, unbounded pending, system terms ("free action",
-   "durability"; 3962a001), a tier-1 balance outlier, rd-008 kill trophies still standard (9f591a25).
-2. Extraction: softened dark deeds (s3 burning -> "threatened"), two deeds per event, over-splits (40f4431d).
-3. Next playtest: a PF2e campaign (both systems must work), local-model players.
-4. Live Foundry: click Suggest/Reject on both worlds; the PF2e live check is still pending.
-5. Cloud packets C1-C3, C5 (C5 reviewer died on the session limit; restart on sonnet).
+1. Extraction: softened dark deeds, two deeds per event, smashed-lock misread (pf2e s2), over-splits.
+2. Proposals: tier-1 balance outliers (beef7277), rd-008 red miss, bland re-coined motifs, single-session failures.
+3. Playtest: salt-lantern s3 and ember-road s4 to exercise the new gates on both systems.
+4. Live Foundry (both worlds): Suggest/Reject buttons + the PF2e live check, when the server is up.
+5. Cloud packets C1-C3; the repair-turn redCheck todo (low).
