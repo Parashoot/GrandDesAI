@@ -1,0 +1,2269 @@
+{
+ "name": "salt-lantern",
+ "system": "pf2e",
+ "created": "2026-09-28T20:21:06.928Z",
+ "sessionsPlayed": 1,
+ "gateway": {},
+ "party": [
+  {
+   "name": "Doro",
+   "className": "Champion",
+   "level": 3,
+   "persona": "rules-lawyer",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790627138882-1",
+      "summary": "Doro deciphered the keeper's logbook in the old coastal script.",
+      "tags": [
+       "society",
+       "lore"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.882Z",
+      "themes": [
+       "deciphering",
+       "reading"
+      ],
+      "quote": "Doro deciphered the keeper's logbook in the old coastal script (Society, success)",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138884-2",
+      "summary": "Doro used Raise a Shield and Shield Block, then hit crab A with his warhammer.",
+      "tags": [
+       "defense",
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.884Z",
+      "themes": [
+       "shielding",
+       "melee"
+      ],
+      "quote": "Doro used Raise a Shield and Shield Block and cracked crab A with his warhammer",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138884-3",
+      "summary": "Doro used Demanding Challenge to draw crab B onto himself.",
+      "tags": [
+       "leadership",
+       "defense"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.884Z",
+      "themes": [
+       "taunting",
+       "tank"
+      ],
+      "quote": "used Demanding Challenge to pull crab B onto himself and took an 11-damage claw for it",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138884-4",
+      "summary": "Doro made an offering at the temple of Gozreh.",
+      "tags": [
+       "religion"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.884Z",
+      "themes": [
+       "offering"
+      ],
+      "quote": "Doro made an offering at the temple of Gozreh (success)",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138884-5",
+      "summary": "Doro lost at arm-wrestling.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.884Z",
+      "themes": [
+       "arm-wrestling"
+      ],
+      "quote": "lost at arm-wrestling",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:champion-s-bulwark",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Doro deciphered the keeper's logbook in the old coastal script (Society, success)",
+       "Doro used Raise a Shield and Shield Block, then hit crab A with his warhammer",
+       "Doro used Demanding Challenge to draw crab B onto himself"
+      ],
+      "entry": {
+       "name": "Champion's Bulwark",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "While you are adjacent to an ally, they gain a +1 circumstance bonus to their AC and Fortitude saves against attacks from creatures you have threatened or are currently engaging.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "while adjacent"
+       },
+       "metadata": {
+        "tags": [
+         "defense",
+         "martial",
+         "leadership"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Doro demonstrated a consistent pattern of using defensive actions (Shield Block) and taunting (Demanding Challenge) to protect allies and control enemy focus, embodying the Champion's role as a protector."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Champion's defensive aura or similar martial feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:26:54.099Z",
+      "rejectedAt": "2026-09-28T20:28:39.380Z",
+      "rejectedReason": "permanent +1 AC to every adjacent ally is too strong at tier 1; evidence cites the logbook"
+     },
+     {
+      "id": "proposal:ai-skill:champion-s-insight",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Doro deciphered the keeper's logbook in the old coastal script (Society, success)"
+      ],
+      "entry": {
+       "name": "Champion's Insight",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt a Society check to decipher a text, symbol, or clue. On a success, you gain one piece of relevant information. On a critical success, you gain two pieces of information or a significant advantage in the current situation.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "duration": "instant",
+        "actions": 2,
+        "roll": {
+         "kind": "Society check",
+         "formula": "1d20+4"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "society",
+         "lore"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Doro successfully deciphered a complex logbook in an old script, showing a dedicated ability to extract knowledge from obscure sources, which complements the Champion's role in understanding the world they protect."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Society skill action or feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:26:54.099Z"
+     },
+     {
+      "id": "proposal:ai-skill:champion-s-devotion",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Doro made an offering at the temple of Gozreh (success)"
+      ],
+      "entry": {
+       "name": "Champion's Devotion",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a Religion check to gain a boon from your deity. On a success, you gain a +1 circumstance bonus to your next saving throw or skill check. On a critical success, you gain a +2 circumstance bonus and can use this ability again immediately.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "until the end of the current turn or next check",
+        "actions": 1,
+        "roll": {
+         "kind": "Religion check",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "religion",
+         "divine"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Doro made a successful offering at the temple of Gozreh, indicating a strong connection to divine power and a willingness to seek aid from their deity, which is a core aspect of the Champion class."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Champion's divine boon or similar feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:26:54.100Z",
+      "approvedAt": "2026-09-28T20:28:39.047Z"
+     }
+    ],
+    "levelProgression": {
+     "level": 1,
+     "progress": 6.25,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:25:38.885Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "Salt Lantern - Session 1 recap (Brinemouth / Gull Rock lighthouse)\n\nThe harbour town of Brinemouth hired the party to find out why the Gull Rock lighthouse went dark. Inside, Doro deciphered the keeper's logbook in the old coastal script (Society, success) - last entry: \"The Salt Mother wants her lamp back.\" Ione couldn't read the rest. Pim found a brass spyglass behind the desk and pocketed it, but failed to pick the sea-chest lock. Buck flying-kicked his way up the spiral stair (Acrobatics success!) and Kestrel spotted a salt-crusted giant crab first and put two arrows in it with Hunt Prey - the second a nat 20 crit.\n\nFight on the stair: two salt crabs and the drowned keeper, who was prying the great lens out of the lamp. Doro used Raise a Shield and Shield Block and cracked crab A with his warhammer, then used Demanding Challenge to pull crab B onto himself and took an 11-damage claw for it. Pim missed crab B and got clawed for 13, but crit-succeeded on Stealth to get behind the keeper, threw salt in its eyes, and then - on purpose - knocked the great lens off the gallery rail. It shattered on the ground floor. Ione's fire ray was a nat 1 critical failure and singed her own owl, Glafka. Buck grabbed the spyglass off Pim, flashed light in the keeper's eyes and actually landed his flying kick, knocking the lens out of its hands; the keeper then grabbed him by the throat and he coughed up seawater, broke the grip with Athletics, and face-planted when his backflip off the rail failed. Kestrel kept up Hunt Prey + double Strike and crit crab A for 18; his Demoralize on the keeper failed. With the lens gone the keeper collapsed into salt water and the crabs fled out a window. The lighthouse is dark and the lens is destroyed.\n\nDowntime, three days in Brinemouth: Doro made an offering at the temple of Gozreh (success) and lost at arm-wrestling. Pim lost at arm-wrestling too, stole snacks from the fish market without being seen, and failed to charm the scholar. Ione failed to find a translator but finally identified the spyglass (Arcana success: it shows the sea as it was a hundred years ago) - \"Κοίτα! Η θάλασσα πριν από εκατό χρόνια\" she said. Buck actually learned the coastal script from the scholar (Society, exactly the DC), lost every single arm-wrestling match in the tavern, and the harbourmaster laughed at his reef-warning plan. Kestrel tried to help the glassworks remake the lens and crit-failed (broke a mould), did chores for Gozreh's priests (success), and practised archery at the fish market.\n\nGM notes: next session the Salt Mother / the sea-chest. Rules question for next time - does Demanding Challenge let the target Step first? Remember Doro is at 2 hero points. Pizza was good.",
+     "at": "2026-09-28T20:25:38.885Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790627138882-1",
+      "event:1790627138884-2",
+      "event:1790627138884-3",
+      "event:1790627138884-4",
+      "event:1790627138884-5"
+     ],
+     "proposalIds": [],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 5,
+      "attributedToOthers": 27,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 2,
+      "attempts": 2,
+      "repairs": 0,
+      "totalMs": 59074
+     },
+     "attributedToOthers": [
+      {
+       "actorName": "Ione",
+       "summary": "Ione tried to read the rest of the logbook."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim found and pocketed a brass spyglass behind the desk."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim tried to pick the sea-chest lock."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck flying-kicked his way up the spiral stair."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel shot a giant crab with two arrows, the second being a critical hit."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim attacked crab B."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim sneaked behind the keeper."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim threw salt in the keeper's eyes."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim knocked the great lens off the gallery rail."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione cast Fire Ray."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck took the spyglass from Pim and flashed light in the keeper's eyes."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck landed a flying kick on the keeper."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck broke the keeper's grip on his throat."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck attempted a backflip off the rail."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel attacked crab A with Hunt Prey and double Strike."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel tried to demoralize the keeper."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim lost at arm-wrestling."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim stole snacks from the fish market."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim tried to charm the scholar."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione failed to find a translator."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione identified the spyglass using Arcana."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck learned the coastal script from the scholar."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck lost every arm-wrestling match in the tavern."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck presented a reef-warning plan to the harbourmaster."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel tried to help the glassworks remake the lens."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel did chores for Gozreh's priests."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel practised archery at the fish market."
+      }
+     ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:champion-s-devotion": {
+       "name": "Champion's Devotion",
+       "itemId": "pt572ve96xod",
+       "approvedAt": "2026-09-28T20:28:39.047Z",
+       "metadata": {
+        "id": "skill:champion-s-devotion",
+        "tags": [
+         "religion",
+         "divine"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Doro made a successful offering at the temple of Gozreh, indicating a strong connection to divine power and a willingness to seek aid from their deity, which is a core aspect of the Champion class."
+        }
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a Religion check to gain a boon from your deity. On a success, you gain a +1 circumstance bonus to your next saving throw or skill check. On a critical success, you gain a +2 circumstance bonus and can use this ability again immediately.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "until the end of the current turn or next check",
+        "actions": 1,
+        "roll": {
+         "kind": "Religion check",
+         "formula": "1d20+3"
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Champion's divine boon or similar feat (Pathfinder Second Edition)"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
+    }
+   },
+   "items": [
+    {
+     "name": "[Champion's Devotion] Skill",
+     "type": "action",
+     "system": {
+      "actionType": {
+       "value": "action"
+      },
+      "actions": {
+       "value": 1
+      },
+      "category": "offensive",
+      "description": {
+       "value": "<p><strong>Pathfinder Second Edition equivalent:</strong> Champion&#039;s divine boon or similar feat (Pathfinder Second Edition)</p><p><strong>Effect:</strong> Make a Religion check to gain a boon from your deity. On a success, you gain a +1 circumstance bonus to your next saving throw or skill check. On a critical success, you gain a +2 circumstance bonus and can use this ability again immediately.</p><p><strong>Frequency:</strong> 1/day</p><p><strong>Duration:</strong> until the end of the current turn or next check</p><p><strong>Resolution:</strong> Religion check — [[/r 1d20+3]]</p><p><strong>Tags:</strong> religion, divine</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Doro made a successful offering at the temple of Gozreh, indicating a strong connection to divine power and a willingness to seek aid from their deity, which is a core aspect of the Champion class.</p>"
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:champion-s-devotion",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:champion-s-devotion",
+        "tags": [
+         "religion",
+         "divine"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Doro made a successful offering at the temple of Gozreh, indicating a strong connection to divine power and a willingness to seek aid from their deity, which is a core aspect of the Champion class."
+        }
+       }
+      }
+     },
+     "_id": "pt572ve96xod"
+    }
+   ]
+  },
+  {
+   "name": "Pim",
+   "className": "Rogue",
+   "level": 3,
+   "persona": "texter",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790627138893-1",
+      "summary": "Pim found and pocketed a brass spyglass behind the desk.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.893Z",
+      "themes": [
+       "looting"
+      ],
+      "quote": "Pim found a brass spyglass behind the desk and pocketed it",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138893-2",
+      "summary": "Pim tried to pick the sea-chest lock.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.893Z",
+      "themes": [
+       "lockpicking"
+      ],
+      "quote": "failed to pick the sea-chest lock",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138893-3",
+      "summary": "Pim attacked crab B.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.893Z",
+      "themes": [
+       "melee"
+      ],
+      "quote": "Pim missed crab B and got clawed for 13",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138893-4",
+      "summary": "Pim sneaked behind the keeper.",
+      "tags": [
+       "stealth"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-28T20:25:38.893Z",
+      "themes": [
+       "sneaking"
+      ],
+      "quote": "crit-succeeded on Stealth to get behind the keeper",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138893-5",
+      "summary": "Pim threw salt in the keeper's eyes.",
+      "tags": [
+       "deception"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.893Z",
+      "themes": [
+       "blinding"
+      ],
+      "quote": "threw salt in its eyes",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138893-6",
+      "summary": "Pim knocked the great lens off the gallery rail.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.893Z",
+      "themes": [
+       "sabotage"
+      ],
+      "quote": "knocked the great lens off the gallery rail. It shattered on the ground floor",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138894-7",
+      "summary": "Pim lost at arm-wrestling.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.894Z",
+      "themes": [
+       "arm-wrestling"
+      ],
+      "quote": "Pim lost at arm-wrestling too",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138894-8",
+      "summary": "Pim stole snacks from the fish market.",
+      "tags": [
+       "thievery",
+       "stealth"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.894Z",
+      "themes": [
+       "pickpocketing",
+       "sneaking"
+      ],
+      "quote": "stole snacks from the fish market without being seen",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138894-9",
+      "summary": "Pim tried to charm the scholar.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.894Z",
+      "themes": [
+       "persuasion"
+      ],
+      "quote": "failed to charm the scholar",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:shadowstep-silent-theft",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Pim sneaked behind the keeper (criticalSuccess)",
+       "Pim stole snacks from the fish market without being seen (success)",
+       "Pim found and pocketed a brass spyglass behind the desk (success)"
+      ],
+      "entry": {
+       "name": "Shadowstep: Silent Theft",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt a Thievery check to steal a small item from an adjacent creature or location without their knowledge. On a success, you gain the item and remain undetected. On a critical success, you also gain a +1 circumstance bonus to your next Stealth check.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Thievery check",
+         "formula": "1d20+4"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "thievery",
+         "stealth"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Pim demonstrated consistent success in stealthy theft and looting, including a critical success in sneaking and successful pickpocketing."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Thievery skill action (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:27:24.012Z"
+     },
+     {
+      "id": "proposal:ai-skill:roguecraft-improvised-blinding",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Pim threw salt in the keeper's eyes (success)",
+       "Pim knocked the great lens off the gallery rail (success)"
+      ],
+      "entry": {
+       "name": "Roguecraft: Improvised Blinding",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a Deception check to distract or blind an adjacent creature using a non-lethal improvised method (e.g., throwing salt, dust, or debris). On a success, the target is blinded for 1 round. On a critical success, the target is also staggered.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Deception check",
+         "formula": "1d20+3"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "deception",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Pim successfully used improvised methods to blind and distract enemies, showing a knack for creative, non-standard combat tactics."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Deception skill action (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:27:24.012Z",
+      "approvedAt": "2026-09-28T20:28:39.131Z"
+     }
+    ],
+    "levelProgression": {
+     "level": 1,
+     "progress": 65,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:25:38.894Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "Salt Lantern - Session 1 recap (Brinemouth / Gull Rock lighthouse)\n\nThe harbour town of Brinemouth hired the party to find out why the Gull Rock lighthouse went dark. Inside, Doro deciphered the keeper's logbook in the old coastal script (Society, success) - last entry: \"The Salt Mother wants her lamp back.\" Ione couldn't read the rest. Pim found a brass spyglass behind the desk and pocketed it, but failed to pick the sea-chest lock. Buck flying-kicked his way up the spiral stair (Acrobatics success!) and Kestrel spotted a salt-crusted giant crab first and put two arrows in it with Hunt Prey - the second a nat 20 crit.\n\nFight on the stair: two salt crabs and the drowned keeper, who was prying the great lens out of the lamp. Doro used Raise a Shield and Shield Block and cracked crab A with his warhammer, then used Demanding Challenge to pull crab B onto himself and took an 11-damage claw for it. Pim missed crab B and got clawed for 13, but crit-succeeded on Stealth to get behind the keeper, threw salt in its eyes, and then - on purpose - knocked the great lens off the gallery rail. It shattered on the ground floor. Ione's fire ray was a nat 1 critical failure and singed her own owl, Glafka. Buck grabbed the spyglass off Pim, flashed light in the keeper's eyes and actually landed his flying kick, knocking the lens out of its hands; the keeper then grabbed him by the throat and he coughed up seawater, broke the grip with Athletics, and face-planted when his backflip off the rail failed. Kestrel kept up Hunt Prey + double Strike and crit crab A for 18; his Demoralize on the keeper failed. With the lens gone the keeper collapsed into salt water and the crabs fled out a window. The lighthouse is dark and the lens is destroyed.\n\nDowntime, three days in Brinemouth: Doro made an offering at the temple of Gozreh (success) and lost at arm-wrestling. Pim lost at arm-wrestling too, stole snacks from the fish market without being seen, and failed to charm the scholar. Ione failed to find a translator but finally identified the spyglass (Arcana success: it shows the sea as it was a hundred years ago) - \"Κοίτα! Η θάλασσα πριν από εκατό χρόνια\" she said. Buck actually learned the coastal script from the scholar (Society, exactly the DC), lost every single arm-wrestling match in the tavern, and the harbourmaster laughed at his reef-warning plan. Kestrel tried to help the glassworks remake the lens and crit-failed (broke a mould), did chores for Gozreh's priests (success), and practised archery at the fish market.\n\nGM notes: next session the Salt Mother / the sea-chest. Rules question for next time - does Demanding Challenge let the target Step first? Remember Doro is at 2 hero points. Pizza was good.",
+     "at": "2026-09-28T20:25:38.894Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790627138893-1",
+      "event:1790627138893-2",
+      "event:1790627138893-3",
+      "event:1790627138893-4",
+      "event:1790627138893-5",
+      "event:1790627138893-6",
+      "event:1790627138894-7",
+      "event:1790627138894-8",
+      "event:1790627138894-9"
+     ],
+     "proposalIds": [],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 9,
+      "attributedToOthers": 23,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 2,
+      "attempts": 2,
+      "repairs": 0,
+      "totalMs": 1
+     },
+     "attributedToOthers": [
+      {
+       "actorName": "Doro",
+       "summary": "Doro deciphered the keeper's logbook in the old coastal script."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione tried to read the rest of the logbook."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck flying-kicked his way up the spiral stair."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel shot a giant crab with two arrows, the second being a critical hit."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro used Raise a Shield and Shield Block, then hit crab A with his warhammer."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro used Demanding Challenge to draw crab B onto himself."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione cast Fire Ray."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck took the spyglass from Pim and flashed light in the keeper's eyes."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck landed a flying kick on the keeper."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck broke the keeper's grip on his throat."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck attempted a backflip off the rail."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel attacked crab A with Hunt Prey and double Strike."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel tried to demoralize the keeper."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro made an offering at the temple of Gozreh."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro lost at arm-wrestling."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione failed to find a translator."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione identified the spyglass using Arcana."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck learned the coastal script from the scholar."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck lost every arm-wrestling match in the tavern."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck presented a reef-warning plan to the harbourmaster."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel tried to help the glassworks remake the lens."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel did chores for Gozreh's priests."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel practised archery at the fish market."
+      }
+     ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:roguecraft-improvised-blinding": {
+       "name": "Roguecraft: Improvised Blinding",
+       "itemId": "ptlvjs4ukx4i",
+       "approvedAt": "2026-09-28T20:28:39.130Z",
+       "metadata": {
+        "id": "skill:roguecraft-improvised-blinding",
+        "tags": [
+         "deception",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Pim successfully used improvised methods to blind and distract enemies, showing a knack for creative, non-standard combat tactics."
+        }
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a Deception check to distract or blind an adjacent creature using a non-lethal improvised method (e.g., throwing salt, dust, or debris). On a success, the target is blinded for 1 round. On a critical success, the target is also staggered.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Deception check",
+         "formula": "1d20+3"
+        },
+        "actions": 1
+       },
+       "tier": 1,
+       "system_equivalent": "Deception skill action (Pathfinder Second Edition)"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
+    }
+   },
+   "items": [
+    {
+     "name": "[Roguecraft: Improvised Blinding] Skill",
+     "type": "action",
+     "system": {
+      "actionType": {
+       "value": "action"
+      },
+      "actions": {
+       "value": 1
+      },
+      "category": "offensive",
+      "description": {
+       "value": "<p><strong>Pathfinder Second Edition equivalent:</strong> Deception skill action (Pathfinder Second Edition)</p><p><strong>Effect:</strong> Make a Deception check to distract or blind an adjacent creature using a non-lethal improvised method (e.g., throwing salt, dust, or debris). On a success, the target is blinded for 1 round. On a critical success, the target is also staggered.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Resolution:</strong> Deception check — [[/r 1d20+3]]</p><p><strong>Tags:</strong> deception, precision</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Pim successfully used improvised methods to blind and distract enemies, showing a knack for creative, non-standard combat tactics.</p>"
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:roguecraft-improvised-blinding",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:roguecraft-improvised-blinding",
+        "tags": [
+         "deception",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Pim successfully used improvised methods to blind and distract enemies, showing a knack for creative, non-standard combat tactics."
+        }
+       }
+      }
+     },
+     "_id": "ptlvjs4ukx4i"
+    }
+   ]
+  },
+  {
+   "name": "Ione",
+   "className": "Wizard",
+   "level": 3,
+   "persona": "polyglot",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790627138896-1",
+      "summary": "Ione tried to read the rest of the logbook.",
+      "tags": [
+       "lore"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.896Z",
+      "themes": [
+       "reading"
+      ],
+      "quote": "Ione couldn't read the rest",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138896-2",
+      "summary": "Ione cast Fire Ray.",
+      "tags": [
+       "spellcasting",
+       "fire"
+      ],
+      "outcome": "criticalFailure",
+      "occurredAt": "2026-09-28T20:25:38.896Z",
+      "quote": "Ione's fire ray was a nat 1 critical failure and singed her own owl, Glafka",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138896-3",
+      "summary": "Ione failed to find a translator.",
+      "tags": [
+       "society"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.896Z",
+      "themes": [
+       "finding-a-translation"
+      ],
+      "quote": "Ione failed to find a translator",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138896-4",
+      "summary": "Ione identified the spyglass using Arcana.",
+      "tags": [
+       "arcana"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.896Z",
+      "themes": [
+       "identifying-magic"
+      ],
+      "quote": "finally identified the spyglass (Arcana success: it shows the sea as it was a hundred years ago)",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [],
+    "levelProgression": {
+     "level": 0,
+     "progress": 50,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:25:38.896Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "Salt Lantern - Session 1 recap (Brinemouth / Gull Rock lighthouse)\n\nThe harbour town of Brinemouth hired the party to find out why the Gull Rock lighthouse went dark. Inside, Doro deciphered the keeper's logbook in the old coastal script (Society, success) - last entry: \"The Salt Mother wants her lamp back.\" Ione couldn't read the rest. Pim found a brass spyglass behind the desk and pocketed it, but failed to pick the sea-chest lock. Buck flying-kicked his way up the spiral stair (Acrobatics success!) and Kestrel spotted a salt-crusted giant crab first and put two arrows in it with Hunt Prey - the second a nat 20 crit.\n\nFight on the stair: two salt crabs and the drowned keeper, who was prying the great lens out of the lamp. Doro used Raise a Shield and Shield Block and cracked crab A with his warhammer, then used Demanding Challenge to pull crab B onto himself and took an 11-damage claw for it. Pim missed crab B and got clawed for 13, but crit-succeeded on Stealth to get behind the keeper, threw salt in its eyes, and then - on purpose - knocked the great lens off the gallery rail. It shattered on the ground floor. Ione's fire ray was a nat 1 critical failure and singed her own owl, Glafka. Buck grabbed the spyglass off Pim, flashed light in the keeper's eyes and actually landed his flying kick, knocking the lens out of its hands; the keeper then grabbed him by the throat and he coughed up seawater, broke the grip with Athletics, and face-planted when his backflip off the rail failed. Kestrel kept up Hunt Prey + double Strike and crit crab A for 18; his Demoralize on the keeper failed. With the lens gone the keeper collapsed into salt water and the crabs fled out a window. The lighthouse is dark and the lens is destroyed.\n\nDowntime, three days in Brinemouth: Doro made an offering at the temple of Gozreh (success) and lost at arm-wrestling. Pim lost at arm-wrestling too, stole snacks from the fish market without being seen, and failed to charm the scholar. Ione failed to find a translator but finally identified the spyglass (Arcana success: it shows the sea as it was a hundred years ago) - \"Κοίτα! Η θάλασσα πριν από εκατό χρόνια\" she said. Buck actually learned the coastal script from the scholar (Society, exactly the DC), lost every single arm-wrestling match in the tavern, and the harbourmaster laughed at his reef-warning plan. Kestrel tried to help the glassworks remake the lens and crit-failed (broke a mould), did chores for Gozreh's priests (success), and practised archery at the fish market.\n\nGM notes: next session the Salt Mother / the sea-chest. Rules question for next time - does Demanding Challenge let the target Step first? Remember Doro is at 2 hero points. Pizza was good.",
+     "at": "2026-09-28T20:25:38.896Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790627138896-1",
+      "event:1790627138896-2",
+      "event:1790627138896-3",
+      "event:1790627138896-4"
+     ],
+     "proposalIds": [],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 4,
+      "attributedToOthers": 28,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 2,
+      "attempts": 2,
+      "repairs": 0,
+      "totalMs": 1
+     },
+     "attributedToOthers": [
+      {
+       "actorName": "Doro",
+       "summary": "Doro deciphered the keeper's logbook in the old coastal script."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim found and pocketed a brass spyglass behind the desk."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim tried to pick the sea-chest lock."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck flying-kicked his way up the spiral stair."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel shot a giant crab with two arrows, the second being a critical hit."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro used Raise a Shield and Shield Block, then hit crab A with his warhammer."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro used Demanding Challenge to draw crab B onto himself."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim attacked crab B."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim sneaked behind the keeper."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim threw salt in the keeper's eyes."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim knocked the great lens off the gallery rail."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck took the spyglass from Pim and flashed light in the keeper's eyes."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck landed a flying kick on the keeper."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck broke the keeper's grip on his throat."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck attempted a backflip off the rail."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel attacked crab A with Hunt Prey and double Strike."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel tried to demoralize the keeper."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro made an offering at the temple of Gozreh."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro lost at arm-wrestling."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim lost at arm-wrestling."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim stole snacks from the fish market."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim tried to charm the scholar."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck learned the coastal script from the scholar."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck lost every arm-wrestling match in the tavern."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck presented a reef-warning plan to the harbourmaster."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel tried to help the glassworks remake the lens."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel did chores for Gozreh's priests."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel practised archery at the fish market."
+      }
+     ]
+    }
+   },
+   "items": []
+  },
+  {
+   "name": "Buck",
+   "className": "Monk",
+   "level": 3,
+   "persona": "failure-magnet",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790627138898-1",
+      "summary": "Buck flying-kicked his way up the spiral stair.",
+      "tags": [
+       "acrobatics",
+       "mobility"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.898Z",
+      "themes": [
+       "climbing",
+       "flying-kick"
+      ],
+      "quote": "Buck flying-kicked his way up the spiral stair (Acrobatics success!)",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138898-2",
+      "summary": "Buck took the spyglass from Pim and flashed light in the keeper's eyes.",
+      "tags": [
+       "deception"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.898Z",
+      "themes": [
+       "blinding"
+      ],
+      "quote": "Buck grabbed the spyglass off Pim, flashed light in the keeper's eyes",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138898-3",
+      "summary": "Buck landed a flying kick on the keeper.",
+      "tags": [
+       "acrobatics",
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.898Z",
+      "themes": [
+       "flying-kick"
+      ],
+      "quote": "actually landed his flying kick, knocking the lens out of its hands",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138898-4",
+      "summary": "Buck broke the keeper's grip on his throat.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.898Z",
+      "themes": [
+       "grappling"
+      ],
+      "quote": "broke the grip with Athletics",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138898-5",
+      "summary": "Buck attempted a backflip off the rail.",
+      "tags": [
+       "acrobatics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.898Z",
+      "themes": [
+       "backflip"
+      ],
+      "quote": "face-planted when his backflip off the rail failed",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138898-6",
+      "summary": "Buck learned the coastal script from the scholar.",
+      "tags": [
+       "society"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:25:38.898Z",
+      "themes": [
+       "learning-script"
+      ],
+      "quote": "Buck actually learned the coastal script from the scholar (Society, exactly the DC)",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138898-7",
+      "summary": "Buck lost every arm-wrestling match in the tavern.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.898Z",
+      "themes": [
+       "arm-wrestling"
+      ],
+      "quote": "lost every single arm-wrestling match in the tavern",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627138898-8",
+      "summary": "Buck presented a reef-warning plan to the harbourmaster.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:25:38.898Z",
+      "themes": [
+       "negotiating"
+      ],
+      "quote": "the harbourmaster laughed at his reef-warning plan",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:monk-aerial-momentum",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Buck flying-kicked his way up the spiral stair (Acrobatics success!)",
+       "actually landed his flying kick, knocking the lens out of its hands",
+       "face-planted when his backflip off the rail failed"
+      ],
+      "entry": {
+       "name": "Monk: Aerial Momentum",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a melee Strike with your foot or hand. If you succeed, you can use your reaction to move up to 10 feet in a straight line away from the target, gaining a +1 circumstance bonus to your next Acrobatics check to avoid a trip or grapple.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 1,
+        "roll": {
+         "kind": "Melee attack",
+         "formula": "1d20+6"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "acrobatics",
+         "martial",
+         "mobility"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Buck demonstrated a distinct pattern of using acrobatic movement (flying kicks, backflips) as part of his combat style, successfully combining mobility with martial strikes despite a failure in a high-risk maneuver."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Monk's Flurry of Blows variant or Acrobatics combat feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:27:55.336Z",
+      "approvedAt": "2026-09-28T20:28:39.215Z"
+     },
+     {
+      "id": "proposal:ai-skill:monk-disruptive-grasp",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Buck grabbed the spyglass off Pim, flashed light in the keeper's eyes",
+       "Buck broke the grip with Athletics"
+      ],
+      "entry": {
+       "name": "Monk: Disruptive Grasp",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt to Disarm or Grapple a target. On a success, the target is off-guard against your next Strike. On a critical success, the target is also blinded for 1 round.",
+        "frequency": {
+         "max": 1,
+         "per": "minute"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Athletics check",
+         "formula": "1d20+6"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "athletics",
+         "deception",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Buck successfully used a combination of grabbing an item to blind an opponent and breaking a physical grip, showing a tactical blend of Athletics and Deception in close-quarters control."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Grapple/Disarm action with a conditional bonus (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:27:55.336Z"
+     }
+    ],
+    "levelProgression": {
+     "level": 1,
+     "progress": 43.75,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:25:38.899Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "Salt Lantern - Session 1 recap (Brinemouth / Gull Rock lighthouse)\n\nThe harbour town of Brinemouth hired the party to find out why the Gull Rock lighthouse went dark. Inside, Doro deciphered the keeper's logbook in the old coastal script (Society, success) - last entry: \"The Salt Mother wants her lamp back.\" Ione couldn't read the rest. Pim found a brass spyglass behind the desk and pocketed it, but failed to pick the sea-chest lock. Buck flying-kicked his way up the spiral stair (Acrobatics success!) and Kestrel spotted a salt-crusted giant crab first and put two arrows in it with Hunt Prey - the second a nat 20 crit.\n\nFight on the stair: two salt crabs and the drowned keeper, who was prying the great lens out of the lamp. Doro used Raise a Shield and Shield Block and cracked crab A with his warhammer, then used Demanding Challenge to pull crab B onto himself and took an 11-damage claw for it. Pim missed crab B and got clawed for 13, but crit-succeeded on Stealth to get behind the keeper, threw salt in its eyes, and then - on purpose - knocked the great lens off the gallery rail. It shattered on the ground floor. Ione's fire ray was a nat 1 critical failure and singed her own owl, Glafka. Buck grabbed the spyglass off Pim, flashed light in the keeper's eyes and actually landed his flying kick, knocking the lens out of its hands; the keeper then grabbed him by the throat and he coughed up seawater, broke the grip with Athletics, and face-planted when his backflip off the rail failed. Kestrel kept up Hunt Prey + double Strike and crit crab A for 18; his Demoralize on the keeper failed. With the lens gone the keeper collapsed into salt water and the crabs fled out a window. The lighthouse is dark and the lens is destroyed.\n\nDowntime, three days in Brinemouth: Doro made an offering at the temple of Gozreh (success) and lost at arm-wrestling. Pim lost at arm-wrestling too, stole snacks from the fish market without being seen, and failed to charm the scholar. Ione failed to find a translator but finally identified the spyglass (Arcana success: it shows the sea as it was a hundred years ago) - \"Κοίτα! Η θάλασσα πριν από εκατό χρόνια\" she said. Buck actually learned the coastal script from the scholar (Society, exactly the DC), lost every single arm-wrestling match in the tavern, and the harbourmaster laughed at his reef-warning plan. Kestrel tried to help the glassworks remake the lens and crit-failed (broke a mould), did chores for Gozreh's priests (success), and practised archery at the fish market.\n\nGM notes: next session the Salt Mother / the sea-chest. Rules question for next time - does Demanding Challenge let the target Step first? Remember Doro is at 2 hero points. Pizza was good.",
+     "at": "2026-09-28T20:25:38.899Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790627138898-1",
+      "event:1790627138898-2",
+      "event:1790627138898-3",
+      "event:1790627138898-4",
+      "event:1790627138898-5",
+      "event:1790627138898-6",
+      "event:1790627138898-7",
+      "event:1790627138898-8"
+     ],
+     "proposalIds": [],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 8,
+      "attributedToOthers": 24,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 2,
+      "attempts": 2,
+      "repairs": 0,
+      "totalMs": 0
+     },
+     "attributedToOthers": [
+      {
+       "actorName": "Doro",
+       "summary": "Doro deciphered the keeper's logbook in the old coastal script."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione tried to read the rest of the logbook."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim found and pocketed a brass spyglass behind the desk."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim tried to pick the sea-chest lock."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel shot a giant crab with two arrows, the second being a critical hit."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro used Raise a Shield and Shield Block, then hit crab A with his warhammer."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro used Demanding Challenge to draw crab B onto himself."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim attacked crab B."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim sneaked behind the keeper."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim threw salt in the keeper's eyes."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim knocked the great lens off the gallery rail."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione cast Fire Ray."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel attacked crab A with Hunt Prey and double Strike."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel tried to demoralize the keeper."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro made an offering at the temple of Gozreh."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro lost at arm-wrestling."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim lost at arm-wrestling."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim stole snacks from the fish market."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim tried to charm the scholar."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione failed to find a translator."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione identified the spyglass using Arcana."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel tried to help the glassworks remake the lens."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel did chores for Gozreh's priests."
+      },
+      {
+       "actorName": "Kestrel",
+       "summary": "Kestrel practised archery at the fish market."
+      }
+     ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:monk-aerial-momentum": {
+       "name": "Monk: Aerial Momentum",
+       "itemId": "pt3t8lcsm7t4",
+       "approvedAt": "2026-09-28T20:28:39.215Z",
+       "metadata": {
+        "id": "skill:monk-aerial-momentum",
+        "tags": [
+         "acrobatics",
+         "martial",
+         "mobility"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Buck demonstrated a distinct pattern of using acrobatic movement (flying kicks, backflips) as part of his combat style, successfully combining mobility with martial strikes despite a failure in a high-risk maneuver."
+        }
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a melee Strike with your foot or hand. If you succeed, you can use your reaction to move up to 10 feet in a straight line away from the target, gaining a +1 circumstance bonus to your next Acrobatics check to avoid a trip or grapple.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 1,
+        "roll": {
+         "kind": "Melee attack",
+         "formula": "1d20+6"
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Monk's Flurry of Blows variant or Acrobatics combat feat (Pathfinder Second Edition)"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
+    }
+   },
+   "items": [
+    {
+     "name": "[Monk: Aerial Momentum] Skill",
+     "type": "action",
+     "system": {
+      "actionType": {
+       "value": "action"
+      },
+      "actions": {
+       "value": 1
+      },
+      "category": "offensive",
+      "description": {
+       "value": "<p><strong>Pathfinder Second Edition equivalent:</strong> Monk&#039;s Flurry of Blows variant or Acrobatics combat feat (Pathfinder Second Edition)</p><p><strong>Effect:</strong> Make a melee Strike with your foot or hand. If you succeed, you can use your reaction to move up to 10 feet in a straight line away from the target, gaining a +1 circumstance bonus to your next Acrobatics check to avoid a trip or grapple.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Resolution:</strong> Melee attack — [[/r 1d20+6]]</p><p><strong>Tags:</strong> acrobatics, martial, mobility</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Buck demonstrated a distinct pattern of using acrobatic movement (flying kicks, backflips) as part of his combat style, successfully combining mobility with martial strikes despite a failure in a high-risk maneuver.</p>"
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:monk-aerial-momentum",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:monk-aerial-momentum",
+        "tags": [
+         "acrobatics",
+         "martial",
+         "mobility"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Buck demonstrated a distinct pattern of using acrobatic movement (flying kicks, backflips) as part of his combat style, successfully combining mobility with martial strikes despite a failure in a high-risk maneuver."
+        }
+       }
+      }
+     },
+     "_id": "pt3t8lcsm7t4"
+    }
+   ]
+  },
+  {
+   "name": "Kestrel",
+   "className": "Ranger",
+   "level": 3,
+   "persona": "min-maxer",
+   "flags": {
+    "growthEvents": [
+     {
+      "id": "event:1790627162988-1",
+      "summary": "Kestrel shot a giant crab with two arrows, the second being a critical hit.",
+      "tags": [
+       "ranged",
+       "precision",
+       "survival"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-28T20:26:02.988Z",
+      "themes": [
+       "archery",
+       "hunting"
+      ],
+      "quote": "Kestrel spotted a salt-crusted giant crab first and put two arrows in it with Hunt Prey - the second a nat 20 crit",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627162988-2",
+      "summary": "Kestrel attacked crab A with Hunt Prey and double Strike.",
+      "tags": [
+       "ranged",
+       "precision"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-28T20:26:02.988Z",
+      "themes": [
+       "archery"
+      ],
+      "quote": "Kestrel kept up Hunt Prey + double Strike and crit crab A for 18",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627162988-3",
+      "summary": "Kestrel tried to demoralize the keeper.",
+      "tags": [
+       "intimidation"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:26:02.988Z",
+      "themes": [
+       "demoralizing"
+      ],
+      "quote": "his Demoralize on the keeper failed",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627162988-4",
+      "summary": "Kestrel tried to help the glassworks remake the lens.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "criticalFailure",
+      "occurredAt": "2026-09-28T20:26:02.988Z",
+      "themes": [
+       "glassblowing"
+      ],
+      "quote": "Kestrel tried to help the glassworks remake the lens and crit-failed (broke a mould)",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627162988-5",
+      "summary": "Kestrel did chores for Gozreh's priests.",
+      "tags": [
+       "religion"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:26:02.988Z",
+      "themes": [
+       "temple-chores"
+      ],
+      "quote": "did chores for Gozreh's priests (success)",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627162989-6",
+      "summary": "Kestrel practised archery at the fish market.",
+      "tags": [
+       "ranged"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:26:02.989Z",
+      "themes": [
+       "archery"
+      ],
+      "quote": "practised archery at the fish market",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     }
+    ],
+    "growthProposals": [
+     {
+      "id": "proposal:emergent-archery",
+      "kind": "skill",
+      "status": "rejected",
+      "source": "emergent",
+      "needsAuthoring": true,
+      "theme": "archery",
+      "evidence": [
+       "event:1790627162988-1",
+       "event:1790627162988-2",
+       "event:1790627162989-6"
+      ],
+      "entry": {
+       "name": "Archery Knack",
+       "tier": 1,
+       "system_equivalent": "Placeholder emergent Skill (GM review) -- use \"Author with AI\" to write real mechanics",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you attempt a check whose purpose is clearly archery, you gain a +1 bonus to that check (a circumstance bonus). The GM decides which checks qualify.",
+        "duration": "while practicing archery",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        }
+       },
+       "metadata": {
+        "tags": [],
+        "themes": [
+         "archery"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Emergent theme \"archery\" practiced across 3 recorded event(s), weighted evidence 4.20. Not in the fixed tag taxonomy -- this is a placeholder awaiting AI/GM authoring."
+        }
+       }
+      },
+      "rejectedAt": "2026-09-28T20:26:25.506Z",
+      "rejectedReason": "placeholder, duplicates Salt-Wind Precision"
+     },
+     {
+      "id": "proposal:ai-skill:ranger-s-aim-salt-wind-precision",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Kestrel shot a giant crab with two arrows, the second being a critical hit.",
+       "Kestrel attacked crab A with Hunt Prey and double Strike.",
+       "Kestrel practised archery at the fish market."
+      ],
+      "entry": {
+       "name": "Ranger's Aim: Salt-Wind Precision",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "You gain a +1 circumstance bonus to ranged Strikes made with a bow or crossbow when targeting a creature that is not off-guard.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "while wielding a ranged weapon"
+       },
+       "metadata": {
+        "tags": [
+         "ranged",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeated successful ranged engagements, including critical hits and dedicated practice, demonstrate a growing mastery of precise archery."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Precision Shot feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T20:26:25.590Z",
+      "rejectedReason": "permanent +1 to every ranged Strike is too strong at tier 1 in PF2e"
+     },
+     {
+      "id": "proposal:ai-skill:ranger-salt-wind-shot",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Kestrel shot a giant crab with two arrows, the second being a critical hit.",
+       "Kestrel attacked crab A with Hunt Prey and double Strike.",
+       "Kestrel practised archery at the fish market."
+      ],
+      "entry": {
+       "name": "Ranger: Salt-Wind Shot",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a ranged Strike with a bow. If the target is an aquatic or amphibious creature, you gain a +1 circumstance bonus to the attack roll. On a critical success, the target is also slowed 1 for 1 round.",
+        "frequency": {
+         "max": 1,
+         "per": "round"
+        },
+        "actions": 1,
+        "roll": {
+         "kind": "Ranged attack",
+         "formula": "1d20+6"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "ranged",
+         "precision",
+         "survival"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated exceptional precision and adaptability when hunting marine creatures, specifically critting a giant crab twice in one encounter."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Ranger class feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:28:23.914Z",
+      "approvedAt": "2026-09-28T20:28:39.299Z"
+     },
+     {
+      "id": "proposal:ai-skill:ranger-glasswright-s-caution",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Kestrel tried to help the glassworks remake the lens and crit-failed (broke a mould)"
+      ],
+      "entry": {
+       "name": "Ranger: Glasswright's Caution",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you attempt a Craft check to work with fragile materials (glass, crystal, etc.) and roll a critical failure, you do not break the item or tool; instead, the check is treated as a simple failure.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "passive"
+       },
+       "metadata": {
+        "tags": [
+         "craft"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Learned through a costly critical failure in glassblowing, instilling a defensive instinct against shattering delicate work."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Craft skill feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:28:23.914Z"
+     }
+    ],
+    "levelProgression": {
+     "level": 1,
+     "progress": 48.75,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:26:02.989Z",
+     "lastRestType": "long"
+    },
+    "lastAnalysis": {
+     "notes": "Salt Lantern - Session 1 recap (Brinemouth / Gull Rock lighthouse)\n\nThe harbour town of Brinemouth hired the party to find out why the Gull Rock lighthouse went dark. Inside, Doro deciphered the keeper's logbook in the old coastal script (Society, success) - last entry: \"The Salt Mother wants her lamp back.\" Ione couldn't read the rest. Pim found a brass spyglass behind the desk and pocketed it, but failed to pick the sea-chest lock. Buck flying-kicked his way up the spiral stair (Acrobatics success!) and Kestrel spotted a salt-crusted giant crab first and put two arrows in it with Hunt Prey - the second a nat 20 crit.\n\nFight on the stair: two salt crabs and the drowned keeper, who was prying the great lens out of the lamp. Doro used Raise a Shield and Shield Block and cracked crab A with his warhammer, then used Demanding Challenge to pull crab B onto himself and took an 11-damage claw for it. Pim missed crab B and got clawed for 13, but crit-succeeded on Stealth to get behind the keeper, threw salt in its eyes, and then - on purpose - knocked the great lens off the gallery rail. It shattered on the ground floor. Ione's fire ray was a nat 1 critical failure and singed her own owl, Glafka. Buck grabbed the spyglass off Pim, flashed light in the keeper's eyes and actually landed his flying kick, knocking the lens out of its hands; the keeper then grabbed him by the throat and he coughed up seawater, broke the grip with Athletics, and face-planted when his backflip off the rail failed. Kestrel kept up Hunt Prey + double Strike and crit crab A for 18; his Demoralize on the keeper failed. With the lens gone the keeper collapsed into salt water and the crabs fled out a window. The lighthouse is dark and the lens is destroyed.\n\nDowntime, three days in Brinemouth: Doro made an offering at the temple of Gozreh (success) and lost at arm-wrestling. Pim lost at arm-wrestling too, stole snacks from the fish market without being seen, and failed to charm the scholar. Ione failed to find a translator but finally identified the spyglass (Arcana success: it shows the sea as it was a hundred years ago) - \"Κοίτα! Η θάλασσα πριν από εκατό χρόνια\" she said. Buck actually learned the coastal script from the scholar (Society, exactly the DC), lost every single arm-wrestling match in the tavern, and the harbourmaster laughed at his reef-warning plan. Kestrel tried to help the glassworks remake the lens and crit-failed (broke a mould), did chores for Gozreh's priests (success), and practised archery at the fish market.\n\nGM notes: next session the Salt Mother / the sea-chest. Rules question for next time - does Demanding Challenge let the target Step first? Remember Doro is at 2 hero points. Pizza was good.",
+     "at": "2026-09-28T20:26:02.989Z",
+     "source": "adapter",
+     "eventIds": [
+      "event:1790627162988-1",
+      "event:1790627162988-2",
+      "event:1790627162988-3",
+      "event:1790627162988-4",
+      "event:1790627162988-5",
+      "event:1790627162989-6"
+     ],
+     "proposalIds": [
+      "proposal:ai-skill:ranger-s-aim-salt-wind-precision"
+     ],
+     "diagnostics": {
+      "source": "adapter",
+      "events": 6,
+      "attributedToOthers": 26,
+      "skippedEvents": 0,
+      "skippedProposals": 0,
+      "model": "qwen3.8:27b",
+      "provider": "ollama",
+      "pipeline": "two-stage",
+      "chunks": 2,
+      "attempts": 3,
+      "repairs": 0,
+      "totalMs": 24087
+     },
+     "attributedToOthers": [
+      {
+       "actorName": "Doro",
+       "summary": "Doro deciphered the keeper's logbook in the old coastal script."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione tried to read the rest of the logbook."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim found and pocketed a brass spyglass behind the desk."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim tried to pick the sea-chest lock."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck flying-kicked his way up the spiral stair."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro used Raise a Shield and Shield Block, then hit crab A with his warhammer."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro used Demanding Challenge to draw crab B onto himself."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim attacked crab B."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim sneaked behind the keeper."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim threw salt in the keeper's eyes."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim knocked the great lens off the gallery rail."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione cast Fire Ray."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck took the spyglass from Pim and flashed light in the keeper's eyes."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck landed a flying kick on the keeper."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck broke the keeper's grip on his throat."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck attempted a backflip off the rail."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro made an offering at the temple of Gozreh."
+      },
+      {
+       "actorName": "Doro",
+       "summary": "Doro lost at arm-wrestling."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim lost at arm-wrestling."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim stole snacks from the fish market."
+      },
+      {
+       "actorName": "Pim",
+       "summary": "Pim tried to charm the scholar."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione failed to find a translator."
+      },
+      {
+       "actorName": "Ione",
+       "summary": "Ione identified the spyglass using Arcana."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck learned the coastal script from the scholar."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck lost every arm-wrestling match in the tavern."
+      },
+      {
+       "actorName": "Buck",
+       "summary": "Buck presented a reef-warning plan to the harbourmaster."
+      }
+     ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:ranger-salt-wind-shot": {
+       "name": "Ranger: Salt-Wind Shot",
+       "itemId": "pt9dal7bbf7c",
+       "approvedAt": "2026-09-28T20:28:39.299Z",
+       "metadata": {
+        "id": "skill:ranger-salt-wind-shot",
+        "tags": [
+         "ranged",
+         "precision",
+         "survival"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated exceptional precision and adaptability when hunting marine creatures, specifically critting a giant crab twice in one encounter."
+        }
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a ranged Strike with a bow. If the target is an aquatic or amphibious creature, you gain a +1 circumstance bonus to the attack roll. On a critical success, the target is also slowed 1 for 1 round.",
+        "frequency": {
+         "max": 1,
+         "per": "round"
+        },
+        "actions": 1,
+        "roll": {
+         "kind": "Ranged attack",
+         "formula": "1d20+6"
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Ranger class feat (Pathfinder Second Edition)"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
+    }
+   },
+   "items": [
+    {
+     "name": "[Ranger: Salt-Wind Shot] Skill",
+     "type": "action",
+     "system": {
+      "actionType": {
+       "value": "action"
+      },
+      "actions": {
+       "value": 1
+      },
+      "category": "offensive",
+      "description": {
+       "value": "<p><strong>Pathfinder Second Edition equivalent:</strong> Ranger class feat (Pathfinder Second Edition)</p><p><strong>Effect:</strong> Make a ranged Strike with a bow. If the target is an aquatic or amphibious creature, you gain a +1 circumstance bonus to the attack roll. On a critical success, the target is also slowed 1 for 1 round.</p><p><strong>Frequency:</strong> 1/round</p><p><strong>Resolution:</strong> Ranged attack — [[/r 1d20+6]]</p><p><strong>Tags:</strong> ranged, precision, survival</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Demonstrated exceptional precision and adaptability when hunting marine creatures, specifically critting a giant crab twice in one encounter.</p>"
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:ranger-salt-wind-shot",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:ranger-salt-wind-shot",
+        "tags": [
+         "ranged",
+         "precision",
+         "survival"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated exceptional precision and adaptability when hunting marine creatures, specifically critting a giant crab twice in one encounter."
+        }
+       }
+      }
+     },
+     "_id": "pt9dal7bbf7c"
+    }
+   ]
+  }
+ ],
+ "emergentThemes": {
+  "themes": {
+   "deciphering": {
+    "count": 1,
+    "label": "Deciphering",
+    "firstSeen": "2026-09-28T20:25:38.884Z",
+    "lastSeen": "2026-09-28T20:25:38.884Z"
+   },
+   "reading": {
+    "count": 2,
+    "label": "Reading",
+    "firstSeen": "2026-09-28T20:25:38.884Z",
+    "lastSeen": "2026-09-28T20:25:38.896Z"
+   },
+   "shielding": {
+    "count": 1,
+    "label": "Shielding",
+    "firstSeen": "2026-09-28T20:25:38.884Z",
+    "lastSeen": "2026-09-28T20:25:38.884Z"
+   },
+   "melee": {
+    "count": 2,
+    "label": "Melee",
+    "firstSeen": "2026-09-28T20:25:38.884Z",
+    "lastSeen": "2026-09-28T20:25:38.894Z"
+   },
+   "taunting": {
+    "count": 1,
+    "label": "Taunting",
+    "firstSeen": "2026-09-28T20:25:38.884Z",
+    "lastSeen": "2026-09-28T20:25:38.884Z"
+   },
+   "tank": {
+    "count": 1,
+    "label": "Tank",
+    "firstSeen": "2026-09-28T20:25:38.884Z",
+    "lastSeen": "2026-09-28T20:25:38.884Z"
+   },
+   "offering": {
+    "count": 1,
+    "label": "Offering",
+    "firstSeen": "2026-09-28T20:25:38.884Z",
+    "lastSeen": "2026-09-28T20:25:38.884Z"
+   },
+   "arm-wrestling": {
+    "count": 3,
+    "label": "Arm Wrestling",
+    "firstSeen": "2026-09-28T20:25:38.884Z",
+    "lastSeen": "2026-09-28T20:25:38.898Z"
+   },
+   "looting": {
+    "count": 1,
+    "label": "Looting",
+    "firstSeen": "2026-09-28T20:25:38.894Z",
+    "lastSeen": "2026-09-28T20:25:38.894Z"
+   },
+   "lockpicking": {
+    "count": 1,
+    "label": "Lockpicking",
+    "firstSeen": "2026-09-28T20:25:38.894Z",
+    "lastSeen": "2026-09-28T20:25:38.894Z"
+   },
+   "sneaking": {
+    "count": 2,
+    "label": "Sneaking",
+    "firstSeen": "2026-09-28T20:25:38.894Z",
+    "lastSeen": "2026-09-28T20:25:38.894Z"
+   },
+   "blinding": {
+    "count": 2,
+    "label": "Blinding",
+    "firstSeen": "2026-09-28T20:25:38.894Z",
+    "lastSeen": "2026-09-28T20:25:38.898Z"
+   },
+   "sabotage": {
+    "count": 1,
+    "label": "Sabotage",
+    "firstSeen": "2026-09-28T20:25:38.894Z",
+    "lastSeen": "2026-09-28T20:25:38.894Z"
+   },
+   "pickpocketing": {
+    "count": 1,
+    "label": "Pickpocketing",
+    "firstSeen": "2026-09-28T20:25:38.894Z",
+    "lastSeen": "2026-09-28T20:25:38.894Z"
+   },
+   "persuasion": {
+    "count": 1,
+    "label": "Persuasion",
+    "firstSeen": "2026-09-28T20:25:38.894Z",
+    "lastSeen": "2026-09-28T20:25:38.894Z"
+   },
+   "finding-a-translation": {
+    "count": 1,
+    "label": "Finding A Translation",
+    "firstSeen": "2026-09-28T20:25:38.896Z",
+    "lastSeen": "2026-09-28T20:25:38.896Z"
+   },
+   "identifying-magic": {
+    "count": 1,
+    "label": "Identifying Magic",
+    "firstSeen": "2026-09-28T20:25:38.896Z",
+    "lastSeen": "2026-09-28T20:25:38.896Z"
+   },
+   "climbing": {
+    "count": 1,
+    "label": "Climbing",
+    "firstSeen": "2026-09-28T20:25:38.898Z",
+    "lastSeen": "2026-09-28T20:25:38.898Z"
+   },
+   "flying-kick": {
+    "count": 2,
+    "label": "Flying Kick",
+    "firstSeen": "2026-09-28T20:25:38.898Z",
+    "lastSeen": "2026-09-28T20:25:38.898Z"
+   },
+   "grappling": {
+    "count": 1,
+    "label": "Grappling",
+    "firstSeen": "2026-09-28T20:25:38.898Z",
+    "lastSeen": "2026-09-28T20:25:38.898Z"
+   },
+   "backflip": {
+    "count": 1,
+    "label": "Backflip",
+    "firstSeen": "2026-09-28T20:25:38.898Z",
+    "lastSeen": "2026-09-28T20:25:38.898Z"
+   },
+   "learning-script": {
+    "count": 1,
+    "label": "Learning Script",
+    "firstSeen": "2026-09-28T20:25:38.898Z",
+    "lastSeen": "2026-09-28T20:25:38.898Z"
+   },
+   "negotiating": {
+    "count": 1,
+    "label": "Negotiating",
+    "firstSeen": "2026-09-28T20:25:38.898Z",
+    "lastSeen": "2026-09-28T20:25:38.898Z"
+   },
+   "archery": {
+    "count": 3,
+    "label": "Archery",
+    "firstSeen": "2026-09-28T20:26:02.989Z",
+    "lastSeen": "2026-09-28T20:26:02.989Z"
+   },
+   "hunting": {
+    "count": 1,
+    "label": "Hunting",
+    "firstSeen": "2026-09-28T20:26:02.989Z",
+    "lastSeen": "2026-09-28T20:26:02.989Z"
+   },
+   "demoralizing": {
+    "count": 1,
+    "label": "Demoralizing",
+    "firstSeen": "2026-09-28T20:26:02.989Z",
+    "lastSeen": "2026-09-28T20:26:02.989Z"
+   },
+   "glassblowing": {
+    "count": 1,
+    "label": "Glassblowing",
+    "firstSeen": "2026-09-28T20:26:02.989Z",
+    "lastSeen": "2026-09-28T20:26:02.989Z"
+   },
+   "temple-chores": {
+    "count": 1,
+    "label": "Temple Chores",
+    "firstSeen": "2026-09-28T20:26:02.989Z",
+    "lastSeen": "2026-09-28T20:26:02.989Z"
+   }
+  }
+ }
+}

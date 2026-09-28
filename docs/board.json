@@ -277,7 +277,7 @@
   {
    "id": "c829f2a7",
    "title": "C5 cloud: cold review of the AI pipeline, findings as todo tests (docs/cloud-work.md)",
-   "status": "blocked",
+   "status": "doing",
    "notes": [
     "2026-09-27: reviewer agent stopped by the session limit before writing anything (worktree agent-ae0b36baa42de76bf, empty). Restart on a cheaper model."
    ],
@@ -289,7 +289,7 @@
    "owner": "reviewer",
    "source": "cli",
    "created": 1790531510.992,
-   "updated": 1790620957.182356,
+   "updated": 1790626870.578,
    "parent": "f2d3213f"
   },
   {
@@ -314,7 +314,7 @@
   {
    "id": "3962a001",
    "title": "Proposal duplicates the class's own feature: 'Hexblade: Infernal Pact' grants Warlock Pact Magic/Eldritch Blast to a Warlock 3",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "s2 again: 'Shadowfingers: Sleight of Hand' grants Sleight of Hand + Thieves' Tools proficiency to a Rogue 3.",
     "s3: system terms still slip - 'if using a durability system', 'use your free action' (dnd5e)."
@@ -324,10 +324,10 @@
     "dnd5e"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-proposals",
    "source": "ember-road s1 re-run 2026-09-27",
    "created": 1790543771.53,
-   "updated": 1790624440.121,
+   "updated": 1790626872.173,
    "parent": "f2d3213f"
   },
   {
@@ -501,7 +501,9 @@
    "id": "beef7277",
    "title": "Balance: tier-1 'Shieldwall: Bottleneck' = advantage on every attack at a chokepoint, unlimited",
    "status": "todo",
-   "notes": [],
+   "notes": [
+    "salt-lantern s1 (pf2e): 'Salt-Wind Precision' +1 circumstance to all ranged Strikes, unlimited; 'Champion's Bulwark' +1 AC to every adjacent ally, unlimited - both rejected as too strong at tier 1."
+   ],
    "tags": [
     "proposals",
     "dnd5e"
@@ -510,7 +512,7 @@
    "owner": "",
    "source": "ember-road s2",
    "created": 1790621174.933,
-   "updated": 1790621174.933
+   "updated": 1790627349.128
   },
   {
    "id": "ad43ec26",
@@ -558,31 +560,76 @@
   {
    "id": "316705b6",
    "title": "Proposals duplicate an OWNED Skill by mechanic (Luz 'Voice of Conviction' = her Public Edict); registry dedupe is by name only",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "proposals"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-proposals",
    "source": "ember-road s3",
    "created": 1790624440.04,
-   "updated": 1790624440.04
+   "updated": 1790626872.077
   },
   {
    "id": "b81a0357",
    "title": "Pending proposals grow without limit (Tovin 5, Luz 4 pending for 1 allowance each): cap or roll up per actor",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "proposals",
     "qol"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-proposals",
    "source": "ember-road s3",
    "created": 1790624440.081,
-   "updated": 1790624440.081
+   "updated": 1790626872.126
+  },
+  {
+   "id": "e8ae42d0",
+   "title": "pf2e naming: motif is the bare class name ('Monk: Aerial Momentum', 'Ranger: Salt-Wind Shot', 'Champion's Bulwark/Insight/Devotion') despite the naming rule",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "naming",
+    "pf2e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "salt-lantern s1",
+   "created": 1790627348.998,
+   "updated": 1790627348.998
+  },
+  {
+   "id": "7cb2c568",
+   "title": "pf2e terms in proposals: 'staggered' (not a PF2e condition), 'blinded for 1 round' (PF2e: until the end of your next turn), 'Craft check' (Crafting)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "proposals",
+    "pf2e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "salt-lantern s1",
+   "created": 1790627349.04,
+   "updated": 1790627349.04
+  },
+  {
+   "id": "9cda8ea5",
+   "title": "Failure-magnet gets no learning-from-failure proposal: Buck's 4 failures (arm-wrestling x2 sessions, backflip, harbourmaster) never cited; design says failures are evidence",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "proposals",
+    "progression"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "salt-lantern s1",
+   "created": 1790627349.083,
+   "updated": 1790627349.083
   }
  ]
 }
