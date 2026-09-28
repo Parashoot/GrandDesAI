@@ -45,7 +45,7 @@ Contract + change log: `docs/ai-gateway-v2-contract.md` (read it first).
 - Harness: `tools/nlp-scale/` — 322-item labeled corpus (13 categories, 14 languages), scoring,
   consistency metrics, simulated fault-injecting model.
 
-## Status (2026-09-27) and open work
+## Status (2026-09-28) and open work
 Default model **`qwen3.8:27b`**. Scale numbers: see the 2026-09-24 entries in the contract change log and
 `Scale Test Results` in the vault (extraction 97.6%, count 96.2%, traps 100%, fallback 0%).
 
