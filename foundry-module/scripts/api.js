@@ -784,10 +784,16 @@ export class GrandDesignApi {
     // The gateway's stage 2 sees every event in the notes, so it can build a proposal for this
     // character purely out of someone else's deeds; one whose evidence cites only other characters
     // is skipped (and reported) rather than offered.
+    // A rejected proposal is kept on the actor (never deleted), so the SAME id merging back in via
+    // mergeProposals already leaves it alone -- but the gateway can re-author the same idea under a
+    // fresh id, so its name is also checked here.
+    const rejectedNames = rejectedProposalNames(eventProposals);
     const modelProposals = [];
     for (const proposal of validProposals) {
       if (proposalCitesOnlyOthers(proposal, { actorNames, ownEvents: taggedEvents, otherEvents })) {
         invalidProposals.push({ proposal, errors: [`Evidence cites only other characters' actions, not ${actor.name ?? "this character"}'s.`], reason: "attributed-to-others" });
+      } else if (rejectedNames.has(slugify(proposal.entry?.name ?? ""))) {
+        invalidProposals.push({ proposal, errors: [`The GM already rejected a proposal named ${proposal.entry?.name}.`], reason: "rejected" });
       } else {
         modelProposals.push(proposal);
       }
@@ -1049,12 +1055,17 @@ export class GrandDesignApi {
     const candidates = Array.isArray(output) ? [] : Array.isArray(output?.proposals) ? output.proposals : [];
     const { accepted, skipped } = this._validateModelProposals(candidates, actor, { customSynonyms: config.customSynonyms });
     const pendingNames = new Set(growth.proposals.filter((proposal) => proposal.status === "pending").map((proposal) => slugify(proposal.entry?.name ?? "")));
+    const rejectedNames = rejectedProposalNames(growth.proposals);
     const known = new Set(growth.proposals.map((proposal) => proposal.id));
     const added = [];
     for (const proposal of accepted) {
       const key = slugify(proposal.entry.name);
       if (known.has(proposal.id) || pendingNames.has(key)) {
         skipped.push({ proposal, errors: [`A pending proposal named ${proposal.entry.name} already exists.`], reason: "duplicate" });
+        continue;
+      }
+      if (rejectedNames.has(key)) {
+        skipped.push({ proposal, errors: [`The GM already rejected a proposal named ${proposal.entry.name}.`], reason: "rejected" });
         continue;
       }
       known.add(proposal.id);
@@ -1119,9 +1130,15 @@ export class GrandDesignApi {
       ...(emergentEnabled ? generateEmergentProposals(events, registry, { themeMap, systemId }) : [])
     ];
     const known = new Map(growth.proposals.map((proposal) => [proposal.id, proposal]));
+    // Template/theme proposal ids are already stable per template or theme, so a rejected one is
+    // normally re-matched by id below and left alone; this name check is the fallback for the case
+    // an id changes (a re-slugified name, a re-authored placeholder) but the idea is the same one the
+    // GM already said no to.
+    const rejectedNames = rejectedProposalNames(growth.proposals);
     for (const proposal of generated) {
       const existing = known.get(proposal.id);
       if (!existing) {
+        if (rejectedNames.has(slugify(proposal.entry?.name ?? ""))) continue;
         known.set(proposal.id, proposal);
       } else if (existing.status === "pending") {
         // An emergent placeholder the GM already had the AI author must keep its authored entry;
@@ -1173,6 +1190,36 @@ export class GrandDesignApi {
     });
     Hooks.callAll("grand-design-ai.skillProposalApproved", actor, proposal, approved);
     return approved;
+  }
+
+  /**
+   * The GM's "no" (playtest ember-road s2: "Warden's Duty: Gatekeeper" was not a Skill,
+   * "Honeycomb: Artisan's Trade" was garbled). Only a pending proposal can be rejected; approving or
+   * rejecting a proposal that is already approved/rejected is refused the same way approveProposal
+   * refuses a non-pending id. Nothing is deleted -- the proposal and its cited evidence events stay on
+   * the actor, just marked `status: "rejected"` so it drops out of every "pending" filter (the Growth
+   * dialog's list, requestGrowthProposals' and analyzeSessionNotes' duplicate-name checks) without
+   * losing the GM's evidence. Calling this twice on the same id is a no-op the second time (idempotent)
+   * rather than an error, so a double-click or a retried command never throws.
+   */
+  async rejectProposal(actor, id, { reason } = {}) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    const growth = this.getGrowth(actor);
+    const proposal = growth.proposals.find((candidate) => candidate.id === id);
+    if (proposal?.status === "rejected") return proposal;
+    if (!proposal || proposal.status !== "pending") throw new Error(`No pending skill proposal exists for ${id}.`);
+    const trimmedReason = typeof reason === "string" ? reason.trim() : "";
+    const rejected = {
+      ...proposal,
+      status: "rejected",
+      rejectedAt: new Date().toISOString(),
+      ...(trimmedReason ? { rejectedReason: trimmedReason } : {})
+    };
+    const proposals = growth.proposals.map((candidate) => (candidate.id === id ? rejected : candidate));
+    await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+    Hooks.callAll("grand-design-ai.proposalRejected", actor, rejected);
+    return rejected;
   }
 
   async runTestScenario() {
@@ -1564,6 +1611,18 @@ function mergeProposals(existing, additions) {
 
 function slugify(value) {
   return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+// The slugified names of an actor's rejected proposals. Kept (not just relied on for id equality)
+// so a proposal regenerated under a different id -- the gateway re-authoring it, or a template GM
+// house rules touched -- still cannot reappear under the exact name the GM already said no to.
+function rejectedProposalNames(proposals) {
+  return new Set(
+    (Array.isArray(proposals) ? proposals : [])
+      .filter((proposal) => proposal?.status === "rejected")
+      .map((proposal) => slugify(proposal.entry?.name ?? ""))
+      .filter(Boolean)
+  );
 }
 
 function consolidationKey(classIdA, classIdB) {

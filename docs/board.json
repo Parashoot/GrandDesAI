@@ -459,8 +459,11 @@
   {
    "id": "7c026881",
    "title": "No way to reject/dismiss a proposal (api, growth-ui, playtest runner): rejected proposals stay pending forever and block re-suggestion by name",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "api.rejectProposal(actor, id, {reason}) added (GM only, idempotent, never deletes evidence, Hook grand-design-ai.proposalRejected); rejected excluded from pending everywhere (dialog, requestGrowthProposals dup-check, analyzeSessionNotes merge) and a rejected NAME (not just id) is skipped by both the gateway and template proposal paths. growth-ui.js: per-proposal Reject button (delegated click handler; only rendered for status===pending). playtest.mjs: reject --campaign X --actor Name --proposal <id|name> [--reason], mirrors approve. New tests/reject-proposal.test.mjs: 16 tests (8 x pf2e/dnd5e + 2 UI), all green -- npm test 787/787 pass (was 769). Verified end to end on an isolated copy (playtests/reject-check, internal name field fixed so saveCampaign didn't collide with playtests/ember-road/campaign.json -- caught and reverted an accidental write to the real ember-road data from the first attempt): rejected Brakka's real 'Warden's Duty: Gatekeeper' (the s2 example), confirmed status=rejected+reason+rejectedAt on disk and gone from status's pending list; ember-road itself left untouched (git status clean). No lang/*.json changes -- growth-ui.js has Growth.* keys declared but never calls game.i18n.localize, so there was no localization pattern to extend.",
+    "PM verified on main: npm test 787/787; real ember-road GM rejections via 'playtest.mjs reject' with reasons (Gatekeeper, Honeycomb, Warden's Bargain, Shadowfingers) -> gone from pending, status rejected + rejectedReason."
+   ],
    "tags": [
     "ui",
     "proposals",
@@ -470,7 +473,7 @@
    "owner": "dev-integration",
    "source": "ember-road s2",
    "created": 1790621174.852,
-   "updated": 1790621223.015
+   "updated": 1790622041.138
   },
   {
    "id": "c438b5e2",
@@ -500,6 +503,20 @@
    "source": "ember-road s2",
    "created": 1790621174.933,
    "updated": 1790621174.933
+  },
+  {
+   "id": "ad43ec26",
+   "title": "playtest.mjs saveCampaign writes to the campaign.json's internal name, not the --campaign folder: a copied campaign folder overwrites the original",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "harness"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-integration 2026-09-28",
+   "created": 1790622041.096,
+   "updated": 1790622041.096
   }
  ]
 }

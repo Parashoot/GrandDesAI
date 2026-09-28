@@ -3,8 +3,8 @@
 // the way a GM would use it -- without Foundry. The DM (a person or a Claude "DM" agent) writes
 // each session's notes; this script feeds them through the REAL module API (api.js ->
 // analyzeSessionNotes -> the AI gateway against a local Ollama model), keeps every character's
-// Grand Design state between sessions, resolves rests, approves proposals the way the DM decides,
-// and writes what the GM would actually see: a readable report plus the real Growth dialog HTML.
+// Grand Design state between sessions, resolves rests, approves or rejects proposals the way the DM
+// decides, and writes what the GM would actually see: a readable report plus the real Growth dialog HTML.
 //
 // Why without Foundry: a playtest needs dozens of analyses across sessions and both systems; the
 // module's pure API runs in Node against mock actors (same pattern as tests/api-gateway-v2), so a
@@ -18,6 +18,7 @@
 //        [--proposal-mode when-earned|always|never] [--model qwen3.8:27b] [--sim]
 //   node tools/playtest/playtest.mjs suggest --campaign ember-road --actor Maren[,Tovin]   ("Suggest proposals")
 //   node tools/playtest/playtest.mjs approve --campaign ember-road --actor Wick --proposal <id|name>
+//   node tools/playtest/playtest.mjs reject  --campaign ember-road --actor Wick --proposal <id|name> [--reason "..."]
 //   node tools/playtest/playtest.mjs status  --campaign ember-road [--json]
 //
 // Files (foundry-module/playtests/<campaign>/):
@@ -284,6 +285,24 @@ function cmdApprove(flags) {
   })();
 }
 
+// The GM's "no" (api.rejectProposal): mirrors cmdApprove exactly except for which API call it makes
+// and that it prints the optional reason. Like approve, only a currently-pending proposal matches.
+function cmdReject(flags) {
+  return (async () => {
+    const campaign = loadCampaign(flags.campaign);
+    const pc = campaign.party.find((p) => p.name.toLowerCase() === String(flags.actor ?? "").toLowerCase());
+    if (!pc) throw new Error(`no party member ${flags.actor}`);
+    const { api } = await buildApi(campaign, { ...flags, sim: true });
+    const actor = makeActor(pc, campaign.system);
+    const ref = String(flags.proposal ?? "").toLowerCase();
+    const proposal = api.getGrowth(actor).proposals.find((p) => p.status === "pending" && (p.id === flags.proposal || String(p.entry?.name ?? "").toLowerCase().includes(ref)));
+    if (!proposal) throw new Error(`no pending proposal matches ${flags.proposal}`);
+    const done = await api.rejectProposal(actor, proposal.id, { reason: flags.reason });
+    saveCampaign(campaign);
+    console.log(`rejected ${proposal.entry?.name} for ${pc.name}${done?.rejectedReason ? ` (${done.rejectedReason})` : ""}`);
+  })();
+}
+
 // The Growth dialog's "Suggest proposals" button (api.requestGrowthProposals): what a GM clicks when a
 // grant allowance is waiting and nothing is pending. Real model; prints what the GM would read.
 async function cmdSuggest(flags) {
@@ -439,10 +458,11 @@ try {
   if (cmd === "init") cmdInit(flags);
   else if (cmd === "analyze") await cmdAnalyze(flags);
   else if (cmd === "approve") await cmdApprove(flags);
+  else if (cmd === "reject") await cmdReject(flags);
   else if (cmd === "suggest") await cmdSuggest(flags);
   else if (cmd === "status") await cmdStatus(flags);
   else {
-    console.error("commands: init | analyze | suggest | approve | status  (see the header of this file)");
+    console.error("commands: init | analyze | suggest | approve | reject | status  (see the header of this file)");
     process.exit(1);
   }
 } catch (error) {

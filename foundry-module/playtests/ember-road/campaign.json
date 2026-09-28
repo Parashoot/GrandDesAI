@@ -207,7 +207,7 @@
      {
       "id": "proposal:ai-skill:warden-s-duty-gatekeeper",
       "kind": "skill",
-      "status": "pending",
+      "status": "rejected",
       "evidence": [
        "Brakka repaired the fort's gate.",
        "Brakka stood watch outside Maren's room."
@@ -244,7 +244,9 @@
        "tier": 1,
        "system_equivalent": "Crafting and Perception support action (Dungeons & Dragons Fifth Edition (2024 rules))"
       },
-      "source": "ai-gateway"
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T19:00:29.601Z",
+      "rejectedReason": "not a Skill: repairing a gate as an action"
      }
     ],
     "levelProgression": {
@@ -751,7 +753,7 @@
      {
       "id": "proposal:ai-skill:shadowfingers-sleight-of-hand",
       "kind": "skill",
-      "status": "pending",
+      "status": "rejected",
       "evidence": [
        "Wick stole the writ from the collector's glove",
        "Wick stole 30 gold pieces",
@@ -785,7 +787,9 @@
        "system_equivalent": "Sleight of Hand proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
       },
       "source": "ai-gateway",
-      "requestedAt": "2026-09-28T18:44:51.953Z"
+      "requestedAt": "2026-09-28T18:44:51.953Z",
+      "rejectedAt": "2026-09-28T19:00:29.843Z",
+      "rejectedReason": "grants proficiency a rogue already has"
      },
      {
       "id": "proposal:ai-skill:oxwhip-animal-handling",
@@ -1505,7 +1509,7 @@
      {
       "id": "proposal:ai-skill:honeycomb-artisan-s-trade",
       "kind": "skill",
-      "status": "pending",
+      "status": "rejected",
       "evidence": [
        "Maren sold out of honey.",
        "Maren placed second in a bake-off with a lavender honey loaf."
@@ -1538,12 +1542,14 @@
        "system_equivalent": "Dungeons & Dragons Fifth Edition (2024 rules) feat (GM review)"
       },
       "source": "ai-gateway",
-      "requestedAt": "2026-09-27T22:21:23.988Z"
+      "requestedAt": "2026-09-27T22:21:23.988Z",
+      "rejectedAt": "2026-09-28T19:00:29.681Z",
+      "rejectedReason": "garbled: adds proficiency to the DC of her own check"
      },
      {
       "id": "proposal:ai-skill:verdant-snare-warden-s-bargain",
       "kind": "skill",
-      "status": "pending",
+      "status": "rejected",
       "evidence": [
        "Maren persuaded Vesk to stand down (criticalSuccess)",
        "Maren persuaded Vesk to pay for the shrine's repairs (success)"
@@ -1575,7 +1581,9 @@
        "tier": 1,
        "system_equivalent": "Feat granting a reactive social benefit (Dungeons & Dragons Fifth Edition (2024 rules))"
       },
-      "source": "ai-gateway"
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T19:00:29.764Z",
+      "rejectedReason": "buffs the creature she persuaded, not Maren"
      }
     ],
     "levelProgression": {

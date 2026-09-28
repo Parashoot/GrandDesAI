@@ -48,6 +48,26 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
     }
   };
 
+  // "Reject" lives beside each proposal in the body, not the footer, for the same reason as
+  // "Suggest proposals" below: a footer button closes the v1 Dialog before its callback runs, and
+  // there is one of these per pending proposal rather than one global target picked from the select.
+  const reject = async (root, button, proposalId) => {
+    if (!proposalId || button?.disabled) return;
+    if (button) button.disabled = true;
+    const typed = String(root?.querySelector?.('textarea[name="growth-notes"]')?.value ?? "");
+    try {
+      await api.rejectProposal(actor, proposalId);
+    } catch (error) {
+      console.error(`${MODULE_ID} | proposal rejection failed`, error);
+      ui.notifications.error(error?.message || "Grand Design could not reject that proposal.");
+      if (button) button.disabled = false;
+      return;
+    }
+    ui.notifications.info("Grand Design proposal rejected. It will not be suggested again under this name.");
+    await safe(() => dialog.close(), null);
+    openGrowthManager(actor, { lastResult, draftNotes: typed });
+  };
+
   // "Suggest proposals" lives in the dialog body, not the footer: footer buttons close a v1 Dialog
   // before their callback runs, and this call takes ~10 s with a local model, so the GM needs to see
   // it working in place. The dialog is then reopened so the new proposals render.
@@ -86,6 +106,14 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
             event.preventDefault();
             suggest(root, button);
           });
+        });
+        // Delegated (one listener on the root, not one per <li>): there can be several Reject
+        // buttons, one per pending proposal, and the list re-renders every time a proposal changes.
+        root?.addEventListener?.("click", (event) => {
+          const button = event.target?.closest?.('[data-action="gd-reject-proposal"]');
+          if (!button) return;
+          event.preventDefault();
+          reject(root, button, button.dataset?.proposalId);
         });
       },
       buttons: {
@@ -347,7 +375,9 @@ export function renderEventLine(event, newThemes = new Set(), withQuote = false)
     <span class="gd-chips">${tags}${themes || (!tags ? '<span class="gd-chip">untagged</span>' : "")}</span>${quote}`;
 }
 
-function renderProposal(proposal) {
+// Exported so a test can check the Reject button's presence directly against a proposal's status,
+// not just indirectly through renderGrowthContent's own pending-only filtering.
+export function renderProposal(proposal) {
   const effect = proposal.entry?.mechanics?.effect ?? "(no effect text on this proposal)";
   const cited = Array.isArray(proposal.evidence) && proposal.evidence.length ? `${proposal.evidence.length} event(s)` : "none cited";
   const badge = proposal.source === "emergent"
@@ -358,7 +388,12 @@ function renderProposal(proposal) {
         ? '<span class="gd-chip gd-capstone">capstone</span>'
         : '<span class="gd-chip">template</span>';
   const authoring = proposal.needsAuthoring ? ' <em class="gd-needs-authoring">placeholder — "Author with AI" writes real mechanics</em>' : "";
-  return `<li><strong>${escapeHtml(proposal.entry?.name ?? proposal.id)}</strong> ${badge}${authoring}<br>${escapeHtml(effect)} <em>Evidence: ${escapeHtml(cited)}</em></li>`;
+  // Approve happens through the footer button + the <select> above; Reject sits right on the
+  // proposal it acts on since there is one of these per pending item, not one global target.
+  const reject = proposal.status === "pending"
+    ? ` <button type="button" class="gd-reject" data-action="gd-reject-proposal" data-proposal-id="${escapeHtml(proposal.id)}" aria-busy="false" title="Reject this proposal"><i class="fas fa-ban"></i> Reject</button>`
+    : "";
+  return `<li><strong>${escapeHtml(proposal.entry?.name ?? proposal.id)}</strong> ${badge}${authoring}${reject}<br>${escapeHtml(effect)} <em>Evidence: ${escapeHtml(cited)}</em></li>`;
 }
 
 export function renderUnderTheHood(lastAnalysis, lastResult) {
