@@ -364,47 +364,47 @@
   {
    "id": "0cd50d30",
    "title": "s2: Maren's use of her approved Skill (Thorn Lash pinned the thrall at the wagon) not extracted as her event; 'maren thorn lash ... wick finished it off' became only Wick's kill",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "gateway"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-gateway",
    "source": "ember-road s2",
    "created": 1790550835.426,
-   "updated": 1790620957.1823575,
+   "updated": 1790621233.274,
    "parent": "f2d3213f"
   },
   {
    "id": "649aeb9f",
    "title": "s2: two spells in one line merged into one event with one outcome: 'luz sanctuary on Oren (shrugged off), sacred flame, guiding bolt missed' -> 'Luz cast Sacred Flame and Guiding Bolt' failure (Sacred Flame hit)",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "gateway"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-gateway",
    "source": "ember-road s2",
    "created": 1790550835.466,
-   "updated": 1790620957.1823578,
+   "updated": 1790621233.32,
    "parent": "f2d3213f"
   },
   {
    "id": "40d30e3d",
    "title": "s2: Maren's baking with Oren (amazing bread, drew out his testimony) not extracted; cottagecore downtime is the persona's growth",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "gateway",
     "themes"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-gateway",
    "source": "ember-road s2",
    "created": 1790550835.509,
-   "updated": 1790620957.182358,
+   "updated": 1790621233.366,
    "parent": "f2d3213f"
   },
   {
@@ -459,7 +459,7 @@
   {
    "id": "7c026881",
    "title": "No way to reject/dismiss a proposal (api, growth-ui, playtest runner): rejected proposals stay pending forever and block re-suggestion by name",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "ui",
@@ -467,10 +467,10 @@
     "qol"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "ember-road s2",
    "created": 1790621174.852,
-   "updated": 1790621174.852
+   "updated": 1790621223.015
   },
   {
    "id": "c438b5e2",

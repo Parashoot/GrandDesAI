@@ -55,8 +55,12 @@ Full procedure: [references/dm-guide.md](references/dm-guide.md). Personas:
    `node foundry-module/tools/playtest/playtest.mjs init --campaign <name> --system dnd5e --party "Name:Class:Level:persona,..."`
    3-5 PCs, each with a persona from personas.md. Mix at least one "breaker" (chaos, non-native,
    shorthand, multilingual, dark-path) with the "players who just want to play".
-2. **Play the session.** Spawn the players as sub-agents (one per PC, `model: "sonnet"` is plenty,
-   in parallel) using the player prompt in dm-guide.md. You run the table: frame a scene, collect
+2. **Play the session.** Players run on the LOCAL model, not Claude: write
+   `playtests/<campaign>/players.json` (one persona system prompt per PC, from personas.md) and send each
+   scene with `node foundry-module/tools/playtest/players.mjs --campaign <c> --session N --scene scene.txt`
+   (mistral-small3.2:24b, ~25 s for five players, zero Claude tokens; history in `sessions/NN/players-log.json`).
+   Why: a Claude sub-agent costs ~30k tokens of harness per turn, and haiku players refused to role-play
+   (ember-road s3). Use Claude sub-agents only if Ollama is down. You run the table: frame a scene, collect
    every player's declared action, roll real dice (`node -e` with `crypto.randomInt`), narrate
    results, 3-6 rounds, at least one fight, one social scene and one "downtime" beat where players
    do off-script things (the module exists for those). Save the play log as
