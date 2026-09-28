@@ -316,7 +316,8 @@
    "title": "Proposal duplicates the class's own feature: 'Hexblade: Infernal Pact' grants Warlock Pact Magic/Eldritch Blast to a Warlock 3",
    "status": "todo",
    "notes": [
-    "s2 again: 'Shadowfingers: Sleight of Hand' grants Sleight of Hand + Thieves' Tools proficiency to a Rogue 3."
+    "s2 again: 'Shadowfingers: Sleight of Hand' grants Sleight of Hand + Thieves' Tools proficiency to a Rogue 3.",
+    "s3: system terms still slip - 'if using a durability system', 'use your free action' (dnd5e)."
    ],
    "tags": [
     "proposals",
@@ -326,7 +327,7 @@
    "owner": "",
    "source": "ember-road s1 re-run 2026-09-27",
    "created": 1790543771.53,
-   "updated": 1790621174.973,
+   "updated": 1790624440.121,
    "parent": "f2d3213f"
   },
   {
@@ -364,8 +365,11 @@
   {
    "id": "0cd50d30",
    "title": "s2: Maren's use of her approved Skill (Thorn Lash pinned the thrall at the wagon) not extracted as her event; 'maren thorn lash ... wick finished it off' became only Wick's kill",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "Fixed (pipeline.js NEW_OCCASION regex). Root cause confirmed via real-model probe + report.json: stage-1 correctly emitted Thorn Lash as its own event, but flagged continuesPrevious:true; the fold regex did not treat 'then' as a new-occasion marker, so mergeFollowUpEvents silently joined it into Entangle (report.json's merged quote 'maren entangle only got 1 of 4 ... then Thorn Lash...' matches the merge code's join pattern exactly). Fix: 'then' now blocks the fold regardless of the model's flag, plus a reinforcing few-shot (Rin/Web/Ensnaring Strike/Dorn). New unit tests reproduce the exact pre-fix shape and assert both events survive. Real model: baseline probe never reproduced the merge in 13 reps of the actual s2 notes (low-probability flake); post-fix, Thorn Lash+kill stayed separate in all 9 reps too -- the guard is now structural, not just probabilistic. npm test 774/774 green.",
+    "PM verified s3 on main: 'Maren used Thorn Lash on the third guard', 'Maren healed the guard with Field Triage', Luz Public Edict, Brakka Bottleneck, Wick Oxwhip - all approved-Skill uses credited."
+   ],
    "tags": [
     "gateway"
    ],
@@ -373,14 +377,16 @@
    "owner": "dev-gateway",
    "source": "ember-road s2",
    "created": 1790550835.426,
-   "updated": 1790621233.274,
+   "updated": 1790624440.161,
    "parent": "f2d3213f"
   },
   {
    "id": "649aeb9f",
    "title": "s2: two spells in one line merged into one event with one outcome: 'luz sanctuary on Oren (shrugged off), sacred flame, guiding bolt missed' -> 'Luz cast Sacred Flame and Guiding Bolt' failure (Sacred Flame hit)",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "Mitigated (prompts.js few-shot), not a pipeline-merge bug: confirmed the real session's merged event ('Luz cast Sacred Flame and Guiding Bolt') was emitted by stage-1 as ONE JSON event, not folded by mergeFollowUpEvents (whose join never rewrites .summary, which the real event's summary structure ruled out). Fix: new few-shot teaching that several named abilities in a comma list with a result word on only the last one are still N separate events (Kade/Mage Armor/Fireball). Real model: separate in all 13 baseline reps AND all 9 post-fix reps of the actual s2 notes -- did not reproduce the merge either way in this sampling (it's a rarer model flake than 40d30e3d), so this is evidence-based prevention, not a reproduced-then-verified fix. Regression sanity: 112-item run (novel-activities/long-multiscene/bullets-fragments/traps) score 96.4%, count 90.2%, fallback 0%, traps 100% -- no regression. npm test 774/774 green."
+   ],
    "tags": [
     "gateway"
    ],
@@ -388,14 +394,16 @@
    "owner": "dev-gateway",
    "source": "ember-road s2",
    "created": 1790550835.466,
-   "updated": 1790621233.32,
+   "updated": 1790624165.49,
    "parent": "f2d3213f"
   },
   {
    "id": "40d30e3d",
    "title": "s2: Maren's baking with Oren (amazing bread, drew out his testimony) not extracted; cottagecore downtime is the persona's growth",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "Fixed (prompts.js few-shot), the most reproducible of the three: 'bread w/ Oren was amazing' was never emitted by stage-1 at all in 5 of 13 baseline real-model reps of the actual s2 notes (~38% miss rate), confirmed by grepping the raw stage-1 JSON for 'bread' before any coercion ran -- an elliptical, implied-verb evaluative clause ('X with Y was amazing/lovely', actor carried from the previous sentence) reads as scenery, not a doer's action. Fix: new few-shot (Nessa/tomatoes-rotted/Stew with Bael) teaching the pattern is still that character's event, themed craft/cooking. Real model: present in 9/9 post-fix reps of the actual notes.md vs 8/13 baseline (~62%) -- clear improvement, though stage-1 extraction is stochastic at temp 0.2-0.3 so this is not a 100% guarantee. Regression sanity: 112-item run score 96.4%, count 90.2%, fallback 0%. npm test 774/774 green."
+   ],
    "tags": [
     "gateway",
     "themes"
@@ -404,7 +412,7 @@
    "owner": "dev-gateway",
    "source": "ember-road s2",
    "created": 1790550835.509,
-   "updated": 1790621233.366,
+   "updated": 1790624172.528,
    "parent": "f2d3213f"
   },
   {
@@ -445,7 +453,7 @@
   {
    "id": "1ce03b72",
    "title": "ember-road s2 approvals + review, fix s2 high item, play s3 (haiku players)",
-   "status": "todo",
+   "status": "done",
    "notes": [],
    "tags": [
     "playtest"
@@ -454,7 +462,7 @@
    "owner": "",
    "source": "owner 2026-09-28",
    "created": 1790621060.738,
-   "updated": 1790621060.738
+   "updated": 1790624440.201
   },
   {
    "id": "7c026881",
@@ -517,6 +525,64 @@
    "source": "dev-integration 2026-09-28",
    "created": 1790622041.096,
    "updated": 1790622041.096
+  },
+  {
+   "id": "ba12b00b",
+   "title": "s3: deed softened again: 'pressed the burning lantern into his chest until he agreed' (a yielded man) -> 'Tovin threatened a surrendered guard with a burning lantern' (interrogation)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway",
+    "red"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s3",
+   "created": 1790624439.956,
+   "updated": 1790624439.956
+  },
+  {
+   "id": "60460603",
+   "title": "s3: two deeds in one event: 'threw a dagger ... and used Oxwhip to send Steve through a door'; 'fixed his gear and attempted shield drills' = success though the drills failed",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s3",
+   "created": 1790624439.998,
+   "updated": 1790624439.998
+  },
+  {
+   "id": "316705b6",
+   "title": "Proposals duplicate an OWNED Skill by mechanic (Luz 'Voice of Conviction' = her Public Edict); registry dedupe is by name only",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s3",
+   "created": 1790624440.04,
+   "updated": 1790624440.04
+  },
+  {
+   "id": "b81a0357",
+   "title": "Pending proposals grow without limit (Tovin 5, Luz 4 pending for 1 allowance each): cap or roll up per actor",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "proposals",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s3",
+   "created": 1790624440.081,
+   "updated": 1790624440.081
   }
  ]
 }

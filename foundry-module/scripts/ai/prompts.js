@@ -132,6 +132,42 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
       { quote: "I pray for him after", summary: "Sable prayed for the old priest.", actorName: "Sable", tags: ["religion"], themes: ["prayer"], outcome: "success", dangerGap: "none", language: "en" },
       { quote: "lost 30g of the party's money rigging cards", summary: "Ivo tried to cheat at cards by rigging them.", consequence: "He lost 30 gold of the party's money.", actorName: "Ivo", tags: ["deception", "thievery"], themes: ["gambling", "cheating"], outcome: "failure", dangerGap: "none", language: "en" }
     ]
+  },
+  // Three more things ember-road s2 got wrong, each shown once (board 0cd50d30, 649aeb9f, 40d30e3d):
+  // (1) a second ability by the SAME actor right after a first one, joined by "then", is a new
+  // action, not the first one's payoff, even mid-combat (Thorn Lash was folded into Entangle and
+  // lost as its own event); continuesPrevious is false for it, same as the "kesh ... then he kick
+  // door" example above.
+  {
+    notes: "Rin's Web only tangled 1 of 3 raiders. Then her Ensnaring Strike caught the one going for the cart, holding it in place. Dorn finished it off with his axe.",
+    events: [
+      { quote: "Rin's Web only tangled 1 of 3 raiders", summary: "Rin cast Web on the raiders.", consequence: "It only tangled 1 of 3.", actorName: "Rin", tags: ["arcana"], themes: ["web"], outcome: "failure", dangerGap: "none", language: "en" },
+      { quote: "Then her Ensnaring Strike caught the one going for the cart, holding it in place", summary: "Rin used Ensnaring Strike on the raider going for the cart.", consequence: "It held the raider in place.", actorName: "Rin", tags: ["martial"], themes: ["ensnaring-strike"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "Dorn finished it off with his axe", summary: "Dorn killed the ensnared raider with his axe.", actorName: "Dorn", tags: ["martial"], themes: ["finishing-blow"], outcome: "success", dangerGap: "none", language: "en" }
+    ]
+  },
+  // (2) several named abilities in one comma list, with an outcome word attached to only the last
+  // one, are still that many separate events -- one per ability, not one event covering all of
+  // them (the model had merged "sacred flame, guiding bolt missed" into a single failed event,
+  // losing that Sacred Flame hit). The ability with no stated result defaults to success.
+  {
+    notes: "Kade cast Mage Armor, Fireball fizzled.",
+    events: [
+      { quote: "cast Mage Armor", summary: "Kade cast Mage Armor.", actorName: "Kade", tags: ["arcana"], themes: ["mage-armor"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "Fireball fizzled", summary: "Kade cast Fireball.", consequence: "It fizzled.", actorName: "Kade", tags: ["arcana"], themes: ["fireball"], outcome: "failure", dangerGap: "none", language: "en" }
+    ]
+  },
+  // (3) an activity can be named only by its result, with the verb left out and the actor only
+  // named in an earlier sentence ("Stew with Bael was wonderful" = she made stew with him): still
+  // her event, not scenery, and not folded into the unrelated failure before it (the model had
+  // dropped "bread w/ Oren was amazing" entirely).
+  {
+    notes: "Nessa's tomatoes in the flooded row rotted. Stew with Bael was wonderful, he finally told her about the sunken bell. She got the miller to grind their grain for free.",
+    events: [
+      { quote: "Nessa's tomatoes in the flooded row rotted", summary: "Nessa's tomatoes rotted in the flooded row.", actorName: "Nessa", tags: ["nature"], themes: ["gardening"], outcome: "failure", dangerGap: "none", language: "en" },
+      { quote: "Stew with Bael was wonderful", summary: "Nessa made stew with Bael.", consequence: "It was wonderful, and he finally told her about the sunken bell.", actorName: "Nessa", tags: ["craft"], themes: ["cooking"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "got the miller to grind their grain for free", summary: "Nessa persuaded the miller to grind their grain for free.", actorName: "Nessa", tags: ["diplomacy"], themes: ["negotiating"], outcome: "success", dangerGap: "none", language: "en" }
+    ]
   }
 ];
 

@@ -905,7 +905,14 @@ export function mergeFollowUpEvents(events) {
 
 // A follow-up that names a new occasion ("on Wednesday", "again", "the next day", "later") is
 // repeated effort -- exactly the evidence progression should count -- so it is never folded.
-const NEW_OCCASION = /\b(again|later|next|another|afterwards?|the following|meanwhile|every|each|mon|tues|wednes|thurs|fri|satur|sun)(day)?\b|\bday \d|\b(d[ií]a|jour|tag|giorno)\b/i;
+// "then" (and "and then") is here too: it is the plain-English marker for "a new, separate action
+// follows", even by the same actor in the same breath ("Entangle only got 1 of 4, THEN Thorn Lash
+// pinned it"). The model is asked to leave continuesPrevious false for exactly this case (see the
+// "kesh ... then he kick door" few-shot in prompts.js) but does not always get it right at this
+// model size (2026-09-28, ember-road s2 board 0cd50d30: Maren's Thorn Lash was folded into her
+// Entangle, losing the hit as its own event) -- this deterministic guard catches it regardless of
+// what the model set continuesPrevious to.
+const NEW_OCCASION = /\b(again|later|next|another|afterwards?|then|the following|meanwhile|every|each|mon|tues|wednes|thurs|fri|satur|sun)(day)?\b|\bday \d|\b(d[ií]a|jour|tag|giorno)\b/i;
 function marksNewOccasion(event) {
   return NEW_OCCASION.test(`${event.quote ?? ""} ${event.summary ?? ""}`);
 }
