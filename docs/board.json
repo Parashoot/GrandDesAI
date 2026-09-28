@@ -277,9 +277,10 @@
   {
    "id": "c829f2a7",
    "title": "C5 cloud: cold review of the AI pipeline, findings as todo tests (docs/cloud-work.md)",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "2026-09-27: reviewer agent stopped by the session limit before writing anything (worktree agent-ae0b36baa42de76bf, empty). Restart on a cheaper model."
+    "2026-09-27: reviewer agent stopped by the session limit before writing anything (worktree agent-ae0b36baa42de76bf, empty). Restart on a cheaper model.",
+    "3 findings: 2 high (pipeline.js differentActors false-negative on common/title words merges different actors' events, misattributing tags; pipeline.js dedupeEvents/normalize.js eventDedupeKey has no actorName in its key so two PCs' generic same-summary events silently collapse into one, losing the second PC's event), 1 medium (pipeline.js validateProposals repair turn reuses proposalSchemaCapped with redCheck required even though the repair message promises {proposals:[...]} only -- schema/prompt drift, wastes repair token budget). Findings + repro + test.todo proofs in docs/reviews/ai-pipeline-review.md and foundry-module/tests/review-ai-pipeline.test.mjs. npm test: 795 tests, 792 pass, 0 fail, 3 todo."
    ],
    "tags": [
     "cloud",
@@ -289,7 +290,7 @@
    "owner": "reviewer",
    "source": "cli",
    "created": 1790531510.992,
-   "updated": 1790626870.578,
+   "updated": 1790627490.334,
    "parent": "f2d3213f"
   },
   {
@@ -630,6 +631,48 @@
    "source": "salt-lantern s1",
    "created": 1790627349.083,
    "updated": 1790627349.083
+  },
+  {
+   "id": "ef3663ee",
+   "title": "dedupeEvents/eventDedupeKey ignore actorName: two PCs' events with the same summary+outcome ('Picked a lock.') collapse into one, the second PC's deed silently dropped (review test.todo)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "C5 review 2026-09-28",
+   "created": 1790627490.203,
+   "updated": 1790627490.203
+  },
+  {
+   "id": "754f317e",
+   "title": "differentActors (mergeFollowUpEvents) matches any shared 3+ letter word incl. titles ('Sir'): 'Sir Aldric stole...' folds into Tovin's event, Aldric's deed and credit lost; use significantTokens (review test.todo)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "C5 review 2026-09-28",
+   "created": 1790627490.247,
+   "updated": 1790627490.247
+  },
+  {
+   "id": "96b5beea",
+   "title": "Proposal repair turn still requires redCheck in the schema though the repair prompt asks for {proposals} only - wastes numPredict (review test.todo)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "C5 review 2026-09-28",
+   "created": 1790627490.291,
+   "updated": 1790627490.291
   }
  ]
 }

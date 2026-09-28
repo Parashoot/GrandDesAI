@@ -1,0 +1,52 @@
+{
+ "Doro": [
+  {
+   "role": "user",
+   "content": "DM: Session 2 - the Salt Mother. The harbourmaster blames you for the broken lens and demands you \"fix what you broke\". Buck, who learned the coastal script, can now read the rest of the keeper's logbook: the Salt Mother is a sea hag who lives in the drowned chapel under the reef, and the keeper traded her the lighthouse's light for his drowned daughter's return. At low tide you wade into the drowned chapel: knee-deep water, barnacled pews, candles burning underwater. The sea-chest from the lighthouse (you hauled it here - Pim never opened it) starts to knock from the inside. A voice from the altar, sweet as honey: \"Little thieves. Bring me my light, or bring me one of you.\" What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "\"By Moradin's Forge, we've stumbled into a right mess. Ione, lend me your wisdom—what do you know of hag's bargains?\" I Raise a Shield, then Stride, then Strike the sea-chest with my warhammer, [Strength] to damage it. \"If it's a fight she wants, let's give her a taste of steel!\" [Champion's Devotion] for a boon, [Religion] to see if the light can be used against her."
+  }
+ ],
+ "Pim": [
+  {
+   "role": "user",
+   "content": "DM: Session 2 - the Salt Mother. The harbourmaster blames you for the broken lens and demands you \"fix what you broke\". Buck, who learned the coastal script, can now read the rest of the keeper's logbook: the Salt Mother is a sea hag who lives in the drowned chapel under the reef, and the keeper traded her the lighthouse's light for his drowned daughter's return. At low tide you wade into the drowned chapel: knee-deep water, barnacled pews, candles burning underwater. The sea-chest from the lighthouse (you hauled it here - Pim never opened it) starts to knock from the inside. A voice from the altar, sweet as honey: \"Little thieves. Bring me my light, or bring me one of you.\" What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "uhhh the box is knocked? is it like a ticking time bomb 💣 lol brb grabbing it & stuffing it in my bag, let's see what's up - [Arcana to peek inside]. ooo the voice is nice, but also sus, gonna whisper to Doro \"what do you think about giving her our shiny friend here to talk?\" and throw the chest towards the altar 💅\n\n[Stealth to avoid her noticing if possible]."
+  }
+ ],
+ "Ione": [
+  {
+   "role": "user",
+   "content": "DM: Session 2 - the Salt Mother. The harbourmaster blames you for the broken lens and demands you \"fix what you broke\". Buck, who learned the coastal script, can now read the rest of the keeper's logbook: the Salt Mother is a sea hag who lives in the drowned chapel under the reef, and the keeper traded her the lighthouse's light for his drowned daughter's return. At low tide you wade into the drowned chapel: knee-deep water, barnacled pews, candles burning underwater. The sea-chest from the lighthouse (you hauled it here - Pim never opened it) starts to knock from the inside. A voice from the altar, sweet as honey: \"Little thieves. Bring me my light, or bring me one of you.\" What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "\"Ione, we need to understand this hag's power,\" I say, turning to the party. \"Let's see what we're dealing with. Glafka, períblepsi\" [Perceive] (inspect) - look around for more clues.\n\nI kneel by the sea-chest, placing my hand gently on it. \"Ego elpizo na sygkoinoniísoyme\" [I hope we can communicate], I whisper, trying to establish contact with whatever's inside. I start tapping on the chest, mimicking the knocking, hoping to communicate with whatever's inside [Diplomacy].\n\nThen, I turn to the altar, my eyes narrowing as I study the burning candles. \"Ti ekane ayti ti agia\" [What happened to this holy place]? I mutter, before casting \"fwtiz\" [Light] (Illumination) on my owl, Glafka, sending her closer to the candles to"
+  }
+ ],
+ "Buck": [
+  {
+   "role": "user",
+   "content": "DM: Session 2 - the Salt Mother. The harbourmaster blames you for the broken lens and demands you \"fix what you broke\". Buck, who learned the coastal script, can now read the rest of the keeper's logbook: the Salt Mother is a sea hag who lives in the drowned chapel under the reef, and the keeper traded her the lighthouse's light for his drowned daughter's return. At low tide you wade into the drowned chapel: knee-deep water, barnacled pews, candles burning underwater. The sea-chest from the lighthouse (you hauled it here - Pim never opened it) starts to knock from the inside. A voice from the altar, sweet as honey: \"Little thieves. Bring me my light, or bring me one of you.\" What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "I grab the sea-chest, \"Pim, we might need to see what's inside this bad boy! Or maybe I can try to arm-wrestle the Salt Mother? She's got to have a hand in there somewhere, right?\"\n\n[Acrobatics] to leap onto the altar and [Athletics] to arm-wrestle. If that fails, [Perception] to try to see if I can see the hag's hand."
+  }
+ ],
+ "Kestrel": [
+  {
+   "role": "user",
+   "content": "DM: Session 2 - the Salt Mother. The harbourmaster blames you for the broken lens and demands you \"fix what you broke\". Buck, who learned the coastal script, can now read the rest of the keeper's logbook: the Salt Mother is a sea hag who lives in the drowned chapel under the reef, and the keeper traded her the lighthouse's light for his drowned daughter's return. At low tide you wade into the drowned chapel: knee-deep water, barnacled pews, candles burning underwater. The sea-chest from the lighthouse (you hauled it here - Pim never opened it) starts to knock from the inside. A voice from the altar, sweet as honey: \"Little thieves. Bring me my light, or bring me one of you.\" What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "I draw an arrow, nock it, and take aim at the altar, \"We're not giving up the light, hag. You'll have to come take it.\" [Attack with Longbow against the altar]"
+  }
+ ]
+}
