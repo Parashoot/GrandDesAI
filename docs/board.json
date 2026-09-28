@@ -503,7 +503,8 @@
    "title": "Balance: tier-1 'Shieldwall: Bottleneck' = advantage on every attack at a chokepoint, unlimited",
    "status": "todo",
    "notes": [
-    "salt-lantern s1 (pf2e): 'Salt-Wind Precision' +1 circumstance to all ranged Strikes, unlimited; 'Champion's Bulwark' +1 AC to every adjacent ally, unlimited - both rejected as too strong at tier 1."
+    "salt-lantern s1 (pf2e): 'Salt-Wind Precision' +1 circumstance to all ranged Strikes, unlimited; 'Champion's Bulwark' +1 AC to every adjacent ally, unlimited - both rejected as too strong at tier 1.",
+    "salt-lantern s2: 'Salt-Wind: Piercing Volley' - the second Strike automatically succeeds (broken, rejected)."
    ],
    "tags": [
     "proposals",
@@ -513,7 +514,7 @@
    "owner": "",
    "source": "ember-road s2",
    "created": 1790621174.933,
-   "updated": 1790627349.128
+   "updated": 1790628007.489
   },
   {
    "id": "ad43ec26",
@@ -625,7 +626,9 @@
    "id": "9cda8ea5",
    "title": "Failure-magnet gets no learning-from-failure proposal: Buck's 4 failures (arm-wrestling x2 sessions, backflip, harbourmaster) never cited; design says failures are evidence",
    "status": "todo",
-   "notes": [],
+   "notes": [
+    "salt-lantern s2: with repetition it works - 'Monk: Grappler's Resilience' cites 3 sessions of arm-wrestling failures (approved). Remaining gap: single-session failures."
+   ],
    "tags": [
     "proposals",
     "progression"
@@ -634,7 +637,7 @@
    "owner": "",
    "source": "salt-lantern s1",
    "created": 1790627349.083,
-   "updated": 1790627349.083
+   "updated": 1790628007.452
   },
   {
    "id": "ef3663ee",
