@@ -329,6 +329,12 @@ export function inferEventActorName(event, segments) {
   return byLead.size === 1 ? [...byLead][0] : "";
 }
 
+// Below this, Jev's "who did it" answer is only a hint (the contract's attribution threshold) and
+// the model's actorName / the speaker label decide as before.
+export const JEV_ATTRIBUTION_CONFIDENCE = 0.6;
+// The actorName an event Jev marked whole-party is stored under (classifyActorName -> "group").
+export const WHOLE_PARTY_ACTOR = "the party";
+
 /**
  * Splits events into the ones this actor should be credited with (`kept`) and the ones that belong
  * to someone else (`attributedToOthers`: [{ actorName, summary }]). `actorNames` is the actor's
@@ -347,9 +353,24 @@ export function attributeEventsToActor(events, actorNames, { notes } = {}) {
   const dropped = [];
   const attributedToOthers = [];
   for (const event of Array.isArray(events) ? events : []) {
-    const given = typeof event?.actorName === "string" ? event.actorName.trim() : "";
+    // Jev (docs/jev-layer-contract.md) was asked who DID the deed, not who reported it, so a
+    // confident answer beats both the model's actorName and the speaker label: "Luz: she catch
+    // Tovin killing a goblin that was surrender" is Tovin's, even on Luz's line (board 6ca3c8e7).
+    // A whole-party verdict belongs to everyone. No `event.jev` -> exactly the old behaviour.
+    const jev = event?.jev && typeof event.jev === "object" ? event.jev : null;
+    if (jev?.whole === true) {
+      // Everyone keeps it, and under the group label: the model's actorName ("Brakka") on the copy
+      // stored on Tovin's sheet would read as Brakka's deed there, and be dropped as someone else's
+      // by a later attribution pass (requestGrowthProposals, re-analysis).
+      kept.push(event?.actorName === WHOLE_PARTY_ACTOR ? event : { ...event, actorName: WHOLE_PARTY_ACTOR });
+      continue;
+    }
+    const jevName = typeof (jev?.actorName ?? jev?.actor) === "string" ? String(jev.actorName ?? jev.actor).trim() : "";
+    const jevConfident = jevName && Number(jev.actorConfidence) >= JEV_ATTRIBUTION_CONFIDENCE;
+    const given = jevConfident ? jevName : typeof event?.actorName === "string" ? event.actorName.trim() : "";
     const actorName = given || inferEventActorName(event, segments);
-    const resolved = actorName && !given ? { ...event, actorName } : event;
+    const rewrite = jevConfident ? actorName !== event?.actorName : Boolean(actorName) && !given;
+    const resolved = rewrite ? { ...event, actorName } : event;
     if (classifyActorName(actorName, actorNames) === "other") {
       dropped.push(resolved);
       attributedToOthers.push({ actorName, summary: String(event?.summary ?? "").slice(0, 240) });

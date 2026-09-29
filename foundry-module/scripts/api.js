@@ -1466,6 +1466,74 @@ export class GrandDesignApi {
     };
   }
 
+  /**
+   * Party mode (docs/jev-layer-contract.md "Party mode", board 485cae73 / a48d97c0): one click for
+   * the whole party. Each character gets an ordinary analyzeSessionNotes of the same notes (same
+   * flags, same lastAnalysis, same fallbacks); the gateway's extraction cache
+   * (pipeline.js#createExtractionCache) makes that ONE extraction for the party, and each character
+   * still gets its own stage 2 over its own events. At most two characters run at a time (a local
+   * model serves one request well, two overlap usefully, five just queue into timeouts).
+   *
+   * `fresh: true` is the GM's explicit "read them again" (bypasses the cache once, for the first
+   * character; the others then share that new reading). A character whose analysis throws -- or who
+   * is busy with another long task -- is reported on its own entry (`error` / `skipped`) and never
+   * costs the others theirs. Duplicates (same actor twice) are analysed once.
+   *
+   * Returns { perActor: [{ actorId, name, ...analyzeSessionNotes result } | { actorId, name, error }
+   *   | { actorId, name, skipped: "busy", busyWith }], party: { ms, extractionCalls, extractionCache:
+   *   { hit, miss, off, preset }, jev } } where `jev` is the first Jev diagnostics block any
+   *   character's reading carried (null without Jev).
+   */
+  async analyzePartyNotes(actors, notes, { fresh = false } = {}) {
+    this._assertGm();
+    if (!Array.isArray(actors) || !actors.length) throw new Error("Party analysis needs at least one Foundry Actor.");
+    for (const actor of actors) this._assertSupportedSystemActor(actor);
+    if (typeof notes !== "string" || !notes.trim()) throw new Error("Session notes must be non-empty text.");
+    const started = Date.now();
+    const seen = new Set();
+    const party = actors.filter((actor) => {
+      const key = busyKey(actor);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    // Only the first reading may bypass the cache: a `fresh` on every character would re-extract N
+    // times, which is exactly the cost party mode exists to remove.
+    let freshLeft = fresh ? 1 : 0;
+    const perActor = await mapWithConcurrency(party, 2, async (actor) => {
+      const id = { actorId: actor.id ?? null, name: actor.name ?? null };
+      const busyWith = this.getBusyTask(actor);
+      if (busyWith) return { ...id, skipped: "busy", busyWith };
+      const useFresh = freshLeft > 0;
+      if (useFresh) freshLeft -= 1;
+      try {
+        return { ...id, ...(await this.analyzeSessionNotes(actor, notes, { fresh: useFresh })) };
+      } catch (error) {
+        console.warn(`${MODULE_ID} | party analysis failed for ${actor.name ?? actor.id}; the others continue`, error);
+        return { ...id, error: error?.message ?? String(error) };
+      }
+    });
+    const extractionCache = { hit: 0, miss: 0, off: 0, preset: 0 };
+    let jev = null;
+    for (const entry of perActor) {
+      const diagnostics = entry.gatewayDiagnostics;
+      if (!diagnostics) continue;
+      const state = diagnostics.extractionCache;
+      if (state in extractionCache) extractionCache[state] += 1;
+      jev ??= diagnostics.jev ?? null;
+    }
+    return {
+      perActor,
+      party: {
+        ms: Date.now() - started,
+        // Cache misses are the readings the model actually did; "off" means one per character.
+        extractionCalls: extractionCache.miss + extractionCache.off,
+        extractionCache,
+        jev
+      }
+    };
+  }
+
   getLastAnalysis(actor) {
     return actor?.getFlag(MODULE_ID, LAST_ANALYSIS_FLAG) ?? null;
   }
@@ -1776,7 +1844,12 @@ export class GrandDesignApi {
     const adapter = this._proposalAdapter;
     if (!adapter?.config || !adapter?.transport || adapter.config.proposalMode === "always") return adapter;
     try {
-      return createGatewayAdapter({ ...adapter.config, apiKey: "", proposalMode: "always" }, { transportFactory: () => adapter.transport });
+      // `adapter.config.jev.apiKey` is redacted too, so the rebuilt adapter would silently lose Jev;
+      // hand it the SAME client (or null when the adapter has none / predates Jev).
+      return createGatewayAdapter({ ...adapter.config, apiKey: "", proposalMode: "always" }, {
+        transportFactory: () => adapter.transport,
+        jevFactory: () => adapter.jev ?? null
+      });
     } catch (error) {
       console.warn(`${MODULE_ID} | could not force proposalMode "always"; using the configured adapter`, error);
       return adapter;
@@ -2417,7 +2490,8 @@ export class GrandDesignApi {
           status: "pending",
           evidence: Array.isArray(proposal.evidence) ? proposal.evidence : [],
           entry,
-          source: "ai-gateway"
+          source: "ai-gateway",
+          ...(proposal.jev ? { jev: proposal.jev } : {})
         });
         continue;
       }
@@ -2459,7 +2533,10 @@ export class GrandDesignApi {
         status: "pending",
         evidence: Array.isArray(proposal.evidence) ? proposal.evidence : [],
         entry,
-        source: "ai-gateway"
+        source: "ai-gateway",
+        // The gateway's Jev ranking ({ grounded, fit }, "weak-evidence" flag) is what the Growth
+        // dialog's proposal chips read; it must survive validation.
+        ...(proposal.jev ? { jev: proposal.jev } : {})
       });
     }
     return { accepted, skipped };
@@ -2730,6 +2807,20 @@ function attackModifier(actor, kind, systemId) {
   const level = characterLevel(actor, systemId);
   // Trained proficiency (level + 2) plus the better of Strength/Dexterity.
   return level + 2 + Math.max(mod("str"), mod("dex"));
+}
+
+// Runs `fn` over `items` with at most `limit` calls in flight; results keep the input order.
+async function mapWithConcurrency(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index], index);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
 }
 
 function busyKey(actor) {

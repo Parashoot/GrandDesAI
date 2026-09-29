@@ -734,6 +734,7 @@ export function normalizeGrowthEvent(event, index) {
   // recording. Kept (validated, unknown values -> "none") whenever the reader supplied either field;
   // an event without them (the local fallback analyzer, older worlds) simply has no dark deed.
   const darkFields = event.darkDeed !== undefined || event.darkSeverity !== undefined ? normalizeDarkDeed(event) : null;
+  const jev = compactJev(event.jev);
   return {
     id: event.id ?? `event:${Date.now()}-${index}`,
     summary: event.summary.trim(),
@@ -747,8 +748,32 @@ export function normalizeGrowthEvent(event, index) {
     ...(actorName ? { actorName } : {}),
     ...(consequence ? { consequence } : {}),
     ...(darkFields ?? {}),
-    ...(source ? { source } : {})
+    ...(source ? { source } : {}),
+    ...(jev ? { jev } : {})
   };
+}
+
+/**
+ * The Jev annotations (docs/jev-layer-contract.md) the Growth dialog shows as chips -- who did it
+ * and how sure, whole-party, a corrected outcome, flags. Kept compact so it survives the actor flag
+ * without bloating it: only the known keys, short strings, at most 8 flags. Absent -> undefined.
+ */
+function compactJev(jev) {
+  if (!jev || typeof jev !== "object" || Array.isArray(jev)) return undefined;
+  const text = (value) => (isNonEmptyString(value) ? value.trim().slice(0, 64) : undefined);
+  const number = (value) => (Number.isFinite(Number(value)) && value !== null && value !== "" ? Number(value) : undefined);
+  const flags = Array.isArray(jev.flags)
+    ? uniqueStrings(jev.flags.filter(isNonEmptyString)).map((flag) => flag.slice(0, 64)).slice(0, 8)
+    : [];
+  const compact = {
+    ...(text(jev.actorName) ? { actorName: text(jev.actorName) } : {}),
+    ...(number(jev.actorConfidence) !== undefined ? { actorConfidence: number(jev.actorConfidence) } : {}),
+    ...(jev.whole === true ? { whole: true } : {}),
+    ...(text(jev.outcome) ? { outcome: text(jev.outcome) } : {}),
+    ...(text(jev.outcomeFrom) ? { outcomeFrom: text(jev.outcomeFrom) } : {}),
+    ...(flags.length ? { flags } : {})
+  };
+  return Object.keys(compact).length ? compact : undefined;
 }
 
 const MAX_QUOTE_LENGTH = 400;
