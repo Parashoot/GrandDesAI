@@ -145,7 +145,10 @@ numbers changed; `node tools/vault-export.mjs` run so the Obsidian vault has the
    ordered backlog. Append decisions with numbers to `docs/ai-gateway-v2-contract.md`'s change log.
 2. `node tools/vault-export.mjs` - docs, spec, board, scale results and every playtest's notes,
    transcript, report and review go to the Obsidian vault (`~/vault/MandoAI/Grand Design AI/`).
-3. Commit (message names the subsystem and the why). Never push unless asked.
+3. Commit (message names the subsystem and the why), then push `main` to `origin` (owner
+   2026-09-29: push after every merge/commit to main so cloud agents never start from a stale
+   remote). Only `main`, never `--force`; a rejected push means `git pull --ff-only`, else ask.
+   Sub-agents never push.
 4. Finish with `node tools/board.mjs summary` and a short playtest highlight reel for the owner:
    the best and worst thing the module produced this session, quoted.
 
