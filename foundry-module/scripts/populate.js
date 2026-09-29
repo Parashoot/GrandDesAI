@@ -13,6 +13,17 @@
 // fixed sequence and assert an exact result, while real GM use gets real variety each time.
 
 import { SPAWN_DOCUMENT_KINDS } from "./constants.js";
+import {
+  averageDamage,
+  clampNumber,
+  clampPf2eLevel,
+  dnd5eCrRow,
+  dnd5eRange,
+  normalizeDamageFormula,
+  pf2eRange,
+  pf2eStat,
+  snapDnd5eCr
+} from "./systems/npc-stats.js";
 
 const NUMBER_WORDS = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
@@ -148,6 +159,9 @@ export function parseSpawnCriteria(promptText) {
     race: inferRace(lower),
     role: inferRole(lower),
     level: inferLevel(lower),
+    // "an ambush for a party level 3" names the PCs' level, not the creature's. dnd5e's local path
+    // ignores levels on monsters, but PF2e's builds numbers from them, so it needs to tell the two apart.
+    levelIsParty: /\bparty(?:'s)?\s+(?:of\s+)?level\s*\d+/i.test(lower) || /\blevel\s*\d+\s+party\b/i.test(lower),
     powerModifier: inferPowerModifier(lower),
     monsterKeyword: (MONSTER_KEYWORDS.exec(lower) ?? [])[0] ?? null,
     itemKeyword: (ITEM_KEYWORDS.exec(lower) ?? [])[0] ?? null
@@ -257,23 +271,33 @@ function buildNpcBio(criteria) {
 // the same named creatures, not a guaranteed exact match to any specific sourcebook printing --
 // and every spawned monster is a normal, fully GM-editable Actor afterward.
 export const MONSTER_TEMPLATES = {
-  "giant rat": { cr: 0.125, hp: 7, ac: 12, size: "sm", type: "beast", speed: 30, abilities: { str: 7, dex: 15, con: 11, int: 2, wis: 10, cha: 4 }, attack: { name: "Bite", toHit: 4, damage: "1d4+2", damageType: "piercing" } },
-  kobold: { cr: 0.125, hp: 5, ac: 12, size: "sm", type: "humanoid", speed: 30, abilities: { str: 7, dex: 15, con: 9, int: 8, wis: 7, cha: 8 }, attack: { name: "Dagger", toHit: 4, damage: "1d4+2", damageType: "piercing" } },
-  goblin: { cr: 0.25, hp: 7, ac: 15, size: "sm", type: "humanoid", speed: 30, abilities: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 }, attack: { name: "Scimitar", toHit: 4, damage: "1d6+2", damageType: "slashing" } },
-  wolf: { cr: 0.25, hp: 11, ac: 13, size: "med", type: "beast", speed: 40, abilities: { str: 12, dex: 15, con: 12, int: 3, wis: 12, cha: 6 }, attack: { name: "Bite", toHit: 4, damage: "2d4+2", damageType: "piercing" } },
-  skeleton: { cr: 0.25, hp: 13, ac: 13, size: "med", type: "undead", speed: 30, abilities: { str: 10, dex: 14, con: 15, int: 6, wis: 8, cha: 5 }, attack: { name: "Shortsword", toHit: 4, damage: "1d6+2", damageType: "piercing" } },
-  cultist: { cr: 0.25, hp: 9, ac: 12, size: "med", type: "humanoid", speed: 30, abilities: { str: 11, dex: 12, con: 10, int: 10, wis: 11, cha: 10 }, attack: { name: "Scimitar", toHit: 3, damage: "1d6+1", damageType: "slashing" } },
-  orc: { cr: 0.5, hp: 15, ac: 13, size: "med", type: "humanoid", speed: 30, abilities: { str: 16, dex: 12, con: 16, int: 7, wis: 11, cha: 10 }, attack: { name: "Greataxe", toHit: 5, damage: "1d12+3", damageType: "slashing" } },
-  bandit: { cr: 0.125, hp: 11, ac: 12, size: "med", type: "humanoid", speed: 30, abilities: { str: 11, dex: 12, con: 12, int: 10, wis: 10, cha: 10 }, attack: { name: "Scimitar", toHit: 3, damage: "1d6+1", damageType: "slashing" } },
-  zombie: { cr: 0.25, hp: 22, ac: 8, size: "med", type: "undead", speed: 20, abilities: { str: 13, dex: 6, con: 16, int: 3, wis: 6, cha: 5 }, attack: { name: "Slam", toHit: 3, damage: "1d6+1", damageType: "bludgeoning" } },
-  "dire wolf": { cr: 1, hp: 37, ac: 14, size: "lg", type: "beast", speed: 50, abilities: { str: 17, dex: 15, con: 15, int: 3, wis: 12, cha: 7 }, attack: { name: "Bite", toHit: 5, damage: "2d6+3", damageType: "piercing" } },
-  hobgoblin: { cr: 0.5, hp: 11, ac: 18, size: "med", type: "humanoid", speed: 30, abilities: { str: 13, dex: 12, con: 12, int: 10, wis: 10, cha: 9 }, attack: { name: "Longsword", toHit: 3, damage: "1d8+1", damageType: "slashing" } },
-  bugbear: { cr: 1, hp: 27, ac: 16, size: "med", type: "humanoid", speed: 30, abilities: { str: 15, dex: 14, con: 13, int: 8, wis: 11, cha: 9 }, attack: { name: "Morningstar", toHit: 4, damage: "2d8+2", damageType: "piercing" } },
-  ogre: { cr: 2, hp: 59, ac: 11, size: "lg", type: "giant", speed: 40, abilities: { str: 19, dex: 8, con: 16, int: 5, wis: 7, cha: 7 }, attack: { name: "Greatclub", toHit: 6, damage: "2d8+4", damageType: "bludgeoning" } },
-  troll: { cr: 5, hp: 84, ac: 15, size: "lg", type: "giant", speed: 30, abilities: { str: 18, dex: 13, con: 20, int: 7, wis: 9, cha: 7 }, attack: { name: "Claw", toHit: 7, damage: "2d6+4", damageType: "slashing" } },
-  owlbear: { cr: 3, hp: 59, ac: 13, size: "lg", type: "monstrosity", speed: 40, abilities: { str: 20, dex: 12, con: 17, int: 3, wis: 12, cha: 7 }, attack: { name: "Claw", toHit: 7, damage: "2d8+5", damageType: "slashing" } }
+  "giant rat": { pf2eLevel: -1, cr: 0.125, hp: 7, ac: 12, size: "sm", type: "beast", speed: 30, abilities: { str: 7, dex: 15, con: 11, int: 2, wis: 10, cha: 4 }, attack: { name: "Bite", toHit: 4, damage: "1d4+2", damageType: "piercing" } },
+  kobold: { pf2eLevel: -1, cr: 0.125, hp: 5, ac: 12, size: "sm", type: "humanoid", speed: 30, abilities: { str: 7, dex: 15, con: 9, int: 8, wis: 7, cha: 8 }, attack: { name: "Dagger", toHit: 4, damage: "1d4+2", damageType: "piercing" } },
+  goblin: { pf2eLevel: -1, cr: 0.25, hp: 7, ac: 15, size: "sm", type: "humanoid", speed: 30, abilities: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 }, attack: { name: "Scimitar", toHit: 4, damage: "1d6+2", damageType: "slashing" } },
+  wolf: { pf2eLevel: 1, cr: 0.25, hp: 11, ac: 13, size: "med", type: "beast", speed: 40, abilities: { str: 12, dex: 15, con: 12, int: 3, wis: 12, cha: 6 }, attack: { name: "Bite", toHit: 4, damage: "2d4+2", damageType: "piercing" } },
+  skeleton: { pf2eLevel: -1, cr: 0.25, hp: 13, ac: 13, size: "med", type: "undead", speed: 30, abilities: { str: 10, dex: 14, con: 15, int: 6, wis: 8, cha: 5 }, attack: { name: "Shortsword", toHit: 4, damage: "1d6+2", damageType: "piercing" } },
+  cultist: { pf2eLevel: 0, cr: 0.25, hp: 9, ac: 12, size: "med", type: "humanoid", speed: 30, abilities: { str: 11, dex: 12, con: 10, int: 10, wis: 11, cha: 10 }, attack: { name: "Scimitar", toHit: 3, damage: "1d6+1", damageType: "slashing" } },
+  orc: { pf2eLevel: 1, cr: 0.5, hp: 15, ac: 13, size: "med", type: "humanoid", speed: 30, abilities: { str: 16, dex: 12, con: 16, int: 7, wis: 11, cha: 10 }, attack: { name: "Greataxe", toHit: 5, damage: "1d12+3", damageType: "slashing" } },
+  bandit: { pf2eLevel: 0, cr: 0.125, hp: 11, ac: 12, size: "med", type: "humanoid", speed: 30, abilities: { str: 11, dex: 12, con: 12, int: 10, wis: 10, cha: 10 }, attack: { name: "Scimitar", toHit: 3, damage: "1d6+1", damageType: "slashing" } },
+  zombie: { pf2eLevel: -1, cr: 0.25, hp: 22, ac: 8, size: "med", type: "undead", speed: 20, abilities: { str: 13, dex: 6, con: 16, int: 3, wis: 6, cha: 5 }, attack: { name: "Slam", toHit: 3, damage: "1d6+1", damageType: "bludgeoning" } },
+  "dire wolf": { pf2eLevel: 3, cr: 1, hp: 37, ac: 14, size: "lg", type: "beast", speed: 50, abilities: { str: 17, dex: 15, con: 15, int: 3, wis: 12, cha: 7 }, attack: { name: "Bite", toHit: 5, damage: "2d6+3", damageType: "piercing" } },
+  hobgoblin: { pf2eLevel: 1, cr: 0.5, hp: 11, ac: 18, size: "med", type: "humanoid", speed: 30, abilities: { str: 13, dex: 12, con: 12, int: 10, wis: 10, cha: 9 }, attack: { name: "Longsword", toHit: 3, damage: "1d8+1", damageType: "slashing" } },
+  bugbear: { pf2eLevel: 2, cr: 1, hp: 27, ac: 16, size: "med", type: "humanoid", speed: 30, abilities: { str: 15, dex: 14, con: 13, int: 8, wis: 11, cha: 9 }, attack: { name: "Morningstar", toHit: 4, damage: "2d8+2", damageType: "piercing" } },
+  ogre: { pf2eLevel: 3, cr: 2, hp: 59, ac: 11, size: "lg", type: "giant", speed: 40, abilities: { str: 19, dex: 8, con: 16, int: 5, wis: 7, cha: 7 }, attack: { name: "Greatclub", toHit: 6, damage: "2d8+4", damageType: "bludgeoning" } },
+  troll: { pf2eLevel: 5, cr: 5, hp: 84, ac: 15, size: "lg", type: "giant", speed: 30, abilities: { str: 18, dex: 13, con: 20, int: 7, wis: 9, cha: 7 }, attack: { name: "Claw", toHit: 7, damage: "2d6+4", damageType: "slashing" } },
+  owlbear: { pf2eLevel: 4, cr: 3, hp: 59, ac: 13, size: "lg", type: "monstrosity", speed: 40, abilities: { str: 20, dex: 12, con: 17, int: 3, wis: 12, cha: 7 }, attack: { name: "Claw", toHit: 7, damage: "2d8+5", damageType: "slashing" } }
 };
 const DEFAULT_MONSTER_TEMPLATE = MONSTER_TEMPLATES.bandit;
+
+// MONSTER_KEYWORDS matches plurals ("3 goblins", "wolves"), but the templates are keyed singular: the
+// plural used to miss its template and spawn an "approximated" bandit block named "Goblins ...".
+function singularMonsterKeyword(keyword) {
+  if (!keyword) return keyword;
+  const word = keyword.toLowerCase();
+  if (MONSTER_TEMPLATES[word]) return word;
+  const singular = word.replace(/wolves$/, "wolf").replace(/s$/, "");
+  return MONSTER_TEMPLATES[singular] ? singular : word;
+}
 
 /**
  * Builds a system-agnostic monster actor spec from parsed criteria. Falls back to the nearest
@@ -282,7 +306,7 @@ const DEFAULT_MONSTER_TEMPLATE = MONSTER_TEMPLATES.bandit;
  * than failing outright -- the spec honestly records that it was approximated, for the GM to see.
  */
 export function generateMonsterSpec(criteria, { rng = Math.random } = {}) {
-  const keyword = criteria.monsterKeyword;
+  const keyword = singularMonsterKeyword(criteria.monsterKeyword);
   const template = keyword && MONSTER_TEMPLATES[keyword] ? MONSTER_TEMPLATES[keyword] : DEFAULT_MONSTER_TEMPLATE;
   const approximated = !(keyword && MONSTER_TEMPLATES[keyword]);
   const modifier = criteria.powerModifier;
@@ -399,29 +423,315 @@ export function generateItemSpec(criteria, { rng = Math.random } = {}) {
   return spec;
 }
 
+// --- Per-system stats (board dee25a95) -----------------------------------------------------------
+// The curated templates above are dnd5e CR blocks. dnd5e keeps them as they are; a PF2e spawn gets its
+// numbers rebuilt from the PF2e Building Creatures tables for its level (systems/npc-stats.js), with
+// the template's ability scores deciding which statistics are its strengths and weaknesses. PF2e's own
+// answer to "elite/boss" is a higher level, not a HP multiplier, so the power keyword shifts the level.
+
+const PF2E_POWER_LEVEL_SHIFT = { Weak: -1, Veteran: 1, Alpha: 2, Boss: 3, Legendary: 4 };
+
+function ratingFromScore(score) {
+  if (score >= 18) return "high";
+  if (score >= 14) return "moderate";
+  if (score >= 10) return "low";
+  return "terrible";
+}
+
+function pf2eAttributeCap(level) {
+  return Math.max(4, 4 + Math.floor(Math.max(0, level) / 5));
+}
+
+function pf2eAttributesFromScores(scores = {}, level) {
+  const cap = pf2eAttributeCap(level);
+  return Object.fromEntries(ABILITY_KEYS.map((key) => [key, Math.min(cap, Math.max(-5, abilityMod(scores[key] ?? 10)))]));
+}
+
+function pf2eSpeed(speed5e) {
+  const n = Number(speed5e);
+  if (!Number.isFinite(n) || n <= 0) return 25;
+  return Math.max(5, Math.round((n * 5) / 6 / 5) * 5);
+}
+
+// PF2e weapon trait vocabulary for the Strike built from a weapon (5e "light" ~ PF2e "agile").
+const PF2E_STRIKE_TRAITS = { finesse: "finesse", light: "agile", thrown: "thrown-10", versatile: null, ranged: null };
+
+/**
+ * Rebuilds a locally generated actor spec's numbers for PF2e (level, AC, HP, saves, Perception, Strike,
+ * DC). Items and non-actor specs pass through. Pure: returns a new spec.
+ */
+export function applyPf2eStats(spec, criteria = {}) {
+  if (spec?.documentType !== "actor") return spec;
+  const isMonster = spec.actorKind === "monster";
+  const template = isMonster ? MONSTER_TEMPLATES[spec.templateKeyword] : null;
+  const explicitLevel = Number.isFinite(criteria.level) && !criteria.levelIsParty ? criteria.level : null;
+  let level;
+  if (isMonster) {
+    const base = explicitLevel ?? template?.pf2eLevel ?? (spec.cr < 0.25 ? -1 : spec.cr < 1 ? 0 : Math.round(spec.cr));
+    level = clampPf2eLevel(base + (explicitLevel === null ? PF2E_POWER_LEVEL_SHIFT[criteria.powerModifier?.label] ?? 0 : 0));
+  } else {
+    level = clampPf2eLevel(spec.level ?? 1);
+  }
+  const scores = spec.abilities ?? {};
+  const armored = isMonster ? (spec.ac ?? 12) >= 16 : Boolean(criteria.role?.armored);
+  const soft = isMonster ? (spec.ac ?? 12) <= 11 : !armored && (scores.dex ?? 10) < 14;
+  const acRating = armored ? "high" : soft ? "low" : "moderate";
+  const hpRating = (scores.con ?? 10) >= 16 ? "high" : (scores.con ?? 10) <= 9 ? "low" : "moderate";
+  const offense = Math.max(scores.str ?? 10, scores.dex ?? 10);
+  const martial = isMonster || (criteria.role?.tags ?? []).includes("martial") || (criteria.role?.primaryAbilities ?? []).some((k) => k === "str" || k === "dex");
+  const attackRating = offense >= 16 && martial ? "high" : martial ? "moderate" : "low";
+  const base = isMonster ? spec.attack : spec.weaponSpec;
+  const strikeTraits = isMonster
+    ? []
+    : (spec.weaponSpec?.traits ?? []).map((trait) => PF2E_STRIKE_TRAITS[trait]).filter(Boolean);
+  return {
+    ...spec,
+    system: "pf2e",
+    level,
+    hp: pf2eStat("hp", level, hpRating),
+    ac: pf2eStat("ac", level, acRating),
+    perception: pf2eStat("perception", level, ratingFromScore(scores.wis ?? 10)),
+    saves: {
+      fortitude: pf2eStat("save", level, ratingFromScore(scores.con ?? 10)),
+      reflex: pf2eStat("save", level, ratingFromScore(scores.dex ?? 10)),
+      will: pf2eStat("save", level, ratingFromScore(scores.wis ?? 10))
+    },
+    abilityMods: pf2eAttributesFromScores(scores, level),
+    dc: pf2eStat("dc", level),
+    speed: pf2eSpeed(spec.speed),
+    attack: {
+      name: base?.name ?? "Fist",
+      toHit: pf2eStat("attack", level, attackRating),
+      damage: pf2eStat("damage", level, attackRating),
+      damageType: base?.damageType ?? "bludgeoning",
+      traits: strikeTraits
+    }
+  };
+}
+
+/** Local specs for `systemId`: PF2e numbers rebuilt by level, dnd5e left exactly as generated. */
+export function applySystemStats(spec, systemId, criteria = {}) {
+  return systemId === "pf2e" ? applyPf2eStats(spec, criteria) : spec;
+}
+
+// --- AI entries -> specs -----------------------------------------------------------------------
+
+/** A dice formula averaging about `target`, on `die`-sided dice (for replacing an out-of-range AI formula). */
+export function formulaForAverage(target, die = 8, rounding = Math.round) {
+  const t = Math.max(1, rounding(target));
+  const perDie = (die + 1) / 2;
+  let dice = Math.max(1, Math.min(12, Math.round((t * 0.6) / perDie)));
+  // Never a negative modifier: dnd5e's damage parser (and GMs) read "XdY+Z" only.
+  while (dice > 1 && t - dice * perDie < 0) dice -= 1;
+  const mod = Math.max(0, rounding(t - dice * perDie));
+  return mod ? `${dice}d${die}+${mod}` : `${dice}d${die}`;
+}
+
+function clampWithNote(value, range, fallback, label, notes) {
+  const n = Number(value);
+  if (value === null || value === undefined || !Number.isFinite(n)) return fallback;
+  const clamped = clampNumber(n, range, fallback);
+  if (clamped !== Math.round(n)) notes.push(`${label} ${Math.round(n)} -> ${clamped}`);
+  return clamped;
+}
+
+function clampDamage(formula, [min, max], fallback, notes) {
+  const normalized = normalizeDamageFormula(formula);
+  if (!normalized) {
+    if (formula) notes.push(`damage "${formula}" -> ${fallback}`);
+    return fallback;
+  }
+  const avg = averageDamage(normalized);
+  if (avg < min || avg > max) {
+    const die = Number(/d(\d+)/.exec(normalized)?.[1]) || 8;
+    // Rounded toward the inside of the range, so the replacement is itself in range.
+    const replaced = avg < min ? formulaForAverage(min, die, Math.ceil) : formulaForAverage(max, die, Math.floor);
+    notes.push(`damage ${normalized} -> ${replaced}`);
+    return replaced;
+  }
+  return normalized;
+}
+
+function aiBio(entry, notes, systemLabel) {
+  const parts = [];
+  if (entry.gdClass) parts.push(`Grand Design Class: ${entry.gdClass}.`);
+  if (entry.bio) parts.push(entry.bio);
+  if (notes.length) parts.push(`(Numbers adjusted to ${systemLabel} ranges: ${notes.join(", ")}.)`);
+  parts.push("Written by Grand Design AI's Populate tool.");
+  return parts.join(" ");
+}
+
+function aiWeaponSpec(entry, rng) {
+  if (!entry.weaponKey || !(entry.weaponKey in WEAPON_BASE)) return null;
+  return buildWeaponItemSpec({ weaponKey: entry.weaponKey, bonus: 0, rarity: "common" }, rng);
+}
+
+function pf2eSpecFromEntry(entry, name, rng) {
+  const notes = [];
+  const level = clampPf2eLevel(entry.level ?? 1);
+  if (Number.isFinite(entry.level) && entry.level !== level) notes.push(`level ${entry.level} -> ${level}`);
+  const cap = pf2eAttributeCap(level);
+  const attributes = Object.fromEntries(ABILITY_KEYS.map((key) => [key, clampNumber(entry.attributes?.[key], [-5, cap], 0)]));
+  const weaponSpec = aiWeaponSpec(entry, rng);
+  const attack = entry.attack ?? {};
+  return {
+    documentType: "actor",
+    actorKind: entry.kind === "monster" ? "monster" : "npc",
+    source: "ai",
+    system: "pf2e",
+    name,
+    race: entry.race ?? null,
+    role: entry.role ?? null,
+    creatureType: entry.creatureType ?? (entry.kind === "monster" ? null : "humanoid"),
+    size: entry.size ?? "med",
+    level,
+    hp: clampWithNote(entry.hp, pf2eRange("hp", level), pf2eStat("hp", level), "HP", notes),
+    ac: clampWithNote(entry.ac, pf2eRange("ac", level), pf2eStat("ac", level), "AC", notes),
+    perception: clampWithNote(entry.perception, pf2eRange("perception", level), pf2eStat("perception", level), "Perception", notes),
+    saves: {
+      fortitude: clampWithNote(entry.saves?.fortitude, pf2eRange("save", level), pf2eStat("save", level), "Fortitude", notes),
+      reflex: clampWithNote(entry.saves?.reflex, pf2eRange("save", level), pf2eStat("save", level), "Reflex", notes),
+      will: clampWithNote(entry.saves?.will, pf2eRange("save", level), pf2eStat("save", level), "Will", notes)
+    },
+    abilityMods: attributes,
+    dc: clampWithNote(entry.dc, pf2eRange("dc", level), pf2eStat("dc", level), "DC", notes),
+    speed: clampNumber(entry.speed, [5, 80], 25),
+    attack: {
+      name: attack.name ?? weaponSpec?.name ?? "Strike",
+      toHit: clampWithNote(attack.bonus, pf2eRange("attack", level), pf2eStat("attack", level), "Strike", notes),
+      damage: clampDamage(attack.damage, pf2eRange("damage", level), pf2eStat("damage", level), notes),
+      damageType: attack.damageType ?? weaponSpec?.damageType ?? "bludgeoning",
+      traits: []
+    },
+    ...(weaponSpec ? { weaponKey: entry.weaponKey, weaponSpec } : {}),
+    gdClass: entry.gdClass ?? null,
+    adjustments: notes,
+    bio: aiBio(entry, notes, `PF2e level ${level}`)
+  };
+}
+
+function dnd5eSpecFromEntry(entry, name, rng) {
+  const notes = [];
+  const cr = snapDnd5eCr(entry.cr ?? 1);
+  if (Number.isFinite(entry.cr) && Math.abs(entry.cr - cr) > 1e-9) notes.push(`CR ${entry.cr} -> ${cr}`);
+  const row = dnd5eCrRow(cr);
+  const abilities = Object.fromEntries(ABILITY_KEYS.map((key) => [key, clampNumber(entry.abilities?.[key], [1, 30], 10)]));
+  const weaponSpec = aiWeaponSpec(entry, rng);
+  const attack = entry.attack ?? {};
+  const hpDefault = Math.max(1, Math.round(row.hpMin * 0.3));
+  const monster = entry.kind === "monster";
+  const spec = {
+    documentType: "actor",
+    actorKind: monster ? "monster" : "npc",
+    source: "ai",
+    system: "dnd5e",
+    name,
+    race: entry.race ?? null,
+    role: entry.role ?? null,
+    cr,
+    // dnd5e NPC specs carry a level too (the local generator's); a CR-derived one keeps callers that read it working.
+    level: Math.max(1, Math.min(20, Math.round(cr * 2) || 1)),
+    creatureType: entry.creatureType ?? "humanoid",
+    size: entry.size ?? "med",
+    hp: clampWithNote(entry.hp, dnd5eRange("hp", cr), hpDefault, "HP", notes),
+    ac: clampWithNote(entry.ac, dnd5eRange("ac", cr), row.ac, "AC", notes),
+    abilities,
+    dc: clampWithNote(entry.dc, dnd5eRange("dc", cr), row.dc, "save DC", notes),
+    speed: clampNumber(entry.speed, [5, 120], 30),
+    attack: {
+      name: attack.name ?? weaponSpec?.name ?? "Slam",
+      toHit: clampWithNote(attack.bonus, dnd5eRange("attack", cr), row.attack, "attack", notes),
+      damage: clampDamage(attack.damage, dnd5eRange("damage", cr), formulaForAverage(Math.max(2, (row.damageMin + row.damageMax) / 4), 6), notes),
+      damageType: attack.damageType ?? weaponSpec?.damageType ?? "bludgeoning"
+    },
+    ...(weaponSpec ? { weaponKey: entry.weaponKey, weaponSpec } : {}),
+    gdClass: entry.gdClass ?? null,
+    adjustments: notes
+  };
+  spec.bio = aiBio(entry, notes, `dnd5e CR ${cr}`);
+  return spec;
+}
+
+/**
+ * Turns the populate stage's entries (scripts/ai/populate.js) into spawn specs for `systemId`, one per
+ * copy, every number clamped to that system's range for the entry's level/CR. Returns { kind, specs }.
+ */
+export function specsFromAiEntries(entries, systemId, { rng = Math.random } = {}) {
+  const specs = [];
+  let total = 0;
+  for (const entry of Array.isArray(entries) ? entries : []) {
+    if (!entry?.name) continue;
+    const count = Math.max(1, Math.min(MAX_SPAWN_COUNT - total, Number.isInteger(entry.count) ? entry.count : 1));
+    if (count <= 0) break;
+    for (let i = 0; i < count; i += 1) {
+      const name = count > 1 ? `${entry.name} ${i + 1}` : entry.name;
+      if (entry.kind === "item") {
+        const weaponKey = entry.weaponKey && entry.weaponKey in WEAPON_BASE ? entry.weaponKey : "sword";
+        const spec = buildWeaponItemSpec({ weaponKey, bonus: entry.bonus ?? 0, rider: entry.rider ?? null }, rng);
+        spec.name = entry.name;
+        spec.source = "ai";
+        spec.bio = entry.bio ? `${entry.bio} Written by Grand Design AI's Populate tool.` : "Written by Grand Design AI's Populate tool.";
+        specs.push(spec);
+      } else {
+        specs.push(systemId === "pf2e" ? pf2eSpecFromEntry(entry, name, rng) : dnd5eSpecFromEntry(entry, name, rng));
+      }
+    }
+    total += count;
+    if (total >= MAX_SPAWN_COUNT) break;
+  }
+  const first = specs.find((spec) => spec.documentType === "actor");
+  const kind = first ? first.actorKind : specs.length ? "item" : null;
+  return { kind, specs };
+}
+
+function describeAdapterFailure(error) {
+  const message = String(error?.message ?? error ?? "unknown error").replace(/^The AI provider failed:\s*/i, "");
+  if (/timed? ?out|timeout/i.test(message)) return `the AI provider timed out (${message})`;
+  if (/unreach|could not reach|fetch|ECONNREFUSED|network/i.test(message)) return `the AI provider could not be reached (${message})`;
+  return `the AI provider failed (${message})`;
+}
+
 /**
  * The full pipeline in one call: parses `promptText`, expands its parsed count, and returns
- * `{ kind, specs }` where `specs` has one entry per requested copy (a pack of 3 goblins returns 3
- * distinct monster specs, each with its own rolled name/stats). `adapter`, if provided, is tried
- * first and must resolve to the same `{ kind, specs }` shape -- on any adapter failure or when no
- * adapter is registered, the local heuristic below is used instead so Populate always produces
- * something.
+ * `{ kind, specs, source, fallbackReason }` where `specs` has one entry per requested copy (a pack of 3
+ * goblins returns 3 distinct monster specs). `adapter`, if provided, is tried first:
+ *   - the gateway populate adapter (scripts/ai/populate.js) returns `{ format: "populate-entries", entries }`,
+ *     turned into specs here with every number clamped to `systemId`'s range;
+ *   - any other adapter may return a ready `{ kind, specs }` (kept for custom adapters and tests).
+ * Any adapter failure -- a throw, a timeout, an unusable answer -- falls back to the local generator
+ * and says why in `fallbackReason`; this function never throws for an adapter's sake.
  */
-export async function populate(promptText, { adapter = null, rng = Math.random } = {}) {
+export async function populate(promptText, { adapter = null, rng = Math.random, systemId = null, partyLevel = null } = {}) {
+  let fallbackReason = null;
+  let diagnostics = null;
   if (adapter) {
-    const result = await adapter({ promptText });
-    if (result && SPAWN_DOCUMENT_KINDS.has(result.kind) && Array.isArray(result.specs)) {
-      return result;
+    try {
+      const result = await adapter({ promptText, systemId, partyLevel });
+      if (result?.format === "populate-entries") {
+        diagnostics = result.diagnostics ?? null;
+        const built = specsFromAiEntries(result.entries, systemId, { rng });
+        if (built.specs.length) return { ...built, source: "ai", fallbackReason: null, diagnostics };
+        fallbackReason = "the AI answer had no usable entries";
+      } else if (result && SPAWN_DOCUMENT_KINDS.has(result.kind) && Array.isArray(result.specs) && result.specs.length) {
+        return { ...result, source: "ai", fallbackReason: null };
+      } else {
+        fallbackReason = "the AI answer was not in a usable shape";
+      }
+    } catch (error) {
+      fallbackReason = describeAdapterFailure(error);
+      diagnostics = error?.diagnostics ?? null;
     }
   }
   const criteria = parseSpawnCriteria(promptText);
   const specs = [];
   for (let i = 0; i < criteria.count; i += 1) {
-    if (criteria.kind === "item") specs.push(generateItemSpec(criteria, { rng }));
-    else if (criteria.kind === "monster") specs.push(generateMonsterSpec(criteria, { rng }));
-    else specs.push(generateNpcSpec(criteria, { rng }));
+    let spec;
+    if (criteria.kind === "item") spec = generateItemSpec(criteria, { rng });
+    else if (criteria.kind === "monster") spec = generateMonsterSpec(criteria, { rng });
+    else spec = generateNpcSpec(criteria, { rng });
+    specs.push(applySystemStats(spec, systemId, criteria));
   }
-  return { kind: criteria.kind, specs, criteria };
+  return { kind: criteria.kind, specs, criteria, source: "local", fallbackReason, diagnostics };
 }
 
 function capitalize(word) {

@@ -301,28 +301,68 @@ function abilityModPf2e(score) {
   return Math.floor(((score ?? 10) - 10) / 2);
 }
 
+// PF2e creature-type traits a spec's creatureType may map onto (a 5e "monstrosity" has no PF2e trait).
+const PF2E_CREATURE_TRAITS = new Set(["aberration", "animal", "astral", "beast", "celestial", "construct", "dragon", "elemental", "ethereal", "fey", "fiend", "fungus", "giant", "humanoid", "monitor", "ooze", "plant", "spirit", "undead"]);
+
+/**
+ * PF2e NPC Actor source from a populate.js spec. Board dee25a95: specs now carry PF2e numbers by level
+ * (populate.js#applyPf2eStats / the AI stage, from the Building Creatures tables) -- level, AC, HP,
+ * Perception, Fortitude/Reflex/Will, attribute modifiers and a Strike. The Strike is a "melee" Item
+ * (what PF2e NPC Strikes are made of; an NPC's inventory weapon does not give it a Strike), with the
+ * attack bonus and damage written as numbers, the way published PF2e NPCs store them. A spec without
+ * the PF2e fields (a custom adapter's) still builds, with the old approximations.
+ */
 export function buildNpcActorSourcePf2e(spec) {
   const isMonster = spec.actorKind === "monster";
   const abilities = spec.abilities ?? {};
+  const level = Number.isFinite(spec.level) ? spec.level : isMonster ? Math.round(spec.cr ?? 1) : 1;
+  const mods = spec.abilityMods ?? Object.fromEntries(ABILITY_KEYS_PF2E.map((key) => [key, abilityModPf2e(abilities[key])]));
+  const bioHtml = spec.bio ? `<p>${escapeHtmlPf2e(spec.bio)}</p>` : "";
+  const creatureTrait = String(spec.creatureType ?? (isMonster ? "" : "humanoid")).toLowerCase();
   const system = {
-    abilities: Object.fromEntries(ABILITY_KEYS_PF2E.map((key) => [key, { mod: abilityModPf2e(abilities[key]) }])),
+    abilities: Object.fromEntries(ABILITY_KEYS_PF2E.map((key) => [key, { mod: Number.isFinite(mods[key]) ? mods[key] : 0 }])),
     attributes: {
-      hp: { value: spec.hp, max: spec.hp },
-      ac: { value: spec.ac },
-      speed: { value: spec.speed ?? 25 }
+      hp: { value: spec.hp, max: spec.hp, temp: 0, details: "" },
+      ac: { value: spec.ac, details: "" },
+      speed: { value: spec.speed ?? 25, otherSpeeds: [] },
+      allSaves: { value: "" }
     },
     details: {
-      level: { value: isMonster ? Math.round(spec.cr ?? 1) : (spec.level ?? 1) },
-      biography: { value: spec.bio ?? "", public: spec.bio ?? "" }
+      level: { value: level },
+      biography: { value: spec.bio ?? "", public: spec.bio ?? "" },
+      publicNotes: bioHtml,
+      blurb: spec.gdClass ?? ""
     },
-    traits: { size: { value: isMonster ? (spec.size ?? "med") : "med" }, value: [] }
+    traits: {
+      size: { value: spec.size ?? "med" },
+      value: PF2E_CREATURE_TRAITS.has(creatureTrait) ? [creatureTrait] : [],
+      rarity: "common"
+    }
   };
+  if (Number.isFinite(spec.perception)) system.perception = { mod: spec.perception, details: "", senses: [] };
+  if (spec.saves) {
+    system.saves = Object.fromEntries(["fortitude", "reflex", "will"]
+      .filter((key) => Number.isFinite(spec.saves[key]))
+      .map((key) => [key, { value: spec.saves[key], saveDetail: "" }]));
+  }
   const source = { name: spec.name, type: "npc", system };
 
   const embeddedItems = [];
-  if (!isMonster && spec.weaponSpec) embeddedItems.push(buildWeaponItemDataPf2e(spec.weaponSpec));
-  if (isMonster && spec.attack) embeddedItems.push(buildNaturalAttackItemDataPf2e(spec.attack));
+  if (spec.weaponSpec && !isMonster) embeddedItems.push(buildWeaponItemDataPf2e(spec.weaponSpec));
+  if (spec.attack) embeddedItems.push(buildStrikeItemDataPf2e(spec.attack));
   return { source, embeddedItems };
+}
+
+/** An NPC Strike ("melee" Item): the attack bonus and damage exactly as the spec states them. */
+export function buildStrikeItemDataPf2e(attack) {
+  const damage = /^\s*\d+d\d+(?:\s*[+-]\s*\d+)?\s*$/i.test(String(attack.damage ?? "")) ? String(attack.damage).replace(/\s+/g, "") : "1d4";
+  const system = {
+    bonus: { value: Number.isFinite(attack.toHit) ? attack.toHit : 0 },
+    damageRolls: { gdpopulatestrike: { damage, damageType: attack.damageType ?? "bludgeoning", category: null } },
+    traits: { value: Array.isArray(attack.traits) ? attack.traits : [] },
+    attackEffects: { value: [] }
+  };
+  return { name: attack.name ?? "Strike", type: "melee", system };
 }
 
 export function buildEquipmentItemSourcePf2e(spec) {
@@ -339,29 +379,6 @@ function buildWeaponItemDataPf2e(weaponSpec) {
     runes: { potency: Number.isInteger(weaponSpec.bonus) ? weaponSpec.bonus : 0 }
   };
   return { name: weaponSpec.name, type: "weapon", system };
-}
-
-// MONSTER_TEMPLATES' attack formulas (populate.js, shared across both systems) carry a static
-// "+N" damage bonus baked into the dice string, e.g. "1d6+2" -- the dnd5e adapter's own
-// parseWeaponDamage captures that group into system.damage.base.bonus, but the general-purpose
-// parseWeaponDamage above (used by buildItemSourcePf2e for hand-authored entries) never has, so
-// reusing it here would silently drop the bonus and under-power every spawned monster's attack
-// relative to its dnd5e counterpart. A small dedicated parser keeps that pre-existing behavior
-// untouched while still giving Populate's PF2e monsters the same damage the dnd5e ones get.
-function parseAttackDamageWithBonus(formula) {
-  const match = /^(\d+)d(\d+)(?:\s*\+\s*(\d+))?/i.exec(formula);
-  return { dice: Number(match[1]), die: `d${match[2]}`, modifier: match[3] ? Number(match[3]) : 0 };
-}
-
-function buildNaturalAttackItemDataPf2e(attack) {
-  const damage = parseAttackDamageWithBonus(attack.damage);
-  const system = {
-    category: "unarmed",
-    group: "brawling",
-    damage: { dice: damage.dice, die: damage.die, modifier: damage.modifier, damageType: attack.damageType },
-    traits: { value: ["unarmed", "agile", "finesse"] }
-  };
-  return { name: attack.name, type: "weapon", system };
 }
 
 // --- Titles ---------------------------------------------------------------------------------

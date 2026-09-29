@@ -539,7 +539,8 @@ export function buildNpcActorSource5e(spec) {
       movement: { walk: spec.speed ?? 30 }
     },
     details: {
-      cr: isMonster ? spec.cr : approximateCrFromLevel(spec.level),
+      // An AI-written NPC (board dee25a95) states its CR; the local generator only has a level.
+      cr: isMonster || Number.isFinite(spec.cr) ? spec.cr : approximateCrFromLevel(spec.level),
       type: { value: isMonster ? (spec.creatureType ?? "humanoid") : "humanoid" },
       biography: { value: spec.bio ? `<p>${escapeHtml5e(spec.bio)}</p>` : "" }
     },
@@ -548,10 +549,11 @@ export function buildNpcActorSource5e(spec) {
   const source = { name: spec.name, type: "npc", system };
 
   const embeddedItems = [];
-  if (!isMonster && spec.weaponSpec) {
+  // A weapon when the spec has one (dnd5e derives its attack from the wielder), else its natural
+  // attack. Local specs are unchanged by this: NPCs carry only a weapon, monsters only an attack.
+  if (spec.weaponSpec) {
     embeddedItems.push(buildWeaponItemData5e(spec.weaponSpec));
-  }
-  if (isMonster && spec.attack) {
+  } else if (spec.attack) {
     embeddedItems.push(buildNaturalAttackItemData5e(spec.attack));
   }
   return { source, embeddedItems };

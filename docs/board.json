@@ -888,9 +888,10 @@
   {
    "id": "dee25a95",
    "title": "Populate never uses the AI (setPopulateAdapter never called) though its dialog says it does; PF2e gets 5e stat blocks",
-   "status": "todo",
+   "status": "doing",
    "notes": [
-    "api.js:1411 setPopulateAdapter has no caller; populate-ui.js says 'Uses your configured AI provider when one is set'. populate.js:410-416 awaits an adapter with no try/catch; MONSTER_TEMPLATES are 5e CR blocks and PF2e sets level = round(cr). Fix: gateway-backed populate adapter with schema, try/catch local fallback, per-system stat builders, optional AI Grand Design Class for NPCs."
+    "api.js:1411 setPopulateAdapter has no caller; populate-ui.js says 'Uses your configured AI provider when one is set'. populate.js:410-416 awaits an adapter with no try/catch; MONSTER_TEMPLATES are 5e CR blocks and PF2e sets level = round(cr). Fix: gateway-backed populate adapter with schema, try/catch local fallback, per-system stat builders, optional AI Grand Design Class for NPCs.",
+    "dev-populate: Populate now uses the gateway (populate adapter derived from the gateway adapter's transport in api.setProposalAdapter, so ready + settings rebuilds wire it). New stage scripts/ai/populate.js (system-specific JSON Schema, json-repair, 1 repair turn). Every AI failure -> local generator + fallbackReason shown in a warning + chat card. PF2e numbers from Building Creatures tables by level (scripts/systems/npc-stats.js), PF2e Strikes as melee items with saves/Perception; dnd5e local output byte-identical; AI numbers clamped per level/CR with adjustments stated in the bio. Real model qwen3.8:27b, 'a bandit ambush on a forest road, party level 3': PF2e 4 NPCs source=ai 1 call 5-7s (Bandit L1 AC15 HP20 +7 1d6+2; Leader L3 AC18 HP45 +10 1d8+6), dnd5e 5 NPCs source=ai 7-9s (Bandit CR1/4 AC13 HP11 +3 1d6+1; Leader CR1 AC14 HP22); blacksmith prompt ok in both; 0 repairs, 0 fallbacks over 6 calls. Found+fixed: plural monster keywords missed their template; dnd5e damage clamp was too tight (goblin 1d6+2). npm test 1385 green. Not verified live in Foundry."
    ],
    "tags": [
     "gateway",
@@ -899,10 +900,10 @@
     "ui"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-populate",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.947,
-   "updated": 1790661419.9989858,
+   "updated": 1790712393.539,
    "prio": 2,
    "parent": "6d04ba44"
   },

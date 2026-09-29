@@ -250,3 +250,74 @@ export function schemaName(schema) {
   if (schema === COMBINED_SCHEMA) return "grand_design_events_and_proposals";
   return "grand_design_output";
 }
+
+// --- Populate (board dee25a95) ---------------------------------------------------------------------
+// One call turns a GM's "a bandit ambush on a forest road, party level 3" into spawnable entries.
+// Numbers are asked for in the SYSTEM's own terms -- a PF2e entry has a level, saves and Perception
+// (Building Creatures tables), a dnd5e entry a CR, ability scores and a save DC -- because a single
+// cross-system shape is exactly how PF2e ended up with 5e stat blocks. Order: what it is (kind, name,
+// count, level/cr) before its numbers, so the model sizes the creature before it writes stats.
+// populate.js clamps every number to the system's range for that level/CR afterwards.
+export const POPULATE_WEAPON_KEYS = Object.freeze(["sword", "shortsword", "cutlass", "dagger", "axe", "hammer", "warhammer", "mace", "spear", "bow", "crossbow", "staff", "club"]);
+export const POPULATE_RIDERS = Object.freeze(["none", "fire", "cold", "electricity", "poison", "radiant"]);
+export const POPULATE_SIZES = Object.freeze(["tiny", "sm", "med", "lg", "huge", "grg"]);
+const abilityObject = (min, max) => ({
+  type: "object",
+  properties: Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map((key) => [key, { type: "integer", minimum: min, maximum: max }])),
+  required: ["str", "dex", "con", "int", "wis", "cha"]
+});
+
+export function populateSchema(systemId) {
+  const pf2e = systemId === "pf2e";
+  const entry = {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["npc", "monster", "item"] },
+      name: { type: "string" },
+      count: { type: "integer", minimum: 1, maximum: 20 },
+      ...(pf2e ? { level: { type: "integer", minimum: -1, maximum: 24 } } : { cr: { type: "number", minimum: 0, maximum: 30 } }),
+      race: { type: "string" },
+      role: { type: "string" },
+      creatureType: { type: "string" },
+      size: { type: "string", enum: [...POPULATE_SIZES] },
+      hp: { type: "integer", minimum: 1 },
+      ac: { type: "integer", minimum: 1 },
+      speed: { type: "integer", minimum: 0 },
+      ...(pf2e
+        ? {
+          perception: { type: "integer" },
+          fortitude: { type: "integer" },
+          reflex: { type: "integer" },
+          will: { type: "integer" },
+          attributes: abilityObject(-5, 10)
+        }
+        : { abilities: abilityObject(1, 30) }),
+      dc: { type: "integer", minimum: 5 },
+      weapon: { type: "string", enum: ["none", ...POPULATE_WEAPON_KEYS] },
+      attack: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          bonus: { type: "integer" },
+          damage: { type: "string" },
+          damageType: { type: "string" }
+        },
+        required: ["name", "bonus", "damage", "damageType"]
+      },
+      // Items only: enhancement bonus and elemental rider.
+      bonus: { type: "integer", minimum: 0, maximum: 4 },
+      rider: { type: "string", enum: [...POPULATE_RIDERS] },
+      bio: { type: "string" },
+      // Optional Grand Design flavor: the Class this NPC would carry in the world, "[Bandit Captain Lv. 4]".
+      gdClass: { type: "string" }
+    },
+    required: pf2e
+      ? ["kind", "name", "count", "level", "hp", "ac", "perception", "fortitude", "reflex", "will", "attack", "bio"]
+      : ["kind", "name", "count", "cr", "hp", "ac", "abilities", "attack", "bio"]
+  };
+  return {
+    type: "object",
+    properties: { entries: { type: "array", items: entry, minItems: 1, maxItems: 8 } },
+    required: ["entries"]
+  };
+}

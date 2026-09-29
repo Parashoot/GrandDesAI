@@ -61,6 +61,9 @@ export {
   runGatewayPipeline,
   runProposalStageFor
 } from "./pipeline.js";
+export { POPULATE_MAX_TOTAL, PopulateAiError, coercePopulateEntry, coercePopulateResult, runPopulateStage, createPopulateAdapter } from "./populate.js";
+export { populateSchema, POPULATE_WEAPON_KEYS } from "./schemas.js";
+export { buildPopulateMessages } from "./prompts.js";
 export { GATEWAY_DEFAULTS, PIPELINES, PROPOSAL_MODES, CREATIVITY_LEVELS, PROVIDERS, normalizeGatewayConfig, normalizeJevConfig } from "./gateway-config.js";
 export {
   JEV_DEFAULTS,

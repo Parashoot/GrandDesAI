@@ -78,11 +78,15 @@ import {
 } from "./emergent-themes.js";
 import { getSystemAdapter, isSupportedSystem, supportedSystemIds } from "./systems/index.js";
 import { populate as runPopulate } from "./populate.js";
+import { createPopulateAdapter } from "./ai/populate.js";
 
 export class GrandDesignApi {
   constructor() {
     this._proposalAdapter = null;
     this._populateAdapter = null;
+    // True once a caller registered its own populate adapter; until then Populate follows the gateway
+    // adapter (board dee25a95: nothing ever called setPopulateAdapter, so Populate never used the AI).
+    this._populateAdapterExplicit = false;
     // Dynamic tag reweighting (see tag-weighting.js/tag-weighting-settings.js): defaults to "every
     // tag weighs 1x" so GrandDesignApi stays fully Foundry-independent (and testable in plain
     // Node) without a provider wired in. main.js wires this to a world-settings-backed provider at
@@ -1207,6 +1211,10 @@ export class GrandDesignApi {
       throw new Error("A proposal adapter must be a function or null.");
     }
     this._proposalAdapter = adapter;
+    // Populate rides on the same gateway: the gateway adapter is built at ready and rebuilt on every
+    // settings change (ai-provider-config.js#rebuildGatewayAdapter -> here), so deriving the populate
+    // adapter from its transport keeps both on the same provider/model with no second wiring path.
+    if (!this._populateAdapterExplicit) this._populateAdapter = derivePopulateAdapter(adapter);
   }
 
   hasProposalAdapter() {
@@ -2408,7 +2416,13 @@ export class GrandDesignApi {
     if (adapter !== null && typeof adapter !== "function") {
       throw new Error("A Populate adapter must be a function or null.");
     }
-    this._populateAdapter = adapter;
+    // null hands Populate back to the gateway adapter.
+    this._populateAdapterExplicit = adapter !== null;
+    this._populateAdapter = adapter ?? derivePopulateAdapter(this._proposalAdapter);
+  }
+
+  getPopulateAdapter() {
+    return this._populateAdapter;
   }
 
   hasPopulateAdapter() {
@@ -2431,11 +2445,18 @@ export class GrandDesignApi {
           + `Supported systems: ${supportedSystemIds().join(", ")}.`
       );
     }
-    const { kind, specs } = await runPopulate(promptText, { adapter: this._populateAdapter });
-    const adapter = getSystemAdapter(game.system.id);
+    const systemId = game.system.id;
+    // Never throws for the AI's sake: an AI failure comes back as source "local" + fallbackReason.
+    const { kind, specs, source, fallbackReason } = await runPopulate(promptText, {
+      adapter: this._populateAdapter,
+      systemId,
+      partyLevel: partyLevelHint()
+    });
+    const adapter = getSystemAdapter(systemId);
     const created = [];
     for (const spec of specs) {
-      if (kind === "item") {
+      // Per spec: one AI answer can mix a bandit crew with the stolen blade they carry.
+      if (spec.documentType === "item" || (!spec.documentType && kind === "item")) {
         const { source } = adapter.buildEquipmentItemSource(spec);
         created.push(await Item.create(source));
       } else {
@@ -2446,7 +2467,7 @@ export class GrandDesignApi {
       }
     }
     Hooks.callAll("grand-design-ai.populated", kind, created);
-    return { kind, created };
+    return { kind, created, source: source ?? "local", fallbackReason: fallbackReason ?? null, aiAvailable: this._populateAdapter !== null };
   }
 
   /**
@@ -3141,4 +3162,28 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+/** The populate adapter for a gateway adapter (anything carrying a transport), else null. */
+export function derivePopulateAdapter(proposalAdapter) {
+  if (!proposalAdapter?.transport || typeof proposalAdapter.transport.chat !== "function") return null;
+  try {
+    return createPopulateAdapter({ transport: proposalAdapter.transport, config: proposalAdapter.config ?? {} });
+  } catch {
+    return null;
+  }
+}
+
+// The player characters' average level, as a hint for Populate's AI ("an ambush" sized for the party).
+// A level or CR the GM writes in the prompt still wins; null when there are no player characters.
+function partyLevelHint() {
+  try {
+    const levels = (globalThis.game?.actors?.contents ?? [])
+      .filter((actor) => actor?.type === "character" && actor.hasPlayerOwner)
+      .map((actor) => Number(actor.system?.details?.level?.value ?? actor.system?.details?.level))
+      .filter((level) => Number.isFinite(level) && level > 0);
+    return levels.length ? Math.round(levels.reduce((sum, level) => sum + level, 0) / levels.length) : null;
+  } catch {
+    return null;
+  }
 }

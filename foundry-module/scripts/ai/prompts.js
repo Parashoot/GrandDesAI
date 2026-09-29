@@ -12,6 +12,7 @@
 
 import { CANONICAL_TAGS } from "./normalize.js";
 import { VICE_TAXONOMY } from "../vice-taxonomy.js";
+import { dnd5eCrRow, pf2eStat, snapDnd5eCr } from "../systems/npc-stats.js";
 
 // One line per canonical tag. Kept terse on purpose: this block is sent with every chunk.
 export const TAG_MEANINGS = {
@@ -590,4 +591,58 @@ export function buildRepairMessage({ stage, errors, expectedShape }) {
         ? "Keep every real event from the notes (failures too); use only ALLOWED TAGS in tags and put anything else in themes."
         : "Fix every listed field; keep proposals that were already valid unchanged.")
   };
+}
+
+// --- Populate (board dee25a95) ---------------------------------------------------------------------
+
+// A few rows of the system's own creature-building numbers, around the level/CR the GM asked for.
+// Small models guess stat blocks from memory and mix systems (5e AC 12 on a PF2e level-3 bandit);
+// giving them the table rows to copy from is cheaper and more reliable than any rule text.
+function populateReference(systemId, partyLevel) {
+  const center = Number.isFinite(partyLevel) ? partyLevel : 3;
+  if (systemId === "pf2e") {
+    const levels = [...new Set([center - 2, center - 1, center, center + 1, center + 2].map((level) => Math.min(24, Math.max(-1, level))))];
+    const lines = levels.map((level) => `level ${level}: AC ${pf2eStat("ac", level)} (high ${pf2eStat("ac", level, "high")}), HP ${pf2eStat("hp", level, "low")}-${pf2eStat("hp", level, "high")}, `
+      + `saves/Perception ${pf2eStat("save", level, "low")}-${pf2eStat("save", level, "high")}, Strike +${pf2eStat("attack", level)} (high +${pf2eStat("attack", level, "high")}) for ${pf2eStat("damage", level)}, DC ${pf2eStat("dc", level)}`);
+    return "PF2e Building Creatures (moderate values; use high for a creature's strengths, low for weaknesses):\n" + lines.join("\n");
+  }
+  const crs = [...new Set([center / 4, center / 2, center, center + 2].map((cr) => snapDnd5eCr(cr)))];
+  const lines = crs.map((cr) => {
+    const r = dnd5eCrRow(cr);
+    return `CR ${cr}: AC ${r.ac}, attack +${r.attack}, save DC ${r.dc}, damage/round ${r.damageMin}-${r.damageMax} (published creatures often have far fewer HP than the DMG band ${r.hpMin}-${r.hpMax}: a CR 1/8 bandit has 11, a CR 1/4 goblin 7, a CR 2 ogre 59)`;
+  });
+  return "dnd5e Monster Statistics by Challenge Rating:\n" + lines.join("\n");
+}
+
+/**
+ * Messages for the populate stage: one GM prompt -> spawnable entries in `systemId`'s terms.
+ * `partyLevel` (average PC level, when the api knows it) is only a hint: a level or CR the GM wrote in
+ * the prompt wins.
+ */
+export function buildPopulateMessages({ promptText, systemId, partyLevel = null, config = {} }) {
+  const pf2e = systemId === "pf2e";
+  const system = [
+    `You create ready-to-play ${pf2e ? "Pathfinder 2e (PF2e)" : "D&D 5e (dnd5e)"} creatures, NPCs or items for a Game Master's world from a short description. Return only JSON matching the schema.`,
+    "Rules:",
+    "- entries: one entry per DISTINCT creature/NPC/item; `count` says how many copies (\"3 bandits and their leader\" = a Bandit entry with count 3 and a leader entry with count 1). At most 20 in total.",
+    "- kind: \"npc\" for people (humanoids with a job or story), \"monster\" for beasts, undead, monsters and hostile creatures, \"item\" for a weapon or object.",
+    pf2e
+      ? "- level is the PF2e creature level (-1..24). Numbers are PF2e numbers for THAT level: AC, HP, Perception, Fortitude/Reflex/Will and the Strike bonus come from the Building Creatures table below; attributes are modifiers (-5..+7), not scores. Never use D&D 5e numbers."
+      : "- cr is the dnd5e Challenge Rating (0, 0.125, 0.25, 0.5, 1..30). Numbers are D&D 5e numbers for THAT CR; abilities are scores (1..30). Never use Pathfinder numbers.",
+    pf2e
+      ? "- For an encounter against a party of level L: mooks are level L-2 to L-1, a leader L to L+1, a boss up to L+2."
+      : "- For an encounter against a party of level L: mooks are about CR L/4 to L/2, a leader about CR L/2 to L, a boss up to CR L+2.",
+    "- attack: the creature's main attack (a weapon or natural attack). damage is a dice formula like \"1d8+4\". weapon: the matching weapon key, or \"none\" for natural attacks.",
+    "- bio: one or two sentences in the world's voice (who they are, what they want). gdClass (optional): the Grand Design Class this NPC carries, like \"[Highwayman Lv. 6]\".",
+    "- An item entry: name, weapon key, bonus (0-4), rider; fill the creature fields with 0/placeholder values.",
+    ...(config.namingStyle ? [`GM naming style: ${config.namingStyle}`] : []),
+    ...(config.toneHints ? [`Tone hints: ${config.toneHints}`] : []),
+    "",
+    populateReference(systemId, partyLevel)
+  ].join("\n");
+  const user = `Description: ${String(promptText ?? "").trim()}` + (Number.isFinite(partyLevel) ? `\nThe party's average level is ${partyLevel}.` : "");
+  return [
+    { role: "system", content: system },
+    { role: "user", content: user }
+  ];
 }

@@ -174,7 +174,8 @@ test("populate() prefers a registered adapter's result when it returns a valid {
     return adapterResult;
   };
   const result = await populate("anything", { adapter });
-  assert.deepEqual(result, adapterResult);
+  // The result now also says who wrote it (board dee25a95), so the UI can tell the GM.
+  assert.deepEqual(result, { ...adapterResult, source: "ai", fallbackReason: null });
 });
 
 test("populate() falls back to the local heuristic when the adapter returns an invalid shape", async () => {
