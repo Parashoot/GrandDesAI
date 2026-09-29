@@ -218,7 +218,9 @@
    "id": "c61ef1a8",
    "title": "C1 cloud: party-recap corpus + per-character gold scoring (docs/cloud-work.md)",
    "status": "todo",
-   "notes": [],
+   "notes": [
+    "Partly covered by the Jev-layer harness work: 26-item party corpus with per-character gold (corpus/party/) and per-PC credit scoring in lib.mjs, on branch claude/install-typesafe-skill-utldpd."
+   ],
    "tags": [
     "cloud",
     "harness"
@@ -227,7 +229,7 @@
    "owner": "",
    "source": "cli",
    "created": 1790531510.815,
-   "updated": 1790620957.1823552,
+   "updated": 1790706065.992,
    "parent": "f2d3213f"
   },
   {
@@ -1898,7 +1900,9 @@
    "id": "9f76030d",
    "title": "Sim Jev, --jev/--sim-jev in run.mjs and playtest, party corpus (>=20 items)",
    "status": "doing",
-   "notes": [],
+   "notes": [
+    "dev-harness done pre-main: sim-jev.js, 26-item party corpus (corpus/party/), --jev/--sim-jev/--party/--compare-jev in run.mjs, playtest analyze --party + timings.json, 32 tests. Offline stand-in on party corpus: 94.7% -> 99.3% (attribution 295/321 -> 79/80, 3.9 -> 1 extraction) with guarded attribution; blind override 89.4%. Rebasing onto the branch now."
+   ],
    "tags": [
     "harness",
     "jev"
@@ -1907,7 +1911,7 @@
    "owner": "dev-harness",
    "source": "jev-layer",
    "created": 1790705519.999,
-   "updated": 1790705617.891
+   "updated": 1790706065.941
   },
   {
    "id": "27346aba",
