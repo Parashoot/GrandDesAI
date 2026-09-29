@@ -309,7 +309,9 @@
    "id": "642a0bda",
    "title": "Jev settings fieldset + Test Jev, Analyze party action, Jev chips in Growth dialog",
    "status": "doing",
-   "notes": [],
+   "notes": [
+    "dev-ui done in worktree: jevApiKey client setting, Jev fieldset + Test Jev, Analyze party picker, chips + Jev summary line. 688 tests green (39 new). Needs: progression.js keep event.jev, api.js keep proposal.jev (sent to dev-integration); event.jev.outcome + diagnostics.jev.routed (sent to dev-gateway). Awaiting review + merge."
+   ],
    "tags": [
     "ui",
     "jev",
@@ -319,7 +321,7 @@
    "owner": "dev-ui",
    "source": "jev-layer",
    "created": 1790704405.057,
-   "updated": 1790704483.822
+   "updated": 1790705065.077
   },
   {
    "id": "e188c4f1",
