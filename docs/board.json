@@ -742,7 +742,8 @@
    "title": "'Author with AI' never tells the model what to author (placeholders like 'Archery Knack' stay generic)",
    "status": "doing",
    "notes": [
-    "api.js:995 calls adapter.authorProposal, which ai-gateway.js never defines, so it falls back to the full adapter with a 'GM REQUEST' notes wrapper (stage 1 reads it as OOC; stage 2 never sees the instruction), under when-earned gating, no preset events, and takes accepted[0] whatever it is. Capstone/Class fallbacks are forced to a tier-1/2 Skill. Fix: adapter.authorProposal = stage 2 only (presetEvents = cited evidence, mustPropose) with a 'target' (theme/label, kind, tier, placeholder to replace), like the milestone param. Also: approveProposal ignores needsAuthoring - warn or auto-author before approving a placeholder."
+    "api.js:995 calls adapter.authorProposal, which ai-gateway.js never defines, so it falls back to the full adapter with a 'GM REQUEST' notes wrapper (stage 1 reads it as OOC; stage 2 never sees the instruction), under when-earned gating, no preset events, and takes accepted[0] whatever it is. Capstone/Class fallbacks are forced to a tier-1/2 Skill. Fix: adapter.authorProposal = stage 2 only (presetEvents = cited evidence, mustPropose) with a 'target' (theme/label, kind, tier, placeholder to replace), like the milestone param. Also: approveProposal ignores needsAuthoring - warn or auto-author before approving a placeholder.",
+    "dev-proposals: adapter.authorProposal (stage 2 only, presetEvents+target) built; requestProposalAuthoring keeps id/isCapstone/milestoneLevel, tier 3 forced for capstone, stated reason on failure; approveProposal refuses needsAuthoring unless confirm:true. Real qwen3.8:27b both systems: Archery Knack -> real archery Skill, capstone stays tier 3. Uncommitted in worktree; tests/ai-authoring.test.mjs."
    ],
    "tags": [
     "proposals",
@@ -753,7 +754,7 @@
    "owner": "dev-proposals",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.497,
-   "updated": 1790661465.765,
+   "updated": 1790662030.358,
    "prio": 1,
    "parent": "a2cbef5e"
   },
@@ -762,7 +763,8 @@
    "title": "Templates and '<Theme> Knack' placeholders are minted even when the AI read the notes, duplicating AI proposals",
    "status": "doing",
    "notes": [
-    "api.js:1151-1152 recordGrowthEvent always runs generateSkillProposals + generateEmergentProposals, also for adapter events. registryHasTheme only checks APPROVED skills, so an AI proposal and 'Archery Knack' are both pending; 'archery' is both a tag and an ALSO_THEME. Neither source counts toward the pending cap. Live (EndexDND 5E): Briik has 12 pending = 5 Knack placeholders + 2 templates + 5 AI. Fix: skip templates/placeholders for adapter events (or auto-author them), suppress a theme already on a pending AI proposal, include all sources in the cap."
+    "api.js:1151-1152 recordGrowthEvent always runs generateSkillProposals + generateEmergentProposals, also for adapter events. registryHasTheme only checks APPROVED skills, so an AI proposal and 'Archery Knack' are both pending; 'archery' is both a tag and an ALSO_THEME. Neither source counts toward the pending cap. Live (EndexDND 5E): Briik has 12 pending = 5 Knack placeholders + 2 templates + 5 AI. Fix: skip templates/placeholders for adapter events (or auto-author them), suppress a theme already on a pending AI proposal, include all sources in the cap.",
+    "dev-proposals: adapter events no longer mint templates/Knacks (recordGrowthEvent fromAdapter); emergent skips themes on pending AI proposals; cap counts template+emergent+ai (placeholders dropped first). Real model, 3 archery notes, both systems: 5 pending, all ai-gateway, 0 Knack/template. Two existing tests updated to the local path."
    ],
    "tags": [
     "proposals",
@@ -773,7 +775,7 @@
    "owner": "dev-proposals",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.571,
-   "updated": 1790661465.832,
+   "updated": 1790662030.396,
    "prio": 1,
    "parent": "a2cbef5e"
   },
@@ -782,7 +784,8 @@
    "title": "An AI-rewritten template proposal is overwritten by the next recorded event",
    "status": "doing",
    "notes": [
-    "api.js:1165-1170 only protects authored EMERGENT proposals; a re-authored template keeps source 'template' and a stable id (proposal:measured-strike), so the next recordGrowthEvent puts the template text back. Fix: preserve anything with authoredBy 'ai-gateway' (refresh evidence only) and restamp source ai-gateway, origin template."
+    "api.js:1165-1170 only protects authored EMERGENT proposals; a re-authored template keeps source 'template' and a stable id (proposal:measured-strike), so the next recordGrowthEvent puts the template text back. Fix: preserve anything with authoredBy 'ai-gateway' (refresh evidence only) and restamp source ai-gateway, origin template.",
+    "dev-proposals: anything authoredBy ai-gateway keeps its entry (evidence refreshed); a rewritten template becomes source ai-gateway origin template. Tested (both systems)."
    ],
    "tags": [
     "proposals"
@@ -791,7 +794,7 @@
    "owner": "dev-proposals",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.646,
-   "updated": 1790661465.907,
+   "updated": 1790662030.434,
    "prio": 1,
    "parent": "a2cbef5e"
   },
@@ -800,7 +803,8 @@
    "title": "A Class-evolution proposal can no longer be approved once the character levels past the milestone",
    "status": "doing",
    "notes": [
-    "progression.js:782 canApproveGeneratedProposal requires CLASS_EVOLUTION_LEVELS.has(current level). The guaranteed level-20 Class is dead if the GM rests to 21 first; a multi-level rest also falls back to a template that cannot be approved. Fix: gate on proposal.milestoneLevel; pass classEvolutionAvailable for milestone calls instead of reading the live level."
+    "progression.js:782 canApproveGeneratedProposal requires CLASS_EVOLUTION_LEVELS.has(current level). The guaranteed level-20 Class is dead if the GM rests to 21 first; a multi-level rest also falls back to a template that cannot be approved. Fix: gate on proposal.milestoneLevel; pass classEvolutionAvailable for milestone calls instead of reading the live level.",
+    "dev-proposals: canApproveGeneratedProposal gates on milestoneLevel/classEvolutionLevel; adapter marks class available for milestone/target requests; live-level check dropped. Real model: L20 Class resolved at GD level 21 and approved, both systems. Also milestone template fallbacks carry usedFallback+fallbackReason on the proposal (PM add-on)."
    ],
    "tags": [
     "progression",
@@ -810,7 +814,7 @@
    "owner": "dev-proposals",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.722,
-   "updated": 1790661465.982,
+   "updated": 1790662030.472,
    "prio": 1,
    "parent": "12372a7a"
   },

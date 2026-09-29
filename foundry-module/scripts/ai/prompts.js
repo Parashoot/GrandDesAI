@@ -251,7 +251,7 @@ export function creativityTemperature(config) {
 // `mustPropose`: the GM explicitly asked for suggestions (proposalMode "always") or a level-up grant
 // allowance is waiting to be spent. Without it a careful model answers {"proposals":[]} for any
 // single-session evidence -- which is right for "when-earned" and useless for "always".
-export function buildProposalMessages({ request, config, events, themeEvidence = {}, tagEvidence = {}, allowClass, mustPropose = false, milestone = null }) {
+export function buildProposalMessages({ request, config, events, themeEvidence = {}, tagEvidence = {}, allowClass, mustPropose = false, milestone = null, target = null }) {
   const req = request.requirements ?? {};
   const polarity = config.allowRed
     ? req.polarityGuidance
@@ -260,7 +260,9 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
   const system = [
     "You design Grand Design growth proposals (new Skills, or a Class evolution) for a tabletop RPG character from evidence of what they actually did. Reply with JSON only: {\"proposals\":[...]}.",
     "Do not grant, approve, or claim to create any item -- the GM approves every proposal.",
-    milestone
+    target
+      ? `This is an AUTHORING request: the GM asked you to write the real proposal for one placeholder, so return EXACTLY ONE proposal.`
+      : milestone
       ? `This is a GUARANTEED Grand Design milestone reward, not an open-ended suggestion: return EXACTLY ONE proposal.`
       : mustPropose
         ? `The GM has asked for suggestions now: propose at least 1 and at most ${config.maxProposals} proposals, built on the strongest evidence available even if it is a single event. Return {"proposals":[]} only when there are no events at all.`
@@ -268,6 +270,7 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     // api.js#resolveLevelRest asks for the capstone Skill and the Class evolution as two SEPARATE
     // milestone calls even when both land on the same level (both are divisible-by-10 AND in
     // CLASS_EVOLUTION_LEVELS at 20/30/50) -- each call wants exactly its own kind, never the other's.
+    ...(target ? [authoringInstruction(target)] : []),
     ...(milestone ? [
       milestone.kind === "capstone"
         ? `MILESTONE CAPSTONE (Grand Design level ${milestone.level}): the ONE guaranteed capstone Skill every 10th level grants, independent of any Class evolution. kind MUST be "skill", tier MUST be 3, a concrete signature ability built from the single strongest recurring activity in newEvents/tagEvidence/themeEvidence -- never a generic placeholder left for the GM to flesh out. Do not propose a Class here even if one is otherwise available; a Class evolution (when this level also has one) is requested separately.`
@@ -369,6 +372,28 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     { role: "system", content: system },
     { role: "user", content: JSON.stringify(payload) }
   ];
+}
+
+// api.js#requestProposalAuthoring: the GM pressed "Author with AI" on a placeholder ("<Theme> Knack",
+// a template, a capstone). Without this the model was never told WHAT to author (board 3d80edf3).
+function authoringInstruction(target) {
+  const kind = target.kind === "class" ? "class" : "skill";
+  const what = target.label || target.theme || "the activity in newEvents";
+  const parts = [
+    `AUTHORING TARGET: replace the placeholder with ONE real ${kind === "class" ? "Class evolution" : "Skill"} built around "${what}"${target.theme ? ` (theme: ${target.theme}; put it in metadata.themes)` : ""}. kind MUST be "${kind}".`
+  ];
+  if (kind === "skill") {
+    if (Number.isInteger(target.tier)) parts.push(`tier MUST be ${target.tier}${target.isCapstone ? " (a capstone: the character's rare signature ability)" : ""}.`);
+    else parts.push("Keep it modest: tier 1 or 2.");
+  } else {
+    parts.push("Build it on the character's strongest repeated evidence, using the class example's field set. Do not return a Skill.");
+  }
+  parts.push("Cite the newEvents you used as evidence; they are exactly the deeds already recorded for this placeholder. Give it concrete mechanics in this system's own terms.");
+  if (target.placeholder?.name) {
+    const effect = typeof target.placeholder.effect === "string" ? ` -- "${target.placeholder.effect.slice(0, 200)}"` : "";
+    parts.push(`The generic placeholder being replaced is "${target.placeholder.name}"${effect}. Do NOT reuse its name or wording; write something specific to what this character actually did.`);
+  }
+  return parts.join(" ");
 }
 
 function roundValues(map) {

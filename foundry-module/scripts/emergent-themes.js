@@ -209,12 +209,15 @@ function registrySlug(value) {
  * placeholder proposal. The GM's theme map is applied first, so an ignored theme never proposes,
  * a merged one proposes under its merge target, and a mapped one has become a canonical tag.
  */
-export function generateEmergentProposals(events, registry, { themeMap = {}, threshold = EMERGENT_THEME_EVIDENCE_THRESHOLD, systemId = "pf2e" } = {}) {
+export function generateEmergentProposals(events, registry, { themeMap = {}, threshold = EMERGENT_THEME_EVIDENCE_THRESHOLD, systemId = "pf2e", excludeThemes = [] } = {}) {
+  const excluded = new Set(excludeThemes);
   const mapped = applyThemeMap(Array.isArray(events) ? events : [], themeMap);
   const evidence = themeEvidence(mapped);
   const proposals = [];
   for (const [slug, weight] of evidence) {
     if (weight < threshold) continue;
+    // A theme a pending AI proposal already covers must not also get a "<Theme> Knack" placeholder.
+    if (excluded.has(slug)) continue;
     const label = themeLabel(slug, themeMap);
     const evidenceIds = mapped
       .filter((event) => Array.isArray(event.themes) && event.themes.includes(slug) && event.id)

@@ -218,14 +218,20 @@ for (const systemId of SYSTEMS) {
       assert.ok(!result.proposals.some((proposal) => proposal.entry.name === "Soft-Hearted Mender"));
       assert.ok(result.adapterSkippedProposals.some((entry) => entry.reason === "attributed-to-others"));
 
-      // Maren herself does get both.
+      // Maren herself gets the model's proposal; the built-in Field Triage template is NOT minted on
+      // top of it when the AI read the notes (board d8c96c43)...
       const maren = createMockActor(systemId, "Maren");
       const hers = await api.analyzeSessionNotes(maren, PARTY_NOTES);
-      const triage = hers.proposals.find((proposal) => proposal.id === "proposal:field-triage");
+      assert.ok(!hers.proposals.some((proposal) => proposal.id === "proposal:field-triage"), "no template beside the AI's proposals");
+      assert.ok(hers.proposals.some((proposal) => proposal.entry.name === "Soft-Hearted Mender"));
+      // ...it still comes from events recorded on the local path (no adapter read them).
+      const local = createMockActor(systemId, "Maren");
+      let last;
+      for (const event of events.filter((e) => /^Maren (healed|patched|bandaged)/.test(e.summary))) last = await api.recordGrowthEvent(local, { ...event });
+      const triage = last.proposals.find((proposal) => proposal.id === "proposal:field-triage");
       assert.ok(triage, "Maren earned Field Triage");
       assert.equal(triage.source, "template");
       assert.equal(triage.systemId, systemId);
-      assert.ok(hers.proposals.some((proposal) => proposal.entry.name === "Soft-Hearted Mender"));
       if (systemId === "dnd5e") {
         assert.doesNotMatch(entryText(triage.entry), PF2E_TERMS);
         assert.equal(triage.entry.mechanics.roll.formula, "1d20+3"); // dnd5e "acr" modifier, not a flat +0

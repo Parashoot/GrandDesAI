@@ -871,11 +871,16 @@ function summarizeRejections(rejected) {
  * @param {{kind:"capstone"|"class-evolution", level:number}} [args.milestone] a guaranteed Grand
  *   Design milestone reward (api.js#resolveLevelRest): stage 2 is told to return exactly the one
  *   kind of proposal this milestone grants, instead of its usual open-ended suggestion behavior.
+ * @param {{kind:"skill"|"class", theme?:string, label?:string, tier?:number, isCapstone?:boolean, placeholder?:{name:string,effect?:string}}} [args.target]
+ *   "Author with AI" (api.js#requestProposalAuthoring): stage 2 only, always runs, must return exactly
+ *   one proposal of target.kind about target.theme/label (tier fixed for a capstone).
  * @returns {Promise<{events, proposals, themes, skippedEvents, skippedProposals, diagnostics}>}
  */
-export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep, extractionCache = null, refreshExtraction = false, presetEvents = null, milestone = null } = {}) {
+export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep, extractionCache = null, refreshExtraction = false, presetEvents = null, milestone = null, target = null } = {}) {
   const started = nowMs();
-  const cfg = normalizeGatewayConfig(config);
+  const baseCfg = normalizeGatewayConfig(config);
+  // An authoring request writes exactly one proposal whatever the table's maxProposals says.
+  const cfg = target ? { ...baseCfg, maxProposals: 1 } : baseCfg;
   const sysId = systemId ?? cfg.systemId ?? request?.actor?.system ?? "pf2e";
   const validate = {
     skill: validators.validateSkillEntry ?? defaultValidateSkill,
@@ -971,11 +976,13 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
     // events stay whole; api.js attributes them per character with the same rule.
     const ownEvents = request?.actor?.name ? attributeEventsToActor(events, [request.actor.name], { notes: String(request.notes ?? notes) }).kept : events;
     if (ownEvents.length !== events.length) diagnostics.proposalEvents = { own: ownEvents.length, total: events.length };
-    const decision = shouldPropose(ownEvents, request, cfg);
+    const decision = target
+      ? { ...shouldPropose(ownEvents, request, { ...cfg, proposalMode: "always" }), run: true, reason: "authoring-target", allowClass: target.kind === "class" }
+      : shouldPropose(ownEvents, request, cfg);
     diagnostics.proposalStage = { ran: decision.run, reason: decision.reason };
     if (decision.run) {
       try {
-        const result = await proposeStage(ownEvents, decision, ctx, milestone);
+        const result = await proposeStage(ownEvents, decision, ctx, milestone, target);
         proposals = result.accepted;
         skippedProposals.push(...result.skipped);
       } catch (error) {
@@ -1340,17 +1347,17 @@ export function readRedCheck(value) {
     .slice(0, 20);
 }
 
-async function proposeStage(events, decision, ctx, milestone = null) {
+async function proposeStage(events, decision, ctx, milestone = null, target = null) {
   const { transport, request, cfg, diagnostics } = ctx;
   const stage = { stage: "propose", chunk: null, attempts: 0, ms: 0, repairs: [], errors: [] };
   diagnostics.stages.push(stage);
-  const mustPropose = Boolean(milestone) || cfg.proposalMode === "always" || String(decision.reason ?? "").startsWith("grant-allowances");
+  const mustPropose = Boolean(milestone) || Boolean(target) || cfg.proposalMode === "always" || String(decision.reason ?? "").startsWith("grant-allowances");
   // A milestone request always names its own kind explicitly (api.js#resolveLevelRest calls capstone
   // and class-evolution separately, even when one level grants both): a capstone call never allows a
   // Class in the same breath, and a class-evolution call always allows one, regardless of what
   // decision.allowClass (derived from the actor's live grandDesign flag) would otherwise say.
-  const allowClass = milestone ? milestone.kind === "class-evolution" : decision.allowClass;
-  const messages = buildProposalMessages({ request, config: cfg, events, themeEvidence: decision.themeEvidence, tagEvidence: decision.tagEvidence, allowClass, mustPropose, milestone });
+  const allowClass = target ? target.kind === "class" : milestone ? milestone.kind === "class-evolution" : decision.allowClass;
+  const messages = buildProposalMessages({ request, config: cfg, events, themeEvidence: decision.themeEvidence, tagEvidence: decision.tagEvidence, allowClass, mustPropose, milestone, target });
   const temperature = creativityTemperature(cfg);
   let items = null;
   let redFlags = [];
@@ -1386,7 +1393,11 @@ async function proposeStage(events, decision, ctx, milestone = null) {
     return { accepted: [], skipped: [{ reason: "unparseable-proposal-response", errors: stage.errors.slice(-3), raw: String(lastContent).slice(0, 1000) }] };
   }
   const checked = await validateProposals(items, { messages, stage, temperature }, ctx);
-  const gated = gateProposals(checked.accepted, ctx);
+  // An authoring request is for ONE kind; a model that also wrote the other kind first must not use
+  // up the single slot on it.
+  const wrongKind = target ? checked.accepted.filter((p) => p.kind !== target.kind) : [];
+  const gated = gateProposals(target ? checked.accepted.filter((p) => p.kind === target.kind) : checked.accepted, ctx);
+  checked.skipped.push(...wrongKind.map((proposal) => ({ proposal, reason: "wrong-kind-for-target" })));
   // Surface the model's own red verdicts, and say so when it flagged a deed but still wrote nothing
   // red: the GM should know a dark act went unanswered rather than find out from the players.
   if (redFlags.length) {

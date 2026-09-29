@@ -86,10 +86,16 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
   // `events`: already-recorded events to propose from directly (api.requestGrowthProposals); stage 1 is skipped.
   // `milestone`: a guaranteed Grand Design milestone reward (api.requestGrowthProposals-style call
   // from api.resolveLevelRest) -- see pipeline.js#runGatewayPipeline's milestone param.
-  const adapter = async ({ actor, notes, systemId, fresh = false, events = null, milestone = null } = {}) => {
+  const run = async ({ actor, notes, systemId, fresh = false, events = null, milestone = null, target = null }) => {
     const sys = systemId ?? cfg.systemId ?? activeSystemId();
     const request = buildAiGatewayRequest(actor, notes, sys);
-    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys, extractionCache, refreshExtraction: fresh === true, presetEvents: Array.isArray(events) ? events : null, milestone });
+    // A Class request for a milestone the character has ALREADY passed (a multi-level rest, or the GM
+    // resting on to 21 before asking) must not be stripped by the live-level gate: the milestone
+    // level, not the current one, is what makes a Class available (board f48a1e52).
+    if ((milestone?.kind === "class-evolution" || target?.kind === "class") && request.actor?.grandDesign) {
+      request.actor.grandDesign.classEvolutionAvailable = true;
+    }
+    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys, extractionCache, refreshExtraction: fresh === true, presetEvents: Array.isArray(events) ? events : null, milestone, target });
     return {
       events: result.events,
       proposals: result.proposals,
@@ -98,6 +104,20 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
       skippedProposals: result.skippedProposals,
       gatewayDiagnostics: result.diagnostics
     };
+  };
+  const adapter = (args = {}) => run(args);
+  // "Author with AI" (api.js#requestProposalAuthoring): stage 2 only, over the placeholder's own
+  // cited events, told exactly what to write (board 3d80edf3). Never records events.
+  adapter.authorProposal = ({ actor, proposal, events = [], theme = null, label = null, systemId } = {}) => {
+    const kind = proposal?.kind === "class" ? "class" : "skill";
+    const target = {
+      kind,
+      theme,
+      label,
+      ...(proposal?.isCapstone ? { isCapstone: true, tier: 3 } : {}),
+      placeholder: { name: proposal?.entry?.name ?? label ?? "placeholder", effect: proposal?.entry?.mechanics?.effect }
+    };
+    return run({ actor, notes: "", systemId, events: Array.isArray(events) ? events : [], target });
   };
   adapter.ping = () => transport.ping();
   adapter.listModels = () => transport.listModels();

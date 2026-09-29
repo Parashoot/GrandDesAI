@@ -779,7 +779,10 @@ export function canApproveGeneratedProposal(progression, proposal) {
   if (state.grantAllowances < 1) {
     return { valid: false, error: "Resolve a Grand Design level-up at rest before granting a generated entry." };
   }
-  if (proposal.kind === "class" && !CLASS_EVOLUTION_LEVELS.has(state.level)) {
+  // A Class made for a milestone (or by the AI while a Class was available) stays approvable after
+  // the character rests past that level; only a Class with no such level needs the live one.
+  const classLevel = Number.isInteger(proposal.milestoneLevel) ? proposal.milestoneLevel : proposal.classEvolutionLevel;
+  if (proposal.kind === "class" && !CLASS_EVOLUTION_LEVELS.has(state.level) && !CLASS_EVOLUTION_LEVELS.has(classLevel)) {
     return {
       valid: false,
       error: `Generated Class evolution is only available at Grand Design levels 20, 30, or 50 (current level: ${state.level}).`

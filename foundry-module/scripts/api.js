@@ -1,5 +1,6 @@
 import {
   ACTOR_FLAG,
+  CLASS_EVOLUTION_LEVELS,
   COMBINATIONS_FLAG,
   CONSOLIDATIONS_FLAG,
   GROWTH_EVENTS_FLAG,
@@ -773,7 +774,7 @@ export class GrandDesignApi {
     const recorded = [];
     let eventProposals = this.getGrowth(actor).proposals;
     for (const event of taggedEvents) {
-      const result = await this.recordGrowthEvent(actor, { ...event, source: usedAdapter ? "adapter" : "local" }, { observeThemes: false });
+      const result = await this.recordGrowthEvent(actor, { ...event, source: usedAdapter ? "adapter" : "local" }, { observeThemes: false, fromAdapter: usedAdapter });
       recorded.push(result.event);
       eventProposals = result.proposals;
     }
@@ -797,14 +798,14 @@ export class GrandDesignApi {
       } else if (rejectedNames.has(slugify(proposal.entry?.name ?? ""))) {
         invalidProposals.push({ proposal, errors: [`The GM already rejected a proposal named ${proposal.entry?.name}.`], reason: "rejected" });
       } else {
-        modelProposals.push(proposal);
+        modelProposals.push(stampClassEvolutionLevel(proposal, this.getLevelProgression(actor).level));
       }
     }
     const mergedProposals = mergeProposals(eventProposals, modelProposals);
     // Board b81a0357: trim to the pending-proposal cap AFTER merging, so it catches proposals that
     // piled up on the actor from earlier analyses too, not just this batch.
     const allowances = this.getLevelProgression(actor).grantAllowances;
-    const { proposals, dropped: cappedOutProposals, cap: pendingCap } = capPendingAiProposals(mergedProposals, config, allowances);
+    const { proposals, dropped: cappedOutProposals, cap: pendingCap } = capPendingAiProposals(mergedProposals, config, allowances, { countAll: true });
     const cappedIds = new Set(proposals.map((p) => p.id));
 
     const adapterSkippedEvents = usedAdapter
@@ -991,31 +992,50 @@ export class GrandDesignApi {
     const theme = proposal.theme ?? proposal.entry?.metadata?.themes?.[0] ?? null;
     const label = theme ? themeLabel(theme, this._themeMap()) : proposal.entry?.name ?? "this activity";
 
+    const wantedKind = proposal.kind ?? "skill";
+    const hasAuthorEntry = typeof this._proposalAdapter.authorProposal === "function";
     let output;
-    if (typeof this._proposalAdapter.authorProposal === "function") {
-      output = await this._proposalAdapter.authorProposal({ actor, proposal, events: evidenceEvents, theme, label, systemId: game.system?.id });
-    } else {
-      output = await this._proposalAdapter({ actor, notes: buildAuthoringNotes(actor, label, theme, evidenceEvents), systemId: game.system?.id });
+    try {
+      if (hasAuthorEntry) {
+        output = await this._proposalAdapter.authorProposal({ actor, proposal, events: evidenceEvents, theme, label, systemId: game.system?.id });
+      } else {
+        output = await this._proposalAdapter({ actor, notes: buildAuthoringNotes(actor, label, theme, evidenceEvents), systemId: game.system?.id });
+      }
+    } catch (error) {
+      // The placeholder stays exactly as it was; the GM is told why.
+      throw new Error(`The AI provider failed while authoring "${label}" (the placeholder is unchanged): ${error.message}`);
     }
     const candidates = Array.isArray(output) ? [] : Array.isArray(output?.proposals) ? output.proposals : output?.entry ? [output] : [];
     const { accepted, skipped } = this._validateModelProposals(candidates.map((candidate) => ({ kind: "skill", ...candidate })), actor, {
       customSynonyms: config.customSynonyms
     });
-    const authored = accepted.find((candidate) => candidate.kind === (proposal.kind ?? "skill")) ?? accepted[0];
+    // With the stage-2 entry point the model was told the kind, so a different kind is refused; the
+    // legacy notes-wrapper path could only ever ask for a Skill, so it keeps taking whatever came back.
+    const authored = accepted.find((candidate) => candidate.kind === wantedKind) ?? (hasAuthorEntry ? null : accepted[0]);
     if (!authored) {
-      const reasons = skipped.map((entry) => entry.errors?.join(" ")).filter(Boolean).join(" | ");
-      throw new Error(`The AI did not return a usable Skill for "${label}".${reasons ? ` ${reasons}` : ""}`);
+      const gatewaySkipped = Array.isArray(output?.skippedProposals) ? output.skippedProposals : [];
+      const reasons = [...skipped, ...gatewaySkipped]
+        .map((entry) => entry.errors?.join(" ") ?? entry.error ?? entry.reason)
+        .filter(Boolean)
+        .join(" | ");
+      throw new Error(`The AI did not return a usable ${wantedKind === "class" ? "Class" : "Skill"} for "${label}" (the placeholder is unchanged).${reasons ? ` ${reasons}` : ""}`);
     }
     const entry = structuredClone(authored.entry);
     entry.metadata ??= {};
     if (theme) entry.metadata.themes = [...new Set([...(entry.metadata.themes ?? []), theme])];
+    // A capstone is a tier-3 Skill by definition (progression.js#buildCapstoneEntry).
+    if (proposal.isCapstone && wantedKind === "skill" && entry.tier !== 3) entry.tier = 3;
+    // The original id, evidence, isCapstone and milestoneLevel stay (spread), so the entry still
+    // spends the right allowance and is still the same row in the Growth list. A rewritten TEMPLATE
+    // becomes an ai-gateway proposal (origin "template") so the next recorded event leaves it alone.
     const updated = {
       ...proposal,
       kind: authored.kind,
       entry,
       needsAuthoring: false,
       authoredBy: "ai-gateway",
-      authoredAt: new Date().toISOString()
+      authoredAt: new Date().toISOString(),
+      ...(proposal.source === "template" ? { source: "ai-gateway", origin: "template" } : {})
     };
     const proposals = growth.proposals.map((candidate) => (candidate.id === proposalId ? updated : candidate));
     await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
@@ -1082,12 +1102,12 @@ export class GrandDesignApi {
       }
       known.add(proposal.id);
       pendingNames.add(key);
-      added.push({ ...proposal, requestedAt: new Date().toISOString() });
+      added.push({ ...stampClassEvolutionLevel(proposal, this.getLevelProgression(actor).level), requestedAt: new Date().toISOString() });
     }
     const mergedProposals = mergeProposals(growth.proposals, added);
     // Board b81a0357: same cap as analyzeSessionNotes, applied here too since "Suggest proposals" is
     // the other place AI proposals land on the actor.
-    const { proposals, dropped: cappedOutProposals, cap: pendingCap } = capPendingAiProposals(mergedProposals, config, this.getLevelProgression(actor).grantAllowances);
+    const { proposals, dropped: cappedOutProposals, cap: pendingCap } = capPendingAiProposals(mergedProposals, config, this.getLevelProgression(actor).grantAllowances, { countAll: true });
     const cappedIds = new Set(proposals.map((p) => p.id));
     const keptAdded = added.filter((proposal) => cappedIds.has(proposal.id));
     if (keptAdded.length) {
@@ -1128,7 +1148,11 @@ export class GrandDesignApi {
     return [actor?.name, actor?.prototypeToken?.name].filter((name) => typeof name === "string" && name.trim());
   }
 
-  async recordGrowthEvent(actor, event, { observeThemes: observe = true } = {}) {
+  // `fromAdapter`: the event came from the AI gateway's reading of the notes. Stage 2 already covers
+  // templates and themes for those, so minting a template or a "<Theme> Knack" placeholder as well
+  // duplicated its proposals (board d8c96c43); the local path (no adapter, or one that failed) still
+  // generates both.
+  async recordGrowthEvent(actor, event, { observeThemes: observe = true, fromAdapter = false } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
     const growth = this.getGrowth(actor);
@@ -1147,10 +1171,13 @@ export class GrandDesignApi {
     // The GM's theme map is applied before template matching too: a theme mapped onto a canonical
     // tag ("beekeeping" -> nature) is then ordinary evidence for that tag's templates.
     const mappedEvents = applyThemeMap(events, themeMap);
-    const generated = [
-      ...generateSkillProposals(mappedEvents, registry, modifier, this.getConsolidations(actor), this.getTagWeights(), { systemId }),
-      ...(emergentEnabled ? generateEmergentProposals(events, registry, { themeMap, systemId }) : [])
-    ];
+    const pendingAiThemes = pendingAiProposalThemes(growth.proposals);
+    const generated = fromAdapter
+      ? []
+      : [
+        ...generateSkillProposals(mappedEvents, registry, modifier, this.getConsolidations(actor), this.getTagWeights(), { systemId }),
+        ...(emergentEnabled ? generateEmergentProposals(events, registry, { themeMap, systemId, excludeThemes: pendingAiThemes }) : [])
+      ];
     const known = new Map(growth.proposals.map((proposal) => [proposal.id, proposal]));
     // Template/theme proposal ids are already stable per template or theme, so a rejected one is
     // normally re-matched by id below and left alone; this name check is the fallback for the case
@@ -1163,11 +1190,10 @@ export class GrandDesignApi {
         if (rejectedNames.has(slugify(proposal.entry?.name ?? ""))) continue;
         known.set(proposal.id, proposal);
       } else if (existing.status === "pending") {
-        // An emergent placeholder the GM already had the AI author must keep its authored entry;
-        // only its evidence list is refreshed.
-        known.set(proposal.id, existing.source === "emergent" && existing.needsAuthoring === false
-          ? { ...existing, evidence: proposal.evidence }
-          : proposal);
+        // Anything the AI authored (a placeholder, a rewritten template) keeps its authored entry;
+        // only its evidence list is refreshed (board 0a1c8463).
+        const authored = existing.authoredBy === "ai-gateway" || (existing.source === "emergent" && existing.needsAuthoring === false);
+        known.set(proposal.id, authored ? { ...existing, evidence: proposal.evidence } : proposal);
       }
     }
     const proposals = [...known.values()];
@@ -1180,16 +1206,21 @@ export class GrandDesignApi {
     Hooks.callAll("grand-design-ai.growthEventRecorded", actor, normalizedEvent, proposals);
     return { event: normalizedEvent, proposals };
   }
-  async approveSkillProposal(actor, id) {
-    return this.approveProposal(actor, id);
+  async approveSkillProposal(actor, id, options = {}) {
+    return this.approveProposal(actor, id, options);
   }
 
-  async approveProposal(actor, id) {
+  async approveProposal(actor, id, { confirm = false } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
     const growth = this.getGrowth(actor);
     const proposal = growth.proposals.find((candidate) => candidate.id === id && candidate.status === "pending");
     if (!proposal) throw new Error(`No pending skill proposal exists for ${id}.`);
+    // A generic "<Theme> Knack" placeholder is not something to approve when the AI can write the real
+    // one; `confirm: true` approves it as-is (board 3d80edf3).
+    if (proposal.needsAuthoring && this._proposalAdapter && confirm !== true) {
+      throw new Error(`"${proposal.entry?.name ?? id}" is a generic placeholder: use "Author with AI" first, or approve it with confirm: true to accept it as written.`);
+    }
     const levelProgression = this.getLevelProgression(actor);
     const eligibility = canApproveGeneratedProposal(levelProgression, proposal);
     if (!eligibility.valid) throw new Error(eligibility.error);
@@ -1336,17 +1367,18 @@ export class GrandDesignApi {
       });
     };
 
+    // The template stands in for the AI: the proposal itself says so (usedFallback + fallbackReason),
+    // so the Growth dialog can label it a template and not only the rest warning.
+    const fallback = (reason) => ({
+      proposal: { ...buildFallback(), usedFallback: true, fallbackReason: reason },
+      usedFallback: true,
+      reason
+    });
     if (!this._proposalAdapter) {
-      return { proposal: buildFallback(), usedFallback: true, reason: "no AI provider is configured" };
+      return fallback("no AI provider is configured");
     }
-    // A Class-evolution milestone only produces a Class when the actor's OWN current Grand Design
-    // level is one of CLASS_EVOLUTION_LEVELS -- buildAiGatewayRequest reads that live off the actor,
-    // and the gateway's own gateProposals gate strips any Class proposal otherwise. That is only
-    // false here if this single rest crossed more than one milestone level and a later one has
-    // already been persisted above; rare enough to just use the template rather than chase it.
-    if (!isCapstone && this.getLevelProgression(actor).level !== level) {
-      return { proposal: buildFallback(), usedFallback: true, reason: "this level is no longer the actor's current Grand Design level" };
-    }
+    // The adapter marks a Class milestone as available for THE MILESTONE LEVEL (ai-gateway.js), not the
+    // live one, so a rest that crossed several levels still gets an AI Class (board f48a1e52).
 
     const adapter = this._alwaysProposeAdapter();
     let output;
@@ -1360,7 +1392,7 @@ export class GrandDesignApi {
         milestone: { kind, level }
       });
     } catch (error) {
-      return { proposal: buildFallback(), usedFallback: true, reason: `the AI provider failed: ${error.message}` };
+      return fallback(`the AI provider failed: ${error.message}`);
     }
     const candidates = Array.isArray(output) ? [] : Array.isArray(output?.proposals) ? output.proposals : [];
     const wantedKind = isCapstone ? "skill" : "class";
@@ -1371,7 +1403,7 @@ export class GrandDesignApi {
     );
     const authored = accepted[0];
     if (!authored) {
-      return { proposal: buildFallback(), usedFallback: true, reason: "the AI did not return a usable milestone proposal" };
+      return fallback("the AI did not return a usable milestone proposal");
     }
     const proposal = {
       id: isCapstone ? `proposal:capstone-${level}` : `proposal:class-evolution-${level}`,
@@ -1746,24 +1778,50 @@ function mergeProposals(existing, additions) {
  * untouched.
  * @returns {{ proposals: object[], dropped: object[], cap: number }}
  */
-function capPendingAiProposals(proposals, config, allowances) {
+function capPendingAiProposals(proposals, config, allowances, { countAll = false } = {}) {
   const cap = pendingProposalCap(config, allowances);
-  const pendingAi = proposals.filter((p) => p.status === "pending" && p.source === "ai-gateway");
+  // With an AI provider configured every pending source counts (templates and "<Theme> Knack"
+  // placeholders sat on top of the AI's proposals: Briik had 12 pending, board d8c96c43) and the
+  // unauthored ones go first. Guaranteed milestone rewards (capstone, class-evolution) never compete.
+  const counted = (p) => p.status === "pending" && (countAll ? ["ai-gateway", "template", "emergent"].includes(p.source) : p.source === "ai-gateway");
+  const isPlaceholder = (p) => p.source !== "ai-gateway" && p.authoredBy !== "ai-gateway" && !(p.source === "emergent" && p.needsAuthoring === false);
+  const pendingAi = proposals.filter(counted);
   if (pendingAi.length <= cap) return { proposals, dropped: [], cap };
   const scored = pendingAi
     .map((p, i) => ({
       p,
       i,
+      placeholder: isPlaceholder(p) ? 1 : 0,
       evidence: Array.isArray(p.evidence) ? p.evidence.length : 0,
       at: Date.parse(p.requestedAt ?? p.approvedAt ?? "") || 0
     }))
     // Best (more citing evidence) first, newest first among ties, and original order as the last
     // tiebreak so the result is stable.
-    .sort((a, b) => (b.evidence - a.evidence) || (b.at - a.at) || (b.i - a.i));
+    .sort((a, b) => (a.placeholder - b.placeholder) || (b.evidence - a.evidence) || (b.at - a.at) || (b.i - a.i));
   const keepIds = new Set(scored.slice(0, cap).map((s) => s.p.id));
   const dropped = pendingAi.filter((p) => !keepIds.has(p.id));
   const droppedIds = new Set(dropped.map((p) => p.id));
   return { proposals: proposals.filter((p) => !droppedIds.has(p.id)), dropped, cap };
+}
+
+// A Class the AI wrote while a Class evolution was available stays approvable after the character
+// levels past that milestone (progression.js#canApproveGeneratedProposal reads this).
+function stampClassEvolutionLevel(proposal, level) {
+  return proposal.kind === "class" && CLASS_EVOLUTION_LEVELS.has(level) && !Number.isInteger(proposal.milestoneLevel)
+    ? { ...proposal, classEvolutionLevel: level }
+    : proposal;
+}
+
+// Themes already carried by a pending AI-authored proposal (theme field or entry metadata).
+function pendingAiProposalThemes(proposals) {
+  const themes = new Set();
+  for (const p of Array.isArray(proposals) ? proposals : []) {
+    if (p?.status !== "pending" || (p.source !== "ai-gateway" && p.authoredBy !== "ai-gateway")) continue;
+    for (const theme of [p.theme, ...(Array.isArray(p.entry?.metadata?.themes) ? p.entry.metadata.themes : [])]) {
+      if (typeof theme === "string" && theme) themes.add(theme);
+    }
+  }
+  return [...themes];
 }
 
 function slugify(value) {
