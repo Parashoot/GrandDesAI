@@ -80,15 +80,48 @@ export function resolveStatePath(state, path) {
   return current;
 }
 
+/**
+ * The parts of the state a question references, one per distinct `name[i](.field)` reference that
+ * resolves (in order of first mention), or the whole state when it references nothing.
+ */
+export function focusParts(state, instructions) {
+  const refs = String(instructions ?? "").match(/[A-Za-z_$][\w$]*(?:\[\d+\](?:\.[A-Za-z_$][\w$]*)*)+/g) ?? [];
+  const parts = [];
+  for (const ref of refs) {
+    if (parts.some((part) => part.ref === ref)) continue;
+    const value = resolveStatePath(state, ref);
+    if (value !== undefined) parts.push({ ref, value, text: stateText(value) });
+  }
+  return parts.length ? parts : [{ ref: "", value: state, text: stateText(state) }];
+}
+
 /** The part of the state a question is about: every `name[i](.field)` reference that resolves. */
 export function focusOf(state, instructions) {
-  const refs = String(instructions ?? "").match(/[A-Za-z_$][\w$]*(?:\[\d+\](?:\.[A-Za-z_$][\w$]*)*)+/g) ?? [];
-  const hits = [];
-  for (const ref of refs) {
-    const value = resolveStatePath(state, ref);
-    if (value !== undefined) hits.push(value);
-  }
-  return hits.length ? hits.map(stateText).join("\n") : stateText(state);
+  return focusParts(state, instructions).map((part) => part.text).join("\n");
+}
+
+// A referenced part that is just a name ("Luz", "Ana María") rather than a passage.
+const isBareName = (text) => /^[\p{L}\p{M}'’.-]+(?:\s+[\p{L}\p{M}'’.-]+){0,2}$/u.test(String(text ?? "").trim());
+
+/**
+ * What a question is really about, from the parts it references: the `subject` is the most
+ * specific passage (the shortest referenced text that is not a bare name -- an event's quote or
+ * summary rather than the whole notes line it sits in), the `context` is everything else joined,
+ * and `speaker` is a bare-name part (the pipeline's `events[i].noteLine.speaker`), if any.
+ *
+ * Why: the pipeline shows Jev an event's quote and summary AND the whole speaker line around it. A
+ * real Jev answers about the event; an earlier version of this sim answered about whichever deed in
+ * the line matched the longest gold snippet, so every event on Luz's line "became" Tovin's kill and
+ * the party corpus lost credit with Jev on (board ab855163).
+ */
+export function focusSubject(state, instructions) {
+  const parts = focusParts(state, instructions);
+  const named = parts.filter((part) => typeof part.value === "string" && isBareName(part.value));
+  const passages = parts.filter((part) => part.text.trim() && !named.includes(part));
+  const shortest = (list) => [...list].sort((a, b) => a.text.length - b.text.length)[0];
+  const subjectPart = shortest(passages.length ? passages : parts);
+  const context = parts.filter((part) => part !== subjectPart).map((part) => part.text).join("\n");
+  return { subject: subjectPart?.text ?? "", context, speaker: named[0]?.value ?? null, parts };
 }
 
 // ---- intent recognition --------------------------------------------------------------------------
@@ -127,7 +160,7 @@ const DARK_RE = /\b(surrender\w*|helpless|begg\w*|execut\w*|tortur\w*|betray\w*|
 const CRIT_SUCCESS_RE = /\b(nat(ural)? ?20|crit(ical)?(ly)? (success|hit)|crit(ted)?\b|flawless|perfect(ly)?|max(ed)? damage|one[- ]shot)/i;
 const CRIT_FAIL_RE = /\b(nat(ural)? ?1\b|crit(ical)? fail\w*|fumbl\w*|botch\w*|disaster|catastroph\w*|nearly died|almost died|went horribly)/i;
 const FAIL_RE = /\b(fail\w*|lost|lose|losing|miss(ed)?|couldn'?t|could not|didn'?t (manage|work)|banned|kicked out|caught (cheating|stealing)|got caught|ran away|fled|dropped|broke (his|her|their|my)|no luck|whiffed|sat down|lost to)\b/i;
-const WITNESS_VERBS = "(?:saw|see|sees|seen|catch|catches|caught|watched|watch|watches|noticed|notice|spotted|found|heard|witnessed)";
+const WITNESS_VERBS = "(?:saw|see|sees|seen|seeing|catch|catches|caught|catching|watched|watch|watches|watching|noticed|notice|noticing|spotted|spotting|found|heard|hearing|witnessed|witnessing)";
 const GROUP_RE = /\b(we|the party|the group|everyone|everybody|all of us|whole party|the team|together)\b/i;
 
 /** Roster names (+ aliases) from choice labels, excluding the special labels. */
@@ -144,9 +177,11 @@ function nameRe(name) {
  * line ("she catch Tovin killing a goblin"), so a name right after a witness verb wins over the
  * speaker label; otherwise the first roster name that is the subject of the passage.
  */
-export function guessDoer(text, roster, { goldDoer } = {}) {
+export function guessDoer(text, roster, { goldDoer, goldShared = false } = {}) {
   const t = norm(text);
-  if (goldDoer && roster.includes(goldDoer)) return { label: goldDoer, confidence: 0.93, witness: null };
+  // A deed gold gives to several characters at once ("Dax and Pell held the pass") has no single
+  // right label; a one-of-N answer can only be a hesitant one, below the pipeline's 0.6 bar.
+  if (goldDoer && roster.includes(goldDoer)) return { label: goldDoer, confidence: goldShared ? 0.5 : 0.93, witness: null };
   for (const name of roster) {
     const witnessed = new RegExp(`${WITNESS_VERBS}\\s+${escapeRe(norm(name))}\\b`, "u");
     if (witnessed.test(t)) {
@@ -217,22 +252,36 @@ function overlapLevel(a, b, levels) {
  * or by a long verbatim slice of the notes (ordinary items), so unrelated text never matches.
  */
 export function buildJevGoldIndex(corpus = []) {
-  const snippets = [];
+  const bySnippet = new Map();
   const notes = [];
   for (const item of corpus) {
     if (!item || typeof item !== "object") continue;
     if (item.category === "party") {
+      // `redWorthy` is a per-character label (this character did something red this session), not
+      // a per-deed one: only the deeds that read as dark carry it, so "torched a troll" is not dark
+      // just because the same character later killed a prisoner. When none of a red character's
+      // deeds reads as dark, the sim cannot tell which one it was and keeps them all.
       for (const [name, gold] of Object.entries(item.gold?.perActor ?? {})) {
-        for (const snippet of gold.evidence ?? []) {
-          snippets.push({ snippet: norm(snippet), doer: gold.whole ? "whole-party" : name, item, redWorthy: Boolean(gold.redWorthy) });
+        const evidence = (gold.evidence ?? []).map((snippet) => norm(snippet));
+        const darkOnes = gold.redWorthy ? evidence.filter((snippet) => DARK_RE.test(snippet)) : [];
+        for (const snippet of evidence) {
+          const key = `${item.id ?? ""}\u0000${snippet}`;
+          const entry = bySnippet.get(key) ?? { snippet, doers: [], item, redWorthy: false };
+          const doer = gold.whole ? "whole-party" : name;
+          if (!entry.doers.includes(doer)) entry.doers.push(doer);
+          if (gold.redWorthy && (!darkOnes.length || darkOnes.includes(snippet))) entry.redWorthy = true;
+          bySnippet.set(key, entry);
         }
       }
-      for (const snippet of item.gold?.wholeParty?.evidence ?? []) snippets.push({ snippet: norm(snippet), doer: "whole-party", item, redWorthy: false });
+      for (const snippet of item.gold?.wholeParty?.evidence ?? []) {
+        const key = `${item.id ?? ""}\u0000${norm(snippet)}`;
+        if (!bySnippet.has(key)) bySnippet.set(key, { snippet: norm(snippet), doers: ["whole-party"], item, redWorthy: false });
+      }
     } else if (typeof item.notes === "string" && item.notes.length >= 24) {
       notes.push({ key: norm(item.notes).slice(0, 48), item });
     }
   }
-  snippets.sort((a, b) => b.snippet.length - a.snippet.length);
+  const snippets = [...bySnippet.values()].sort((a, b) => b.snippet.length - a.snippet.length);
   return { snippets, notes };
 }
 
@@ -240,7 +289,7 @@ export function matchJevGold(index, text) {
   const t = norm(text);
   if (!t) return null;
   const snippet = index.snippets.find((entry) => entry.snippet.length >= 6 && t.includes(entry.snippet));
-  if (snippet) return { doer: snippet.doer, redWorthy: snippet.redWorthy, noEvents: false, item: snippet.item };
+  if (snippet) return { doer: snippet.doers[0], doers: [...snippet.doers], shared: snippet.doers.length > 1, redWorthy: snippet.redWorthy, noEvents: false, item: snippet.item };
   const whole = index.notes.find((entry) => t.includes(entry.key) || (t.length >= 24 && entry.key.startsWith(t.slice(0, 48))));
   if (whole) return { doer: null, redWorthy: Boolean(whole.item.gold?.redWorthy), noEvents: whole.item.gold?.noEvents === true ? true : false, item: whole.item };
   return null;
@@ -271,34 +320,44 @@ function scoreAnswer(levels, score, confidence) {
 export function answerQuestion(question, state, { goldIndex = { snippets: [], notes: [] } } = {}) {
   const intent = questionIntent(question);
   const focus = focusOf(state, question.instructions);
-  const gold = matchJevGold(goldIndex, focus);
+  // Gold and the per-event heuristics read the SUBJECT (the event's own quote/summary); the
+  // surrounding notes line is context, consulted only when the subject names nobody.
+  const { subject, context, speaker: statedSpeaker } = focusSubject(state, question.instructions);
+  const gold = matchJevGold(goldIndex, subject);
   switch (intent) {
     case "triage":
-      return { intent, answer: { type: "noul", noul: round(triageProbability(focus, gold)) } };
+      return { intent, answer: { type: "noul", noul: round(triageProbability(focus, gold ?? matchJevGold(goldIndex, focus))) } };
     case "witness": {
       const roster = [];
       // A witness question has no labels; the doer heuristic still needs names, so take every
-      // capitalised word that looks like a name out of the focus.
+      // capitalised word that looks like a name out of the focus, plus the stated speaker.
+      const speaker = statedSpeaker ?? /^\s*([\p{L}][\p{L}'.-]*)\s*:/u.exec(String(subject))?.[1] ?? null;
+      if (speaker) roster.push(speaker);
       for (const m of String(focus).matchAll(/\b[A-Z][a-z]{2,}\b/g)) if (!roster.includes(m[0])) roster.push(m[0]);
-      const doer = guessDoer(focus, roster, { goldDoer: gold?.doer && gold.doer !== "whole-party" ? gold.doer : undefined });
-      const speaker = /^\s*([\p{L}][\p{L}'.-]*)\s*:/u.exec(String(focus))?.[1];
-      const witnessOnly = doer.witness || (speaker && doer.label !== "someone-else" && doer.label !== "whole-party" && norm(speaker) !== norm(doer.label));
+      const goldDoer = gold?.doer && gold.doer !== "whole-party" ? gold.doer : undefined;
+      const doer = guessDoer(subject, roster, { goldDoer, goldShared: gold?.shared });
+      const named = doer.label !== "someone-else" && doer.label !== "whole-party";
+      const witnessOnly = Boolean(doer.witness) || Boolean(speaker && named && norm(speaker) !== norm(doer.label));
       return { intent, answer: { type: "noul", noul: witnessOnly ? 0.88 : 0.08 } };
     }
     case "dark":
-      return { intent, answer: { type: "noul", noul: round(darkProbability(focus, gold)) } };
+      return { intent, answer: { type: "noul", noul: round(darkProbability(subject, gold)) } };
     case "actor": {
       const labels = Object.keys(question.criteria ?? {});
       const roster = rosterLabels(question);
       const goldDoer = gold?.doer ?? undefined;
-      const doer = goldDoer === "whole-party" && labels.includes("whole-party")
-        ? { label: "whole-party", confidence: 0.9 }
-        : guessDoer(focus, roster, { goldDoer });
+      let doer;
+      if (goldDoer === "whole-party" && labels.includes("whole-party")) doer = { label: "whole-party", confidence: 0.9 };
+      else {
+        doer = guessDoer(subject, roster, { goldDoer, goldShared: gold?.shared });
+        // "held the bridge" names nobody: the line it sits in ("Brakka: Held the bridge, ...") does.
+        if (doer.label === "someone-else" && context.trim()) doer = guessDoer(context, roster);
+      }
       return { intent, answer: choiceAnswer(labels, doer.label, doer.confidence) };
     }
     case "outcome": {
       const labels = Object.keys(question.criteria ?? {});
-      const guess = guessOutcome(focus);
+      const guess = guessOutcome(subject);
       return { intent, answer: choiceAnswer(labels, guess.outcome, guess.confidence) };
     }
     case "grounded":
@@ -498,7 +557,7 @@ export function createSimJev(options = {}) {
       const { intent, answer } = answerQuestion(question, body.state, { goldIndex });
       stats.intents[intent] = (stats.intents[intent] ?? 0) + 1;
       record.intents.push(intent);
-      if (matchJevGold(goldIndex, focusOf(body.state, question.instructions))) stats.goldMatches += 1;
+      if (matchJevGold(goldIndex, focusSubject(body.state, question.instructions).subject)) stats.goldMatches += 1;
       if (answer) {
         answers[name] = answer;
         stats.answered += 1;

@@ -6,6 +6,7 @@ import { createJevClient, sameName } from "../scripts/ai/jev.js";
 import { buildExtractionMessages } from "../scripts/ai/prompts.js";
 import { normalizeGatewayConfig } from "../scripts/ai/gateway-config.js";
 import { buildAiGatewayRequest, createGatewayAdapter } from "../scripts/ai-gateway.js";
+import { attributeEventsToActor } from "../scripts/session-notes.js";
 import { makeHarnessActor } from "../tools/nlp-scale/lib.mjs";
 
 // The Jev layer in the pipeline (docs/jev-layer-contract.md): off means byte-for-byte today's
@@ -334,6 +335,28 @@ test("attribution does not override when Jev itself says the speaker was not a w
   const kill = result.events.find((event) => /goblin/.test(event.summary));
   assert.equal(kill.actorName, "Luz");
   assert.deepEqual(kill.jev.flags, ["actor-disputed"]);
+  // Board ab855163: the per-character split used to honour the confident-but-disputed Jev name
+  // anyway, silently moving the deed the pipeline had decided to leave on Luz's sheet.
+  assert.ok(attributeEventsToActor(result.events, ["Luz"], { notes: PARTY_NOTES }).kept.some((event) => /goblin/.test(event.summary)), "Luz keeps it");
+  assert.ok(!attributeEventsToActor(result.events, ["Tovin"], { notes: PARTY_NOTES }).kept.some((event) => /goblin/.test(event.summary)), "Tovin's sheet does not take a disputed deed");
+  // The undisputed override still travels: the same fixture with Jev agreeing the speaker witnessed it.
+  const { result: fixed } = await runFixture(FIXTURES[2], { config: JEV_ON, jev: tovinServer(0.9, 0.95).client });
+  assert.ok(attributeEventsToActor(fixed.events, ["Tovin"], { notes: PARTY_NOTES }).kept.some((event) => /goblin/.test(event.summary)));
+  assert.ok(!attributeEventsToActor(fixed.events, ["Luz"], { notes: PARTY_NOTES }).kept.some((event) => /goblin/.test(event.summary)));
+});
+
+test("board ab855163: a roster derived from the notes lists single characters -- an LLM 'Dax and Pell' is split, never a label", async () => {
+  const jev = jevServer();
+  const fixture = {
+    ...FIXTURES[0],
+    notes: "Dax and Pell held the narrow pass while Oona scouted ahead.",
+    replies: () => [{ events: [ev("Dax and Pell held the narrow pass", ["defense"], "success", { actorName: "Dax and Pell" }), ev("Oona scouted ahead", ["stealth"], "success", { actorName: "Oona" })] }, { proposals: [] }]
+  };
+  await runFixture(fixture, { config: JEV_ON, jev: jev.client });
+  const call = jev.calls.find((c) => c.body.state.roster);
+  assert.ok(call, "attribution was asked");
+  assert.deepEqual(call.body.state.roster.map((p) => p.name), ["Kesh", "Dax", "Pell", "Oona"]);
+  assert.ok(!Object.keys(call.body.questions.who_0.criteria).some((label) => /\band\b/.test(label)), "no compound label");
 });
 
 test("attribution can be switched off by config.jev.attribution", async () => {

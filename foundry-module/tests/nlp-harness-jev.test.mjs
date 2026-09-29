@@ -10,6 +10,7 @@ import {
   answerQuestion,
   createSimJev,
   focusOf,
+  focusSubject,
   guessDoer,
   questionIntent,
   validateSystemOneBody
@@ -125,6 +126,49 @@ test("sim-jev: corpus gold decides the doer when the state holds a party evidenc
   const body = await (await post(sim, { model: "jev-latest", state: { events: [{ summary: "Petros: held the door vs 4 zombies" }] }, questions: { who: { type: "choice", instructions: "Who performed events[0]?", criteria: { Nikos: null, Eleni: null, Petros: null, "someone-else": null, "whole-party": null } } } })).json();
   assert.equal(body.answers.who.choice, "Nikos");
   assert.ok(sim.stats.goldMatches >= 1);
+});
+
+test("sim-jev (board ab855163): answers are about the EVENT, not the whole notes line it sits in", async () => {
+  // The pipeline's attribution state: each event carries its quote, summary and the whole speaker
+  // line around it. Luz's line holds her own heal and blessing AND Tovin's kill; the sim used to
+  // match the longest gold snippet anywhere in the line, so all three "became" Tovin's.
+  const partyCorpus = loadPartyCorpus(join(CORPUS_DIR, "party"));
+  const sim = createSimJev({ corpus: partyCorpus });
+  const line = { speaker: "Luz", text: "Luz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol" };
+  const events = [
+    { summary: "Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch)", quote: "Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch)", noteLine: line },
+    { summary: "and she catch Tovin killing a goblin that was surrender", quote: "and she catch Tovin killing a goblin that was surrender", noteLine: line },
+    { summary: "Luz lead the dawn blessing at the temple and whole square kneel", quote: "Luz lead the dawn blessing at the temple and whole square kneel", noteLine: line },
+    { summary: "torched a troll", quote: "torched a troll", noteLine: { speaker: "Tovin", text: "Tovin: torched a troll, lost my pit bet. Also I may have quietly tidied up a loose end on the bridge" } },
+    { summary: "Held the bridge", quote: "Held the bridge", noteLine: { speaker: "Brakka", text: "Brakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them." } }
+  ];
+  const questions = {};
+  events.forEach((_, i) => {
+    questions[`who_${i}`] = { type: "choice", instructions: `events[${i}].quote is the exact text, events[${i}].summary paraphrases it, events[${i}].noteLine is the whole line around it; noteLine.speaker reported it. Who PERFORMED the act in events[${i}]?`, criteria: ROSTER };
+    questions[`witness_${i}`] = { type: "noul", instructions: `events[${i}].noteLine.speaker wrote the line events[${i}] comes from. Was events[${i}].noteLine.speaker only a witness or reporter of the act in events[${i}].quote, with another character performing it?` };
+    questions[`dark_${i}`] = { type: "noul", instructions: `Is events[${i}] a morally dark act by the character who did it: killing someone helpless or surrendered, torture, betraying an ally?` };
+  });
+  const body = await (await post(sim, { model: "jev-latest", state: { roster: Object.keys(ROSTER).map((name) => ({ name })), events }, questions })).json();
+  const a = body.answers;
+  assert.equal(a.who_0.choice, "Luz", "the heal is Luz's own");
+  assert.equal(a.who_1.choice, "Tovin", "the kill she reported is Tovin's");
+  assert.equal(a.who_2.choice, "Luz", "the blessing is Luz's own");
+  assert.equal(a.who_3.choice, "Tovin");
+  assert.equal(a.who_4.choice, "Brakka", "'Held the bridge' names nobody: the line's speaker did it");
+  for (const i of [0, 1, 2, 3]) assert.ok(a[`who_${i}`].confidence >= 0.9, `who_${i} is a confident gold answer`);
+  assert.ok(a.witness_0.noul < 0.2 && a.witness_2.noul < 0.2, "Luz did her own deeds");
+  assert.ok(a.witness_1.noul >= 0.85, "Luz only witnessed the kill");
+  assert.ok(a.dark_1.noul >= 0.85, "the kill of a surrendered goblin is dark");
+  assert.ok(a.dark_3.noul < 0.2, "torching a troll is not dark just because Tovin is the red character");
+  // A deed gold shares between two characters has no single right label: hesitant, below 0.6.
+  const shared = await (await post(sim, { model: "jev-latest", state: { events: [{ summary: "Dax and Pell held the narrow pass", quote: "Dax and Pell held the narrow pass" }] }, questions: { who: { type: "choice", instructions: "Who performed events[0]?", criteria: { Oona: null, Dax: null, Pell: null, Sorrel: null, "someone-else": null, "whole-party": null } } } })).json();
+  assert.ok(["Dax", "Pell"].includes(shared.answers.who.choice));
+  assert.ok(shared.answers.who.confidence < 0.6, `${shared.answers.who.confidence}`);
+  // focusSubject: the shortest referenced passage is the subject; a bare-name part is the speaker.
+  const sub = focusSubject({ events }, questions.witness_1.instructions);
+  assert.equal(sub.speaker, "Luz");
+  assert.equal(sub.subject, events[1].quote);
+  assert.match(sub.context, /catch Tovin killing/);
 });
 
 test("sim-jev: 401 without a bearer key or with the wrong pinned key; 400 on malformed questions; 404/405", async () => {

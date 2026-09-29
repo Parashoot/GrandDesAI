@@ -119,8 +119,9 @@ per-event `redCheck`/`darkDeed`. What remains:
   failure isolation (`{ actorId, name, error }`); the cache makes it one extraction. Returns
   `{ perActor, party: { ms, extractionCache: { hits, misses }, jev } }`. No new flags or roster.
 - `session-notes.js#attributeEventsToActor`: a confident `event.jev.actorName`
-  (`actorConfidence >= 0.6`) beats the LLM's name and the speaker heuristic; `event.jev.whole` keeps
-  the event for everyone as "the party".
+  (`actorConfidence >= 0.6`) beats the LLM's name and the speaker heuristic **unless the pipeline
+  flagged the event `actor-disputed`** (it weighed the two names and kept the LLM's: the split must
+  not silently undo that verdict); `event.jev.whole` keeps the event for everyone as "the party".
 - `progression.js#normalizeGrowthEvent` persists a compact `jev` block; `_validateModelProposals`
   keeps `proposal.jev`; the Suggest-proposals adapter rebuild passes `jevFactory: () => adapter.jev`.
 - Jev attribution in the pipeline is a SECOND OPINION on the LLM's `actorName`: it replaces it only
@@ -167,3 +168,14 @@ per-event `redCheck`/`darkDeed`. What remains:
 - 2026-09-29 orchestrator: contract created.
 - 2026-09-29 (later) orchestrator: origin/main 4d1611a merged; Party mode section re-scoped onto main's extraction cache and LLM actorName/darkDeed (see above). Board items re-filed: 1656f47c gateway, 45499fb2 integration, 64e3c5ae ui, 9f76030d harness, 27346aba real-Jev QA. Owner will supply the key later, so every
   measurement in this change is offline (`--sim-jev`); the real-Jev numbers are an open item.
+- 2026-09-29 (night) dev-gateway+harness, board ab855163 (sim-Jev LOWERED party credit, 94.7% -> 79.4%):
+  (1) `sim-jev.js` answered about the whole notes line the pipeline shows as context, not the event
+  (longest gold snippet anywhere in the line won, so every deed on Luz's line "was" Tovin's kill), and
+  marked every deed of a red-worthy character dark; it now reads the most specific referenced passage
+  (`focusSubject`), consults the line only when the quote names nobody, keeps per-deed red, and answers
+  a deed gold shares between two characters below 0.6. (2) `attributeEventsToActor` applied a
+  confident Jev name the pipeline had flagged `actor-disputed` (above). (3) `pipeline.js#jevRoster`
+  splits an LLM "Dax and Pell" into two roster names. Party with sim-Jev: 97.4% / attribution 97.5%
+  (Jev off unchanged at 94.7% / 91.3%), red recall 100%. Still open: without `request.party` a PC
+  who never speaks and whom the LLM misnamed is not a candidate on another PC's call (pa-007 Kesh),
+  so `api.analyzePartyNotes` passing its actor list as `party` is a dev-integration follow-up.

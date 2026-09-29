@@ -1261,10 +1261,15 @@ function addJevFlag(run, event, index, flag) {
 }
 
 const GROUP_NAME = /^(the party|the group|everyone|we|us)$/i;
+// "Dax and Pell", "Brakka, Wick", "Luz y Tovin": the LLM names a list when two characters shared a
+// deed. Same separators as session-notes.js#classifyActorName.
+const NAME_LIST_SEPARATOR = /\s*(?:,|&|\+|\/|;|\band\b|\by\b|\bund\b|\bet\b)\s*/iu;
 
 // Who could have done things in these notes: an explicit `request.party`, else the speaker labels
 // of the notes plus every doer the LLM named and the analysed character. Attribution is only asked
-// when at least two candidates exist (with one name there is no one to confuse).
+// when at least two candidates exist (with one name there is no one to confuse). Each roster entry
+// is ONE character: Jev's choice labels are the roster, and a label like "Dax and Pell" is a person
+// nobody can pick (board ab855163: it made the roster differ from sheet to sheet).
 function jevRoster(request, events, notes) {
   const explicit = (Array.isArray(request?.party) ? request.party : [])
     .map((entry) => (typeof entry === "string" ? { name: entry.trim() } : isPlainObject(entry) && typeof entry.name === "string" ? { name: entry.name.trim(), aliases: Array.isArray(entry.aliases) ? entry.aliases : [] } : null))
@@ -1272,9 +1277,11 @@ function jevRoster(request, events, notes) {
   if (explicit.length >= 2) return explicit;
   const names = [];
   const add = (name) => {
-    const clean = typeof name === "string" ? name.trim() : "";
-    if (!clean || GROUP_NAME.test(clean) || names.some((known) => sameName(known, clean))) return;
-    names.push(clean);
+    for (const part of String(typeof name === "string" ? name : "").split(NAME_LIST_SEPARATOR)) {
+      const clean = part.trim();
+      if (!clean || GROUP_NAME.test(clean) || names.some((known) => sameName(known, clean))) continue;
+      names.push(clean);
+    }
   };
   add(request?.actor?.name);
   for (const line of noteLines(notes)) add(line.speaker);

@@ -6,8 +6,10 @@ import test from "node:test";
 import { GROWTH_TAXONOMY } from "../scripts/growth-taxonomy.js";
 import { createGatewayAdapter } from "../scripts/ai-gateway.js";
 import { createTransport } from "../scripts/ai/transport.js";
-import { attributionCorrect, distributePartyEvents, renderMarkdown, runScale, scoreItem, scorePartyRep, trueDoers } from "../tools/nlp-scale/lib.mjs";
+import { attributionCorrect, distributePartyEvents, renderMarkdown, runScale, scoreItem, scorePartyRep, summarizeJev, trueDoers } from "../tools/nlp-scale/lib.mjs";
 import { createSimModel, partyGoldEvents } from "../tools/nlp-scale/sim-model.js";
+import { createSimJev } from "../tools/nlp-scale/sim-jev.js";
+import { createJevClient } from "../scripts/ai/jev.js";
 import { loadPartyCorpus } from "../tools/nlp-scale/run.mjs";
 import { CORPUS_DIR, loadCorpusSync } from "./helpers/corpus.mjs";
 
@@ -223,6 +225,28 @@ test("runScale --party (default): the adapter's extraction cache reads each item
   const md = renderMarkdown(after);
   assert.ok(md.includes("mode party"));
   assert.ok(md.includes("extractions per item 1.0"));
+});
+
+test("board ab855163: with the simulated Jev on, party credit and attribution are at least the Jev-off numbers, red recall included", async () => {
+  // The exact run.mjs `--sim --party --sim-jev` path: the real client over the sim's fetch, the
+  // adapter's cache, one extraction per item, and the "without Jev" column from the same transport.
+  const simJev = createSimJev({ corpus: party, seed: 1 });
+  const jevConfig = { enabled: true, apiKey: "sim-jev-key", endpoint: "https://api.typesafe.ai", model: "jev-latest", timeoutMs: 1000 };
+  const client = createJevClient({ ...jevConfig, fetchImpl: simJev.fetch, sleep: async () => {} });
+  const state = await runScale({ corpus: party, transport: simTransport(party), party: true, jev: client, compareWithoutJev: true, config: { proposalMode: "never", jev: jevConfig } });
+  const jev = summarizeJev(state.scored);
+  assert.ok(jev.attribution.scored >= 60, `${jev.attribution.scored} events judged`);
+  assert.ok(jev.attribution.accuracy >= jev.without.attribution.accuracy, `attribution ${jev.attribution.accuracy} < ${jev.without.attribution.accuracy} without Jev`);
+  assert.ok(jev.without.scoreWith >= jev.without.score, `score ${jev.without.scoreWith} < ${jev.without.score} without Jev`);
+  assert.ok(jev.attribution.accuracy > 0.95, `${jev.attribution.accuracy}`);
+  assert.equal(jev.red.recall, 1, "Tovin's red deed is still flagged");
+  // The ember-road line that started it: Luz keeps her heal and blessing, the kill is Tovin's, and no
+  // deed of a single character lands on two sheets.
+  const s1 = state.scored.find((item) => item.id === "pa-001");
+  assert.equal(s1.party.actors.Luz.counts[0], 2);
+  assert.equal(s1.party.actors.Tovin.counts[0], 3);
+  assert.deepEqual(s1.party.attribution, { scored: 13, correct: 13 });
+  assert.equal(s1.party.creditLeak, 0);
 });
 
 test("runScale --party: a confident event.jev.actorName from the pipeline is honoured by the per-character split (session-notes JEV_ATTRIBUTION_CONFIDENCE)", async () => {

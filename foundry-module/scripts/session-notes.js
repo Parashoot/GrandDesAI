@@ -366,7 +366,13 @@ export function attributeEventsToActor(events, actorNames, { notes } = {}) {
       continue;
     }
     const jevName = typeof (jev?.actorName ?? jev?.actor) === "string" ? String(jev.actorName ?? jev.actor).trim() : "";
-    const jevConfident = jevName && Number(jev.actorConfidence) >= JEV_ATTRIBUTION_CONFIDENCE;
+    // The pipeline already weighed Jev's name against the model's (jevAnnotateEvents): when the two
+    // disagreed and the model had NOT merely named the line's reporter, it kept the model's name and
+    // flagged the event "actor-disputed" for the GM. Honouring Jev here anyway would silently undo
+    // that verdict and move the deed to a sheet the pipeline declined to move it to -- with a Jev
+    // that is confidently wrong, every deed on a shared line migrates (board ab855163).
+    const disputed = Array.isArray(jev?.flags) && jev.flags.includes("actor-disputed");
+    const jevConfident = jevName && !disputed && Number(jev.actorConfidence) >= JEV_ATTRIBUTION_CONFIDENCE;
     const given = jevConfident ? jevName : typeof event?.actorName === "string" ? event.actorName.trim() : "";
     const actorName = given || inferEventActorName(event, segments);
     const rewrite = jevConfident ? actorName !== event?.actorName : Boolean(actorName) && !given;
