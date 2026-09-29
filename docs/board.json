@@ -952,9 +952,10 @@
   {
    "id": "5a0cea2e",
    "title": "Approved Skills/Classes become description-only item stubs (no damage, saves, modifiers, frequency)",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "pf2e-adapter.js:13-42: no system.frequency, traits or rule elements (a '+1 circumstance' is never applied), spells without damage/defense/range. dnd5e-adapter.js:137-181: activities without damage parts, save ability/DC or attack bonus. Only text + [[/r]]. Fix: optional structured fields in the proposal schema (damage, save, modifier, range/area) filled by the AI, mapped to PF2e rule elements/spell data and dnd5e activity damage/save; templates too."
+    "pf2e-adapter.js:13-42: no system.frequency, traits or rule elements (a '+1 circumstance' is never applied), spells without damage/defense/range. dnd5e-adapter.js:137-181: activities without damage parts, save ability/DC or attack bonus. Only text + [[/r]]. Fix: optional structured fields in the proposal schema (damage, save, modifier, range/area) filled by the AI, mapped to PF2e rule elements/spell data and dnd5e activity damage/save; templates too.",
+    "LIVE 2026-09-29 build e091fe9, live-verify.mjs 22/22 in BOTH worlds: approved AI Skills carry real data (dnd5e activity on 'Archer: Windstep'; PF2e frequency on 'Archer's Eye: Piercing Focus'). dev-systems raw Item.create validation: dnd5e 12/12 (save activity, damage, template, uses, AE +1 AC toggles 10->11), PF2e 10/10 (FlatModifier + RollOption, frequency, spell damage/defense/area). Model probe: 76/77 proposals carry structured, no wrong-system words. AI numbers clamped by tier/level on acceptance; GM edits reported only. Gaps: conditions are text only, 5e advantage on attacks text only, prose/structured mismatch not checked."
    ],
    "tags": [
     "pf2e",
@@ -965,7 +966,7 @@
    "owner": "dev-systems",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.193,
-   "updated": 1790695316.83,
+   "updated": 1790697391.534,
    "prio": 2,
    "parent": "6d04ba44"
   },
@@ -1037,10 +1038,11 @@
   {
    "id": "21e944ed",
    "title": "Horror Rank is invisible, dodgeable by rejecting red proposals, and differs from the design's stage clock",
-   "status": "doing",
+   "status": "done",
    "notes": [
     "Points accrue only on red APPROVAL and rejectProposal accepts red proposals; docking changes only the registry flag, never items; no listener for grand-design-ai.horrorRankLevelsDocked; conversion rules section 6 describes a 4-stage clock with feat suppression and lock-out that the code lacks; the AI never sees Horror Rank. Fix: meter + docking notices in the dialog, decide the model, make red proposals non-refusable or let rejection accrue, AI-written stage consequences.",
-    "Owner decision 2026-09-29: Horror Rank accrues from red DEEDS recorded in the notes (not approvals); rejecting a red Skill refuses the power, not the stain."
+    "Owner decision 2026-09-29: Horror Rank accrues from red DEEDS recorded in the notes (not approvals); rejecting a red Skill refuses the power, not the stain.",
+    "LIVE 2026-09-29 build e091fe9, live-verify.mjs 22/22 in BOTH worlds: AI-read 'dragged the bandit who had thrown down his sword ... pushed him off, laughing' -> cruelty/serious, Horror Rank 0 -> 15, shown in the Registry. Corpus (red+traps, 50 items, 1 rep): darkDeedAcc 90% (vice+severity), dark FP 0% on 40 traps, score 97.8%. ember-road s1 rerun (v0929b-dnd5e): Tovin 15 points for the surrendering goblin, everyone else 0. Approval no longer accrues; legacy points kept as baseline. Open owner questions in conversion rules section 6 (feat suppression, atonement, 5/15/40 + 100 threshold)."
    ],
    "tags": [
     "red",
@@ -1052,7 +1054,7 @@
    "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.521,
-   "updated": 1790695316.787,
+   "updated": 1790697391.487,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1776,8 +1778,10 @@
   {
    "id": "6b2a26ce",
    "title": "Superseded Items stay mechanically active (dnd5e activity uses, PF2e feat): add markSuperseded(item) per system adapter",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "LIVE 2026-09-29 build e091fe9, live-verify.mjs 22/22 in BOTH worlds: superseded dnd5e Item has 0 activities; PF2e superseded Item has 0 rules (frequency still reads 1 -> follow-up)."
+   ],
    "tags": [
     "dnd5e",
     "pf2e",
@@ -1787,7 +1791,7 @@
    "owner": "dev-systems",
    "source": "dev-integration 2026-09-29",
    "created": 1790694227.981,
-   "updated": 1790695327.192
+   "updated": 1790697391.58
   },
   {
    "id": "536dba59",
@@ -1819,6 +1823,22 @@
    "source": "dev-gateway probe 2026-09-29",
    "created": 1790695000.07,
    "updated": 1790695000.07
+  },
+  {
+   "id": "14248053",
+   "title": "PF2e superseded Item keeps frequency.max 1 live (markSupersededPf2e sets 0?); structured conditions are text only (no PF2e condition link / 5e status effect); prose vs structured mismatch unchecked (a reaction gained 1d8+3 the prose lacks)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "pf2e",
+    "dnd5e",
+    "proposals"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "live verify 2026-09-29 batch 3",
+   "created": 1790697391.628,
+   "updated": 1790697391.628
   }
  ]
 }

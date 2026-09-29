@@ -119,6 +119,27 @@ try {
     check("Evolve is written by the AI", advanced.usedFallback === false, advanced.usedFallback ? `fallback: ${advanced.reason}` : "ai");
   }
 
+  // Structured mechanics (batch 3): the Skill approved above should be a real item, not a text stub.
+  const itemData = await page.evaluate(({ mod, id }) => {
+    const actor = game.actors.get(id);
+    const items = actor.items.filter((i) => i.getFlag(mod, "registryId"));
+    return items.map((i) => ({ name: i.name, rules: i.system?.rules?.length ?? 0, frequency: i.system?.frequency?.max ?? null, activities: i.system?.activities?.size ?? 0, effects: i.effects?.size ?? 0, superseded: Boolean(i.getFlag(mod, "superseded")) }));
+  }, { mod: MOD, id: actorId });
+  const live = itemData.filter((i) => !i.superseded);
+  check("approved Skills become real items (rules/frequency or activities/effects)", live.some((i) => i.rules || i.frequency || i.activities || i.effects), JSON.stringify(itemData).slice(0, 300));
+  const off = itemData.filter((i) => i.superseded);
+  check("the superseded Item's mechanics are switched off", off.length > 0 && off.every((i) => !i.rules && !i.activities), JSON.stringify(off).slice(0, 200));
+
+  // Horror Rank from deeds (owner decision 2026-09-29): an AI-read dark deed adds points.
+  const horror = await page.evaluate(async ({ mod, id }) => {
+    const api = game.modules.get(mod).api; const actor = game.actors.get(id);
+    const before = api.getHorrorRank(actor).points;
+    const r = await api.analyzeSessionNotes(actor, "Kestra dragged the bandit who had thrown down his sword and begged for mercy to the cliff and pushed him off, laughing.");
+    const after = api.getHorrorRank(actor);
+    return { before, after: after.points, stage: after.stage, deeds: (after.deeds ?? []).map((d) => `${d.vice}/${d.severity}:${d.summary}`), events: r.events.map((e) => `${e.darkDeed}/${e.darkSeverity}`) };
+  }, { mod: MOD, id: actorId });
+  check("a dark deed read by the AI raises Horror Rank", horror.after > horror.before, `${horror.before} -> ${horror.after} (stage ${horror.stage}) ${horror.deeds.join(" | ") || horror.events.join(",")}`);
+
   const milestone = await page.evaluate(async ({ mod, id }) => {
     const api = game.modules.get(mod).api; const actor = game.actors.get(id);
     const req = 100 + 19 * 35 + 19 * 19 * 4;

@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 1126 unit tests, ~30 s, no network
+npm test                                    # 1212 unit tests, ~30 s, no network
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -109,9 +109,17 @@ skips/cap, playtest.mjs owned/evolve/merge/titles/erosion. Two live regressions 
 **LIVE 19/19 in BOTH worlds** (build 3e75e8e); worlds switch with `node tools/playtest/switch-world.mjs <worldId>`
 (owner authorised switching; "endex" = PF2e, "endexdnd-5e" = dnd5e). 1126 tests.
 
+2026-09-29 (night): batch 3 (5 agents). Horror Rank accrues from recorded DARK DEEDS (owner decision): every
+event carries `darkDeed`/`darkSeverity`, points 5/15/40, stage 0-3 meter + docking notices in the dialog and
+Registry (darkDeedAcc 90%, 0% false on traps; Tovin 15 for the surrendering goblin). Approved growth is real
+game data: `mechanics.structured` -> PF2e rule elements/frequency/spell data and dnd5e activities/Active Effects,
+AI numbers clamped by tier + level, superseded Items switched off. **LIVE 22/22 in BOTH worlds** (build e091fe9).
+1212 tests. Owner questions open in conversion rules section 6 (feat suppression? atonement? 5/15/40 + 100?).
+
 Open, in order (see the board, epic 278670bb):
-1. Horror Rank model (21e944ed) - needs the owner's decision (refusable red proposals vs rejection accrues).
-2. Superseded Items still mechanically live (systems adapters); real game items with structured damage/saves (5a0cea2e).
-3. Playtest the new mechanics: a 3rd session of salt-lantern/ember-road with evolve/merge/titles via playtest.mjs.
-4. Party analyze (7f1f20ae), undo/reassign events (4344c58a), Populate AI (dee25a95), combos/revival/cleanse.
-5. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008, bland tag motifs (e8ae42d0).
+1. Playtest the new mechanics: salt-lantern s3 (PF2e) with evolve/merge/titles/Horror Rank via playtest.mjs.
+2. Party analyze (7f1f20ae), undo/reassign events (4344c58a), Populate AI (dee25a95).
+3. Combos (e6d9185c), death/revival (b16101a9), cleanse/consolidation (54a5058f).
+4. Follow-ups: bland tag motifs (e8ae42d0), same-name proposals across PCs, dnd5e merges restate sources,
+   structured conditions text-only, PF2e superseded frequency.
+5. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008.

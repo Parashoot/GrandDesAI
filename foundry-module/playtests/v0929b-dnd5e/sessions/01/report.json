@@ -1,0 +1,1547 @@
+{
+ "campaign": "v0929b-dnd5e",
+ "system": "dnd5e",
+ "session": 1,
+ "model": "qwen3.8:27b",
+ "proposalMode": "when-earned",
+ "at": "2026-09-29T15:52:20.731Z",
+ "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
+ "results": [
+  {
+   "name": "Brakka",
+   "className": "Fighter",
+   "persona": "the-tank",
+   "restType": "long",
+   "ms": 22789,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790697140711-1",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.",
+      "tags": [
+       "defense",
+       "leadership"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.711Z",
+      "dangerGap": "severe",
+      "themes": [
+       "holding-a-line"
+      ],
+      "quote": "Held the bridge, troll ran off, kept the goblins in line till the watch took them.",
+      "language": "en",
+      "actorName": "Brakka",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140712-2",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.712Z",
+      "themes": [
+       "brawling"
+      ],
+      "quote": "Won two in the pit, lost the third to the champ",
+      "language": "en",
+      "actorName": "Brakka",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [],
+    "themes": [
+     {
+      "slug": "holding-a-line",
+      "label": "Holding A Line",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "brawling",
+      "label": "Brawling",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Wick",
+      "summary": "Wick rode an ox into a fight with a troll."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick lost his dagger to the river."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick's ox, Steve, lost a race by sitting down."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick misbehaved at a pie tent and was banned."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick tried to cheat at dice and lost 40 gold of the party's money."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used Entangle to root three of four goblins in place."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren healed Brakka."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used Thorn Whip to push the last goblin into a burning railing."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren treated the surrendered goblins."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren sold out of her honey."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren adopted a stable cat."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin set a troll on fire."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin lost a bet in the pit."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin killed a goblin that had surrendered."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz healed Brakka to full health after the troll fight."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz led the dawn blessing at the temple."
+     }
+    ],
+    "evolutionReady": [],
+    "horrorRank": {
+     "points": 0,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [],
+     "deedPoints": 0,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 22763,
+       "repairs": [],
+       "errors": []
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": false,
+      "reason": "not-yet-earned"
+     },
+     "totalMs": 22782,
+     "extractionCache": "miss",
+     "proposalEvents": {
+      "own": 2,
+      "total": 19
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    },
+    "adapterSkippedEvents": [
+     {
+      "event": {
+       "quote": "a woman who wants a year of my dreams for some king's secret",
+       "actorName": "Tovin",
+       "actorRole": "target",
+       "continuesPrevious": false,
+       "summary": "A woman offered Tovin a deal for a year of his dreams in exchange for a king's secret.",
+       "tags": [
+        "occultism"
+       ],
+       "themes": [
+        "occult-deal"
+       ],
+       "outcome": "success",
+       "darkDeed": "none",
+       "darkSeverity": "none",
+       "dangerGap": "none",
+       "language": "en"
+      },
+      "reason": "happened-to-actor",
+      "chunk": 0
+     }
+    ]
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 0,
+     "progress": 87.5,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.714Z",
+     "lastRestType": "long"
+    },
+    "pending": 0
+   },
+   "restResult": {
+    "progression": {
+     "level": 0,
+     "progress": 87.5,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.714Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": [],
+    "classProposals": [],
+    "evolutionReady": []
+   },
+   "approved": [],
+   "pending": [],
+   "advanced": {
+    "owned": {
+     "classes": [],
+     "skills": [],
+     "titles": []
+    },
+    "ownedSource": "getOwnedEntries",
+    "evolutionReady": [],
+    "readySource": "api",
+    "erosion": [],
+    "horrorRank": {
+     "points": 0,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [],
+     "deedPoints": 0,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "pendingAdvanced": [],
+    "notes": []
+   },
+   "fallbacks": []
+  },
+  {
+   "name": "Wick",
+   "className": "Rogue",
+   "persona": "chaos-gremlin",
+   "restType": "long",
+   "ms": 2,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790697140722-1",
+      "summary": "Wick rode an ox into a fight with a troll.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.722Z",
+      "dangerGap": "severe",
+      "themes": [
+       "horsemanship"
+      ],
+      "quote": "bro rode an ox into a troll fight",
+      "language": "en",
+      "actorName": "Wick",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140722-2",
+      "summary": "Wick lost his dagger to the river.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-29T15:52:20.722Z",
+      "themes": [
+       "losing-gear"
+      ],
+      "quote": "lost my dagger to the river",
+      "language": "en",
+      "actorName": "Wick",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140722-3",
+      "summary": "Wick's ox, Steve, lost a race by sitting down.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-29T15:52:20.722Z",
+      "themes": [
+       "racing"
+      ],
+      "quote": "Steve the ox lost a race by sitting down",
+      "language": "en",
+      "actorName": "Wick",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140722-4",
+      "summary": "Wick misbehaved at a pie tent and was banned.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-29T15:52:20.722Z",
+      "themes": [
+       "misbehavior"
+      ],
+      "quote": "I got banned from a pie tent",
+      "language": "en",
+      "actorName": "Wick",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140722-5",
+      "summary": "Wick tried to cheat at dice and lost 40 gold of the party's money.",
+      "tags": [
+       "deception",
+       "thievery"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-29T15:52:20.722Z",
+      "themes": [
+       "gambling",
+       "cheating"
+      ],
+      "quote": "lost the party's 40g rigging dice",
+      "language": "en",
+      "actorName": "Wick",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [],
+    "themes": [
+     {
+      "slug": "horsemanship",
+      "label": "Horsemanship",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "losing-gear",
+      "label": "Losing Gear",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "racing",
+      "label": "Racing",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "misbehavior",
+      "label": "Misbehavior",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "gambling",
+      "label": "Gambling",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "cheating",
+      "label": "Cheating",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+     },
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used Entangle to root three of four goblins in place."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren healed Brakka."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used Thorn Whip to push the last goblin into a burning railing."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren treated the surrendered goblins."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren sold out of her honey."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren adopted a stable cat."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin set a troll on fire."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin lost a bet in the pit."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin killed a goblin that had surrendered."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz healed Brakka to full health after the troll fight."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz led the dawn blessing at the temple."
+     }
+    ],
+    "evolutionReady": [],
+    "horrorRank": {
+     "points": 0,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [],
+     "deedPoints": 0,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 22763,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": false,
+      "reason": "not-yet-earned"
+     },
+     "totalMs": 0,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 5,
+      "total": 19
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    },
+    "adapterSkippedEvents": [
+     {
+      "event": {
+       "quote": "a woman who wants a year of my dreams for some king's secret",
+       "actorName": "Tovin",
+       "actorRole": "target",
+       "continuesPrevious": false,
+       "summary": "A woman offered Tovin a deal for a year of his dreams in exchange for a king's secret.",
+       "tags": [
+        "occultism"
+       ],
+       "themes": [
+        "occult-deal"
+       ],
+       "outcome": "success",
+       "darkDeed": "none",
+       "darkSeverity": "none",
+       "dangerGap": "none",
+       "language": "en"
+      },
+      "reason": "happened-to-actor",
+      "chunk": 0
+     }
+    ]
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 0,
+     "progress": 87.5,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.723Z",
+     "lastRestType": "long"
+    },
+    "pending": 0
+   },
+   "restResult": {
+    "progression": {
+     "level": 0,
+     "progress": 87.5,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.723Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": [],
+    "classProposals": [],
+    "evolutionReady": []
+   },
+   "approved": [],
+   "pending": [],
+   "advanced": {
+    "owned": {
+     "classes": [],
+     "skills": [],
+     "titles": []
+    },
+    "ownedSource": "getOwnedEntries",
+    "evolutionReady": [],
+    "readySource": "api",
+    "erosion": [],
+    "horrorRank": {
+     "points": 0,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [],
+     "deedPoints": 0,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "pendingAdvanced": [],
+    "notes": []
+   },
+   "fallbacks": []
+  },
+  {
+   "name": "Maren",
+   "className": "Druid",
+   "persona": "cottagecore",
+   "restType": "long",
+   "ms": 1,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790697140724-1",
+      "summary": "Maren used Entangle to root three of four goblins in place.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.724Z",
+      "quote": "rooted 3/4 goblins in place with entangle",
+      "language": "en",
+      "actorName": "Maren",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140724-2",
+      "summary": "Maren healed Brakka.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.724Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "healed brakka back up",
+      "language": "en",
+      "actorName": "Maren",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140724-3",
+      "summary": "Maren used Thorn Whip to push the last goblin into a burning railing.",
+      "tags": [
+       "primal",
+       "fire",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.724Z",
+      "quote": "thorn-whipped the last goblin into the burning railing",
+      "language": "en",
+      "actorName": "Maren",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140725-4",
+      "summary": "Maren treated the surrendered goblins.",
+      "tags": [
+       "medicine"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.725Z",
+      "themes": [
+       "first-aid"
+      ],
+      "quote": "patched up the surrendered goblins anyway bc soft heart",
+      "language": "en",
+      "actorName": "Maren",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140725-5",
+      "summary": "Maren sold out of her honey.",
+      "tags": [],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.725Z",
+      "themes": [
+       "trading"
+      ],
+      "quote": "sold out of honey",
+      "language": "en",
+      "actorName": "Maren",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140725-6",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.725Z",
+      "themes": [
+       "baking"
+      ],
+      "quote": "got 2nd place in the bake-off with a lavender honey loaf",
+      "language": "en",
+      "actorName": "Maren",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140725-7",
+      "summary": "Maren adopted a stable cat.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.725Z",
+      "themes": [
+       "petkeeping"
+      ],
+      "quote": "adopted a stable cat",
+      "language": "en",
+      "actorName": "Maren",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [],
+    "themes": [
+     {
+      "slug": "healing",
+      "label": "Healing",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "first-aid",
+      "label": "First Aid",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "trading",
+      "label": "Trading",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "baking",
+      "label": "Baking",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "petkeeping",
+      "label": "Petkeeping",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+     },
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick rode an ox into a fight with a troll."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick lost his dagger to the river."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick's ox, Steve, lost a race by sitting down."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick misbehaved at a pie tent and was banned."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick tried to cheat at dice and lost 40 gold of the party's money."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin set a troll on fire."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin lost a bet in the pit."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin killed a goblin that had surrendered."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz healed Brakka to full health after the troll fight."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz led the dawn blessing at the temple."
+     }
+    ],
+    "evolutionReady": [],
+    "horrorRank": {
+     "points": 0,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [],
+     "deedPoints": 0,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 22763,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": false,
+      "reason": "not-yet-earned"
+     },
+     "totalMs": 0,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 7,
+      "total": 19
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    },
+    "adapterSkippedEvents": [
+     {
+      "event": {
+       "quote": "a woman who wants a year of my dreams for some king's secret",
+       "actorName": "Tovin",
+       "actorRole": "target",
+       "continuesPrevious": false,
+       "summary": "A woman offered Tovin a deal for a year of his dreams in exchange for a king's secret.",
+       "tags": [
+        "occultism"
+       ],
+       "themes": [
+        "occult-deal"
+       ],
+       "outcome": "success",
+       "darkDeed": "none",
+       "darkSeverity": "none",
+       "dangerGap": "none",
+       "language": "en"
+      },
+      "reason": "happened-to-actor",
+      "chunk": 0
+     }
+    ]
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 1,
+     "progress": 75,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.725Z",
+     "lastRestType": "long"
+    },
+    "pending": 0
+   },
+   "restResult": {
+    "progression": {
+     "level": 1,
+     "progress": 75,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.725Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [
+     1
+    ],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": [],
+    "classProposals": [],
+    "evolutionReady": []
+   },
+   "approved": [],
+   "pending": [],
+   "advanced": {
+    "owned": {
+     "classes": [],
+     "skills": [],
+     "titles": []
+    },
+    "ownedSource": "getOwnedEntries",
+    "evolutionReady": [],
+    "readySource": "api",
+    "erosion": [],
+    "horrorRank": {
+     "points": 0,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [],
+     "deedPoints": 0,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "pendingAdvanced": [],
+    "notes": []
+   },
+   "fallbacks": []
+  },
+  {
+   "name": "Tovin",
+   "className": "Warlock",
+   "persona": "dark-path",
+   "restType": "long",
+   "ms": 2,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790697140727-1",
+      "summary": "Tovin set a troll on fire.",
+      "tags": [
+       "fire"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.727Z",
+      "dangerGap": "severe",
+      "themes": [
+       "fire-magic"
+      ],
+      "quote": "torched a troll",
+      "language": "en",
+      "actorName": "Tovin",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140727-2",
+      "summary": "Tovin lost a bet in the pit.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-29T15:52:20.727Z",
+      "themes": [
+       "gambling"
+      ],
+      "quote": "lost my pit bet",
+      "language": "en",
+      "actorName": "Tovin",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140727-3",
+      "summary": "Tovin killed a goblin that had surrendered.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.727Z",
+      "themes": [
+       "killing-the-surrendered"
+      ],
+      "quote": "she catch Tovin killing a goblin that was surrender",
+      "language": "en",
+      "actorName": "Tovin",
+      "darkDeed": "cruelty",
+      "darkSeverity": "serious",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [],
+    "themes": [
+     {
+      "slug": "fire-magic",
+      "label": "Fire Magic",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "gambling",
+      "label": "Gambling",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "killing-the-surrendered",
+      "label": "Killing The Surrendered",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+     },
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick rode an ox into a fight with a troll."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick lost his dagger to the river."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick's ox, Steve, lost a race by sitting down."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick misbehaved at a pie tent and was banned."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick tried to cheat at dice and lost 40 gold of the party's money."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used Entangle to root three of four goblins in place."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren healed Brakka."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used Thorn Whip to push the last goblin into a burning railing."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren treated the surrendered goblins."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren sold out of her honey."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren adopted a stable cat."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz healed Brakka to full health after the troll fight."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz led the dawn blessing at the temple."
+     }
+    ],
+    "evolutionReady": [],
+    "horrorRank": {
+     "points": 15,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [
+      {
+       "eventId": "event:1790697140727-3",
+       "summary": "Tovin killed a goblin that had surrendered.",
+       "vice": "cruelty",
+       "severity": "serious",
+       "points": 15
+      }
+     ],
+     "deedPoints": 15,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 22763,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": false,
+      "reason": "not-yet-earned"
+     },
+     "totalMs": 0,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 3,
+      "total": 19
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    },
+    "adapterSkippedEvents": [
+     {
+      "event": {
+       "quote": "a woman who wants a year of my dreams for some king's secret",
+       "actorName": "Tovin",
+       "actorRole": "target",
+       "continuesPrevious": false,
+       "summary": "A woman offered Tovin a deal for a year of his dreams in exchange for a king's secret.",
+       "tags": [
+        "occultism"
+       ],
+       "themes": [
+        "occult-deal"
+       ],
+       "outcome": "success",
+       "darkDeed": "none",
+       "darkSeverity": "none",
+       "dangerGap": "none",
+       "language": "en"
+      },
+      "reason": "happened-to-actor",
+      "chunk": 0
+     }
+    ]
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 0,
+     "progress": 93.75,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.728Z",
+     "lastRestType": "long"
+    },
+    "pending": 0
+   },
+   "restResult": {
+    "progression": {
+     "level": 0,
+     "progress": 93.75,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.728Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": [],
+    "classProposals": [],
+    "evolutionReady": []
+   },
+   "approved": [],
+   "pending": [],
+   "advanced": {
+    "owned": {
+     "classes": [],
+     "skills": [],
+     "titles": []
+    },
+    "ownedSource": "getOwnedEntries",
+    "evolutionReady": [],
+    "readySource": "api",
+    "erosion": [],
+    "horrorRank": {
+     "points": 15,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [
+      {
+       "eventId": "event:1790697140727-3",
+       "summary": "Tovin killed a goblin that had surrendered.",
+       "vice": "cruelty",
+       "severity": "serious",
+       "points": 15
+      }
+     ],
+     "deedPoints": 15,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "pendingAdvanced": [],
+    "notes": []
+   },
+   "fallbacks": []
+  },
+  {
+   "name": "Luz",
+   "className": "Cleric",
+   "persona": "non-native",
+   "restType": "long",
+   "ms": 1,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790697140729-1",
+      "summary": "Luz healed Brakka to full health after the troll fight.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.729Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "Luz heal Brakka full HP after the troll fight",
+      "language": "en",
+      "actorName": "Luz",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790697140730-2",
+      "summary": "Luz led the dawn blessing at the temple.",
+      "tags": [
+       "religion"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-29T15:52:20.730Z",
+      "themes": [
+       "ritual"
+      ],
+      "quote": "Luz lead the dawn blessing at the temple",
+      "language": "en",
+      "actorName": "Luz",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [],
+    "themes": [
+     {
+      "slug": "healing",
+      "label": "Healing",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "ritual",
+      "label": "Ritual",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+     },
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick rode an ox into a fight with a troll."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick lost his dagger to the river."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick's ox, Steve, lost a race by sitting down."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick misbehaved at a pie tent and was banned."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick tried to cheat at dice and lost 40 gold of the party's money."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used Entangle to root three of four goblins in place."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren healed Brakka."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used Thorn Whip to push the last goblin into a burning railing."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren treated the surrendered goblins."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren sold out of her honey."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren adopted a stable cat."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin set a troll on fire."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin lost a bet in the pit."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin killed a goblin that had surrendered."
+     }
+    ],
+    "evolutionReady": [],
+    "horrorRank": {
+     "points": 0,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [],
+     "deedPoints": 0,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 22763,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": false,
+      "reason": "not-yet-earned"
+     },
+     "totalMs": 0,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 2,
+      "total": 19
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    },
+    "adapterSkippedEvents": [
+     {
+      "event": {
+       "quote": "a woman who wants a year of my dreams for some king's secret",
+       "actorName": "Tovin",
+       "actorRole": "target",
+       "continuesPrevious": false,
+       "summary": "A woman offered Tovin a deal for a year of his dreams in exchange for a king's secret.",
+       "tags": [
+        "occultism"
+       ],
+       "themes": [
+        "occult-deal"
+       ],
+       "outcome": "success",
+       "darkDeed": "none",
+       "darkSeverity": "none",
+       "dangerGap": "none",
+       "language": "en"
+      },
+      "reason": "happened-to-actor",
+      "chunk": 0
+     }
+    ]
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 0,
+     "progress": 50,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.730Z",
+     "lastRestType": "long"
+    },
+    "pending": 0
+   },
+   "restResult": {
+    "progression": {
+     "level": 0,
+     "progress": 50,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-29T15:52:20.730Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": [],
+    "classProposals": [],
+    "evolutionReady": []
+   },
+   "approved": [],
+   "pending": [],
+   "advanced": {
+    "owned": {
+     "classes": [],
+     "skills": [],
+     "titles": []
+    },
+    "ownedSource": "getOwnedEntries",
+    "evolutionReady": [],
+    "readySource": "api",
+    "erosion": [],
+    "horrorRank": {
+     "points": 0,
+     "stage": 0,
+     "nextThreshold": 100,
+     "totalLevelsDocked": 0,
+     "deeds": [],
+     "deedPoints": 0,
+     "legacyPoints": 0,
+     "threshold": 100,
+     "thresholdsDocked": 0
+    },
+    "pendingAdvanced": [],
+    "notes": []
+   },
+   "fallbacks": []
+  }
+ ]
+}
