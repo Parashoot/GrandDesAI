@@ -952,7 +952,7 @@
   {
    "id": "5a0cea2e",
    "title": "Approved Skills/Classes become description-only item stubs (no damage, saves, modifiers, frequency)",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "pf2e-adapter.js:13-42: no system.frequency, traits or rule elements (a '+1 circumstance' is never applied), spells without damage/defense/range. dnd5e-adapter.js:137-181: activities without damage parts, save ability/DC or attack bonus. Only text + [[/r]]. Fix: optional structured fields in the proposal schema (damage, save, modifier, range/area) filled by the AI, mapped to PF2e rule elements/spell data and dnd5e activity damage/save; templates too."
    ],
@@ -962,10 +962,10 @@
     "gateway"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-systems",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.193,
-   "updated": 1790661419.4809763,
+   "updated": 1790695316.83,
    "prio": 2,
    "parent": "6d04ba44"
   },
@@ -1037,9 +1037,10 @@
   {
    "id": "21e944ed",
    "title": "Horror Rank is invisible, dodgeable by rejecting red proposals, and differs from the design's stage clock",
-   "status": "todo",
+   "status": "doing",
    "notes": [
-    "Points accrue only on red APPROVAL and rejectProposal accepts red proposals; docking changes only the registry flag, never items; no listener for grand-design-ai.horrorRankLevelsDocked; conversion rules section 6 describes a 4-stage clock with feat suppression and lock-out that the code lacks; the AI never sees Horror Rank. Fix: meter + docking notices in the dialog, decide the model, make red proposals non-refusable or let rejection accrue, AI-written stage consequences."
+    "Points accrue only on red APPROVAL and rejectProposal accepts red proposals; docking changes only the registry flag, never items; no listener for grand-design-ai.horrorRankLevelsDocked; conversion rules section 6 describes a 4-stage clock with feat suppression and lock-out that the code lacks; the AI never sees Horror Rank. Fix: meter + docking notices in the dialog, decide the model, make red proposals non-refusable or let rejection accrue, AI-written stage consequences.",
+    "Owner decision 2026-09-29: Horror Rank accrues from red DEEDS recorded in the notes (not approvals); rejecting a red Skill refuses the power, not the stain."
    ],
    "tags": [
     "red",
@@ -1048,10 +1049,10 @@
     "docs"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.521,
-   "updated": 1790661418.6869833,
+   "updated": 1790695316.787,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1775,7 +1776,7 @@
   {
    "id": "6b2a26ce",
    "title": "Superseded Items stay mechanically active (dnd5e activity uses, PF2e feat): add markSuperseded(item) per system adapter",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "dnd5e",
@@ -1783,10 +1784,10 @@
     "progression"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-systems",
    "source": "dev-integration 2026-09-29",
    "created": 1790694227.981,
-   "updated": 1790694227.981
+   "updated": 1790695327.192
   },
   {
    "id": "536dba59",
