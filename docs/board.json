@@ -1846,7 +1846,7 @@
   {
    "id": "1656f47c",
    "title": "Jev client + triage/attribution/verify/rank steps in the gateway (docs/jev-layer-contract.md)",
-   "status": "doing",
+   "status": "done",
    "notes": [
     "Review (Fable) on pre-main version: MERGE AFTER FIXES. Wire format vs SDK, total fail-open, timeout, secret scrub, Jev-off equivalence all verified. Must rebase onto main: never mutate cached events (extraction cache), key dark-act on darkDeed/redCheck, drop Luz/Tovin example names from prompts, rank defaults actor to the character, skip target-role events. Sent to dev-gateway.",
     "Landed after rebase (cache-safe annotation, darkDeed-keyed dark-act, witness-guarded attribution). 1358 tests on the merged tree; Jev-off sim identical."
@@ -1859,12 +1859,12 @@
    "owner": "dev-gateway",
    "source": "jev-layer",
    "created": 1790705519.789,
-   "updated": 1790706585.039
+   "updated": 1790707682.335
   },
   {
    "id": "45499fb2",
    "title": "Party mode: one-click api.analyzePartyNotes over the extraction cache + Jev attribution trust",
-   "status": "doing",
+   "status": "done",
    "notes": [
     "Pre-main version reviewed (MERGE AFTER FIXES, fixes done, 681 tests). Re-scoped: main's extraction cache supersedes the one-extraction refactor; porting only attribution trust, compactJev, proposal.jev, jevFactory and a thin analyzePartyNotes.",
     "Landed on the branch (thin analyzePartyNotes over the cache, attribution trust, compactJev, proposal.jev, jevFactory). 1231 tests. Covers board 7f1f20ae (party analyze). Real-model re-run pending locally."
@@ -1877,12 +1877,12 @@
    "owner": "dev-integration",
    "source": "jev-layer",
    "created": 1790705519.873,
-   "updated": 1790706032.522
+   "updated": 1790707682.382
   },
   {
    "id": "64e3c5ae",
    "title": "Jev settings fieldset + Test Jev, Analyze party action, Jev chips in Growth dialog",
-   "status": "doing",
+   "status": "done",
    "notes": [
     "Landed on the branch after rebase onto main (per-user settings, delegated buttons). 1272 tests, bundle check OK. Live click-through pending on the owner's Foundry (both worlds)."
    ],
@@ -1895,12 +1895,12 @@
    "owner": "dev-ui",
    "source": "jev-layer",
    "created": 1790705519.937,
-   "updated": 1790706032.579
+   "updated": 1790707682.435
   },
   {
    "id": "9f76030d",
    "title": "Sim Jev, --jev/--sim-jev in run.mjs and playtest, party corpus (>=20 items)",
-   "status": "doing",
+   "status": "done",
    "notes": [
     "dev-harness done pre-main: sim-jev.js, 26-item party corpus (corpus/party/), --jev/--sim-jev/--party/--compare-jev in run.mjs, playtest analyze --party + timings.json, 32 tests. Offline stand-in on party corpus: 94.7% -> 99.3% (attribution 295/321 -> 79/80, 3.9 -> 1 extraction) with guarded attribution; blind override 89.4%. Rebasing onto the branch now.",
     "Landed after rebase. Merged tree: --sim 100.0%, --fault-rate 0.3 95.0% (unchanged); --sim --sim-jev 100.0%. Party corpus with sim-Jev: 79.4% vs 94.7% without -> regression filed."
@@ -1913,7 +1913,7 @@
    "owner": "dev-harness",
    "source": "jev-layer",
    "created": 1790705519.999,
-   "updated": 1790706585.091
+   "updated": 1790707682.487
   },
   {
    "id": "27346aba",
@@ -1948,8 +1948,10 @@
   {
    "id": "ab855163",
    "title": "Jev attribution on the party corpus LOWERS credit (sim: score 94.7% -> 79.4%, attribution 91.3% -> 76.3%, 6 overrides) while red recall 0 -> 100%; root-cause before enabling attribution by default",
-   "status": "todo",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "Fixed: attributeEventsToActor ignored the actor-disputed flag (product bug), jevRoster kept compound names, sim-Jev matched gold on the whole line. --sim --party --sim-jev 79.4% -> 97.4%, attribution 97.5%, red recall 100%; Jev-off unchanged. 1361 tests."
+   ],
    "tags": [
     "gateway",
     "jev",
@@ -1959,7 +1961,22 @@
    "owner": "",
    "source": "run.mjs --sim --party --sim-jev",
    "created": 1790706585.142,
-   "updated": 1790706585.142
+   "updated": 1790707682.273
+  },
+  {
+   "id": "e54491dd",
+   "title": "analyzePartyNotes should pass an explicit request.party roster so Jev can name a PC who never speaks and the LLM misnamed (pa-007 Kesh/Amiri: 78/80)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "integration",
+    "jev"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "ab855163 fix",
+   "created": 1790707682.557,
+   "updated": 1790707682.557
   }
  ]
 }

@@ -12,7 +12,9 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 1212 unit tests, ~30 s, no network
+npm test                                    # 1361 unit tests, ~30 s, no network
+node tools/nlp-scale/run.mjs --sim --party --sim-jev                   # party corpus, simulated Jev
+node tools/nlp-scale/run.mjs --jev --party                             # real Jev (TYPESAFE_API_KEY)
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -42,6 +44,9 @@ Contract + change log: `docs/ai-gateway-v2-contract.md` (read it first).
 - Emergent themes: events carry free `themes` (beekeeping, innkeeping…); `scripts/emergent-themes.js`
   turns repeated themes into new Skill proposals; GM curates them in the "Emergent Themes" settings menu.
 - UI: `scripts/ai-provider-config.js` (Gateway settings app), `scripts/growth-ui.js` (Growth dialog).
+- Optional **Jev (TypeSafe) layer**: `scripts/ai/jev.js` + contract `docs/jev-layer-contract.md`. Off without a key;
+  fails open; triage before stage 1, second opinions on who-did-it / dark acts (flags, guarded overrides),
+  proposal ranking. Settings fieldset + Test Jev; Growth dialog "Analyze party" + chips.
 - Harness: `tools/nlp-scale/` — 322-item labeled corpus (13 categories, 14 languages), scoring,
   consistency metrics, simulated fault-injecting model.
 
@@ -116,9 +121,24 @@ game data: `mechanics.structured` -> PF2e rule elements/frequency/spell data and
 AI numbers clamped by tier + level, superseded Items switched off. **LIVE 22/22 in BOTH worlds** (build e091fe9).
 1212 tests. Owner questions open in conversion rules section 6 (feat suppression? atonement? 5/15/40 + 100?).
 
+2026-09-29 (cloud session, branch `claude/install-typesafe-skill-utldpd`): optional **Jev (TypeSafe) layer** by a
+4-role dev team + Fable reviewers (`docs/jev-layer-contract.md`). `scripts/ai/jev.js` speaks `/v1/systemone`
+directly (no dependency); every step fails open and Jev-off output is byte-identical (3948/3948 corpus variants).
+Steps: triage (skip passages with no character action, cached with the reading), attribution as a second opinion
+on the LLM's `actorName` (replaces only under a witness guard, else `actor-disputed`), dark-act flag when the LLM
+said `none` (never lowers `darkDeed`), proposal `grounded`/`fit` + `weak-evidence`. `api.analyzePartyNotes`
+(one click, over the extraction cache, covers 7f1f20ae), Gateway settings "Jev" fieldset + Test Jev (client-scoped
+`jevApiKey`), Growth dialog "Analyze party" + chips. Harness: `sim-jev.js`, 26-item party corpus
+(`corpus/party/`, per-PC gold, part of C1), `--jev/--sim-jev/--party`, `playtest.mjs analyze --party`.
+Offline numbers: `--sim --party` 94.7% (attribution 91.3%) -> with sim-Jev **97.4% / 97.5%**, red recall 0 -> 100%
+(after fixing a real bug: the per-PC split honoured a Jev name the pipeline had flagged disputed). 1361 tests.
+**Not yet done:** real-Jev numbers (`TYPESAFE_API_KEY` set locally; run `run.mjs --jev --party` and
+`playtest.mjs analyze --party --jev` on ember-road s1), the Foundry click-through (Test Jev, CORS?, Analyze party,
+chips) in BOTH worlds, `node tools/vault-export.mjs`. Board: 27346aba (real-Jev QA), e54491dd, edfcd96e.
+
 Open, in order (see the board, epic 278670bb):
 1. Playtest the new mechanics: salt-lantern s3 (PF2e) with evolve/merge/titles/Horror Rank via playtest.mjs.
-2. Party analyze (7f1f20ae), undo/reassign events (4344c58a), Populate AI (dee25a95).
+2. Real-Jev measurement + live click-through of the Jev layer (27346aba); undo/reassign events (4344c58a), Populate AI (dee25a95).
 3. Combos (e6d9185c), death/revival (b16101a9), cleanse/consolidation (54a5058f).
 4. Follow-ups: bland tag motifs (e8ae42d0), same-name proposals across PCs, dnd5e merges restate sources,
    structured conditions text-only, PF2e superseded frequency.
