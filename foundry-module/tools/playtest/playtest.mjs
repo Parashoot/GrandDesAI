@@ -16,6 +16,10 @@
 //   node tools/playtest/playtest.mjs analyze --campaign ember-road --session 1 [--notes file]
 //        [--for all|Brakka,Wick] [--rest short|long|none] [--approve none|first|all]
 //        [--proposal-mode when-earned|always|never] [--model qwen3.8:27b] [--sim]
+//        [--party]   one api.analyzePartyNotes call for the whole party (per-PC loop when absent)
+//        [--jev | --sim-jev [--jev-fault-rate 0.2]]   Jev layer: real (TYPESAFE_API_KEY,
+//                    TYPESAFE_BASE_URL) or the offline simulator; report.md's Timing section keeps
+//                    every run of the session (sessions/NN/timings.json) so before/after is visible
 //   node tools/playtest/playtest.mjs suggest --campaign ember-road --actor Maren[,Tovin]   ("Suggest proposals")
 //   node tools/playtest/playtest.mjs approve --campaign ember-road --actor Wick --proposal <id|name> [--confirm]
 //        (any pending kind: skill, class, title, an evolution or a merge)
@@ -44,7 +48,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MODULE_ROOT = join(HERE, "..", "..");
@@ -159,29 +163,82 @@ function makeActor(record, systemId) {
   };
 }
 
-function buildApi(campaign, flags) {
+// ---- Jev (docs/jev-layer-contract.md): optional, off unless --jev / --sim-jev -------------------
+
+const JEV_MODULE = join(MODULE_ROOT, "scripts", "ai", "jev.js");
+
+/**
+ * Resolve --jev / --sim-jev into { mode, jevConfig, jevFactory, sim, note }. scripts/ai/jev.js is
+ * built by another part of the team; when it is missing the analysis runs without Jev and the
+ * report says so (Jev is optional by contract, never a reason to fail a playtest).
+ */
+async function resolveJev(flags) {
+  if (!flags.jev && !flags["sim-jev"]) return { mode: "off" };
+  if (flags.jev && flags["sim-jev"]) throw new Error("--jev and --sim-jev are mutually exclusive");
+  const mode = flags["sim-jev"] ? "sim" : "real";
+  const apiKey = mode === "sim" ? "sim-jev-key" : String(process.env.TYPESAFE_API_KEY ?? "").trim();
+  if (!apiKey) throw new Error("--jev needs the Jev API key in TYPESAFE_API_KEY (optionally TYPESAFE_BASE_URL); or use --sim-jev");
+  const endpoint = mode === "sim" ? "https://api.typesafe.ai" : String(process.env.TYPESAFE_BASE_URL || "https://api.typesafe.ai").replace(/\/+$/, "");
+  const jevConfig = { enabled: true, apiKey, endpoint, model: flags["jev-model"] ?? "jev-latest", timeoutMs: mode === "sim" ? 1000 : 10000 };
+  if (!existsSync(JEV_MODULE)) return { mode, jevConfig: null, note: "scripts/ai/jev.js is not present in this checkout: analysed WITHOUT Jev" };
+  let jevModule;
+  try {
+    jevModule = await import(pathToFileURL(JEV_MODULE).href);
+  } catch (error) {
+    return { mode, jevConfig: null, note: `scripts/ai/jev.js failed to load (${error.message}): analysed WITHOUT Jev` };
+  }
+  if (mode === "real") return { mode, jevConfig, jevFactory: jevModule.createJevClient };
+  const { createSimJev } = await import("../nlp-scale/sim-jev.js");
+  const sim = createSimJev({ seed: 1, faultRate: Number(flags["jev-fault-rate"] ?? 0) || 0 });
+  const jevFactory = (options = {}) => jevModule.createJevClient({ ...options, timeoutMs: 100, fetchImpl: sim.fetch, sleep: async () => {} });
+  return { mode, jevConfig, jevFactory, sim };
+}
+
+async function buildApi(campaign, flags) {
   installFoundryGlobals(campaign.system);
   const api = new GrandDesignApi();
+  const jev = await resolveJev(flags);
   const config = normalizeGatewayConfig({
     ...(campaign.gateway ?? {}),
     ...(flags.model ? { model: flags.model } : {}),
     ...(flags["proposal-mode"] ? { proposalMode: flags["proposal-mode"] } : {}),
+    ...(jev.jevConfig ? { jev: jev.jevConfig } : {}),
     systemId: campaign.system
   });
+  // The raw jev block goes to the adapter even if this checkout's normalizeGatewayConfig does not
+  // know `jev` yet; the adapter's own normalization decides (and ignores it when it cannot use it).
+  const adapterConfig = jev.jevConfig ? { ...config, jev: jev.jevConfig } : config;
+  const adapterOptions = jev.jevFactory ? { jevFactory: jev.jevFactory } : {};
   if (flags.sim) {
     // Offline dry run: the simulated model from the scale harness (no Ollama needed).
-    return import("../nlp-scale/sim-model.js").then(({ createSimModel }) => {
-      const sim = createSimModel({ faultRate: 0 });
-      api.setGatewayConfigProvider(() => config);
-      api.setProposalAdapter(createGatewayAdapter({ ...config, model: "sim", fetchImpl: sim.fetch, sleep: async () => {} }));
-      wireThemes(api, campaign);
-      return { api, config: { ...config, model: "sim" } };
-    });
+    const { createSimModel } = await import("../nlp-scale/sim-model.js");
+    const sim = createSimModel({ faultRate: 0 });
+    api.setGatewayConfigProvider(() => config);
+    api.setProposalAdapter(createGatewayAdapter({ ...adapterConfig, model: "sim", fetchImpl: sim.fetch, sleep: async () => {} }, adapterOptions));
+    wireThemes(api, campaign);
+    return { api, config: { ...config, model: "sim" }, jev };
   }
   api.setGatewayConfigProvider(() => config);
-  api.setProposalAdapter(createGatewayAdapter(config));
+  api.setProposalAdapter(createGatewayAdapter(adapterConfig, adapterOptions));
   wireThemes(api, campaign);
-  return Promise.resolve({ api, config });
+  return { api, config, jev };
+}
+
+/** Jev diagnostics wherever this checkout's API puts them (result, gateway diagnostics, party). */
+function jevDiagnosticsOf(analysis) {
+  return analysis?.gatewayDiagnostics?.jev ?? analysis?.diagnostics?.jev ?? analysis?.jev ?? null;
+}
+
+function summarizeJevDiagnostics(list) {
+  const present = list.filter((d) => d && typeof d === "object");
+  if (!present.length) return null;
+  return {
+    calls: present.reduce((s, d) => s + (Number(d.calls) || 0), 0),
+    ms: present.reduce((s, d) => s + (Number(d.ms) || 0), 0),
+    skippedChunks: present.reduce((s, d) => s + (Array.isArray(d.skippedChunks) ? d.skippedChunks.length : 0), 0),
+    overrides: present.reduce((s, d) => s + (Number(d.overrides) || (Array.isArray(d.overrides) ? d.overrides.length : 0)), 0),
+    errors: present.reduce((s, d) => s + (Array.isArray(d.errors) ? d.errors.length : 0), 0)
+  };
 }
 
 function wireThemes(api, campaign) {
@@ -214,24 +271,67 @@ async function cmdAnalyze(flags) {
   const notesPath = flags.notes ?? join(dir, "notes.md");
   if (!existsSync(notesPath)) throw new Error(`no notes at ${notesPath}`);
   const notes = readFileSync(notesPath, "utf8").replace(/^---[\s\S]*?---\s*/, "").trim();
-  const { api, config } = await buildApi(campaign, flags);
+  const { api, config, jev } = await buildApi(campaign, flags);
   const who = !flags.for || flags.for === "all" ? campaign.party : campaign.party.filter((pc) => String(flags.for).split(",").map((s) => s.trim().toLowerCase()).includes(pc.name.toLowerCase()));
   const rest = ["short", "long"].includes(flags.rest) ? flags.rest : null;
   const approveMode = flags.approve ?? "none";
+  if (jev.note) console.log(`Jev: ${jev.note}`);
+
+  // Party mode (board a48d97c0): ONE api.analyzePartyNotes call reads the notes once for the whole
+  // party. Without that API (older checkout) it is today's per-PC loop, and the report says so.
+  const wantsParty = Boolean(flags.party);
+  const partyAvailable = typeof api.analyzePartyNotes === "function";
+  const mode = wantsParty && partyAvailable ? "party" : "per-pc";
+  const actors = new Map(who.map((pc) => [pc, makeActor(pc, campaign.system)]));
+  const before = new Map(who.map((pc) => {
+    const actor = actors.get(pc);
+    return [pc, { progression: structuredClone(api.getLevelProgression(actor)), pending: api.getGrowth(actor).proposals.filter((p) => p.status === "pending").length }];
+  }));
+  const analyses = new Map();
+  const startedAll = Date.now();
+  let partyInfo = null;
+  if (mode === "party") {
+    let partyError = null;
+    let out = null;
+    try {
+      out = await api.analyzePartyNotes(who.map((pc) => actors.get(pc)), notes);
+    } catch (e) {
+      partyError = e.message;
+    }
+    const ms = Date.now() - startedAll;
+    // api.analyzePartyNotes -> { perActor: [{ actorId, name, ...analyzeSessionNotes result } |
+    //   { actorId, name, error } | { actorId, name, skipped: "busy", busyWith }],
+    //   party: { ms, extractionCalls, extractionCache: { hit, miss, off, preset }, jev } }
+    partyInfo = { ms: out?.party?.ms ?? ms, extractionCalls: out?.party?.extractionCalls ?? null, extractionCache: out?.party?.extractionCache ?? null, jev: out?.party?.jev ?? null };
+    const perActor = Array.isArray(out?.perActor) ? out.perActor : [];
+    for (const pc of who) {
+      const actor = actors.get(pc);
+      const entry = perActor.find((e) => e.actorId === actor.id) ?? perActor.find((e) => String(e.name ?? "").toLowerCase() === pc.name.toLowerCase()) ?? null;
+      let error = partyError;
+      if (!error && !entry) error = "analyzePartyNotes returned nothing for this character";
+      else if (!error && entry.skipped) error = `skipped: ${entry.skipped}${entry.busyWith ? ` (busy with ${entry.busyWith})` : ""}`;
+      else if (!error && entry.error) error = entry.error;
+      analyses.set(pc, { analysis: error ? undefined : entry, error, ms: null });
+    }
+  } else {
+    for (const pc of who) {
+      const started = Date.now();
+      let analysis;
+      let error = null;
+      try {
+        analysis = await api.analyzeSessionNotes(actors.get(pc), notes);
+      } catch (e) {
+        error = e.message;
+      }
+      analyses.set(pc, { analysis, error, ms: Date.now() - started });
+    }
+  }
+  const totalMs = Date.now() - startedAll;
 
   const results = [];
   for (const pc of who) {
-    const actor = makeActor(pc, campaign.system);
-    const before = { progression: structuredClone(api.getLevelProgression(actor)), pending: api.getGrowth(actor).proposals.filter((p) => p.status === "pending").length };
-    const started = Date.now();
-    let analysis;
-    let error = null;
-    try {
-      analysis = await api.analyzeSessionNotes(actor, notes);
-    } catch (e) {
-      error = e.message;
-    }
-    const ms = Date.now() - started;
+    const actor = actors.get(pc);
+    const { analysis, error, ms } = analyses.get(pc);
     let restResult = null;
     if (!error && rest) restResult = await api.resolveLevelRest(actor, { restType: rest });
     const approved = [];
@@ -267,14 +367,46 @@ async function cmdAnalyze(flags) {
       advanced = { error: e.message };
     }
     const fallbacks = error ? [] : fallbackLines({ analysis, restResult, pending });
-    results.push({ name: pc.name, className: pc.className, persona: pc.persona, restType: rest, ms, error, analysis, before, after: { progression, pending: pending.length }, restResult, approved, pending, advanced, fallbacks });
-    console.log(`${pc.name}: ${error ? `ERROR ${error}` : `${analysis.source}, ${analysis.events.length} events, ${pending.length} pending proposals`} (${(ms / 1000).toFixed(1)}s)`);
+    results.push({ name: pc.name, className: pc.className, persona: pc.persona, restType: rest, ms, error, analysis, before: before.get(pc), after: { progression, pending: pending.length }, restResult, approved, pending, advanced, fallbacks });
+    const took = ms === null ? "party call" : `${(ms / 1000).toFixed(1)}s`;
+    console.log(`${pc.name}: ${error ? `ERROR ${error}` : `${analysis.source}, ${analysis.events.length} events, ${pending.length} pending proposals`} (${took})`);
   }
+
+  const jevSummary = summarizeJevDiagnostics(mode === "party" ? [partyInfo?.jev] : results.map((r) => jevDiagnosticsOf(r.analysis)));
+  const timing = {
+    at: new Date().toISOString(),
+    mode,
+    requested: wantsParty ? "party" : "per-pc",
+    ...(wantsParty && !partyAvailable ? { note: "api.analyzePartyNotes is not in this checkout: ran the per-PC loop" } : {}),
+    jev: jev.mode === "off" ? "off" : jev.note ? `${jev.mode} (unavailable)` : jev.mode,
+    ...(jev.note ? { jevNote: jev.note } : {}),
+    model: config.model,
+    characters: who.length,
+    totalMs,
+    perActorMs: Object.fromEntries(results.map((r) => [r.name, r.ms])),
+    ...(partyInfo ? { party: { ms: partyInfo.ms, extractionCalls: partyInfo.extractionCalls, extractionCache: partyInfo.extractionCache } } : {}),
+    ...(jevSummary ? { jevDiagnostics: jevSummary } : {}),
+    ...(jev.sim ? { simJev: { calls: jev.sim.stats.calls, faults: jev.sim.stats.faults } } : {})
+  };
+  console.log(`timing: ${mode}${timing.note ? ` (${timing.note})` : ""}, Jev ${timing.jev}, ${who.length} character(s) in ${(totalMs / 1000).toFixed(1)}s${partyInfo?.extractionCalls !== null && partyInfo?.extractionCalls !== undefined ? `, ${partyInfo.extractionCalls} extraction call(s)` : ""}${jevSummary ? `; Jev ${jevSummary.calls} calls, ${jevSummary.skippedChunks} chunks skipped` : ""}`);
+
   campaign.sessionsPlayed = Math.max(campaign.sessionsPlayed, n);
   saveCampaign(campaign);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "report.json"), `${JSON.stringify({ campaign: campaign.name, system: campaign.system, session: n, model: config.model, proposalMode: config.proposalMode, at: new Date().toISOString(), notes, results }, null, 1)}\n`);
-  writeFileSync(join(dir, "report.md"), renderReport(campaign, n, config, notes, results, existsSync(join(dir, "transcript.md"))));
+  // Every analyze run of a session appends its timing, so the report can show before/after
+  // (per-PC vs party, Jev off vs on) even though report.md itself is rewritten each run.
+  const timingsPath = join(dir, "timings.json");
+  let timings = [];
+  try {
+    timings = existsSync(timingsPath) ? JSON.parse(readFileSync(timingsPath, "utf8")) : [];
+  } catch {
+    timings = [];
+  }
+  if (!Array.isArray(timings)) timings = [];
+  timings.push(timing);
+  writeFileSync(timingsPath, `${JSON.stringify(timings, null, 1)}\n`);
+  writeFileSync(join(dir, "report.json"), `${JSON.stringify({ campaign: campaign.name, system: campaign.system, session: n, model: config.model, proposalMode: config.proposalMode, at: new Date().toISOString(), timing, notes, results }, null, 1)}\n`);
+  writeFileSync(join(dir, "report.md"), renderReport(campaign, n, config, notes, results, existsSync(join(dir, "transcript.md")), { timing, timings }));
   console.log(`report: ${join(dir, "report.md")}`);
 }
 
@@ -283,7 +415,7 @@ function cmdApprove(flags) {
     const campaign = loadCampaign(flags.campaign);
     const pc = campaign.party.find((p) => p.name.toLowerCase() === String(flags.actor ?? "").toLowerCase());
     if (!pc) throw new Error(`no party member ${flags.actor}`);
-    const { api } = await buildApi(campaign, { ...flags, sim: true });
+    const { api } = await buildApi(campaign, { ...flags, sim: true, jev: false, "sim-jev": false });
     const actor = makeActor(pc, campaign.system);
     const ref = String(flags.proposal ?? "").toLowerCase();
     const proposal = api.getGrowth(actor).proposals.find((p) => p.status === "pending" && (p.id === flags.proposal || String(p.entry?.name ?? "").toLowerCase().includes(ref)));
@@ -346,7 +478,7 @@ async function cmdSuggest(flags) {
 
 async function cmdStatus(flags) {
   const campaign = loadCampaign(flags.campaign);
-  const { api } = await buildApi(campaign, { ...flags, sim: true });
+  const { api } = await buildApi(campaign, { ...flags, sim: true, jev: false, "sim-jev": false });
   const rows = campaign.party.map((pc) => {
     const actor = makeActor(pc, campaign.system);
     const growth = api.getGrowth(actor);
@@ -506,14 +638,40 @@ function writeGmView(dir, name, campaign, html) {
   );
 }
 
+const seconds = (ms) => (Number.isFinite(ms) ? `${(ms / 1000).toFixed(1)} s` : "–");
+
+/** "## Timing": this run, and every analyze run of this session so before/after stays visible. */
+function renderTiming(timing, timings) {
+  const lines = ["## Timing"];
+  const perActor = Object.entries(timing.perActorMs ?? {}).filter(([, ms]) => Number.isFinite(ms)).map(([name, ms]) => `${name} ${seconds(ms)}`).join(", ");
+  lines.push(`This run: mode **${timing.mode}**${timing.note ? ` (${timing.note})` : ""}, Jev **${timing.jev}**, ${timing.characters} character(s) in **${seconds(timing.totalMs)}**${perActor ? ` (${perActor})` : ""}${timing.party ? `; party call ${seconds(timing.party.ms)}${timing.party.extractionCalls !== null && timing.party.extractionCalls !== undefined ? `, ${timing.party.extractionCalls} extraction call(s)` : ""}${timing.party.extractionCache ? ` (cache hit ${timing.party.extractionCache.hit ?? 0}, miss ${timing.party.extractionCache.miss ?? 0}, off ${timing.party.extractionCache.off ?? 0}, preset ${timing.party.extractionCache.preset ?? 0})` : ""}` : ""}.`);
+  if (timing.jevNote) lines.push(`Jev note: ${timing.jevNote}.`);
+  if (timing.jevDiagnostics) {
+    const j = timing.jevDiagnostics;
+    lines.push(`Jev: ${j.calls} call(s) in ${seconds(j.ms)}, ${j.skippedChunks} chunk(s) skipped, ${j.overrides} outcome override(s), ${j.errors} error(s).`);
+  }
+  if (timings.length > 1) {
+    lines.push("");
+    lines.push("| run at | mode | Jev | model | characters | total | per character |");
+    lines.push("|---|---|---|---|---|---|---|");
+    for (const t of timings) {
+      const n = Math.max(1, t.characters ?? 1);
+      lines.push(`| ${String(t.at ?? "").slice(0, 16).replace("T", " ")}${t === timing ? " (this run)" : ""} | ${t.mode}${t.note ? "*" : ""} | ${t.jev} | ${t.model ?? "?"} | ${t.characters ?? "?"} | ${seconds(t.totalMs)} | ${seconds((t.totalMs ?? NaN) / n)} |`);
+    }
+    if (timings.some((t) => t.note)) lines.push("", "\\* party requested, but this checkout had no api.analyzePartyNotes: the per-PC loop ran.");
+  }
+  return lines;
+}
+
 const flagsRest = (r) => (r.restType === "long" ? "Long" : "Short");
 
-function renderReport(campaign, n, config, notes, results, hasTranscript) {
+function renderReport(campaign, n, config, notes, results, hasTranscript, { timing = null, timings = [] } = {}) {
   const lines = [];
   lines.push(`# ${campaign.name} - session ${n} - module report`);
   lines.push("");
   lines.push(`System **${campaign.system}**, model \`${config.model}\`, proposals \`${config.proposalMode}\`, analysed ${new Date().toISOString().slice(0, 16).replace("T", " ")}.${hasTranscript ? " The played scene is in `transcript.md`." : ""}`);
   lines.push("");
+  if (timing) lines.push(...renderTiming(timing, timings), "");
   lines.push("## Session notes (as the DM wrote them)");
   lines.push("");
   lines.push(notes.split("\n").map((l) => `> ${l}`).join("\n"));
@@ -528,7 +686,7 @@ function renderReport(campaign, n, config, notes, results, hasTranscript) {
     }
     const a = r.analysis;
     const fell = a.source !== "adapter";
-    lines.push(`- Read by: **${a.source}**${fell ? ` -- FALLBACK${a.adapterError ? `: ${a.adapterError}` : ""}` : ""} in ${(r.ms / 1000).toFixed(1)}s`);
+    lines.push(`- Read by: **${a.source}**${fell ? ` -- FALLBACK${a.adapterError ? `: ${a.adapterError}` : ""}` : ""} ${r.ms === null || r.ms === undefined ? "(one party call, see Timing)" : `in ${(r.ms / 1000).toFixed(1)}s`}`);
     // Every AI fallback (analysis, milestone rewards at rest, fallback proposals), stated with its reason.
     for (const f of (r.fallbacks ?? []).filter((line) => !line.startsWith("analysis read by"))) lines.push(`- usedFallback: ${f}`);
     const p0 = r.before.progression;

@@ -187,6 +187,86 @@ function heuristicDark(sentence) {
   return hit ? { darkDeed: hit[1], darkSeverity: hit[2] } : { darkDeed: "none", darkSeverity: "none" };
 }
 
+const lowerNorm = (text) => String(text ?? "").toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, " ").trim();
+
+/** The note line (or sentence) that contains a gold evidence snippet, plus its speaker label. */
+function locateSnippet(notes, snippet) {
+  const wanted = lowerNorm(snippet);
+  for (const line of String(notes).split(/\n+/)) {
+    if (!lowerNorm(line).includes(wanted)) continue;
+    const label = /^\s*(?:[-*•]\s*)?([\p{L}][\p{L}\p{M}'’.-]*)\s*:/u.exec(line)?.[1] ?? null;
+    // The clause around the snippet (comma / sentence bounded), so several deeds packed into one
+    // chat line become distinct quotes instead of one quote the pipeline would dedupe.
+    const flat = lowerNorm(line);
+    const at = flat.indexOf(wanted);
+    const cuts = [0, flat.length];
+    for (const m of flat.matchAll(/[,.;!?—:]| while | then | but | also /g)) cuts.push(m.index, m.index + m[0].length);
+    cuts.sort((a, b) => a - b);
+    const start = Math.max(...cuts.filter((c) => c <= at));
+    const end = Math.min(...cuts.filter((c) => c >= at + wanted.length));
+    const original = String(line).replace(/[’']/g, "'").replace(/\s+/g, " ").trim();
+    const sentence = (original.length === flat.length ? original : flat).slice(start, end).trim() || wanted;
+    return { line: line.trim(), sentence, label };
+  }
+  return { line: snippet, sentence: snippet, label: null };
+}
+
+/**
+ * The events a typical local model extracts from a party item (category "party"): one per gold
+ * evidence snippet, tagged from the doer's gold. Its actorName reproduces the ember-road s1
+ * failure on purpose: when the deed sits in another party member's "Name: ..." line, the model
+ * names the SPEAKER (Luz for "she catch Tovin killing a goblin"). `trueDoers: true` names the real
+ * doer instead (used to check the labels are self-consistent). Whole-party snippets are "the party".
+ */
+export function partyGoldEvents(item, { trueDoers = false } = {}) {
+  const gold = item.gold ?? {};
+  const party = Array.isArray(item.party) ? item.party : [];
+  const bySnippet = new Map();
+  const add = (snippet, doer, actorGold) => {
+    const key = lowerNorm(snippet);
+    const entry = bySnippet.get(key) ?? { snippet, doers: [], golds: [] };
+    if (!entry.doers.includes(doer)) {
+      entry.doers.push(doer);
+      entry.golds.push(actorGold);
+    }
+    bySnippet.set(key, entry);
+  };
+  for (const [name, actorGold] of Object.entries(gold.perActor ?? {})) for (const snippet of actorGold.evidence ?? []) add(snippet, name, actorGold);
+  for (const snippet of gold.wholeParty?.evidence ?? []) add(snippet, "the party", gold.wholeParty);
+  const notesLower = lowerNorm(item.notes);
+  const ordered = [...bySnippet.values()].sort((a, b) => notesLower.indexOf(lowerNorm(a.snippet)) - notesLower.indexOf(lowerNorm(b.snippet)));
+  // Spread each doer's gold tags over their events: the k-th event gets the k-th tag group, and the
+  // doer's last event also carries any groups left over, so every group lands on some event.
+  const totals = new Map();
+  for (const entry of ordered) for (const doer of entry.doers) totals.set(doer, (totals.get(doer) ?? 0) + 1);
+  const seen = new Map();
+  return ordered
+    .map((entry) => {
+      const where = locateSnippet(item.notes, entry.snippet);
+      const tags = [];
+      entry.doers.forEach((doer, i) => {
+        const must = (entry.golds[i].mustTags ?? []).map(firstAlt);
+        const k = seen.get(doer) ?? 0;
+        seen.set(doer, k + 1);
+        const chosen = k < must.length ? [must[k], ...(k === totals.get(doer) - 1 ? must.slice(k + 1) : [])] : must.slice(0, 1);
+        for (const tag of chosen) if (!tags.includes(tag)) tags.push(tag);
+      });
+      const doerName = entry.doers.join(" and ");
+      const speaker = where.label && party.some((name) => lowerNorm(name) === lowerNorm(where.label)) ? party.find((name) => lowerNorm(name) === lowerNorm(where.label)) : null;
+      const actorName = trueDoers || entry.doers.includes("the party") || entry.doers.length > 1 ? doerName : speaker ?? doerName;
+      const outcome = firstAlt(entry.golds[0].outcome) ?? "success";
+      return {
+        summary: where.sentence.slice(0, 200),
+        actorName,
+        tags,
+        themes: tags.length ? [] : ["sim-activity"],
+        outcome,
+        quote: where.sentence.slice(0, 400),
+        language: String(item.lang ?? "en").split("-")[0]
+      };
+    });
+}
+
 /** Cheap fallback when the notes are not a corpus item: taxonomy regexes per sentence. */
 export function heuristicEvents(text) {
   const out = [];
@@ -458,7 +538,7 @@ export function createSimModel(options = {}) {
     let events;
     if (match) {
       stats.matched += 1;
-      events = goldEvents(match.item);
+      events = match.item.category === "party" ? partyGoldEvents(match.item) : goldEvents(match.item);
     } else {
       stats.heuristic += 1;
       events = heuristicEvents(req.notesText);

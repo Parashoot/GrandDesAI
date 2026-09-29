@@ -18,9 +18,11 @@
 
 import { runGatewayPipeline } from "../../scripts/ai/pipeline.js";
 import { normalizeGatewayConfig } from "../../scripts/ai/gateway-config.js";
-import { buildAiGatewayRequest } from "../../scripts/ai-gateway.js";
+import { buildAiGatewayRequest, createGatewayAdapter } from "../../scripts/ai-gateway.js";
 import { validateGrowthEvent } from "../../scripts/progression.js";
 import { EVENT_ITEM_SCHEMA } from "../../scripts/ai/schemas.js";
+import { attributeEventsToActor, classifyActorName } from "../../scripts/session-notes.js";
+import { GROWTH_TAXONOMY } from "../../scripts/growth-taxonomy.js";
 
 export const HARNESS_VERSION = "1.1.0";
 
@@ -170,14 +172,16 @@ function now() {
  * Run one item `reps` times. Never throws: a pipeline total failure is recorded as a rep with
  * `error` (that is exactly the "would have fallen back to the local analyzer" case we count).
  */
-export async function runItem(item, { transport, config, reps = 1, systemId = "pf2e", pipeline = runGatewayPipeline } = {}) {
+export async function runItem(item, { transport, config, reps = 1, systemId = "pf2e", pipeline = runGatewayPipeline, jev = null } = {}) {
   const normalized = normalizeGatewayConfig(config ?? {});
   const request = buildHarnessRequest(item, systemId);
   const results = [];
   for (let rep = 0; rep < reps; rep += 1) {
     const started = now();
     try {
-      const output = await pipeline({ transport, request, config: normalized });
+      // `jev` only when there is a client: without one the call is byte-for-byte what it was before
+      // the Jev layer existed (contract invariant 1).
+      const output = await pipeline(jev ? { transport, request, config: normalized, jev } : { transport, request, config: normalized });
       results.push({
         rep,
         ms: now() - started,
@@ -190,6 +194,76 @@ export async function runItem(item, { transport, config, reps = 1, systemId = "p
       });
     } catch (error) {
       results.push({ rep, ms: now() - started, error: { name: error?.name ?? "Error", message: String(error?.message ?? error) }, events: [], proposals: [], themes: [] });
+    }
+  }
+  return { id: item.id, category: item.category, lang: item.lang, reps: results };
+}
+
+function mergeJevDiagnostics(list) {
+  const present = list.filter((d) => d && typeof d === "object");
+  if (!present.length) return null;
+  return {
+    enabled: present.some((d) => d.enabled !== false),
+    ran: [...new Set(present.flatMap((d) => (Array.isArray(d.ran) ? d.ran : [])))],
+    calls: present.reduce((s, d) => s + (Number(d.calls) || 0), 0),
+    ms: present.reduce((s, d) => s + (Number(d.ms) || 0), 0),
+    skippedChunks: present.flatMap((d) => (Array.isArray(d.skippedChunks) ? d.skippedChunks : [])),
+    overrides: present.reduce((s, d) => s + (Number(d.overrides) || (Array.isArray(d.overrides) ? d.overrides.length : 0)), 0),
+    flags: present.flatMap((d) => (Array.isArray(d.flags) ? d.flags : [])),
+    errors: present.flatMap((d) => (Array.isArray(d.errors) ? d.errors : []))
+  };
+}
+
+/**
+ * Run one party item (category "party") `reps` times the way api.analyzePartyNotes reads a whole
+ * party's notes: ONE gateway adapter (whose extraction cache, keyed on notes+system+config, makes
+ * stage 1 run once per distinct notes) and one adapter call per character with the same notes; each
+ * character then keeps the events session-notes.js#attributeEventsToActor gives it (it trusts a
+ * confident `event.jev.actorName`). Modes:
+ *   - "party" (default, `partyMode: "auto"`): the adapter's cache on -> one extraction per item;
+ *   - "per-pc": the cache off -> one extraction per character, today's pre-cache cost, for the
+ *     before-numbers.
+ * Extractions are counted from `gatewayDiagnostics.extractionCache` ("miss" / "off" = the model
+ * really read the notes). A `jev` client reaches the adapter through `jevFactory` (contract; the
+ * adapter ignores it until the Jev integration lands). Never throws: a total failure is a rep with
+ * `error`, as in runItem.
+ */
+export async function runPartyItem(item, { transport, config, reps = 1, systemId, jev = null, partyMode = "auto", adapterFactory = createGatewayAdapter } = {}) {
+  const sys = item.system ?? systemId ?? "pf2e";
+  const mode = partyMode === "per-pc" ? "per-pc" : "party";
+  const actors = (item.party ?? []).map((name) => makeHarnessActor(sys, { name }));
+  const results = [];
+  for (let rep = 0; rep < reps; rep += 1) {
+    const started = now();
+    try {
+      // A fresh adapter per rep, so a rep never reads another rep's cached extraction.
+      const adapter = adapterFactory(
+        { ...(config ?? {}), systemId: sys, ...(mode === "per-pc" ? { extractionCacheEntries: 0 } : {}) },
+        { transportFactory: () => transport, jevFactory: () => jev }
+      );
+      const perActor = {};
+      let events = null;
+      const proposals = [];
+      const stages = [];
+      const jevDiags = [];
+      let extractions = 0;
+      for (const actor of actors) {
+        const output = await adapter({ actor, notes: item.notes, systemId: sys });
+        const runEvents = Array.isArray(output?.events) ? output.events : [];
+        // The extraction is shared, so the first character's events are the party's events; the
+        // per-character split is what each sheet would record.
+        events ??= runEvents;
+        perActor[actor.name] = attributeEventsToActor(runEvents, [actor.name], { notes: item.notes }).kept;
+        proposals.push(...(Array.isArray(output?.proposals) ? output.proposals : []));
+        const diagnostics = output?.gatewayDiagnostics ?? output?.diagnostics ?? null;
+        stages.push(...(Array.isArray(diagnostics?.stages) ? diagnostics.stages : []));
+        jevDiags.push(diagnostics?.jev);
+        if (diagnostics?.extractionCache === "miss" || diagnostics?.extractionCache === "off" || diagnostics?.extractionCache === undefined) extractions += 1;
+      }
+      const jevDiag = mergeJevDiagnostics(jevDiags);
+      results.push({ rep, ms: now() - started, mode, extractions, events: events ?? [], perActor, proposals, themes: [], diagnostics: { stages, ...(jevDiag ? { jev: jevDiag } : {}) } });
+    } catch (error) {
+      results.push({ rep, ms: now() - started, mode, error: { name: error?.name ?? "Error", message: String(error?.message ?? error) }, events: [], proposals: [], themes: [] });
     }
   }
   return { id: item.id, category: item.category, lang: item.lang, reps: results };
@@ -386,10 +460,258 @@ export function diagnosticsStats(rep) {
   return { stages: stages.length, calls, firstTryValid, repairTurns, jsonRepairs, callMs };
 }
 
-export function scoreItem(item, runResult, options = {}) {
-  const reps = runResult.reps.map((rep) => ({ ...scoreRep(item, rep, options), ms: rep.ms, error: rep.error ?? null, diag: diagnosticsStats(rep) }));
-  const agg = (key) => mean(reps.map((r) => (r[key] === null || r[key] === undefined ? null : Number(r[key]))));
+// ---- party corpus: per-character credit (docs/jev-layer-contract.md "Party corpus") -----------
+
+const normText = (text) => String(text ?? "").toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, " ").trim();
+const WHOLE = "*whole-party*";
+
+/** Evidence snippets of a party item -> the character(s) who did that deed (WHOLE = everyone). */
+export function partyEvidence(item) {
+  const map = new Map();
+  const add = (snippet, doer) => {
+    const key = normText(snippet);
+    if (!key) return;
+    const doers = map.get(key) ?? [];
+    if (!doers.includes(doer)) doers.push(doer);
+    map.set(key, doers);
+  };
+  for (const [name, gold] of Object.entries(item?.gold?.perActor ?? {})) for (const snippet of gold.evidence ?? []) add(snippet, name);
+  for (const snippet of item?.gold?.wholeParty?.evidence ?? []) add(snippet, WHOLE);
+  return [...map.entries()].map(([snippet, doers]) => ({ snippet, doers })).sort((a, b) => b.snippet.length - a.snippet.length);
+}
+
+/** Who really did an extracted event, from the gold evidence its quote/summary contains; null if unknown. */
+export function trueDoers(item, event) {
+  const text = normText(`${event?.quote ?? ""} \n ${event?.summary ?? ""}`);
+  const hit = partyEvidence(item).find((entry) => text.includes(entry.snippet));
+  if (!hit) return null;
+  return hit.doers.includes(WHOLE) ? { whole: true, doers: [...(item.party ?? [])] } : { whole: false, doers: hit.doers };
+}
+
+/** The characters an event's (final) actorName credits: roster names classified "self", or group. */
+export function creditedActors(item, event) {
+  if (event?.jev?.whole === true) return { group: true, names: [...(item.party ?? [])] };
+  const name = typeof event?.actorName === "string" ? event.actorName.trim() : "";
+  if (!name) return { group: false, names: [], empty: true };
+  const names = (item.party ?? []).filter((member) => classifyActorName(name, [member]) === "self");
+  const group = !names.length && classifyActorName(name, item.party ?? []) === "group";
+  return { group, names };
+}
+
+const eventKey = (event) => `${String(event?.summary ?? "").trim()}\u0000${String(event?.quote ?? "").trim()}`;
+
+/**
+ * Is this event credited to exactly the right character(s)? null when the doer is not known. With
+ * `perActor` (name -> the events that character's sheet recorded) the credit is the FINAL one, after
+ * session-notes.js#attributeEventsToActor (which honours a confident event.jev.actorName); without
+ * it, the event's own actorName / jev.whole is read.
+ */
+export function attributionCorrect(item, event, perActor = null) {
+  const truth = trueDoers(item, event);
+  if (!truth) return null;
+  const credited = perActor
+    ? (() => {
+        const key = eventKey(event);
+        const names = (item.party ?? []).filter((name) => (perActor[name] ?? []).some((kept) => kept === event || eventKey(kept) === key));
+        return { group: names.length === (item.party ?? []).length && names.length > 1, names };
+      })()
+    : creditedActors(item, event);
+  if (truth.whole) return credited.group || credited.names.length === (item.party ?? []).length;
+  if (credited.group || !credited.names.length) return false;
+  return credited.names.length === truth.doers.length && truth.doers.every((doer) => credited.names.includes(doer));
+}
+
+/** One event list -> { name: events the module would record for that character }. */
+export function distributePartyEvents(item, events, { attribute = attributeEventsToActor } = {}) {
+  const out = {};
+  for (const name of item.party ?? []) out[name] = attribute(Array.isArray(events) ? events : [], [name], { notes: item.notes }).kept;
+  return out;
+}
+
+/** A dark act the Jev layer (or the model) marked: the event-level red signal. Includes darkDeed. */
+export function isJevDarkEvent(event) {
+  return Boolean(
+    isDarkEvent(event)
+      ||     (Array.isArray(event?.jev?.flags) && event.jev.flags.includes("dark-act"))
+      || (Array.isArray(event?.themes) && event.themes.includes("dark-deed"))
+      || event?.polarity === "red"
+  );
+}
+
+/**
+ * Per-character credit for one rep of a party item. `rep.perActor` (name -> events, as the API
+ * recorded them) wins; otherwise the rep's events are distributed with the module's own
+ * attributeEventsToActor, so the number is what a GM would see on each sheet.
+ */
+export function scorePartyRep(item, rep) {
+  const failed = Boolean(rep?.error);
+  const party = item.party ?? [];
+  const perActor = rep?.perActor ?? distributePartyEvents(item, rep?.events ?? []);
+  const actors = {};
+  let creditLeak = 0;
+  for (const name of party) {
+    const gold = item.gold?.perActor?.[name] ?? { minEvents: 0, maxEvents: 0, mustTags: [] };
+    const events = failed ? [] : perActor[name] ?? [];
+    const tags = unionTags(events);
+    const groups = (gold.mustTags ?? []).map(alts).filter((group) => group.length);
+    const recall = groups.length ? groups.filter((group) => group.some((tag) => tags.has(tag))).length / groups.length : null;
+    const min = gold.minEvents ?? 0;
+    const max = gold.maxEvents ?? Infinity;
+    const countOk = events.length >= min && events.length <= max;
+    creditLeak += Math.max(0, events.length - max);
+    const outcomeOk = gold.outcome ? alts(gold.outcome).includes(dominantOutcome(events)) : null;
+    const forbidOk = gold.forbidTags?.length ? !gold.forbidTags.some((tag) => tags.has(tag)) : null;
+    const dark = events.some(isJevDarkEvent);
+    const redOk = gold.redWorthy ? dark : null;
+    const redFalse = !gold.redWorthy && events.length ? dark : null;
+    const checks = [countOk, recall, outcomeOk, forbidOk].filter((v) => v !== null).map(Number);
+    actors[name] = {
+      count: events.length,
+      min,
+      max: Number.isFinite(max) ? max : null,
+      countOk,
+      recall,
+      outcomeOk,
+      forbidOk,
+      redOk,
+      redFalse,
+      tags: [...tags].sort(),
+      outcome: dominantOutcome(events),
+      score: failed ? 0 : checks.length ? checks.reduce((a, b) => a + b, 0) / checks.length : 1
+    };
+  }
+  const list = Object.values(actors);
+  const events = rep?.events ?? [];
+  const judged = events.map((event) => attributionCorrect(item, event, failed ? null : perActor)).filter((v) => v !== null);
+  const idle = list.filter((a) => a.max === 0);
+  const avg = (key) => mean(list.map((a) => (a[key] === null || a[key] === undefined ? null : Number(a[key]))));
+  const redActors = list.filter((a) => a.redOk !== null);
+  const falseActors = list.filter((a) => a.redFalse !== null);
   return {
+    failed,
+    party: true,
+    actors,
+    attribution: { scored: judged.length, correct: judged.filter(Boolean).length },
+    creditLeak,
+    idleOk: idle.length ? idle.filter((a) => a.count === 0).length / idle.length : null,
+    recall: avg("recall"),
+    precision: null,
+    f1: null,
+    outcomeOk: avg("outcomeOk"),
+    dangerOk: null,
+    themeOk: null,
+    trapOk: null,
+    forbidOk: avg("forbidOk"),
+    countOk: avg("countOk"),
+    redOk: redActors.length ? redActors.filter((a) => a.redOk).length / redActors.length : null,
+    redFalse: falseActors.length ? falseActors.filter((a) => a.redFalse).length / falseActors.length : null,
+    invalidEvents: events.filter((event) => !validateGrowthEvent(event).valid).length,
+    eventCount: events.length,
+    tags: [...unionTags(events)].sort(),
+    themes: predictedThemes(rep ?? {}),
+    outcome: dominantOutcome(events),
+    score: failed ? 0 : mean(list.map((a) => a.score)) ?? 1
+  };
+}
+
+// ---- Jev measurements (docs/jev-layer-contract.md "Harness") ------------------------------------
+
+const TAXONOMY_PATTERNS = new Map(GROWTH_TAXONOMY.map(([tag, pattern]) => [tag, pattern]));
+
+/**
+ * Did a chunk Jev's triage skipped hold gold events? The pipeline only reports the first 160
+ * characters of a skipped chunk, so this is a lower bound: a party chunk counts when it contains an
+ * evidence snippet or names a character who has gold events; an ordinary item's chunk counts when
+ * the item has events and the text matches the taxonomy pattern of one of its gold tags.
+ */
+export function chunkHeldGold(item, text) {
+  const t = normText(text);
+  if (!t) return false;
+  if (item?.category === "party") {
+    if (partyEvidence(item).some((entry) => t.includes(entry.snippet) || (entry.snippet.length > 24 && t.includes(entry.snippet.slice(0, 24))))) return true;
+    return Object.entries(item.gold?.perActor ?? {}).some(([name, gold]) => (gold.minEvents ?? 0) > 0 && t.includes(normText(name)));
+  }
+  const gold = item?.gold ?? {};
+  if (gold.noEvents) return false;
+  const tags = [...(gold.mustTags ?? []).flatMap(alts), ...(gold.okTags ?? [])];
+  return tags.some((tag) => TAXONOMY_PATTERNS.get(tag)?.test(String(text)));
+}
+
+function goldOutcomeFor(item, event) {
+  if (item?.category !== "party") return item?.gold?.noEvents ? null : item?.gold?.outcome ?? null;
+  const truth = trueDoers(item, event);
+  if (!truth || truth.whole || truth.doers.length !== 1) return null;
+  return item.gold?.perActor?.[truth.doers[0]]?.outcome ?? null;
+}
+
+/** Red signal for the with/without-Jev comparison: a red proposal or a dark-act event. */
+export function redSignal(rep) {
+  return (rep?.proposals ?? []).some((p) => p?.entry?.metadata?.polarity === "red") || (rep?.events ?? []).some(isJevDarkEvent);
+}
+
+function isRedWorthy(item) {
+  if (item?.category === "party") return Object.values(item.gold?.perActor ?? {}).some((gold) => gold.redWorthy);
+  return Boolean(item?.gold?.redWorthy);
+}
+
+/** What Jev did in one rep, judged against gold. null when the rep carries no diagnostics.jev. */
+export function jevRepStats(item, rep) {
+  const d = rep?.diagnostics?.jev;
+  if (!d || typeof d !== "object") return null;
+  const skipped = Array.isArray(d.skippedChunks) ? d.skippedChunks : [];
+  const overrides = { total: 0, right: 0, wrong: 0, neutral: 0 };
+  const flags = {};
+  for (const event of rep.events ?? []) {
+    for (const flag of event?.jev?.flags ?? []) flags[flag] = (flags[flag] ?? 0) + 1;
+    const from = event?.jev?.outcomeFrom;
+    if (!from || from === event.outcome) continue;
+    overrides.total += 1;
+    const gold = goldOutcomeFor(item, event);
+    if (!gold) {
+      overrides.neutral += 1;
+      continue;
+    }
+    const nowOk = alts(gold).includes(event.outcome);
+    const beforeOk = alts(gold).includes(from);
+    if (nowOk && !beforeOk) overrides.right += 1;
+    else if (beforeOk && !nowOk) overrides.wrong += 1;
+    else overrides.neutral += 1;
+  }
+  for (const proposal of rep.proposals ?? []) for (const flag of proposal?.jev?.flags ?? []) flags[flag] = (flags[flag] ?? 0) + 1;
+  return {
+    enabled: d.enabled !== false,
+    ran: Array.isArray(d.ran) ? d.ran : [],
+    calls: Number(d.calls) || 0,
+    ms: Number.isFinite(Number(d.ms)) ? Number(d.ms) : null,
+    skipped: skipped.length,
+    triageMisses: skipped.filter((chunk) => chunkHeldGold(item, chunk?.text)).length,
+    overrides,
+    flags,
+    errors: Array.isArray(d.errors) ? d.errors.length : Number(d.errors) || 0
+  };
+}
+
+function redStats(item, rep) {
+  const worthy = isRedWorthy(item);
+  if (rep?.error) return { worthy, hit: false, counted: worthy };
+  // A false positive only counts where something was produced at all (as redFalse does).
+  const counted = worthy || (rep?.events ?? []).length > 0 || (rep?.proposals ?? []).length > 0;
+  return { worthy, hit: redSignal(rep), counted };
+}
+
+export function scoreItem(item, runResult, options = {}) {
+  const isParty = item.category === "party";
+  const reps = runResult.reps.map((rep) => ({
+    ...(isParty ? scorePartyRep(item, rep) : scoreRep(item, rep, options)),
+    ms: rep.ms,
+    error: rep.error ?? null,
+    diag: diagnosticsStats(rep),
+    jev: jevRepStats(item, rep),
+    red: redStats(item, rep),
+    ...(rep.mode ? { mode: rep.mode, extractions: rep.extractions ?? null } : {})
+  }));
+  const agg = (key) => mean(reps.map((r) => (r[key] === null || r[key] === undefined ? null : Number(r[key]))));
+  const scored = {
     id: item.id,
     category: item.category,
     lang: item.lang,
@@ -417,11 +739,126 @@ export function scoreItem(item, runResult, options = {}) {
     consistency: consistency(runResult.reps),
     sampleOutput: runResult.reps.map((rep) => ({
       error: rep.error ?? undefined,
-      events: (rep.events ?? []).map((e) => ({ summary: e.summary, consequence: e.consequence, actorName: e.actorName, tags: e.tags, themes: e.themes, outcome: e.outcome, dangerGap: e.dangerGap, darkDeed: e.darkDeed, darkSeverity: e.darkSeverity })),
+      events: (rep.events ?? []).map((e) => ({ summary: e.summary, consequence: e.consequence, actorName: e.actorName, tags: e.tags, themes: e.themes, outcome: e.outcome, dangerGap: e.dangerGap, darkDeed: e.darkDeed, darkSeverity: e.darkSeverity, ...(e.jev ? { jev: e.jev } : {}) })),
       proposals: (rep.proposals ?? []).map((p) => ({ name: p?.entry?.name, kind: p?.entry?.gameItem?.kind, tags: p?.entry?.metadata?.tags, polarity: p?.entry?.metadata?.polarity })),
       skippedProposals: (rep.skippedProposals ?? []).map((sp) => ({ reason: sp?.reason, name: sp?.proposal?.entry?.name ?? sp?.proposal?.name, errors: (sp?.errors ?? []).slice(0, 3) })),
-      proposalStage: rep.diagnostics?.proposalStage
+      proposalStage: rep.diagnostics?.proposalStage,
+      ...(rep.diagnostics?.jev ? { jev: { calls: rep.diagnostics.jev.calls, ms: rep.diagnostics.jev.ms, ran: rep.diagnostics.jev.ran, skippedChunks: rep.diagnostics.jev.skippedChunks, errors: rep.diagnostics.jev.errors } } : {})
     }))
+  };
+  if (isParty) {
+    const names = item.party ?? [];
+    scored.party = {
+      party: names,
+      mode: reps.find((r) => r.mode)?.mode ?? null,
+      attribution: {
+        scored: reps.reduce((s, r) => s + (r.attribution?.scored ?? 0), 0),
+        correct: reps.reduce((s, r) => s + (r.attribution?.correct ?? 0), 0)
+      },
+      creditLeak: mean(reps.map((r) => r.creditLeak ?? 0)),
+      idleAcc: mean(reps.map((r) => r.idleOk)),
+      actors: Object.fromEntries(names.map((name) => {
+        const list = reps.map((r) => r.actors?.[name]).filter(Boolean);
+        const gold = item.gold?.perActor?.[name] ?? {};
+        return [name, {
+          min: gold.minEvents ?? 0,
+          max: gold.maxEvents ?? null,
+          counts: list.map((a) => a.count),
+          countAcc: mean(list.map((a) => Number(a.countOk))),
+          recall: mean(list.map((a) => a.recall)),
+          score: mean(list.map((a) => a.score)),
+          tags: [...new Set(list.flatMap((a) => a.tags))].sort()
+        }];
+      }))
+    };
+  }
+  return scored;
+}
+
+/** The fields of a scored item kept when the same item is re-run without Jev for comparison. */
+export function baselineOf(scored) {
+  const reps = scored?.reps ?? [];
+  return {
+    score: scored?.score ?? null,
+    redAcc: scored?.redAcc ?? null,
+    redFalseRate: scored?.redFalseRate ?? null,
+    red: reps.map((r) => r.red),
+    attribution: scored?.party?.attribution ?? null,
+    msMean: mean(reps.map((r) => r.ms)),
+    calls: reps.reduce((s, r) => s + (r.diag?.calls ?? 0), 0)
+  };
+}
+
+function redRates(redList) {
+  const worthy = redList.filter((r) => r && r.worthy);
+  const others = redList.filter((r) => r && !r.worthy && r.counted);
+  return {
+    recall: worthy.length ? worthy.filter((r) => r.hit).length / worthy.length : null,
+    falseRate: others.length ? others.filter((r) => r.hit).length / others.length : null,
+    worthy: worthy.length,
+    others: others.length
+  };
+}
+
+/** Jev section numbers over scored items (and their no-Jev baselines, when the run compared). */
+export function summarizeJev(scoredItems) {
+  const items = (scoredItems ?? []).filter(Boolean);
+  const reps = items.flatMap((item) => item.reps.map((rep) => ({ item, rep })));
+  const withJev = reps.filter(({ rep }) => rep.jev);
+  const flags = {};
+  const overrides = { total: 0, right: 0, wrong: 0, neutral: 0 };
+  let calls = 0;
+  let skipped = 0;
+  let triageMisses = 0;
+  let errors = 0;
+  let runsWithErrors = 0;
+  const ms = [];
+  const ran = {};
+  for (const { rep } of withJev) {
+    const j = rep.jev;
+    calls += j.calls;
+    skipped += j.skipped;
+    triageMisses += j.triageMisses;
+    errors += j.errors;
+    if (j.errors) runsWithErrors += 1;
+    if (j.ms !== null) ms.push(j.ms);
+    for (const step of j.ran) ran[step] = (ran[step] ?? 0) + 1;
+    for (const key of Object.keys(overrides)) overrides[key] += j.overrides[key];
+    for (const [flag, n] of Object.entries(j.flags)) flags[flag] = (flags[flag] ?? 0) + n;
+  }
+  const party = items.filter((item) => item.party);
+  const attribution = party.reduce((acc, item) => ({ scored: acc.scored + item.party.attribution.scored, correct: acc.correct + item.party.attribution.correct }), { scored: 0, correct: 0 });
+  const baselined = items.filter((item) => item.withoutJev);
+  const baseAttribution = baselined.filter((item) => item.withoutJev.attribution).reduce((acc, item) => ({ scored: acc.scored + item.withoutJev.attribution.scored, correct: acc.correct + item.withoutJev.attribution.correct }), { scored: 0, correct: 0 });
+  return {
+    runs: reps.length,
+    runsWithJev: withJev.length,
+    calls,
+    callsPerRun: withJev.length ? calls / withJev.length : null,
+    msP50: percentile(ms, 50),
+    msP95: percentile(ms, 95),
+    ran,
+    skippedChunks: skipped,
+    triageMisses,
+    overrides,
+    flags,
+    errors,
+    runsWithErrors,
+    attribution: { ...attribution, accuracy: attribution.scored ? attribution.correct / attribution.scored : null },
+    red: redRates(reps.map(({ rep }) => rep.red)),
+    compared: baselined.length,
+    without: baselined.length
+      ? {
+          score: mean(baselined.map((item) => item.withoutJev.score)),
+          scoreWith: mean(baselined.map((item) => item.score)),
+          red: redRates(baselined.flatMap((item) => item.withoutJev.red)),
+          attribution: { ...baseAttribution, accuracy: baseAttribution.scored ? baseAttribution.correct / baseAttribution.scored : null },
+          msMean: mean(baselined.map((item) => item.withoutJev.msMean)),
+          msMeanWith: mean(baselined.map((item) => mean(item.reps.map((r) => r.ms)))),
+          calls: baselined.reduce((s, item) => s + item.withoutJev.calls, 0),
+          callsWith: baselined.reduce((s, item) => s + item.reps.reduce((t, r) => t + (r.diag?.calls ?? 0), 0), 0)
+        }
+      : null
   };
 }
 
@@ -511,6 +948,13 @@ export function scoreRun(scoredItems) {
  * @param {Function} [onProgress]              ({done,total,item,scored,elapsedMs}) after each item
  * @param {{aborted:boolean}} [options.signal] set .aborted = true to stop after in-flight items
  */
+/** The config as recorded in a report: no API key (gateway or Jev) and no function hooks. */
+export function redactConfig(config) {
+  const out = { ...config, apiKey: config?.apiKey ? "***" : "", fetchImpl: undefined, sleep: undefined, getHeaders: undefined };
+  if (config?.jev && typeof config.jev === "object") out.jev = { ...config.jev, apiKey: config.jev.apiKey ? "***" : "", fetchImpl: undefined, sleep: undefined };
+  return out;
+}
+
 export async function runScale(options = {}, onProgress = () => {}) {
   const { corpus = [], reps = 1, concurrency = 1, systemId = "pf2e", pipeline = runGatewayPipeline } = options;
   const config = normalizeGatewayConfig(options.config ?? {});
@@ -525,9 +969,11 @@ export async function runScale(options = {}, onProgress = () => {}) {
     status: "running",
     model: config.model,
     provider: config.provider,
-    config: { ...config, apiKey: config.apiKey ? "***" : "", fetchImpl: undefined, sleep: undefined, getHeaders: undefined },
+    config: redactConfig(config),
     reps,
     systemId,
+    ...(options.party ? { party: true, partyMode: options.partyMode ?? "auto" } : {}),
+    ...(options.jevInfo ? { jev: { ...options.jevInfo } } : {}),
     total: items.length,
     done: 0,
     scored: [],
@@ -540,8 +986,14 @@ export async function runScale(options = {}, onProgress = () => {}) {
     while (cursor < items.length && !options.signal?.aborted) {
       const item = items[cursor];
       cursor += 1;
-      const result = await runItem(item, { transport, config, reps, systemId, pipeline });
-      const scored = scoreItem(item, result, options.darkSchema === undefined ? {} : { darkSchema: options.darkSchema });
+      const runOne = (jev) => (item.category === "party"
+        ? runPartyItem(item, { transport, config: options.config ?? {}, reps, systemId, jev, partyMode: options.partyMode, ...(options.adapterFactory ? { adapterFactory: options.adapterFactory } : {}) })
+        : runItem(item, { transport, config, reps, systemId, pipeline, jev }));
+      const result = await runOne(options.jev ?? null);
+      const scoreOptions = options.darkSchema === undefined ? {} : { darkSchema: options.darkSchema };
+      const scored = scoreItem(item, result, scoreOptions);
+      // Same item, same transport, Jev off: the "without Jev" column of the report.
+      if (options.jev && options.compareWithoutJev) scored.withoutJev = baselineOf(scoreItem(item, await runOne(null), scoreOptions));
       state.scored.push(scored);
       state.errors += scored.reps.filter((rep) => rep.failed).length;
       state.done += 1;
@@ -556,6 +1008,7 @@ export async function runScale(options = {}, onProgress = () => {}) {
   await Promise.all(Array.from({ length: Math.max(1, Math.min(concurrency, items.length || 1)) }, worker));
   state.scored.sort((a, b) => a.id.localeCompare(b.id));
   state.summary = scoreRun(state.scored);
+  if (state.jev || state.scored.some((item) => item.reps.some((rep) => rep.jev))) state.jevSummary = summarizeJev(state.scored);
   state.finishedAt = new Date().toISOString();
   state.elapsedMs = now() - started;
   state.status = options.signal?.aborted ? "aborted" : "done";
@@ -607,10 +1060,69 @@ function renderItem(lines, item) {
       lines.push(`- rep ${index}: **ERROR** ${out.error.name}: ${out.error.message}`);
       return;
     }
-    const events = out.events.map((e) => `[${(e.tags ?? []).join(",")}${e.themes?.length ? ` / ${e.themes.join(",")}` : ""}] ${e.outcome}${e.dangerGap ? ` (${e.dangerGap})` : ""}${isDarkEvent(e) ? ` {dark: ${e.darkDeed}/${e.darkSeverity ?? "?"}}` : ""} — ${String(e.summary ?? "").slice(0, 100)}`);
+    const events = out.events.map((e) => `${e.actorName ? `${e.actorName}: ` : ""}[${(e.tags ?? []).join(",")}${e.themes?.length ? ` / ${e.themes.join(",")}` : ""}] ${e.outcome}${e.dangerGap ? ` (${e.dangerGap})` : ""}${isDarkEvent(e) ? ` {dark: ${e.darkDeed}/${e.darkSeverity ?? "?"}}` : ""} — ${String(e.summary ?? "").slice(0, 100)}`);
     lines.push(`- rep ${index}: ${events.length} event(s)${events.length ? "\n  - " + events.join("\n  - ") : ""}`);
     if (out.proposals.length) lines.push(`  - proposals: ${out.proposals.map((p) => `${p.name} (${p.kind}${p.polarity === "red" ? ", red" : ""})`).join("; ")}`);
   });
+}
+
+/** "## Jev" section lines; [] when the run did not ask for Jev and no rep carried Jev diagnostics. */
+export function renderJevSection(state) {
+  const info = state?.jev ?? null;
+  const summary = state?.jevSummary ?? (state?.scored?.some((item) => item.reps?.some((rep) => rep.jev)) ? summarizeJev(state.scored) : null);
+  if (!info && !summary) return [];
+  const lines = ["## Jev"];
+  if (info) lines.push(`- mode **${info.mode ?? "?"}**${info.endpoint ? `, endpoint ${info.endpoint}` : ""}${info.model ? `, model ${info.model}` : ""}${info.faultRate ? `, simulated fault rate ${info.faultRate}` : ""}`);
+  if (info?.note) lines.push(`- note: ${info.note}`);
+  if (!summary || !summary.runsWithJev) {
+    lines.push("- no run carried `diagnostics.jev`: the Jev layer did not run (not configured, or the pipeline/adapter in this checkout has no Jev integration yet), so every number in this report is the plain run.");
+    if (!summary || !summary.runsWithJev) return lines;
+  }
+  const s = summary;
+  lines.push(`- ${s.runsWithJev}/${s.runs} runs with Jev; **${s.calls} Jev calls** (${num(s.callsPerRun)}/run), Jev time per run p50 ${ms(s.msP50)} / p95 ${ms(s.msP95)}; steps ran: ${Object.entries(s.ran).map(([k, v]) => `${k} ${v}`).join(", ") || "–"}`);
+  lines.push(`- triage: **${s.skippedChunks} chunk(s) skipped**, ${s.triageMisses} triage miss(es) (skipped chunks that held gold events)`);
+  lines.push(`- outcome overrides: ${s.overrides.total} (right ${s.overrides.right}, wrong ${s.overrides.wrong}, no gold or no change in correctness ${s.overrides.neutral})`);
+  lines.push(`- flags: ${Object.entries(s.flags).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}; Jev errors ${s.errors} in ${s.runsWithErrors} run(s) (fail-open: those runs carried on without Jev)`);
+  if (s.attribution.scored) lines.push(`- attribution accuracy (party items, events whose doer is known from gold evidence): **${pct(s.attribution.accuracy)}** (${s.attribution.correct}/${s.attribution.scored})`);
+  lines.push(`- red signal (red proposal or dark-act event): recall ${pct(s.red.recall)} on ${s.red.worthy} red-worthy run(s), false rate ${pct(s.red.falseRate)} on ${s.red.others} other run(s)`);
+  if (s.without) {
+    const w = s.without;
+    lines.push("");
+    lines.push(`With vs without Jev (${s.compared} item(s) re-run with Jev off, same transport):`);
+    lines.push("");
+    lines.push("| | with Jev | without Jev |");
+    lines.push("|---|---|---|");
+    lines.push(`| score | ${pct(w.scoreWith)} | ${pct(w.score)} |`);
+    lines.push(`| red recall | ${pct(s.red.recall)} | ${pct(w.red.recall)} |`);
+    lines.push(`| red false rate | ${pct(s.red.falseRate)} | ${pct(w.red.falseRate)} |`);
+    if (s.attribution.scored || w.attribution.scored) lines.push(`| attribution accuracy | ${pct(s.attribution.accuracy)} | ${pct(w.attribution.accuracy)} |`);
+    lines.push(`| model calls | ${w.callsWith} | ${w.calls} |`);
+    lines.push(`| mean time per run | ${ms(w.msMeanWith)} | ${ms(w.msMean)} |`);
+  }
+  return lines;
+}
+
+/** "## Party credit" section: per character, gold bounds vs the events each sheet would get. */
+export function renderPartySection(state) {
+  const party = (state?.scored ?? []).filter((item) => item.party);
+  if (!party.length) return [];
+  const lines = ["## Party credit"];
+  const modes = [...new Set(party.map((item) => item.party.mode).filter(Boolean))];
+  const leak = mean(party.map((item) => item.party.creditLeak));
+  const idle = mean(party.map((item) => item.party.idleAcc));
+  const att = party.reduce((acc, item) => ({ scored: acc.scored + item.party.attribution.scored, correct: acc.correct + item.party.attribution.correct }), { scored: 0, correct: 0 });
+  const extractions = party.flatMap((item) => item.reps.map((rep) => rep.extractions)).filter((n) => Number.isFinite(n));
+  lines.push(`- mode ${modes.join(", ") || "?"} (party = one adapter with its extraction cache, one extraction per item; per-pc = cache off, one extraction per character, the pre-cache cost); extractions per item ${num(mean(extractions), 1)}`);
+  lines.push(`- per-character count within gold bounds ${pct(mean(party.map((item) => item.countAcc)))}; idle characters left at zero ${pct(idle)}; credit leak ${num(leak)} extra event(s)/item; attribution ${pct(att.scored ? att.correct / att.scored : null)} (${att.correct}/${att.scored})`);
+  lines.push("");
+  lines.push("| item | character | gold events | got | count ok | tag recall | tags |");
+  lines.push("|---|---|---|---|---|---|---|");
+  for (const item of party) {
+    for (const [name, a] of Object.entries(item.party.actors)) {
+      lines.push(`| ${item.id} | ${name} | ${a.min}-${a.max ?? "∞"} | ${a.counts.join("/")} | ${pct(a.countAcc)} | ${pct(a.recall)} | ${a.tags.join(", ")} |`);
+    }
+  }
+  return lines;
 }
 
 export function renderMarkdown(state) {
@@ -639,6 +1151,10 @@ export function renderMarkdown(state) {
   lines.push(HEADER);
   for (const [name, g] of Object.entries(summary.byLang)) lines.push(row(name, g));
   lines.push("");
+  const jevLines = renderJevSection(state);
+  if (jevLines.length) lines.push(...jevLines, "");
+  const partyLines = renderPartySection(state);
+  if (partyLines.length) lines.push(...partyLines, "");
   lines.push("## Worst 15 items");
   const byId = new Map((state.scored ?? []).map((item) => [item.id, item]));
   for (const id of summary.worst) {

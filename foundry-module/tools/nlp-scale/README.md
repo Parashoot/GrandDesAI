@@ -12,6 +12,8 @@ inside `npm test`.
 | `lib.mjs` | Environment-agnostic core: run items, score vs gold, aggregate, render markdown |
 | `run.mjs` | Node CLI (Windows/macOS/Linux) |
 | `sim-model.js` | Deterministic fake `fetch` (Ollama + OpenAI shapes) with fault injection |
+| `sim-jev.js` | Deterministic fake TypeSafe Jev (`POST /v1/systemone`, `GET /v1/models`) with fault injection |
+| `corpus/party/party-*.json` | 26 party items (per-character gold) for `--party`; kept out of `corpus/*.json` on purpose |
 | `browser-entry.mjs` / `build-browser.mjs` | One-file browser bundle `dist/nlp-scale.browser.js` → `window.NlpScale` |
 
 ## Running from a Windows terminal (PowerShell)
@@ -113,3 +115,60 @@ section in the `.md`, since they never move score.
 
 Tags must be canonical (`scripts/growth-taxonomy.js`); `tests/nlp-harness.test.mjs` enforces that
 plus the category minimums, and that `darkDeed` vices exist in `scripts/vice-taxonomy.js`. Non-native items carry `l1` (the writer's first language).
+
+## Party corpus and per-character credit (`--party`)
+
+`corpus/party/party-dnd5e.json` and `party-pf2e.json` hold whole-party notes (speaker-labelled chat
+lines, third-person recaps, deeds reported by a witness, whole-party deeds, idle PCs, mixed
+languages, shorthand, and the ember-road s1 recap). They live in a subfolder because every loader
+and test of the scale corpus reads `corpus/*.json` with the ordinary item shape, and the sim
+model's fingerprint index is built from those files: keeping party items apart keeps every existing
+number unchanged. Shape (docs/jev-layer-contract.md):
+
+```json
+{ "id": "pa-002", "category": "party", "style": "ember-road", "traits": ["witness", "idle-pc"],
+  "system": "dnd5e", "lang": "en", "source": "ember-road-s1", "notes": "Tovin: ...\n\nLuz: ...",
+  "party": ["Tovin", "Luz", "Brakka"],
+  "gold": { "perActor": {
+     "Tovin":  { "minEvents": 2, "maxEvents": 4, "mustTags": ["fire|spellcasting|arcane|occult"], "redWorthy": true,
+                 "evidence": ["torched a troll", "killing a goblin that was surrender", "tidied up a loose end"] },
+     "Luz":    { "minEvents": 2, "maxEvents": 3, "mustTags": ["medicine|divine|spellcasting"], "evidence": ["heal brakka full hp"] },
+     "Brakka": { "minEvents": 0, "maxEvents": 0, "mustTags": [] } },
+    "wholeParty": { "evidence": ["..."], "mustTags": ["craft"] } } }
+```
+
+`evidence` snippets (verbatim, case-insensitive) say who really did each deed: an extracted event
+whose quote/summary contains one is judged for **attribution** (its final `actorName` must name
+exactly the doer; a whole-party deed must be credited to the group). Per character the score checks
+the event count against `[minEvents, maxEvents]` (whole-party deeds count for everyone), `mustTags`
+recall, `outcome` and `forbidTags`, using the module's own `attributeEventsToActor` to split events
+per character. The report adds a **Party credit** table. With the simulated model a party item's
+events reproduce the ember-road bug on purpose: a deed in another player's line is credited to the
+speaker (Luz for Tovin's goblin kill), so the harness can show a fix.
+
+```powershell
+node tools/nlp-scale/run.mjs --sim --party                        # per-PC today (before-numbers)
+node tools/nlp-scale/run.mjs --model qwen3.8:27b --party --party-mode per-pc
+node tools/nlp-scale/run.mjs --model qwen3.8:27b --party          # one extraction per item (the adapter's cache), like api.analyzePartyNotes
+```
+
+## Jev (`--jev`, `--sim-jev`)
+
+The optional TypeSafe Jev layer (docs/jev-layer-contract.md). `--jev` uses the real service: set
+`TYPESAFE_API_KEY` (and optionally `TYPESAFE_BASE_URL`, or `--jev-endpoint`); the run stops with a
+clear message when the key is missing. `--sim-jev [--jev-fault-rate 0.2] [--jev-seed N]` uses
+`sim-jev.js` offline. `--compare-jev` / `--no-compare-jev` re-runs each item with Jev off for the
+with/without columns (default on for `--sim-jev`, off for `--jev` since it doubles model time).
+When `scripts/ai/jev.js` or the pipeline's Jev integration is missing, the run goes ahead without
+Jev and the report says so. The **Jev** report section lists calls, Jev ms p50/p95, chunks skipped by
+triage and triage misses (skipped chunks that held gold events; a lower bound, the pipeline reports
+only the first 160 characters of a skipped chunk), outcome overrides right/wrong vs gold, flags,
+errors (fail-open), attribution accuracy, and red-signal recall / false rate (a red proposal or a
+`dark-act` event) with vs without Jev. The Jev key is never written to a report.
+
+`sim-jev.js` answers from the question's type, criteria labels and instruction keywords (never its
+name), keyword heuristics over the state the instructions reference (`events[3].summary`,
+`chunks[1]`), and corpus gold when a party evidence snippet or an ordinary item's notes are
+recognised. Faults: `http500`, `http503`, `http429` (Retry-After), `timeout` (never settles; rejects
+with AbortError when the caller's signal fires), `malformed` (truncated JSON), `unauthorized` (401),
+`network` (off by default). `forceFault` pins a kind (or a per-call function) for tests.

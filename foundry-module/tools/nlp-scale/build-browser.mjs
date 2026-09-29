@@ -15,7 +15,7 @@
 //   node tools/nlp-scale/build-browser.mjs [--out path] [--check]
 //     --check  also executes the bundle under Node with a fake window + the simulated model.
 
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -127,7 +127,16 @@ function transformModule(source, file, resolveDep) {
   return { deps: [...new Set(deps)], body };
 }
 
-export function bundle({ entry = ENTRY, corpusDir = join(HERE, "corpus") } = {}) {
+// Optional modules bundled beside the entry and handed to installNlpScale as `extras`: the offline
+// Jev simulator always, and the real Jev client (scripts/ai/jev.js) only once it exists -- it is
+// built by another part of the team and the bundle must keep building without it.
+export const JEV_MODULE = join(ROOT, "scripts", "ai", "jev.js");
+export const SIM_JEV_MODULE = join(HERE, "sim-jev.js");
+export function defaultExtraModules() {
+  return { simJev: SIM_JEV_MODULE, ...(existsSync(JEV_MODULE) ? { jev: JEV_MODULE } : {}) };
+}
+
+export function bundle({ entry = ENTRY, corpusDir = join(HERE, "corpus"), extraModules = defaultExtraModules() } = {}) {
   const modules = new Map();
   const order = [];
   const visiting = new Set();
@@ -148,6 +157,8 @@ export function bundle({ entry = ENTRY, corpusDir = join(HERE, "corpus") } = {})
     order.push(file);
   };
   visit(entry);
+  const extras = Object.entries(extraModules ?? {}).filter(([, file]) => file && existsSync(file));
+  for (const [, file] of extras) visit(file);
 
   const corpusFiles = readdirSync(corpusDir).filter((name) => name.endsWith(".json")).sort();
   const corpus = corpusFiles.flatMap((name) => JSON.parse(readFileSync(join(corpusDir, name), "utf8")));
@@ -179,9 +190,10 @@ export function bundle({ entry = ENTRY, corpusDir = join(HERE, "corpus") } = {})
   parts.push(`const __CORPUS = ${JSON.stringify(corpus)};`);
   parts.push(`const __entry = __require(${JSON.stringify(idOf(entry))});`);
   parts.push("const __target = typeof window !== 'undefined' ? window : globalThis;");
-  parts.push("__entry.installNlpScale(__target, __CORPUS);");
+  parts.push(`const __extras = { ${extras.map(([name, file]) => `${JSON.stringify(name)}: __require(${JSON.stringify(idOf(file))})`).join(", ")} };`);
+  parts.push("__entry.installNlpScale(__target, __CORPUS, __extras);");
   parts.push("})();");
-  return { code: parts.join("\n") + "\n", modules: order.map(idOf), corpusItems: corpus.length };
+  return { code: parts.join("\n") + "\n", modules: order.map(idOf), corpusItems: corpus.length, extras: extras.map(([name]) => name) };
 }
 
 async function selfCheck(outFile) {
@@ -215,10 +227,10 @@ async function main() {
   const args = process.argv.slice(2);
   const outIndex = args.indexOf("--out");
   const outFile = resolve(outIndex >= 0 ? args[outIndex + 1] : join(HERE, "dist", "nlp-scale.browser.js"));
-  const { code, modules, corpusItems } = bundle();
+  const { code, modules, corpusItems, extras } = bundle();
   mkdirSync(dirname(outFile), { recursive: true });
   writeFileSync(outFile, code);
-  console.log(`Wrote ${relative(process.cwd(), outFile)} (${(code.length / 1024).toFixed(0)} KiB, ${modules.length} modules, ${corpusItems} corpus items)`);
+  console.log(`Wrote ${relative(process.cwd(), outFile)} (${(code.length / 1024).toFixed(0)} KiB, ${modules.length} modules, ${corpusItems} corpus items; extras: ${extras.join(", ") || "none"}${extras.includes("jev") ? "" : " -- scripts/ai/jev.js not present yet"})`);
   if (args.includes("--check")) {
     const { brief, requests } = await selfCheck(outFile);
     console.log(`Self-check OK: ${requests} same-origin requests; ${JSON.stringify(brief.overall)}`);

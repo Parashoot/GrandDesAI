@@ -37,7 +37,10 @@ function pageOrigin(target) {
   return origin && origin !== "null" ? origin : "http://localhost:11434";
 }
 
-export function installNlpScale(target = globalThis, corpusInput = []) {
+// `extras` come from build-browser.mjs: { simJev: sim-jev.js exports, jev?: scripts/ai/jev.js exports }.
+// jev.js is optional (built by another part of the team); without it `jev`/`simJev` run options are
+// ignored and the run records why, exactly like run.mjs does.
+export function installNlpScale(target = globalThis, corpusInput = [], extras = {}) {
   const corpus = loadCorpusFromArrays(corpusInput);
   const signal = { aborted: false };
   const api = {
@@ -51,6 +54,8 @@ export function installNlpScale(target = globalThis, corpusInput = []) {
     renderSummaryTable,
     filterCorpus,
     createSimModel,
+    createSimJev: extras.simJev?.createSimJev ?? null,
+    createJevClient: extras.jev?.createJevClient ?? null,
 
     /**
      * @param {object} options { model, endpoint = "" (same origin), provider = "ollama", apiKey,
@@ -89,6 +94,28 @@ export function installNlpScale(target = globalThis, corpusInput = []) {
         ...(sim ? { sleep: async () => {} } : {}),
         ollamaOptions: { num_ctx: config.numCtx, num_predict: config.numPredict }
       });
+      // Jev: options.jev = { apiKey, endpoint?, model? } (real; the endpoint must allow this page's
+      // origin via CORS) or options.simJev = { faultRate, seed } (offline).
+      let jevClient = null;
+      let jevInfo = null;
+      let simJev = null;
+      if (options.jev || options.simJev) {
+        const mode = options.simJev ? "sim" : "real";
+        jevInfo = { mode, endpoint: options.jev?.endpoint ?? "https://api.typesafe.ai", model: options.jev?.model ?? "jev-latest" };
+        if (typeof extras.jev?.createJevClient !== "function") {
+          jevInfo.note = "scripts/ai/jev.js was not in this bundle, so the run went ahead WITHOUT Jev.";
+        } else {
+          if (mode === "sim") simJev = extras.simJev.createSimJev({ corpus, seed: options.simJev.seed ?? 1, faultRate: options.simJev.faultRate ?? 0 });
+          jevClient = extras.jev.createJevClient({
+            apiKey: mode === "sim" ? "sim-jev-key" : options.jev.apiKey,
+            endpoint: jevInfo.endpoint,
+            model: jevInfo.model,
+            timeoutMs: mode === "sim" ? 100 : options.jev.timeoutMs ?? 10000,
+            ...(simJev ? { fetchImpl: simJev.fetch, sleep: async () => {} } : {})
+          });
+          if (!jevClient) jevInfo.note = "createJevClient returned no client (empty key?), so the run went ahead WITHOUT Jev.";
+        }
+      }
       const state = { status: "starting" };
       api.lastRun = state;
       api.lastError = null;
@@ -107,13 +134,17 @@ export function installNlpScale(target = globalThis, corpusInput = []) {
           offset: options.offset,
           systemId: options.systemId ?? "pf2e",
           state,
-          signal
+          signal,
+          ...(jevInfo ? { jevInfo } : {}),
+          ...(jevClient ? { jev: jevClient, compareWithoutJev: Boolean(options.compareJev ?? simJev) } : {}),
+          ...(jevClient ? { config: { ...config, jev: { enabled: true, apiKey: simJev ? "sim-jev-key" : options.jev.apiKey, endpoint: jevInfo.endpoint, model: jevInfo.model } } } : {})
         }, (progress) => {
           const line = { done: progress.done, total: progress.total, item: progress.item, score: progress.scored.score, events: progress.scored.reps.map((r) => r.eventCount), failed: progress.scored.reps.filter((r) => r.failed).length, elapsedMs: Math.round(progress.elapsedMs) };
           api.progressLog.push(line);
           if (typeof onProgress === "function") onProgress(line, progress);
         });
         if (sim) state.simStats = sim.stats;
+        if (simJev) state.jev = { ...(state.jev ?? {}), simStats: simJev.stats };
         return state;
       } catch (error) {
         state.status = "error";
