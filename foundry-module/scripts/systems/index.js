@@ -15,6 +15,7 @@ import {
   getCharacterClassPf2e,
   getCharacterKnownFeaturesPf2e,
   getCharacterLevelPf2e,
+  markSupersededPf2e,
   SYSTEM_LABEL as PF2E_LABEL,
   RULES_VOCABULARY as PF2E_VOCABULARY
 } from "./pf2e-adapter.js";
@@ -29,6 +30,7 @@ import {
   getCharacterClass5e,
   getCharacterKnownFeatures5e,
   getCharacterLevel5e,
+  markSuperseded5e,
   SYSTEM_LABEL as DND5E_LABEL,
   RULES_VOCABULARY as DND5E_VOCABULARY
 } from "./dnd5e-adapter.js";
@@ -47,7 +49,8 @@ const ADAPTERS = {
     buildEquipmentItemSource: buildEquipmentItemSourcePf2e,
     buildTitleItemSource: buildTitleItemSourcePf2e,
     buildTitleGrantItemSource: buildTitleGrantItemSourcePf2e,
-    buildCombinationItemSource: buildCombinationItemSourcePf2e
+    buildCombinationItemSource: buildCombinationItemSourcePf2e,
+    markSuperseded: markSupersededPf2e
   },
   dnd5e: {
     id: "dnd5e",
@@ -62,7 +65,8 @@ const ADAPTERS = {
     buildEquipmentItemSource: buildEquipmentItemSource5e,
     buildTitleItemSource: buildTitleItemSource5e,
     buildTitleGrantItemSource: buildTitleGrantItemSource5e,
-    buildCombinationItemSource: buildCombinationItemSource5e
+    buildCombinationItemSource: buildCombinationItemSource5e,
+    markSuperseded: markSuperseded5e
   }
 };
 

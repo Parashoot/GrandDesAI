@@ -145,7 +145,7 @@ export function createFeatureSource(kind, entry, systemId) {
   const sources = entry.metadata.lineage.sources.length
     ? entry.metadata.lineage.sources.join(", ")
     : "none";
-  const { source: systemSource, postCreate } = adapter.buildItemSource(kind, entry);
+  const { source: systemSource, postCreate, descriptionHtml } = adapter.buildItemSource(kind, entry);
   const source = {
     name: title,
     type: systemSource.type,
@@ -153,7 +153,9 @@ export function createFeatureSource(kind, entry, systemId) {
       ...systemSource.system,
       description: {
         ...(systemSource.system?.description ?? {}),
-        value: `<p><strong>${escapeHtml(adapter.label)} equivalent:</strong> ${escapeHtml(equivalent)}</p>${createMechanicsHtml(entry)}<p><strong>Tags:</strong> ${escapeHtml(tags)}</p><p><strong>Lineage:</strong> ${escapeHtml(entry.metadata.lineage.operation)}; sources: ${escapeHtml(sources)}</p><p>${escapeHtml(entry.metadata.lineage.rationale)}</p>`
+        // descriptionHtml: the adapter's rollable rules lines (@Damage/@Check, [[/damage]]/[[/save]])
+        // for entries with structured mechanics; empty otherwise, so old entries read as before.
+        value: `<p><strong>${escapeHtml(adapter.label)} equivalent:</strong> ${escapeHtml(equivalent)}</p>${createMechanicsHtml(entry)}${descriptionHtml ?? ""}<p><strong>Tags:</strong> ${escapeHtml(tags)}</p><p><strong>Lineage:</strong> ${escapeHtml(entry.metadata.lineage.operation)}; sources: ${escapeHtml(sources)}</p><p>${escapeHtml(entry.metadata.lineage.rationale)}</p>`
       }
     },
     flags: {
@@ -164,6 +166,8 @@ export function createFeatureSource(kind, entry, systemId) {
       }
     }
   };
+  // dnd5e structured modifiers/advantage ride along as embedded Active Effects.
+  if (Array.isArray(systemSource.effects) && systemSource.effects.length) source.effects = systemSource.effects;
   return { source, postCreate };
 }
 

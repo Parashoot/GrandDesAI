@@ -43,7 +43,7 @@ import { VICE_TAGS, VICE_TAXONOMY } from "./vice-taxonomy.js";
 import { buildCombinationGrowthEvent, buildCombinationSkill } from "./combination-skills.js";
 import { clearTestScenario, runTestScenario } from "./test-scenario.js";
 import { clearAiTestScenario, runAiTestScenario } from "./ai-test-scenario.js";
-import { validateClassEntry, validateConversion, validateSkillEntry, validateTitleEntry } from "./validator.js";
+import { clampEntryStructuredMechanics, validateClassEntry, validateConversion, validateSkillEntry, validateTitleEntry } from "./validator.js";
 import {
   generateSkillProposals,
   generateCapstoneProposal,
@@ -726,7 +726,10 @@ export class GrandDesignApi {
       }
       if (typeof systemAdapter?.markSuperseded !== "function") continue;
       try {
-        const update = await systemAdapter.markSuperseded(item, { by: byId, byName, at });
+        const update = await systemAdapter.markSuperseded(item, { by: byName ?? byId, byId, byName, at });
+        // The api owns flags.<module>.superseded ({by, byName, at}, written above); an adapter's
+        // bare `superseded: true` would overwrite that record.
+        if (update && typeof update === "object") delete update[`flags.${MODULE_ID}.superseded`];
         if (update && typeof update === "object" && Object.keys(update).length) await item.update(update);
       } catch (error) {
         console.warn(`${MODULE_ID} | could not switch off the superseded Item ${id}'s mechanics`, error);
@@ -1990,6 +1993,9 @@ export class GrandDesignApi {
         errors.push(`[${entry.name}] is already an approved ${kind === "class" ? "Class" : kind === "title" ? "Title" : "Skill"} on ${actor.name ?? "this character"}.`);
       }
       if (errors.length) return { ok: false, errors, proposal };
+      // Report, never enforce: the GM may deliberately go past the tier budget.
+      const systemId = globalThis.game?.system?.id;
+      const { clamps } = clampEntryStructuredMechanics(entry, { level: characterLevel(actor, systemId), systemId });
       const updated = {
         ...proposal,
         entry,
@@ -2002,7 +2008,7 @@ export class GrandDesignApi {
       const proposals = growth.proposals.map((candidate) => (candidate.id === proposalId ? updated : candidate));
       await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
       Hooks.callAll("grand-design-ai.proposalUpdated", actor, updated);
-      return { ok: true, errors: [], proposal: updated };
+      return { ok: true, errors: [], proposal: updated, clamps };
     });
   }
 
@@ -2419,7 +2425,11 @@ export class GrandDesignApi {
         skipped.push({ proposal, errors: [`Invalid AI ${proposal.kind} proposal: it has no "entry" object (got keys: ${Object.keys(proposal).join(", ")}).`] });
         continue;
       }
-      const entry = structuredClone(proposal.entry);
+      // The model's structured numbers are clamped to the tier and character level before a GM
+      // sees them (validator.js reports each clamp in entry.mechanics.clamps). GM edits are not
+      // clamped: updateProposal only reports what would be.
+      let entry = structuredClone(proposal.entry);
+      entry = clampEntryStructuredMechanics(entry, { level: characterLevel(actor, systemId), systemId }).entry;
       if (entry.metadata && typeof entry.metadata === "object" && entry.metadata.tags !== undefined) {
         const { tags, themes } = splitTagsAndThemes(Array.isArray(entry.metadata.tags) ? entry.metadata.tags : [], { customSynonyms });
         entry.metadata.tags = tags;
