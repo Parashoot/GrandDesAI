@@ -735,6 +735,7 @@ export function normalizeGrowthEvent(event, index) {
   // an event without them (the local fallback analyzer, older worlds) simply has no dark deed.
   const darkFields = event.darkDeed !== undefined || event.darkSeverity !== undefined ? normalizeDarkDeed(event) : null;
   const jev = compactJev(event.jev);
+  const reassigned = compactReassigned(event.reassigned);
   return {
     id: event.id ?? `event:${Date.now()}-${index}`,
     summary: event.summary.trim(),
@@ -749,7 +750,24 @@ export function normalizeGrowthEvent(event, index) {
     ...(consequence ? { consequence } : {}),
     ...(darkFields ?? {}),
     ...(source ? { source } : {}),
-    ...(jev ? { jev } : {})
+    ...(jev ? { jev } : {}),
+    ...(reassigned ? { reassigned } : {})
+  };
+}
+
+/**
+ * Board 4344c58a: the GM's "Move to..." stamp (api.js#reassignRecordedEvent) -- who the notes had
+ * credited and when the GM moved it. Only the known keys survive; anything else -> undefined.
+ */
+function compactReassigned(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const text = (entry) => (isNonEmptyString(entry) ? entry.trim().slice(0, 120) : null);
+  return {
+    fromActorId: text(value.fromActorId),
+    fromActorName: text(value.fromActorName),
+    originalActorName: text(value.originalActorName),
+    by: "gm",
+    at: text(value.at) ?? new Date().toISOString()
   };
 }
 

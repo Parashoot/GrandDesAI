@@ -77,6 +77,7 @@ import {
   themeSlug
 } from "./emergent-themes.js";
 import { getSystemAdapter, isSupportedSystem, supportedSystemIds } from "./systems/index.js";
+import { stripSupersededLine } from "./systems/structured.js";
 import { populate as runPopulate } from "./populate.js";
 import { createPopulateAdapter } from "./ai/populate.js";
 
@@ -723,7 +724,9 @@ export class GrandDesignApi {
       if (!item?.update) continue;
       const name = typeof item.name === "string" && !/\(superseded\)$/.test(item.name) ? `${item.name} (superseded)` : item.name;
       try {
-        await item.update({ ...(name ? { name } : {}), [`flags.${MODULE_ID}.superseded`]: { by: byId, byName, at } });
+        // `prior`: what the adapters' markSuperseded overwrites without stashing (a spent frequency,
+        // spent uses, which effects were already off), so revertApproval can put it back exactly.
+        await item.update({ ...(name ? { name } : {}), [`flags.${MODULE_ID}.superseded`]: { by: byId, byName, at, prior: priorMechanicsState(item) } });
       } catch (error) {
         // The registry is the source of truth; a sheet Item that refuses the rename is only cosmetic.
         console.warn(`${MODULE_ID} | could not mark the superseded Item ${id}`, error);
@@ -1576,14 +1579,14 @@ export class GrandDesignApi {
     const remove = new Set(eventIds);
     const growth = this.getGrowth(actor);
     const removed = growth.events.filter((event) => remove.has(event.id));
-    if (!removed.length) return;
-    const events = growth.events.filter((event) => !remove.has(event.id));
     const levelProgression = this.getLevelProgression(actor);
+    if (!removed.length) return { removed: [], lostProgress: 0, withdrawn: [], progress: { before: levelProgression.progress, after: levelProgression.progress } };
+    const events = growth.events.filter((event) => !remove.has(event.id));
     const lostProgress = removed.reduce((sum, event) => sum + progressionForEvent(event), 0);
     // A pending proposal whose every cited event was just removed no longer has any evidence behind it.
     // Except a milestone reward (guaranteed by the level, not by the evidence: dropping it stranded
     // the capstone allowance, board b375d56c) and a proposal the GM edited.
-    const proposals = growth.proposals.filter((proposal) =>
+    const keep = (proposal) =>
       proposal.status !== "pending"
       || isMilestoneProposal(proposal)
       || proposal.editedAt
@@ -1591,14 +1594,285 @@ export class GrandDesignApi {
       || proposal.requestedBy === "gm"
       || !Array.isArray(proposal.evidence)
       || !proposal.evidence.length
-      || proposal.evidence.some((id) => !remove.has(id))
+      || proposal.evidence.some((id) => !remove.has(id));
+    const withdrawn = growth.proposals.filter((proposal) => !keep(proposal)).map((proposal) => proposal.id);
+    // A pending proposal that keeps other evidence no longer cites the removed events (board 4344c58a:
+    // its evidence count is what the GM reads). Approved/rejected ones keep their history as it was.
+    const proposals = growth.proposals.filter(keep).map((proposal) =>
+      proposal.status === "pending" && Array.isArray(proposal.evidence) && proposal.evidence.some((id) => remove.has(id))
+        ? { ...proposal, evidence: proposal.evidence.filter((id) => !remove.has(id)) }
+        : proposal
     );
+    // Unspent progress only: levels already resolved at a rest stay (like a Horror Rank dock is never
+    // refunded); the result reports the drop so the GM can see what the event was worth.
+    const after = Math.max(0, levelProgression.progress - lostProgress);
     await actor.update({
       [`flags.${MODULE_ID}.${GROWTH_EVENTS_FLAG}`]: events,
       [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
-      [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: { ...levelProgression, progress: Math.max(0, levelProgression.progress - lostProgress) }
+      [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: { ...levelProgression, progress: after }
     });
     if (recomputeHorror) await this._recomputeHorrorRank(actor);
+    return { removed, lostProgress, withdrawn, progress: { before: levelProgression.progress, after } };
+  }
+
+  /**
+   * Board 4344c58a: the GM deletes one recorded event (a misread, an invented deed, a party-mate's
+   * deed credited here). Its unspent progress is taken back, pending proposals that cited only it
+   * are withdrawn (milestones, GM edits and GM requests are kept), other pending proposals stop
+   * citing it, and the Horror Rank is re-derived from the remaining deeds (a dock already taken is
+   * never refunded). Returns { event, lostProgress, progress: { before, after }, withdrawnProposals,
+   * horrorRank }.
+   */
+  async deleteRecordedEvent(actor, eventId) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "delete event", async () => {
+      const event = this.getGrowth(actor).events.find((candidate) => candidate?.id === eventId);
+      if (!event) throw new Error(`No recorded event ${eventId} exists on ${actor.name ?? "this character"}.`);
+      const removal = await this._removeRecordedEvents(actor, [eventId], { recomputeHorror: false });
+      const horror = await this._recomputeHorrorRank(actor);
+      Hooks.callAll("grand-design-ai.growthEventDeleted", actor, event);
+      return { event, lostProgress: removal.lostProgress, progress: removal.progress, withdrawnProposals: removal.withdrawn, horrorRank: horror.state };
+    });
+  }
+
+  /**
+   * Board 4344c58a: moves one recorded event to another character's evidence (the notes credited
+   * the wrong PC). The event keeps its data (summary, tags, outcome, dark deed, quote, the optional
+   * Jev block...), is credited to the target by name and stamped `reassigned: { fromActorId,
+   * fromActorName, originalActorName, by: "gm", at }`. The source loses the progress, the proposals
+   * that cited only it and the dark-deed points; the target gains them exactly as if the notes had
+   * named them. The target is written first, so a failure never loses the event (at worst it is on
+   * both sheets). Both actors are locked. Returns { event, from, to, lostProgress, gainedProgress,
+   * withdrawnProposals, horrorRank: { from, to } }.
+   */
+  async reassignRecordedEvent(actor, eventId, targetActor) {
+    this._assertSupportedSystemActor(actor);
+    this._assertSupportedSystemActor(targetActor);
+    this._assertGm();
+    if (targetActor === actor || (actor.id && targetActor.id === actor.id)) {
+      throw new Error(`The event is already ${actor.name ?? "this character"}'s.`);
+    }
+    return this._withActorLock(actor, "move event", () => this._withActorLock(targetActor, "move event", async () => {
+      const event = this.getGrowth(actor).events.find((candidate) => candidate?.id === eventId);
+      if (!event) throw new Error(`No recorded event ${eventId} exists on ${actor.name ?? "this character"}.`);
+      const targetIds = new Set(this.getGrowth(targetActor).events.map((candidate) => candidate?.id));
+      let id = event.id;
+      for (let n = 2; targetIds.has(id); n += 1) id = `${event.id}:moved-${n}`;
+      const moved = {
+        ...structuredClone(event),
+        id,
+        // The target's name: every "whose event is it" reader (_ownEvents, stage 2, Suggest) sees it as theirs.
+        actorName: targetActor.name,
+        reassigned: {
+          fromActorId: actor.id ?? null,
+          fromActorName: actor.name ?? null,
+          originalActorName: event.actorName ?? null,
+          by: "gm",
+          at: new Date().toISOString()
+        }
+      };
+      // The AI's reading already produced its proposals, so an adapter event mints no templates here
+      // either; themes were counted for the world when the notes were first read.
+      const recorded = await this.recordGrowthEvent(targetActor, moved, { observeThemes: false, fromAdapter: event.source === "adapter", recomputeHorror: false });
+      const targetHorror = await this._recomputeHorrorRank(targetActor);
+      const removal = await this._removeRecordedEvents(actor, [eventId], { recomputeHorror: false });
+      const sourceHorror = await this._recomputeHorrorRank(actor);
+      Hooks.callAll("grand-design-ai.growthEventReassigned", actor, targetActor, recorded.event);
+      return {
+        event: recorded.event,
+        from: { actorId: actor.id ?? null, name: actor.name ?? null },
+        to: { actorId: targetActor.id ?? null, name: targetActor.name ?? null },
+        lostProgress: removal.lostProgress,
+        gainedProgress: progressionForEvent(recorded.event),
+        withdrawnProposals: removal.withdrawn,
+        horrorRank: { from: sourceHorror.state, to: targetHorror.state }
+      };
+    }));
+  }
+
+  /**
+   * Board 4344c58a: undoes an approval. Removes the approved Class/Skill/Title `entryId` from the
+   * registry and deletes its Item (a Title also takes the Skill/Item it granted), restores whatever
+   * it superseded (registry status and the Item: name, description, rule elements / activities,
+   * frequency / uses, effects), refunds the grant or capstone allowance the approval spent, and puts
+   * its proposal back to pending (`reject: true` marks it rejected instead). Pending evolutions or
+   * merges built on the entry and consolidations naming it are dropped. Horror Rank is untouched:
+   * it comes from the deeds, not from the approval.
+   *
+   * Refused, with nothing written, when it cannot be undone cleanly: the entry was itself evolved or
+   * merged (revert that first), a live Combination uses it, a source it replaced is missing or was
+   * replaced by something else, or a Skill a Title granted has since evolved.
+   * Returns { kind, entryId, name, removedItemIds, restored, proposal, refunded, withdrawnProposals,
+   * removedConsolidations }.
+   */
+  async revertApproval(actor, entryId, { reject = false } = {}) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "revert", () => this._revertApproval(actor, entryId, { reject }));
+  }
+
+  async _revertApproval(actor, entryId, { reject }) {
+    const registry = this.getActorRegistry(actor);
+    const found = [["class", "classes"], ["skill", "skills"], ["title", "titles"]].find(([, bucket]) => registry[bucket]?.[entryId]);
+    if (!found) throw new Error(`No approved Class, Skill or Title ${entryId} exists on ${actor.name ?? "this character"}.`);
+    const [kind, bucketName] = found;
+    const entry = registry[bucketName][entryId];
+    const nameOf = (bucket, id) => registry[bucket]?.[id]?.name ?? id;
+
+    // --- Pre-flight: every refusal happens before anything is written. ---
+    if (!isActiveEntry(entry)) {
+      throw new Error(`[${entry.name}] was replaced by [${nameOf(bucketName, entry.supersededBy)}]; revert [${nameOf(bucketName, entry.supersededBy)}] first.`);
+    }
+    const live = this.getCombinations(actor).find((combination) => combination?.active && combination.contributedSkillId === entryId);
+    if (live) throw new Error(`[${entry.name}] is part of the live Combination [${live.name ?? live.id}]; end it before reverting.`);
+    const lineage = entry.metadata?.lineage ?? {};
+    const sources = kind !== "title" && ["upgrade", "combine"].includes(lineage.operation) && Array.isArray(lineage.sources) ? lineage.sources : [];
+    for (const sourceId of sources) {
+      const source = registry[bucketName]?.[sourceId];
+      if (!source) throw new Error(`Cannot revert [${entry.name}]: the ${kind} it replaced (${sourceId}) is no longer in the registry, so it cannot be restored.`);
+      if (source.status === "superseded" && source.supersededBy !== entryId) {
+        throw new Error(`Cannot revert [${entry.name}]: [${source.name}] was replaced by [${nameOf(bucketName, source.supersededBy)}], not by it.`);
+      }
+    }
+    let grantedSkillId = null;
+    if (kind === "title" && entry.grantedSkillId) {
+      grantedSkillId = Object.entries(registry.skills ?? {}).find(([, skill]) => skill?.itemId === entry.grantedSkillId)?.[0] ?? null;
+      const granted = grantedSkillId ? registry.skills[grantedSkillId] : null;
+      if (granted && !isActiveEntry(granted)) {
+        throw new Error(`Cannot revert [${entry.name}]: the Skill it granted, [${granted.name}], was since replaced by [${nameOf("skills", granted.supersededBy)}]; revert that first.`);
+      }
+    }
+
+    // --- Items: the approved one (and a Title's grants) go; the replaced sources come back. ---
+    const itemFor = (registryId, itemId) =>
+      (registryId ? actor.items?.find?.((item) => item.getFlag?.(MODULE_ID, "registryId") === registryId) : null)
+      ?? (itemId ? actor.items?.find?.((item) => item.id === itemId) : null);
+    const doomed = [itemFor(entryId, entry.itemId)];
+    if (kind === "title") {
+      if (grantedSkillId) doomed.push(itemFor(grantedSkillId, entry.grantedSkillId));
+      else if (entry.grantedSkillId) doomed.push(itemFor(null, entry.grantedSkillId));
+      if (entry.grantedItemId) doomed.push(itemFor(null, entry.grantedItemId));
+    }
+    const removedItemIds = [...new Set(doomed.filter((item) => item?.id).map((item) => item.id))];
+    if (removedItemIds.length && typeof actor.deleteEmbeddedDocuments === "function") {
+      await actor.deleteEmbeddedDocuments("Item", removedItemIds);
+    }
+    const restored = [];
+    for (const sourceId of sources) {
+      if (registry[bucketName][sourceId]?.status !== "superseded") continue;
+      await this._restoreSupersededItem(actor, sourceId);
+      restored.push(sourceId);
+    }
+
+    // --- Actor flags, one update. The registry is edited by path: Foundry deep-merges an object
+    // flag, so writing the registry without the entry would leave it in place. ---
+    const registryPath = `flags.${MODULE_ID}.${REGISTRY_FLAG}`;
+    const update = { [`${registryPath}.${bucketName}.-=${entryId}`]: null };
+    if (grantedSkillId) update[`${registryPath}.skills.-=${grantedSkillId}`] = null;
+    for (const sourceId of restored) {
+      for (const key of ["status", "supersededBy", "supersededAt"]) update[`${registryPath}.${bucketName}.${sourceId}.-=${key}`] = null;
+    }
+
+    const growth = this.getGrowth(actor);
+    const matchesEntry = (proposal) => proposal?.status === "approved"
+      && (proposal.kind ?? "skill") === kind
+      && (proposal.entry?.metadata?.id === entryId || `${kind}:${slugify(proposal.entry?.name ?? "")}` === entryId);
+    const approvedProposal = growth.proposals
+      .filter(matchesEntry)
+      .sort((a, b) => String(b.approvedAt ?? "").localeCompare(String(a.approvedAt ?? "")))[0] ?? null;
+    const goneIds = new Set([entryId, ...(grantedSkillId ? [grantedSkillId] : [])]);
+    // A pending evolution/merge of the reverted entry would build on something that no longer exists.
+    const builtOnIt = (proposal) => proposal?.status === "pending"
+      && (proposal.entry?.metadata?.lineage?.sources ?? []).some((id) => goneIds.has(id));
+    const withdrawnProposals = growth.proposals.filter(builtOnIt).map((proposal) => proposal.id);
+    const at = new Date().toISOString();
+    let revertedProposal = null;
+    const proposals = growth.proposals.filter((proposal) => !builtOnIt(proposal)).map((proposal) => {
+      if (proposal !== approvedProposal) return proposal;
+      const { approvedAt, allowanceSpent, ...rest } = proposal;
+      revertedProposal = reject
+        ? { ...rest, status: "rejected", rejectedAt: at, rejectedReason: "approval reverted by the GM", revertedAt: at }
+        : { ...rest, status: "pending", revertedAt: at };
+      return revertedProposal;
+    });
+    if (approvedProposal) update[`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`] = proposals;
+
+    const refunded = approvedProposal
+      ? (approvedProposal.allowanceSpent !== undefined ? approvedProposal.allowanceSpent : allowanceKindFor(approvedProposal))
+      : null;
+    if (refunded) {
+      const progression = this.getLevelProgression(actor);
+      update[`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`] = refunded === "capstone"
+        ? { ...progression, capstoneAllowances: progression.capstoneAllowances + 1 }
+        : { ...progression, grantAllowances: progression.grantAllowances + 1 };
+    }
+    if (!approvedProposal && withdrawnProposals.length) update[`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`] = proposals;
+
+    const consolidations = this.getConsolidations(actor);
+    const keptConsolidations = consolidations.filter((link) => !(link?.classIds ?? []).includes(entryId));
+    const removedConsolidations = consolidations.length - keptConsolidations.length;
+    if (removedConsolidations) update[`flags.${MODULE_ID}.${CONSOLIDATIONS_FLAG}`] = keptConsolidations;
+
+    await actor.update(update);
+    const result = {
+      kind,
+      entryId,
+      name: entry.name,
+      removedItemIds,
+      restored,
+      proposal: revertedProposal,
+      refunded: refunded ?? null,
+      withdrawnProposals,
+      removedConsolidations
+    };
+    Hooks.callAll("grand-design-ai.approvalReverted", actor, result);
+    return result;
+  }
+
+  // Undoes _supersedeSources + the system adapter's markSuperseded on one source Item: the name and
+  // description lose their "(superseded)" marks, the stashed rule elements (PF2e) / activities
+  // (dnd5e) come back, the frequency / uses / effects return to what they were. Cosmetic like the
+  // supersede itself: the registry is the source of truth, a refusing Item is only logged.
+  async _restoreSupersededItem(actor, registryId) {
+    const item = actor.items?.find?.((candidate) => candidate.getFlag?.(MODULE_ID, "registryId") === registryId);
+    if (!item?.update) return false;
+    const mark = item.getFlag?.(MODULE_ID, "superseded");
+    const prior = mark && typeof mark === "object" ? mark.prior ?? null : null;
+    const source = item._source ?? item;
+    const system = source.system ?? item.system ?? {};
+    const update = { [`flags.${MODULE_ID}.-=superseded`]: null };
+    if (typeof item.name === "string" && /\s*\(superseded\)$/.test(item.name)) update.name = item.name.replace(/\s*\(superseded\)$/, "");
+    if (typeof system.description?.value === "string") update["system.description.value"] = stripSupersededLine(system.description.value);
+    const rules = item.getFlag?.(MODULE_ID, "supersededRules");
+    if (Array.isArray(rules)) {
+      update["system.rules"] = structuredClone(rules);
+      update[`flags.${MODULE_ID}.-=supersededRules`] = null;
+    }
+    const activities = item.getFlag?.(MODULE_ID, "supersededActivities");
+    if (activities && typeof activities === "object") {
+      update["system.activities"] = structuredClone(activities);
+      update[`flags.${MODULE_ID}.-=supersededActivities`] = null;
+    }
+    if (system.frequency && typeof system.frequency === "object") {
+      const value = Number.isFinite(prior?.frequencyValue) ? prior.frequencyValue : system.frequency.max;
+      if (Number.isFinite(value)) update["system.frequency.value"] = value;
+    }
+    if (system.uses?.max && Number.isFinite(Number(system.uses.spent))) {
+      update["system.uses.spent"] = Number.isFinite(prior?.usesSpent) ? prior.usesSpent : 0;
+    }
+    const effects = itemEffectSources(item);
+    if (effects.length) {
+      const wasOff = new Set(Array.isArray(prior?.disabledEffectIds) ? prior.disabledEffectIds : []);
+      update.effects = effects.map((effect) => ({ ...structuredClone(effect), disabled: wasOff.has(effect._id) }));
+    }
+    try {
+      await item.update(update);
+      return true;
+    } catch (error) {
+      console.warn(`${MODULE_ID} | could not restore the superseded Item ${registryId}`, error);
+      return false;
+    }
   }
 
   /**
@@ -1958,8 +2232,7 @@ export class GrandDesignApi {
     // What pays for the proposal. A Title is earned by its deed and a requested evolution/merge by the
     // readiness or the GM's choice, so neither spends (nor needs) a grant allowance; a merge offered
     // as a Class milestone's reward spends it like the milestone's other option.
-    const needsAllowance = proposal.isCapstone === true
-      || (kind !== "title" && !(["skill-evolution", "class-merge"].includes(proposal.source) && !Number.isInteger(proposal.milestoneLevel)));
+    const needsAllowance = allowanceKindFor(proposal) !== null;
     if (needsAllowance) {
       const eligibility = canApproveGeneratedProposal(levelProgression, proposal);
       if (!eligibility.valid) throw new Error(eligibility.error);
@@ -1980,7 +2253,8 @@ export class GrandDesignApi {
       }
     }
     const proposals = growth.proposals.map((candidate) =>
-      candidate.id === id ? { ...candidate, status: "approved", approvedAt: new Date().toISOString() } : candidate
+      // `allowanceSpent` lets revertApproval refund exactly what this approval spent.
+      candidate.id === id ? { ...candidate, status: "approved", approvedAt: new Date().toISOString(), allowanceSpent: allowanceKindFor(proposal) } : candidate
     );
     // A capstone proposal (progression.js#generateCapstoneProposal) is guaranteed by hitting a
     // level divisible by 10, not by the ordinary per-rest grant allowance every other generated
@@ -2872,6 +3146,35 @@ function milestoneKind(proposal) {
   if (proposal?.isCapstone || proposal?.source === "capstone") return "capstone";
   if (proposal?.source === "class-evolution") return "class-evolution";
   return null;
+}
+
+// Which allowance approving this proposal spends: "capstone", "grant", or null. A Title is earned by
+// its deed and a requested evolution/merge by the readiness or the GM's choice, so neither spends one;
+// a merge offered as a Class milestone's reward spends it like the milestone's other option.
+function allowanceKindFor(proposal) {
+  if (proposal?.isCapstone === true) return "capstone";
+  const kind = proposal?.kind ?? "skill";
+  if (kind === "title") return null;
+  if (["skill-evolution", "class-merge"].includes(proposal?.source) && !Number.isInteger(proposal?.milestoneLevel)) return null;
+  return "grant";
+}
+
+// An Item's embedded ActiveEffect sources (dnd5e keeps them on the Item; plain test Items may not).
+function itemEffectSources(item) {
+  const raw = item?._source?.effects ?? item?.effects;
+  const list = Array.isArray(raw) ? raw : typeof raw?.map === "function" ? raw.map((effect) => effect) : [];
+  return list.map((effect) => effect?._source ?? effect).filter((effect) => typeof effect?._id === "string");
+}
+
+// The mechanics state the adapters' markSuperseded overwrites without a stash of its own.
+function priorMechanicsState(item) {
+  const system = item?._source?.system ?? item?.system ?? {};
+  const prior = {};
+  if (Number.isFinite(system.frequency?.value)) prior.frequencyValue = system.frequency.value;
+  if (Number.isFinite(Number(system.uses?.spent)) && system.uses?.spent !== null && system.uses?.spent !== "") prior.usesSpent = Number(system.uses.spent);
+  const disabled = itemEffectSources(item).filter((effect) => effect.disabled === true).map((effect) => effect._id);
+  if (disabled.length) prior.disabledEffectIds = disabled;
+  return prior;
 }
 
 function isMilestoneProposal(proposal) {

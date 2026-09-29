@@ -40,7 +40,11 @@ const ACTIONS = Object.freeze({
   save: { action: "gd-save-proposal", busy: "Saving..." },
   suggest: { action: "gd-suggest-proposals", busy: "Asking the AI for proposals... (about 10 s)" },
   // Board 752369f6: a Skill the last analysis found ready to evolve can be evolved from here too.
-  evolve: { action: "gd-evolve-skill", busy: "The AI is evolving it..." }
+  evolve: { action: "gd-evolve-skill", busy: "The AI is evolving it..." },
+  // Board 4344c58a: the GM corrects the record (GM-only controls; each asks to confirm first).
+  deleteEvent: { action: "gd-delete-event", busy: "Deleting..." },
+  moveEvent: { action: "gd-move-event", busy: "Moving..." },
+  revert: { action: "gd-revert-approval", busy: "Reverting..." }
 });
 // Not a long action (it only opens the panel), so it is not locked with the others.
 const OPEN_REGISTRY = "gd-open-registry";
@@ -58,6 +62,11 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
   const canEdit = typeof api.updateProposal === "function";
   const canRetry = typeof api.retryMilestoneReward === "function";
   const canEvolve = typeof api.requestSkillEvolution === "function";
+  // Board 4344c58a: correcting the record is the GM's call only (the API refuses a player too).
+  const isGM = game.user?.isGM === true;
+  const canManageEvents = isGM && typeof api.deleteRecordedEvent === "function" && typeof api.reassignRecordedEvent === "function";
+  const canRevert = isGM && typeof api.revertApproval === "function";
+  let owned = { classes: [], skills: [], titles: [] };
   const apiBusy = () => typeof api.isBusy === "function" && safe(() => api.isBusy(actor), false) === true;
   const busyAtOpen = apiBusy();
   try {
@@ -68,14 +77,16 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
     const lastAnalysis = safe(() => api.getLastAnalysis(actor), null);
     const status = statusBadge(safe(() => api.getGatewayConfig(), {}), lastResult ?? lastAnalysis, aiAttached);
     // Lineage by NAME (board 752369f6): an evolved/merged proposal cites its sources by id.
-    const namesById = safe(() => ownedNameIndex(collectOwnedEntries(api, actor)), new Map());
+    owned = safe(() => collectOwnedEntries(api, actor), owned);
+    const namesById = safe(() => ownedNameIndex(owned), new Map());
     // Board 0860fd78: erosion is shown right after an analysis, when the GM is looking at what changed.
     const erosion = lastResult ? safe(() => activeErosion(api, actor), []) : [];
     // Board 21e944ed: the meter reads getHorrorRank (the new shape is feature-detected by the renderer).
     const horrorRank = typeof api.getHorrorRank === "function" ? safe(() => api.getHorrorRank(actor), null) : null;
     content = renderGrowthContent({
       growth, progression, pending, lastAnalysis, lastResult, status, draftNotes, canSuggest, canEdit, canRetry, aiAttached,
-      busy: busyAtOpen, namesById, focusProposalId, lastSuggest, erosion, canEvolve, horrorRank, systemId: currentSystemId()
+      busy: busyAtOpen, namesById, focusProposalId, lastSuggest, erosion, canEvolve, horrorRank, systemId: currentSystemId(),
+      canManageEvents, canRevert, owned
     });
   } catch (error) {
     console.error(`${MODULE_ID} | growth dialog render failed`, error);
@@ -125,6 +136,7 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
   };
 
   const find = (id) => safe(() => (api.getGrowth(actor).proposals ?? []).find((proposal) => proposal?.id === id), null);
+  const findEvent = (id) => (id ? safe(() => (api.getGrowth(actor).events ?? []).find((event) => event?.id === id), null) : null);
   const handlers = {
     [ACTIONS.analyze.action]: (root, button) => runAction(root, button, "analyze", async (notes) => {
       if (!notes.trim()) {
@@ -193,6 +205,43 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
       ui.notifications[level](message, level === "warn" ? { permanent: true } : undefined);
       return { focusProposalId: result?.proposal?.id ?? null };
     }),
+    [ACTIONS.deleteEvent.action]: async (root, button) => {
+      const eventId = button?.dataset?.eventId;
+      const event = findEvent(eventId);
+      if (!canManageEvents || !event || running) return;
+      if (!(await confirmDialog("Delete this recorded event?", renderDeleteEventConfirm(event)))) return;
+      return runAction(root, button, "deleteEvent", async () => {
+        const { level, message } = describeDeleteResult(await api.deleteRecordedEvent(actor, eventId));
+        ui.notifications[level](message);
+      });
+    },
+    [ACTIONS.moveEvent.action]: async (root, button) => {
+      const eventId = button?.dataset?.eventId;
+      const event = findEvent(eventId);
+      if (!canManageEvents || !event || running) return;
+      const candidates = partyCandidates(worldActors()).filter((candidate) => candidate.id !== actor.id);
+      if (!candidates.length) {
+        ui.notifications.warn("There is no other player character to move this event to.");
+        return;
+      }
+      const targetId = await pickMoveTarget(event, candidates, actor.name);
+      const target = targetId ? worldActors().find((candidate) => candidate?.id === targetId) : null;
+      if (!target) return;
+      return runAction(root, button, "moveEvent", async () => {
+        const { level, message } = describeReassignResult(await api.reassignRecordedEvent(actor, eventId, target));
+        ui.notifications[level](message);
+      });
+    },
+    [ACTIONS.revert.action]: async (root, button) => {
+      const entryId = button?.dataset?.entryId;
+      const entry = [...owned.classes, ...owned.skills, ...owned.titles].find((candidate) => candidate?.id === entryId);
+      if (!canRevert || !entry || running) return;
+      if (!(await confirmDialog("Revert this approval?", renderRevertConfirm(entry, ownedNameIndex(owned))))) return;
+      return runAction(root, button, "revert", async () => {
+        const { level, message } = describeRevertResult(await api.revertApproval(actor, entryId));
+        ui.notifications[level](message);
+      });
+    },
     [OPEN_REGISTRY]: () => {
       if (!running) openRegistryPanel(actor);
     },
@@ -322,14 +371,112 @@ export function setBusy(root, clicked, busy, busyLabel = "Working...", { lockabl
 async function confirmApproveAsWritten(name) {
   const title = "Approve a placeholder as written?";
   const content = `<p><strong>${escapeHtml(name)}</strong> is a generic placeholder, not a Skill the AI wrote from this character's deeds.</p><p>"Author with AI" writes real mechanics first. Approve it exactly as written anyway (it spends a grant allowance)?</p>`;
+  return confirmDialog(title, content);
+}
+
+// Yes/no, defaulting to no. A failed or dismissed dialog is a "no": nothing destructive runs unasked.
+async function confirmDialog(title, content) {
   try {
     const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
     if (typeof DialogV2?.confirm === "function") return (await DialogV2.confirm({ window: { title }, content, rejectClose: false })) === true;
     if (typeof Dialog?.confirm === "function") return (await Dialog.confirm({ title, content, yes: () => true, no: () => false, defaultYes: false })) === true;
   } catch (error) {
-    console.warn(`${MODULE_ID} | approve-as-written confirmation failed`, error);
+    console.warn(`${MODULE_ID} | "${title}" confirmation failed`, error);
   }
   return false;
+}
+
+// The "Move to..." picker: the chosen character's id, or null (cancelled / closed). The picker is
+// the confirmation: it says what moves and what follows before the GM clicks Move.
+function pickMoveTarget(event, candidates, fromName) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+    try {
+      new Dialog({
+        title: "Move recorded event",
+        content: renderMovePicker(event, candidates, fromName),
+        buttons: {
+          move: {
+            icon: '<i class="fas fa-people-arrows"></i>',
+            label: "Move",
+            callback: (html) => {
+              const root = html?.[0] ?? html;
+              finish(String(root?.querySelector?.('select[name="gd-move-target"]')?.value ?? "") || null);
+            }
+          },
+          cancel: { icon: '<i class="fas fa-times"></i>', label: "Cancel", callback: () => finish(null) }
+        },
+        default: "cancel",
+        close: () => finish(null)
+      }).render(true);
+    } catch (error) {
+      console.warn(`${MODULE_ID} | move picker failed`, error);
+      finish(null);
+    }
+  });
+}
+
+/** The Move picker's body. Pure, exported for tests. */
+export function renderMovePicker(event, candidates, fromName = "") {
+  const options = (Array.isArray(candidates) ? candidates : [])
+    .map((candidate) => `<option value="${escapeHtml(candidate.id)}">${escapeHtml(candidate.name)}</option>`)
+    .join("");
+  return `<form class="grand-design-growth gd-move-picker">
+    <p><strong>${escapeHtml(event?.summary ?? "")}</strong></p>
+    <p class="gd-hint">Credited to ${escapeHtml(fromName || "this character")} now. Moving it takes its progression, dark-deed points and the proposals that cited only it off this sheet and credits the chosen character instead (the event's data, quote and chips are kept).</p>
+    <div class="form-group"><label>Move to</label><select name="gd-move-target">${options}</select></div>
+  </form>`;
+}
+
+/** The Delete confirmation's body. Pure, exported for tests. */
+export function renderDeleteEventConfirm(event) {
+  const dark = isDarkDeed(event) ? " Its dark-deed points come off the Horror Rank (a level already docked is not given back)." : "";
+  return `<p><strong>${escapeHtml(event?.summary ?? "")}</strong></p><p>The event is removed from the recorded evidence, with the progression it gave (levels already resolved at a rest stay). Pending proposals that cited only this event are withdrawn.${dark}</p><p>This cannot be undone.</p>`;
+}
+
+/** The Revert confirmation's body. Pure, exported for tests. */
+export function renderRevertConfirm(entry, namesById = new Map()) {
+  const kind = entry?.kind === "class" ? "Class" : entry?.kind === "title" ? "Title" : "Skill";
+  const operation = entry?.lineage?.operation;
+  const sources = Array.isArray(entry?.lineage?.sources) ? entry.lineage.sources : [];
+  const restores = (operation === "upgrade" || operation === "combine") && sources.length
+    ? ` It replaced ${sources.map((id) => `<strong>${escapeHtml(namesById.get?.(id) ?? id)}</strong>`).join(", ")}, which come${sources.length === 1 ? "s" : ""} back with ${sources.length === 1 ? "its" : "their"} mechanics switched on again.`
+    : "";
+  const grants = entry?.kind === "title" ? " Anything the Title granted is removed with it." : "";
+  return `<p>Revert the approval of the ${kind} <strong>${escapeHtml(entry?.name ?? "")}</strong>?</p><p>It leaves the registry and its Item is deleted from the sheet.${restores}${grants} The allowance the approval spent is given back and the proposal returns to Pending, where you can edit, approve or reject it. Recorded deeds (and the Horror Rank) are unchanged.</p>`;
+}
+
+/** { level, message } for deleteRecordedEvent's result. Pure, exported for tests. */
+export function describeDeleteResult(result) {
+  const lost = Math.round(Number(result?.lostProgress) || 0);
+  const withdrawn = Array.isArray(result?.withdrawnProposals) ? result.withdrawnProposals.length : 0;
+  return {
+    level: "info",
+    message: `Deleted "${result?.event?.summary ?? "the event"}": ${lost} progression taken back${withdrawn ? `, ${withdrawn} proposal${withdrawn === 1 ? "" : "s"} that cited only it withdrawn` : ""}.`
+  };
+}
+
+/** { level, message } for reassignRecordedEvent's result. Pure, exported for tests. */
+export function describeReassignResult(result) {
+  const withdrawn = Array.isArray(result?.withdrawnProposals) ? result.withdrawnProposals.length : 0;
+  const gained = Math.round(Number(result?.gainedProgress) || 0);
+  return {
+    level: "info",
+    message: `Moved "${result?.event?.summary ?? "the event"}" from ${result?.from?.name ?? "this character"} to ${result?.to?.name ?? "another character"} (${gained} progression moved${withdrawn ? `; ${withdrawn} proposal${withdrawn === 1 ? "" : "s"} withdrawn here` : ""}).`
+  };
+}
+
+/** { level, message } for revertApproval's result. Pure, exported for tests. */
+export function describeRevertResult(result) {
+  const restored = Array.isArray(result?.restored) && result.restored.length ? ` ${result.restored.length} replaced entr${result.restored.length === 1 ? "y was" : "ies were"} restored.` : "";
+  const refund = result?.refunded === "capstone" ? " The capstone allowance was given back." : result?.refunded === "grant" ? " The grant allowance was given back." : "";
+  const back = result?.proposal?.status === "pending" ? " Its proposal is pending again." : "";
+  return { level: "info", message: `Reverted ${result?.name ?? "the approval"}.${restored}${refund}${back}` };
 }
 
 /**
@@ -847,7 +994,7 @@ export function renderGrowthContent({
   growth, progression, pending, lastAnalysis, lastResult, status, draftNotes = "",
   canSuggest = true, canEdit = false, canRetry = false, aiAttached = true, busy = false,
   namesById = new Map(), focusProposalId = null, lastSuggest = null, erosion = [], canEvolve = false,
-  horrorRank = null, systemId = null
+  horrorRank = null, systemId = null, canManageEvents = false, canRevert = false, owned = null
 }) {
   const events = Array.isArray(growth?.events) ? growth.events : [];
   pending = Array.isArray(pending) ? pending : [];
@@ -864,7 +1011,7 @@ export function renderGrowthContent({
       : "<li>No proposal has enough evidence yet.</li>";
   const suggest = canSuggest ? `${renderSuggest({ stuck, allowances, status, busy })}${renderSuggestOutcome(lastSuggest)}` : "";
   const eventList = events.length
-    ? events.slice(-40).reverse().map((event) => `<li class="gd-event-row">${renderEventLine(event)}</li>`).join("")
+    ? events.slice(-40).reverse().map((event) => `<li class="gd-event-row">${renderEventLine(event)}${canManageEvents ? renderEventControls(event, { busy }) : ""}</li>`).join("")
     : "<li>No recorded growth events.</li>";
   const hasLast = Boolean(lastAnalysis?.notes);
   const button = (key, icon, label, extra = {}) => actionButton({ action: ACTIONS[key].action, icon, label, disabled: busy, title: busy ? BUSY_NOTICE : "", ...extra });
@@ -887,17 +1034,43 @@ export function renderGrowthContent({
     ${renderInterpretation(events, lastAnalysis, lastResult)}
     ${renderAfterAnalysis(lastResult, erosion, { canEvolve, busy, aiAttached: rowOptions.aiAttached })}
     <hr><h3>Pending Proposals</h3>${stuck ? suggest : ""}${rows ? `<ul class="gd-proposals">${rows}</ul>` : ""}${stuck ? "" : suggest}
-    <hr><details class="gd-history"><summary>Recorded Evidence (${events.length})</summary><ul>${eventList}</ul></details>
+    ${canRevert ? renderApprovedList(owned, { busy }) : ""}
+    <hr><details class="gd-history"><summary>Recorded Evidence (${events.length})</summary>${canManageEvents && events.length ? '<p class="gd-hint">Delete a misread event, or move one the notes credited to the wrong character.</p>' : ""}<ul>${eventList}</ul></details>
   </form>`;
+}
+
+/** Delete / Move to... for one recorded event (GM only; board 4344c58a). Exported for tests. */
+export function renderEventControls(event, { busy = false } = {}) {
+  if (!event?.id) return "";
+  const title = (text) => (busy ? BUSY_NOTICE : text);
+  return `<span class="gd-event-controls">${actionButton({ action: ACTIONS.moveEvent.action, icon: "fas fa-people-arrows", label: "Move to...", eventId: event.id, variant: "gd-quiet", disabled: busy, title: title("Credit this event to another character instead (asks which).") })}${actionButton({ action: ACTIONS.deleteEvent.action, icon: "fas fa-trash", label: "Delete", eventId: event.id, variant: "gd-quiet gd-danger-action", disabled: busy, title: title("Remove this event and the progression it gave (asks to confirm).") })}</span>`;
+}
+
+/**
+ * The character's active approved Classes, Skills and Titles, each with "Revert approval" (GM only;
+ * board 4344c58a). A replaced (superseded) entry is history: revert what replaced it instead.
+ * Exported for tests.
+ */
+export function renderApprovedList(owned, { busy = false } = {}) {
+  const all = [
+    ...(Array.isArray(owned?.classes) ? owned.classes : []),
+    ...(Array.isArray(owned?.skills) ? owned.skills : []),
+    ...(Array.isArray(owned?.titles) ? owned.titles : [])
+  ].filter((entry) => entry?.id && entry.status !== "superseded");
+  if (!all.length) return "";
+  const label = { class: "Class", skill: "Skill", title: "Title" };
+  const rows = all.map((entry) => `<li class="gd-approved-row"><span class="gd-chip">${escapeHtml(label[entry.kind] ?? "Entry")}</span> <strong>${escapeHtml(entry.name)}</strong> ${actionButton({ action: ACTIONS.revert.action, icon: "fas fa-rotate-left", label: "Revert approval", entryId: entry.id, variant: "gd-quiet", disabled: busy, title: busy ? BUSY_NOTICE : "Undo this approval: remove it (and its Item), restore what it replaced, give the allowance back (asks to confirm)." })}</li>`).join("");
+  return `<hr><details class="gd-approved"><summary>Approved (${all.length})</summary><ul>${rows}</ul></details>`;
 }
 
 /**
  * A body button (type="button": it must never submit the dialog form). `id` is a proposal id,
  * `entryId` an owned Class/Skill/Title id (registry panel, Evolve). Exported for the panel.
  */
-export function actionButton({ action, icon, label, id = null, entryId = null, variant = "", disabled = false, title = "", aria = "" }) {
+export function actionButton({ action, icon, label, id = null, entryId = null, eventId = null, variant = "", disabled = false, title = "", aria = "" }) {
   const idAttr = (id !== null && id !== undefined ? ` data-proposal-id="${escapeHtml(id)}"` : "")
-    + (entryId !== null && entryId !== undefined ? ` data-entry-id="${escapeHtml(entryId)}"` : "");
+    + (entryId !== null && entryId !== undefined ? ` data-entry-id="${escapeHtml(entryId)}"` : "")
+    + (eventId !== null && eventId !== undefined ? ` data-event-id="${escapeHtml(eventId)}"` : "");
   return `<button type="button" class="gd-action${variant ? ` ${variant}` : ""}" data-action="${action}"${idAttr} aria-busy="false"${disabled ? " disabled" : ""}${title ? ` title="${escapeHtml(title)}"` : ""}${aria ? ` aria-label="${escapeHtml(aria)}"` : ""}><i class="${icon}"></i> <span class="gd-btn-label">${escapeHtml(label)}</span></button>`;
 }
 
@@ -940,11 +1113,15 @@ export function renderEventLine(event, newThemes = new Set(), withQuote = false)
     .map((theme) => `<span class="gd-chip gd-theme" title="Emergent theme">${escapeHtml(theme)}${newThemes.has(theme) ? ' <b class="gd-new">new!</b>' : ""}</span>`)
     .join("");
   const who = event?.actorName ? `<span class="gd-who">${escapeHtml(event.actorName)}:</span> ` : "";
+  const from = event?.reassigned?.fromActorName;
+  const moved = event?.reassigned && typeof event.reassigned === "object"
+    ? ` <span class="gd-chip gd-moved" title="Moved here by the GM${from ? ` from ${escapeHtml(from)}` : ""}"><i class="fas fa-people-arrows"></i> ${from ? `from ${escapeHtml(from)}` : "moved"}</span>`
+    : "";
   const quote = withQuote && typeof event?.quote === "string" && event.quote.trim() && event.quote.trim() !== String(event.summary ?? "").trim()
     ? `<details class="gd-quote"><summary>original${event.language ? ` (${escapeHtml(event.language)})` : ""}</summary><blockquote>${escapeHtml(event.quote)}</blockquote></details>`
     : "";
   return `<span class="gd-outcome gd-outcome-${escapeHtml(event?.outcome ?? "unknown")}" title="${escapeHtml(outcome.label)}"><i class="${outcome.icon}"></i></span>${flameHtml}
-    ${who}<span class="gd-summary">${escapeHtml(event?.summary ?? "")}</span>${isDarkDeed(event) ? ` ${renderDarkDeedBadge(event)}` : ""}${typeof event?.consequence === "string" && event.consequence.trim() ? ` <span class="gd-consequence">&rarr; ${escapeHtml(event.consequence)}</span>` : ""}
+    ${who}<span class="gd-summary">${escapeHtml(event?.summary ?? "")}</span>${moved}${isDarkDeed(event) ? ` ${renderDarkDeedBadge(event)}` : ""}${typeof event?.consequence === "string" && event.consequence.trim() ? ` <span class="gd-consequence">&rarr; ${escapeHtml(event.consequence)}</span>` : ""}
     <span class="gd-chips">${tags}${themes || (!tags ? '<span class="gd-chip">untagged</span>' : "")}${renderChips(jevEventChips(event))}</span>${quote}`;
 }
 

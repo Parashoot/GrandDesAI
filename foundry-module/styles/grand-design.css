@@ -47,6 +47,13 @@
   padding: 0.2rem 0;
   border-bottom: 1px dashed rgba(0, 0, 0, 0.12);
 }
+/* Board 4344c58a: per-event Delete / Move to... and per-entry Revert approval (GM only). */
+.grand-design-growth .gd-event-controls { display: inline-flex; gap: 0.25rem; margin-left: 0.4rem; vertical-align: middle; }
+.grand-design-growth .gd-event-controls .gd-action,
+.grand-design-growth .gd-approved-row .gd-action { font-size: 0.85em; line-height: 1.4; padding: 0 0.4rem; }
+.grand-design-growth .gd-danger-action { color: #a12a2a; }
+.grand-design-growth .gd-approved-row { padding: 0.15rem 0; }
+.grand-design-growth .gd-moved { font-style: italic; }
 .grand-design-growth .gd-outcome { display: inline-block; width: 1.3em; text-align: center; }
 .grand-design-growth .gd-outcome-criticalSuccess { color: #c99a06; }
 .grand-design-growth .gd-outcome-success { color: #2e7d4f; }
