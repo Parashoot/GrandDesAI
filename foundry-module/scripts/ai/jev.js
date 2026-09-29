@@ -115,7 +115,7 @@ export function createJevClient({ apiKey, endpoint, model, timeoutMs, fetchImpl,
       const message = scrub(error?.message ?? error);
       if (error instanceof TypeError && BROWSER_FETCH_FAILURE.test(message)) {
         throw new JevError(
-          `Your browser could not reach Jev at ${base} ("${message}"). Usually the browser blocked the call (CORS): set the Jev Endpoint to a proxy that adds CORS headers. It can also mean the network is down.`,
+          `Your browser could not reach Jev at ${base} ("${message}"). Usually the browser blocked the call (CORS): set the Jev Endpoint to a proxy that adds CORS headers (node tools/jev-proxy.mjs, then http://127.0.0.1:8788). It can also mean the network is down.`,
           { kind: "cors" }
         );
       }

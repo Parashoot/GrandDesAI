@@ -1919,7 +1919,9 @@
    "id": "27346aba",
    "title": "Real-Jev measurement once TYPESAFE_API_KEY is set locally (+ CORS check from the Foundry browser)",
    "status": "todo",
-   "notes": [],
+   "notes": [
+    "2026-09-29 local: real Jev reachable (ping 183 ms, models jev-latest/jev-preview). api.typesafe.ai refuses EVERY browser origin ('Disallowed CORS origin' for localhost:30000, 127.0.0.1, https, forge-vtt), so inside Foundry Jev always failed open. Added tools/jev-proxy.mjs (zero-dep, forwards only /v1/systemone + /v1/models, never stores a key) and Test Jev's CORS message now names it. LIVE dnd5e (tools/playtest/live-jev.mjs): direct blocked with actionable message, via proxy OK 914 ms, 4/4. Real-model party corpus runs pending."
+   ],
    "tags": [
     "jev",
     "qa"
@@ -1928,7 +1930,7 @@
    "owner": "",
    "source": "jev-layer",
    "created": 1790705520.084,
-   "updated": 1790705520.084
+   "updated": 1790711494.053
   },
   {
    "id": "edfcd96e",

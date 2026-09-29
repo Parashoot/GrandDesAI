@@ -963,7 +963,7 @@ export function describeJevError(result) {
   const message = String(result?.error ?? "");
   const kind = result?.kind;
   if (kind === "cors" || kind === "network" || /failed to fetch|networkerror|load failed|cors|blocked/i.test(message)) {
-    return "Your browser blocked the call to Jev (CORS or network). Set the Jev endpoint to a proxy that adds CORS headers in front of https://api.typesafe.ai, then test again.";
+    return "Your browser blocked the call to Jev (CORS or network). TypeSafe does not accept calls from browser pages, so Foundry needs a proxy that adds CORS headers: on this PC run \"node tools/jev-proxy.mjs\" from the module folder, set the Jev endpoint to http://127.0.0.1:8788, then test again.";
   }
   if (result?.status === 401 || result?.status === 403 || /\b40[13]\b|unauthori[sz]ed|forbidden/i.test(message)) {
     return "Jev rejected the API key (401/403). Check the key in your TypeSafe account.";
