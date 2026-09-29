@@ -273,3 +273,20 @@
 .grand-design-growth .gd-s-field.gd-s-short { flex: 0 1 5rem; }
 .grand-design-growth .gd-s-field.gd-s-check { flex-direction: row; align-items: center; flex: 0 0 auto; gap: 0.2rem; }
 .grand-design-growth .gd-s-field.gd-s-check input { flex: 0 0 auto; margin: 0; }
+
+/* --- Jev (TypeSafe) layer: chips, summary line, party picker, settings (docs/jev-layer-contract.md) */
+.grand-design-growth .gd-jev-chip { border: 1px solid currentColor; }
+.grand-design-growth .gd-jev-disputed { color: #8a5a00; background: rgba(201, 154, 6, 0.15); }
+.grand-design-growth .gd-jev-corrected { color: #1f4e8c; background: rgba(46, 90, 160, 0.1); }
+.grand-design-growth .gd-jev-dark { color: #a12a2a; background: rgba(161, 42, 42, 0.12); }
+.grand-design-growth .gd-jev-who { color: #6b2c86; background: rgba(140, 60, 170, 0.1); border-style: dashed; }
+.grand-design-growth .gd-jev-party { color: #2e7d4f; background: rgba(46, 125, 79, 0.1); }
+.grand-design-growth .gd-jev-weak { color: #8a6d3b; background: rgba(138, 109, 59, 0.12); border-style: dashed; }
+.grand-design-growth .gd-jev-summary { font-size: 0.85em; opacity: 0.85; margin: 0 0 0.3rem; }
+.grand-design-growth .gd-jev-summary .fa-bolt { color: #c99a06; }
+.grand-design-party .gd-party-pick { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
+.grand-design-party .gd-party-pc { display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap; }
+.grand-design-party .gd-party-pc input { flex: 0 0 auto; margin: 0; }
+.grand-design-party textarea[name="party-notes"] { min-height: 12rem; resize: vertical; }
+.grand-design-gateway-settings .gd-jev-test-result { border: 1px solid rgba(0, 0, 0, 0.15); border-radius: 4px; padding: 0.4rem; margin-top: 0.3rem; }
+.grand-design-gateway-settings details.gd-jev-advanced { margin: 0.3rem 0; }

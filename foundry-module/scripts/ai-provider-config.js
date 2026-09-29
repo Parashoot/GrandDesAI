@@ -67,6 +67,40 @@ const NUMBER_KEYS = new Set([
 const BOOLEAN_KEYS = new Set(["allowRed", "emergentThemes", "mergeFollowUps"]);
 const CANONICAL_TAGS = GROWTH_TAXONOMY.map(([tag]) => tag);
 
+// Jev (TypeSafe) optional layer, docs/jev-layer-contract.md. The key is its own CLIENT setting, the
+// same mechanism as aiApiKey (never a user setting: those live server-side in the user document, and
+// never the world flavor or the tuning JSON). Everything else Jev needs is non-secret per-machine
+// tuning and lives in the client tuning JSON under `jev`.
+export const CLIENT_JEV_KEY_SETTING = "jevApiKey";
+// Mirrors GATEWAY_DEFAULTS.jev from the contract; used until/unless gateway-config.js ships its own.
+export const JEV_UI_DEFAULTS = Object.freeze({
+  enabled: false,
+  endpoint: "https://api.typesafe.ai",
+  model: "jev-latest",
+  timeoutMs: 10000,
+  triage: true,
+  attribution: true,
+  verify: true,
+  rank: true,
+  triageThreshold: 0.12,
+  overrideConfidence: 0.85
+});
+export const JEV_TUNING_KEYS = Object.freeze(Object.keys(JEV_UI_DEFAULTS));
+const JEV_STEP_KEYS = Object.freeze(["triage", "attribution", "verify", "rank"]);
+// Flat form field name -> jev tuning key (Foundry's v1 FormApplication hands over flat formData).
+export const JEV_FORM_FIELDS = Object.freeze({
+  jevEnabled: "enabled",
+  jevEndpoint: "endpoint",
+  jevModel: "model",
+  jevTimeoutMs: "timeoutMs",
+  jevTriage: "triage",
+  jevAttribution: "attribution",
+  jevVerify: "verify",
+  jevRank: "rank",
+  jevTriageThreshold: "triageThreshold",
+  jevOverrideConfidence: "overrideConfidence"
+});
+
 // ------------------------------------------------------------------------------------------------
 // Pure helpers
 // ------------------------------------------------------------------------------------------------
@@ -121,11 +155,15 @@ export function buildGatewayConfig({ basics = {}, client = {}, world = {} } = {}
     provider: provider === "disabled" ? GATEWAY_DEFAULTS.provider : provider,
     endpoint: endpoint || GATEWAY_DEFAULTS.endpoint,
     model: model || (provider === "ollama" ? DEFAULT_OLLAMA_MODEL : ""),
-    apiKey: typeof basics.apiKey === "string" ? basics.apiKey : ""
+    apiKey: typeof basics.apiKey === "string" ? basics.apiKey : "",
+    jev: buildJevConfig(client?.jev, basics.jevApiKey)
   };
   const normalized = normalizeGatewayConfig(merged);
   return {
     ...normalized,
+    // gateway-config.js owns the canonical clamp once it knows `jev`; if it does not (yet), the UI's
+    // own normalization is passed through so the adapter still receives the block.
+    jev: normalized.jev && typeof normalized.jev === "object" ? normalized.jev : merged.jev,
     provider,
     endpoint: provider === "disabled" ? "" : endpoint,
     model: provider === "disabled" ? "" : model,
@@ -134,13 +172,57 @@ export function buildGatewayConfig({ basics = {}, client = {}, world = {} } = {}
   };
 }
 
+function jevDefaults() {
+  const fromGateway = GATEWAY_DEFAULTS.jev && typeof GATEWAY_DEFAULTS.jev === "object" ? GATEWAY_DEFAULTS.jev : {};
+  const merged = { ...JEV_UI_DEFAULTS };
+  for (const key of JEV_TUNING_KEYS) if (fromGateway[key] !== undefined) merged[key] = fromGateway[key];
+  return merged;
+}
+
+/**
+ * The non-secret Jev tuning, clamped (thresholds 0-1, timeout 1000-60000 ms; unknown keys and any
+ * stray `apiKey` dropped). This is exactly what may be stored in the client tuning JSON.
+ */
+export function normalizeJevTuning(raw) {
+  const d = jevDefaults();
+  const input = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const bool = (value, fallback) => (typeof value === "boolean" ? value : fallback);
+  const num = (value, min, max, fallback) => {
+    const n = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+  };
+  const str = (value, fallback) => (typeof value === "string" && value.trim() ? value.trim().replace(/\/+$/, "") : fallback);
+  return {
+    enabled: bool(input.enabled, d.enabled),
+    endpoint: str(input.endpoint, d.endpoint),
+    model: str(input.model, d.model),
+    timeoutMs: Math.round(num(input.timeoutMs, 1000, 60000, d.timeoutMs)),
+    triage: bool(input.triage, d.triage),
+    attribution: bool(input.attribution, d.attribution),
+    verify: bool(input.verify, d.verify),
+    rank: bool(input.rank, d.rank),
+    triageThreshold: num(input.triageThreshold, 0, 1, d.triageThreshold),
+    overrideConfidence: num(input.overrideConfidence, 0, 1, d.overrideConfidence)
+  };
+}
+
+/**
+ * The `jev` block the gateway receives: tuning + the key from its own client setting. `enabled` is
+ * forced off without a key (contract invariant 1: unconfigured == off).
+ */
+export function buildJevConfig(tuning, apiKey) {
+  const key = typeof apiKey === "string" ? apiKey.trim() : "";
+  const jev = normalizeJevTuning(tuning);
+  return { ...jev, enabled: jev.enabled && Boolean(key), apiKey: key };
+}
+
 /** The defaults a "Reset to defaults" restores, for a given provider. */
 export function defaultGatewaySettings(provider = "ollama") {
   const preset = PROVIDER_PRESETS[provider] ?? PROVIDER_PRESETS.ollama;
   const pick = (keys) => Object.fromEntries(keys.map((key) => [key, structuredClone(GATEWAY_DEFAULTS[key])]));
   return {
-    basics: { provider, endpoint: preset.endpoint, model: preset.model, apiKey: "" },
-    client: pick(CLIENT_TUNING_KEYS),
+    basics: { provider, endpoint: preset.endpoint, model: preset.model, apiKey: "", jevApiKey: "" },
+    client: { ...pick(CLIENT_TUNING_KEYS), jev: normalizeJevTuning({}) },
     world: pick(WORLD_FLAVOR_KEYS)
   };
 }
@@ -254,6 +336,13 @@ export function formDataToSettings(formData = {}) {
     const value = BOOLEAN_KEYS.has(key) ? coerce(key, formData[key] ?? false) : coerce(key, formData[key]);
     if (value !== undefined) world[key] = value;
   }
+  const jev = formDataToJev(formData);
+  if (jev) {
+    client.jev = jev.tuning;
+    basics.jevApiKey = jev.apiKey;
+    // The Jev fieldset is hidden with the provider "disabled"; never block Save on a field the GM cannot see.
+    if (provider !== "disabled") errors.push(...jev.errors);
+  }
   const synonyms = parseCustomSynonyms(formData.customSynonyms);
   world.customSynonyms = synonyms.synonyms;
   for (const error of synonyms.errors) errors.push(`Custom synonyms line ${error.line}: ${error.message}`);
@@ -282,6 +371,49 @@ export function planOutputLanguageMigration(client = {}, world = {}) {
     changedWorld = true;
   }
   return { client: nextClient, world: nextWorld, changedClient: true, changedWorld };
+}
+
+/**
+ * The Jev fieldset's flat fields -> { tuning (no key), apiKey, errors }, or null when the form has no
+ * Jev fields at all (an older form, or a caller that never showed them: nothing changes).
+ * Unchecked checkboxes are absent from formData, so the toggles read "absent" as false.
+ */
+export function formDataToJev(formData = {}) {
+  const present = Object.keys(JEV_FORM_FIELDS).some((field) => formData[field] !== undefined) || formData.jevApiKey !== undefined;
+  if (!present) return null;
+  const checked = (value) => value === true || value === "true" || value === "on" || value === 1;
+  const raw = {};
+  for (const [field, key] of Object.entries(JEV_FORM_FIELDS)) {
+    if (key === "enabled" || JEV_STEP_KEYS.includes(key)) raw[key] = checked(formData[field]);
+    else if (formData[field] !== undefined && formData[field] !== "") raw[key] = typeof formData[field] === "string" ? formData[field].trim() : formData[field];
+  }
+  const tuning = normalizeJevTuning(raw);
+  const apiKey = String(formData.jevApiKey ?? "").trim();
+  const errors = [];
+  if (tuning.enabled) {
+    if (!apiKey) errors.push("Jev is switched on but has no API key (untick Use Jev, or paste the key from TypeSafe).");
+    const endpointError = validateEndpointUrl(tuning.endpoint);
+    if (endpointError) errors.push(`Jev endpoint: ${endpointError}`);
+  }
+  return { tuning, apiKey, errors };
+}
+
+/**
+ * [settingKey, value] pairs a Save writes, in order. Pure so "the key never reaches a world setting"
+ * is testable: the Jev key only goes to its own client setting, the tuning JSON is rebuilt from
+ * known keys (no `apiKey` can hide in it), and the world flavor is written by a GM only.
+ */
+export function settingsWrites({ basics = {}, client = {}, world = {} } = {}, { isGM = false } = {}) {
+  const writes = Object.entries(CLIENT_BASIC_SETTINGS).map(([key, setting]) => [setting, String(basics[key] ?? "")]);
+  if (basics.jevApiKey !== undefined) writes.push([CLIENT_JEV_KEY_SETTING, String(basics.jevApiKey ?? "")]);
+  const tuning = Object.fromEntries(CLIENT_TUNING_KEYS.filter((key) => client[key] !== undefined).map((key) => [key, client[key]]));
+  if (client.jev !== undefined) tuning.jev = normalizeJevTuning(client.jev);
+  writes.push([CLIENT_TUNING_SETTING, JSON.stringify(tuning)]);
+  if (isGM) {
+    const flavor = Object.fromEntries(WORLD_FLAVOR_KEYS.filter((key) => world[key] !== undefined).map((key) => [key, world[key]]));
+    writes.push([WORLD_FLAVOR_SETTING, JSON.stringify(flavor)]);
+  }
+  return writes;
 }
 
 function parseJsonSetting(raw) {
@@ -335,6 +467,8 @@ export function registerAiProviderSettings() {
     const scope = key === "apiKey" ? "client" : basicScope;
     game.settings.register(MODULE_ID, setting, { scope, config: false, type: String, default: key === "provider" ? "disabled" : "", onChange: () => onGatewaySettingChanged(key === "provider") });
   }
+  // The Jev key follows aiApiKey exactly: this browser only, and a change rebuilds the adapter.
+  game.settings.register(MODULE_ID, CLIENT_JEV_KEY_SETTING, { scope: "client", config: false, type: String, default: "", onChange: () => onGatewaySettingChanged() });
   game.settings.register(MODULE_ID, CLIENT_TUNING_SETTING, { scope: "client", config: false, type: String, default: "{}", onChange: () => onGatewaySettingChanged() });
   game.settings.register(MODULE_ID, WORLD_FLAVOR_SETTING, { scope: "world", config: false, type: String, default: "{}", onChange: () => onGatewaySettingChanged() });
   // Set the first time any GM saves a real provider; what makes "no adapter at ready" a warning
@@ -353,6 +487,12 @@ export function registerAiProviderSettings() {
 export function readStoredSettings() {
   const basics = {};
   for (const [key, setting] of Object.entries(CLIENT_BASIC_SETTINGS)) basics[key] = game.settings.get(MODULE_ID, setting) ?? "";
+  // Read defensively: a missing Jev key must mean "Jev off", never a broken gateway config.
+  try {
+    basics.jevApiKey = game.settings.get(MODULE_ID, CLIENT_JEV_KEY_SETTING) ?? "";
+  } catch {
+    basics.jevApiKey = "";
+  }
   return {
     basics,
     client: parseJsonSetting(game.settings.get(MODULE_ID, CLIENT_TUNING_SETTING)),
@@ -515,12 +655,11 @@ export async function checkGatewayAtReady() {
   return { adapter, problem };
 }
 
-async function persistSettings({ basics, client, world }) {
-  for (const [key, setting] of Object.entries(CLIENT_BASIC_SETTINGS)) {
-    await game.settings.set(MODULE_ID, setting, String(basics[key] ?? ""));
+/** Writes a parsed form to game.settings (exported so the Foundry wiring is testable with a fake `game`). */
+export async function persistSettings(parsed) {
+  for (const [setting, value] of settingsWrites(parsed, { isGM: Boolean(game.user?.isGM) })) {
+    await game.settings.set(MODULE_ID, setting, value);
   }
-  await game.settings.set(MODULE_ID, CLIENT_TUNING_SETTING, JSON.stringify(client));
-  if (game.user?.isGM) await game.settings.set(MODULE_ID, WORLD_FLAVOR_SETTING, JSON.stringify(world));
 }
 
 function buildGatewaySettingsClass() {
@@ -615,6 +754,21 @@ function buildGatewaySettingsClass() {
         if (list && result?.models?.length) list.innerHTML = result.models.map((name) => `<option value="${escapeHtml(name)}"></option>`).join("");
       });
 
+      // The Jev options show only while "Use Jev" is ticked, so the section stays a one-line opt-in.
+      q('input[name="jevEnabled"]')?.addEventListener("change", (event) => {
+        const body = q(".gd-jev-body");
+        if (body) body.style.display = event.target.checked ? "" : "none";
+      });
+
+      q('button[data-action="test-jev"]')?.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const box = q(".gd-jev-test-result");
+        const { config } = this._configFromForm(root);
+        if (box) box.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Asking Jev for its model list...';
+        const result = await testJevConnection(config.jev);
+        if (box) box.innerHTML = renderJevTestResult(result);
+      });
+
       q('button[data-action="reset-defaults"]')?.addEventListener("click", (event) => {
         event.preventDefault();
         const provider = q('select[name="provider"]')?.value || "ollama";
@@ -679,6 +833,7 @@ export function renderGatewayForm(config, stored = {}) {
     <div class="form-group gd-ai-only"${aiOnly}><label>API key</label><input name="apiKey" type="password" value="${escapeHtml(config.apiKey ?? "")}" autocomplete="off" placeholder="only for hosted providers"></div>
     <div class="gd-ai-only"${aiOnly}><button type="button" data-action="test-connection"><i class="fas fa-plug"></i> Test Connection</button><div class="gd-test-result gd-help">Checks the connection, the model, and reads one sample sentence.</div></div>
   </fieldset>
+  ${renderJevFieldset(config.jev, { aiOnly })}
   <details class="gd-ai-only"${aiOnly}><summary><strong>Model tuning (this browser only)</strong></summary><fieldset>
     <div class="form-group"><label>Temperature</label><div class="gd-row"><input type="range" name="temperature" min="0" max="1.5" step="0.05" value="${Number(client.temperature)}"><output name="temperatureValue">${Number(client.temperature).toFixed(2)}</output></div></div>
     <p class="gd-help">Lower = more consistent readings. 0.1-0.3 is a good range for note extraction.</p>
@@ -723,6 +878,110 @@ export function renderGatewayForm(config, stored = {}) {
   </footer>
 </form>`;
 }
+
+/**
+ * The "Jev (TypeSafe) — optional speed-up" fieldset. While Jev is off only the explanation and the
+ * "Use Jev" box show, so a GM who never uses it sees the form essentially as before.
+ */
+export function renderJevFieldset(jevConfig, { aiOnly = "" } = {}) {
+  const jev = normalizeJevTuning(jevConfig);
+  const apiKey = typeof jevConfig?.apiKey === "string" ? jevConfig.apiKey : "";
+  const on = jevConfig?.enabled === true;
+  const box = (name, checked, label) => `<div class="form-group"><label>${escapeHtml(label)}</label><input type="checkbox" name="${name}" ${checked ? "checked" : ""}></div>`;
+  return `<fieldset class="gd-jev gd-ai-only"${aiOnly}><legend>Jev (TypeSafe) — optional speed-up</legend>
+    <p class="gd-help">Jev answers small yes/no and pick-one questions in under a second: it skips passages with no character action, works out who did each deed, double-checks outcomes and dark deeds, and ranks proposals. It never writes text or replaces your model, and if it fails, analysis carries on without it.</p>
+    <div class="form-group"><label>Use Jev</label><input type="checkbox" name="jevEnabled" ${on ? "checked" : ""}></div>
+    <div class="gd-jev-body"${on ? "" : ' style="display:none"'}>
+      <div class="form-group"><label>Jev API key</label><input name="jevApiKey" type="password" value="${escapeHtml(apiKey)}" autocomplete="off" placeholder="from typesafe.ai (kept in this browser only)"></div>
+      <div class="form-group"><label>Jev endpoint</label><input name="jevEndpoint" type="text" value="${escapeHtml(jev.endpoint)}" placeholder="${escapeHtml(JEV_UI_DEFAULTS.endpoint)}"></div>
+      <div class="form-group"><label>Jev model</label><input name="jevModel" type="text" value="${escapeHtml(jev.model)}" placeholder="${escapeHtml(JEV_UI_DEFAULTS.model)}"></div>
+      ${box("jevTriage", jev.triage, "Skip passages with no character action")}
+      ${box("jevAttribution", jev.attribution, "Work out who did each deed")}
+      ${box("jevVerify", jev.verify, "Double-check outcomes and dark deeds")}
+      ${box("jevRank", jev.rank, "Rank proposals by their evidence")}
+      <details class="gd-jev-advanced"><summary>Advanced</summary>
+        <div class="form-group"><label>Skip threshold (0-1)</label><input type="number" name="jevTriageThreshold" min="0" max="1" step="any" value="${Number(jev.triageThreshold)}"></div>
+        <p class="gd-help">A passage is skipped only when Jev's chance that it holds a character action is below this. Lower = skips less.</p>
+        <div class="form-group"><label>Override confidence (0-1)</label><input type="number" name="jevOverrideConfidence" min="0" max="1" step="any" value="${Number(jev.overrideConfidence)}"></div>
+        <p class="gd-help">Jev replaces the model's outcome only above this confidence; below it, it just flags the event for you.</p>
+        <div class="form-group"><label>Jev timeout (ms)</label><input type="number" name="jevTimeoutMs" min="1000" max="60000" step="any" value="${Number(jev.timeoutMs)}"></div>
+      </details>
+      <div><button type="button" data-action="test-jev"><i class="fas fa-bolt"></i> Test Jev</button><div class="gd-jev-test-result gd-help">Checks the key and endpoint and lists Jev's models.</div></div>
+    </div>
+  </fieldset>`;
+}
+
+/**
+ * Pings Jev with the form's (unsaved) settings. Never throws; returns
+ * { ok, ms?, models?: string[], error?, kind?, status? }. jev.js is imported lazily and its absence
+ * is a readable result, so this file keeps loading on a build without the Jev client.
+ */
+export async function testJevConnection(jev, { loadJev = () => import("./ai/jev.js") } = {}) {
+  const apiKey = typeof jev?.apiKey === "string" ? jev.apiKey.trim() : "";
+  if (!apiKey) return { ok: false, kind: "config", error: "Paste a Jev API key first." };
+  const tuning = normalizeJevTuning(jev);
+  const endpointError = validateEndpointUrl(tuning.endpoint);
+  if (endpointError) return { ok: false, kind: "config", error: `Jev endpoint: ${endpointError}` };
+  let createJevClient = null;
+  try {
+    ({ createJevClient } = await loadJev());
+  } catch {
+    createJevClient = null;
+  }
+  if (typeof createJevClient !== "function") {
+    return { ok: false, kind: "missing", error: "This build of Grand Design has no Jev client yet (scripts/ai/jev.js)." };
+  }
+  try {
+    const client = createJevClient({ apiKey, endpoint: tuning.endpoint, model: tuning.model, timeoutMs: tuning.timeoutMs });
+    if (!client || typeof client.ping !== "function") return { ok: false, kind: "config", error: "Jev could not be set up with these settings." };
+    return normalizePingResult(await client.ping());
+  } catch (error) {
+    return { ok: false, kind: error?.kind, status: error?.status, error: error?.message || String(error) };
+  }
+}
+
+function normalizePingResult(result) {
+  const models = (Array.isArray(result?.models) ? result.models : [])
+    .map((model) => (typeof model === "string" ? model : model?.name))
+    .filter((name) => typeof name === "string" && name);
+  const error = result?.error;
+  const out = { ok: result?.ok === true };
+  if (Number.isFinite(result?.ms)) out.ms = result.ms;
+  if (models.length) out.models = models;
+  if (error) {
+    out.error = typeof error === "string" ? error : error.message || String(error);
+    const kind = result?.kind ?? error?.kind;
+    const status = result?.status ?? error?.status;
+    if (kind) out.kind = kind;
+    if (status) out.status = status;
+  }
+  return out;
+}
+
+/** What went wrong with Test Jev, in words a GM can act on. Pure. */
+export function describeJevError(result) {
+  const message = String(result?.error ?? "");
+  const kind = result?.kind;
+  if (kind === "cors" || kind === "network" || /failed to fetch|networkerror|load failed|cors|blocked/i.test(message)) {
+    return "Your browser blocked the call to Jev (CORS or network). Set the Jev endpoint to a proxy that adds CORS headers in front of https://api.typesafe.ai, then test again.";
+  }
+  if (result?.status === 401 || result?.status === 403 || /\b40[13]\b|unauthori[sz]ed|forbidden/i.test(message)) {
+    return "Jev rejected the API key (401/403). Check the key in your TypeSafe account.";
+  }
+  if (kind === "timeout" || /timed? ?out|abort/i.test(message)) return "Jev did not answer in time. Check the endpoint, or raise the Jev timeout under Advanced.";
+  return message || "The Jev test failed.";
+}
+
+/** Pure HTML for a Test Jev result (the result never carries the key). */
+export function renderJevTestResult(result) {
+  if (!result) return '<span class="gd-error">No result.</span>';
+  if (!result.ok) return `<span class="gd-error"><i class="fas fa-circle-xmark"></i> ${escapeHtml(describeJevError(result))}</span>`;
+  const models = Array.isArray(result.models) ? result.models : [];
+  const ms = Number.isFinite(result.ms) ? ` in ${Math.round(result.ms)} ms` : "";
+  return `<span class="gd-ok"><i class="fas fa-circle-check"></i> Jev answered${ms}.</span>${models.length ? `<br><span class="gd-help">Models: ${escapeHtml(models.join(", "))}</span>` : ""}`;
+}
+
+
 
 /** Pure HTML for a testAiConnection result. */
 export function renderTestResult(result) {

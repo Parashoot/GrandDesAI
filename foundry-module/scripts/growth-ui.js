@@ -44,6 +44,8 @@ const ACTIONS = Object.freeze({
 });
 // Not a long action (it only opens the panel), so it is not locked with the others.
 const OPEN_REGISTRY = "gd-open-registry";
+// Same for "Analyze party": it opens the party picker dialog (board a48d97c0), the work runs there.
+const OPEN_PARTY = "gd-analyze-party";
 const LOCKABLE = Object.values(ACTIONS).map(({ action }) => `[data-action="${action}"]`).join(", ");
 
 export function openGrowthManager(actor, { lastResult = null, draftNotes = "", focusProposalId = null, lastSuggest = null } = {}) {
@@ -193,6 +195,14 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
     }),
     [OPEN_REGISTRY]: () => {
       if (!running) openRegistryPanel(actor);
+    },
+    // Whatever was typed here is carried over to the party notes box; this dialog closes.
+    [OPEN_PARTY]: async (root) => {
+      if (running) return;
+      const draftNotes = typedNotes(root);
+      if (pollTimer) clearInterval(pollTimer);
+      await safe(() => dialog.close(), null);
+      openPartyAnalysis({ origin: actor, draftNotes });
     }
   };
 
@@ -487,36 +497,326 @@ export function reportRest(result, restType = "long") {
  * Turns an analyzeSessionNotes result into notifications a GM can act on. The quiet case --
  * zero events -- always comes with a reason.
  */
-export function reportAnalysis(result) {
+export function reportAnalysis(result, { name = "" } = {}) {
+  dispatchNotifications(describeAnalysis(result, { name }));
+  if (!result?.events?.length && result?.diagnostics) console.warn(`${MODULE_ID} | dropped sentences`, result.diagnostics.dropped);
+}
+
+/**
+ * The notifications reportAnalysis shows, as data: [{ level, message, options? }]. With `name` each
+ * message is prefixed "Name: " (party mode reports every character in one go). Pure, exported.
+ */
+export function describeAnalysis(result, { name = "" } = {}) {
+  const prefix = name ? `${name}: ` : "";
+  const out = [];
   const pendingCount = (result?.proposals ?? []).filter((proposal) => proposal?.status === "pending").length;
   if (result?.source === "local-fallback") {
-    ui.notifications.error(`AI provider failed -- fell back to local keyword analysis. ${result.adapterError ?? ""}`, { permanent: true });
+    out.push({ level: "error", message: `${prefix}AI provider failed -- fell back to local keyword analysis. ${result.adapterError ?? ""}`, options: { permanent: true } });
   }
   const events = result?.events ?? [];
   if (events.length) {
     const newThemes = (result.themes ?? []).filter((theme) => theme.isNew).map((theme) => theme.label);
     const themeNote = newThemes.length ? ` New theme(s): ${newThemes.join(", ")}.` : "";
     if (result.source === "adapter") {
-      ui.notifications.info(`Recorded ${events.length} growth event(s) via AI analysis; ${pendingCount} pending proposal(s).${themeNote}`);
+      out.push({ level: "info", message: `${prefix}Recorded ${events.length} growth event(s) via AI analysis; ${pendingCount} pending proposal(s).${themeNote}` });
     } else {
       // A quiet info toast let a GM run on the keyword analyzer for weeks; no AI provider is a warning.
       const reason = result?.source === "local-fallback" ? "" : " No AI provider is attached -- set one in Grand Design AI Gateway settings for fuller readings.";
-      ui.notifications.warn(`Recorded ${events.length} growth event(s) via the local keyword analyzer, not an AI; ${pendingCount} pending proposal(s).${themeNote}${reason}`);
+      out.push({ level: "warn", message: `${prefix}Recorded ${events.length} growth event(s) via the local keyword analyzer, not an AI; ${pendingCount} pending proposal(s).${themeNote}${reason}` });
     }
-    return;
+    return out;
   }
   const diagnostics = result?.diagnostics;
   if (!diagnostics) {
-    ui.notifications.warn("The AI read the notes but found nothing a character did. Try naming who did what and how it went.");
-    return;
+    out.push({
+      level: "warn",
+      message: name
+        ? `${prefix}nothing in these notes was credited to this character.`
+        : "The AI read the notes but found nothing a character did. Try naming who did what and how it went."
+    });
+    return out;
   }
-  ui.notifications.warn(
-    `No growth events found in ${diagnostics.sentences} sentence(s): `
+  out.push({
+    level: "warn",
+    message: `${prefix}No growth events found in ${diagnostics.sentences} sentence(s): `
       + `${diagnostics.droppedNoTag} mentioned nothing in the gameplay vocabulary, `
       + `${diagnostics.droppedNoAction} described an intention rather than something that happened.`
-  );
-  if (diagnostics.hint) ui.notifications.warn(diagnostics.hint, { permanent: true });
-  console.warn(`${MODULE_ID} | dropped sentences`, diagnostics.dropped);
+  });
+  if (diagnostics.hint) out.push({ level: "warn", message: `${prefix}${diagnostics.hint}`, options: { permanent: true } });
+  return out;
+}
+
+function dispatchNotifications(list) {
+  for (const { level, message, options } of list) {
+    if (options) ui.notifications[level](message, options);
+    else ui.notifications[level](message);
+  }
+}
+
+// ---- Jev (docs/jev-layer-contract.md "UI") -----------------------------------------------------
+// Jev only narrows or annotates; everything it did not silently fix shows up as a chip the GM can
+// judge. Events/proposals without a `jev` block render exactly as before (no chips).
+
+const OUTCOME_WORDS = {
+  criticalSuccess: "a critical success",
+  success: "a success",
+  failure: "a failure",
+  criticalFailure: "a critical failure",
+  unclear: "unclear"
+};
+export const JEV_LOW_ATTRIBUTION = 0.8;
+
+const outcomeWords = (outcome) => OUTCOME_WORDS[outcome] ?? String(outcome);
+const percent = (p) => `${Math.round(Number(p) * 100)}%`;
+
+/** [{ kind, text, title }] for one event's Jev annotations. Pure, exported for tests. */
+export function jevEventChips(event) {
+  const jev = event?.jev;
+  if (!jev || typeof jev !== "object") return [];
+  const flags = Array.isArray(jev.flags) ? jev.flags : [];
+  const chips = [];
+  if (flags.includes("outcome-disputed")) {
+    // The pipeline may name Jev's own reading under one of these; without it the chip still says
+    // the outcome is in doubt.
+    const reading = jev.outcome ?? jev.jevOutcome ?? jev.suggestedOutcome;
+    chips.push({
+      kind: "disputed",
+      text: reading ? `Jev reads this as ${outcomeWords(reading)}` : "Jev disputes this outcome",
+      title: `The AI recorded ${outcomeWords(event?.outcome ?? "unknown")}; Jev was not confident enough to change it. Check the notes.`
+    });
+  }
+  if (typeof jev.outcomeFrom === "string" && jev.outcomeFrom) {
+    chips.push({
+      kind: "corrected",
+      text: `Jev corrected (AI said ${outcomeWords(jev.outcomeFrom)})`,
+      title: "Jev was confident the AI's outcome was wrong and replaced it."
+    });
+  }
+  if (flags.includes("dark-act")) {
+    chips.push({ kind: "dark", text: "dark act?", title: "Jev reads this as a morally dark act; it was added to the red-entry check." });
+  }
+  const confidence = Number(jev.actorConfidence);
+  if (!jev.whole && jev.actorConfidence !== undefined && jev.actorConfidence !== null && Number.isFinite(confidence) && confidence < JEV_LOW_ATTRIBUTION) {
+    const name = jev.actorName ?? jev.actor ?? event?.actorName;
+    chips.push({
+      kind: "who",
+      text: "who did this?",
+      title: name ? `Jev is only ${percent(confidence)} sure ${name} did this.` : `Jev is only ${percent(confidence)} sure who did this.`
+    });
+  }
+  if (jev.whole === true) chips.push({ kind: "party", text: "whole party", title: "Jev read this as something the whole party did; every character keeps it." });
+  return chips;
+}
+
+/** [{ kind, text, title }] for one proposal's Jev ranking. Pure, exported for tests. */
+export function jevProposalChips(proposal) {
+  const jev = proposal?.jev;
+  if (!jev || typeof jev !== "object") return [];
+  const flags = Array.isArray(jev.flags) ? jev.flags : [];
+  const grounded = Number(jev.grounded);
+  if (!flags.includes("weak-evidence") && !(Number.isFinite(grounded) && jev.grounded !== null && grounded < 1)) return [];
+  return [{
+    kind: "weak",
+    text: "weak evidence",
+    title: `Jev scored how directly the cited deeds support this at ${Number.isFinite(grounded) ? grounded : "?"}/3${Number.isFinite(Number(jev.fit)) && jev.fit !== null ? ` (fit with the character ${Number(jev.fit)}/3)` : ""}. Read the evidence before approving.`
+  }];
+}
+
+function renderChips(chips) {
+  return chips.map((chip) => `<span class="gd-chip gd-jev-chip gd-jev-${escapeHtml(chip.kind)}" title="${escapeHtml(chip.title)}">${escapeHtml(chip.text)}</span>`).join("");
+}
+
+const countOf = (value) => (Array.isArray(value) ? value.length : Number.isFinite(Number(value)) && value !== null && value !== "" ? Math.max(0, Math.floor(Number(value))) : null);
+
+/**
+ * "Jev: 3 chunks skipped, 14 events routed, 2 outcomes corrected, 612 ms", or "" when Jev did not
+ * run. `events` is used to count what diagnostics do not (routed/corrected). Pure, exported for tests.
+ */
+export function jevSummaryLine(jevDiagnostics, events = []) {
+  const jev = jevDiagnostics;
+  if (!jev || typeof jev !== "object") return "";
+  const ran = Array.isArray(jev.ran) ? jev.ran.length > 0 : Boolean(jev.ran);
+  if (!ran) return "";
+  const list = Array.isArray(events) ? events : [];
+  const skipped = countOf(jev.skippedChunks) ?? 0;
+  const routed = countOf(jev.routed) ?? list.filter((event) => event?.jev && (event.jev.actorName || event.jev.actor || event.jev.whole)).length;
+  const corrected = countOf(jev.overrides) ?? list.filter((event) => event?.jev?.outcomeFrom).length;
+  const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  const parts = [plural(skipped, "chunk") + " skipped", plural(routed, "event") + " routed", plural(corrected, "outcome") + " corrected"];
+  if (Number.isFinite(Number(jev.ms)) && jev.ms !== null) parts.push(`${Math.round(Number(jev.ms))} ms`);
+  const errors = countOf(jev.errors) ?? 0;
+  return `Jev: ${parts.join(", ")}${errors ? ` (${plural(errors, "error")}, analysis carried on without it)` : ""}`;
+}
+
+
+// ---- Analyze party (board a48d97c0): one notes box, one extraction for the whole party ----------
+
+/**
+ * Player characters the party picker offers: [{ id, name, owned }]. Both pf2e and dnd5e call a PC's
+ * actor type "character"; NPCs, familiars, vehicles and loot are left out. Pure, exported.
+ */
+export function partyCandidates(actors) {
+  return (Array.isArray(actors) ? actors : Array.from(actors ?? []))
+    .filter((actor) => actor && actor.type === "character" && actor.id)
+    .map((actor) => ({ id: actor.id, name: String(actor.name ?? actor.id), owned: Boolean(actor.hasPlayerOwner) }));
+}
+
+/**
+ * Default selection: every player-owned character, plus the one whose Growth dialog this came from
+ * (a GM testing on an unassigned PC still gets it ticked). No player-owned PCs at all -> every PC.
+ */
+export function defaultPartySelection(candidates, currentId = null) {
+  const list = Array.isArray(candidates) ? candidates : [];
+  const owned = list.filter((candidate) => candidate.owned).map((candidate) => candidate.id);
+  const ids = new Set(owned.length ? owned : list.map((candidate) => candidate.id));
+  if (currentId && list.some((candidate) => candidate.id === currentId)) ids.add(currentId);
+  return ids;
+}
+
+export function renderPartyContent({ candidates = [], selected = new Set(), draftNotes = "" } = {}) {
+  const chosen = selected instanceof Set ? selected : new Set(selected ?? []);
+  const rows = candidates.length
+    ? candidates
+        .map((candidate) => `<label class="gd-party-pc"><input type="checkbox" name="party-actor" value="${escapeHtml(candidate.id)}" ${chosen.has(candidate.id) ? "checked" : ""}> ${escapeHtml(candidate.name)}${candidate.owned ? "" : ' <em class="gd-hint">(no player owner)</em>'}</label>`)
+        .join("")
+    : "<p><em>No player characters in this world yet.</em></p>";
+  return `<form class="grand-design-growth grand-design-party">
+    <p class="gd-hint">Paste the whole session once. The notes are read one time for everyone, and each character keeps only what they did (a deed everyone shared goes to all of them). Approval is still yours, per character.</p>
+    <fieldset class="gd-party-pick"><legend>Characters</legend>${rows}</fieldset>
+    <div class="form-group stacked"><label>Session Notes</label><textarea name="party-notes" rows="10" placeholder="Write however you like — any language, bullet points, shorthand.&#10;- Luz saw Tovin finish off the surrendered goblin&#10;- Wick lost his dice and his dagger at the inn">${escapeHtml(draftNotes ?? "")}</textarea></div>
+  </form>`;
+}
+
+/**
+ * Calls api.analyzePartyNotes, or -- on a module API without party mode -- analyzeSessionNotes per
+ * character (today's path, one character at a time), with a per-character error kept instead of
+ * aborting the rest. Returns { perActor, party, fallback }.
+ */
+export async function runPartyAnalysis(api, actors, notes) {
+  if (typeof api?.analyzePartyNotes === "function") {
+    const result = await api.analyzePartyNotes(actors, notes);
+    return { perActor: Array.isArray(result?.perActor) ? result.perActor : [], party: result?.party ?? {}, fallback: false };
+  }
+  const started = Date.now();
+  const perActor = [];
+  for (const actor of actors) {
+    try {
+      perActor.push({ actorId: actor.id, name: actor.name, ...(await api.analyzeSessionNotes(actor, notes)) });
+    } catch (error) {
+      perActor.push({ actorId: actor.id, name: actor.name, error: error?.message ?? String(error), events: [], proposals: [] });
+    }
+  }
+  return { perActor, party: { ms: Date.now() - started }, fallback: true };
+}
+
+/** Notifications for a party run: a summary line, the Jev line, then one block per character. Pure. */
+export function describePartyResult(result) {
+  const perActor = Array.isArray(result?.perActor) ? result.perActor : [];
+  const out = [];
+  const events = perActor.flatMap((entry) => (Array.isArray(entry?.events) ? entry.events : []));
+  const ms = Number(result?.party?.ms);
+  const time = Number.isFinite(ms) && result?.party?.ms !== null ? `, ${Math.round(ms)} ms` : "";
+  out.push({
+    level: "info",
+    message: `Party analysis: ${perActor.length} character${perActor.length === 1 ? "" : "s"}, ${events.length} growth event(s) recorded${time}.`
+  });
+  if (result?.fallback) {
+    out.push({ level: "warn", message: "This version of Grand Design has no party mode, so each character's notes were read separately (slower)." });
+  }
+  // party.jev is the run's Jev diagnostics; older shapes may only carry it per character.
+  const jevDiag = result?.party?.jev && typeof result.party.jev === "object"
+    ? result.party.jev
+    : perActor.map((entry) => entry?.gatewayDiagnostics?.jev).find((jev) => jev && typeof jev === "object");
+  const jevLine = jevSummaryLine(jevDiag, events);
+  if (jevLine) out.push({ level: "info", message: jevLine });
+  for (const entry of perActor) {
+    const name = entry?.name ?? entry?.actorId ?? "?";
+    if (entry?.error) out.push({ level: "error", message: `${name}: ${entry.error}` });
+    else out.push(...describeAnalysis(entry, { name }));
+  }
+  return out;
+}
+
+/**
+ * One character's party entry as the Growth dialog's `lastResult`. When Jev's diagnostics live only
+ * on the party (one run for everyone), they are attached so the dialog's Jev line still shows.
+ */
+export function partyEntryAsLastResult(entry, party = {}) {
+  if (!entry || typeof entry !== "object") return null;
+  if (entry.gatewayDiagnostics?.jev || !party?.jev || typeof party.jev !== "object") return entry;
+  return { ...entry, gatewayDiagnostics: { ...(entry.gatewayDiagnostics ?? {}), jev: party.jev } };
+}
+
+export function reportPartyAnalysis(result) {
+  dispatchNotifications(describePartyResult(result));
+}
+
+function worldActors() {
+  const actors = game.actors;
+  if (!actors) return [];
+  return Array.isArray(actors.contents) ? actors.contents : Array.from(actors);
+}
+
+/** The Analyze party dialog. `origin` is the actor whose Growth dialog opened it (may be null). */
+export function openPartyAnalysis({ origin = null, draftNotes = "", selectedIds = null } = {}) {
+  const api = game.modules.get(MODULE_ID).api;
+  const all = worldActors();
+  const candidates = partyCandidates(all);
+  const selected = selectedIds ? new Set(selectedIds) : defaultPartySelection(candidates, origin?.id ?? null);
+  const back = (notes) => (origin ? openGrowthManager(origin, { draftNotes: notes }) : undefined);
+  const read = (html) => {
+    const root = html?.[0] ?? html;
+    const notes = String(root?.querySelector?.('textarea[name="party-notes"]')?.value ?? "");
+    const ids = Array.from(root?.querySelectorAll?.('input[name="party-actor"]:checked') ?? []).map((input) => input.value);
+    return { notes, ids };
+  };
+  new Dialog(
+    {
+      title: "Grand Design: Analyze party",
+      content: renderPartyContent({ candidates, selected, draftNotes }),
+      buttons: {
+        analyze: {
+          icon: '<i class="fas fa-users"></i>',
+          label: "Analyze party",
+          callback: async (html) => {
+            const { notes, ids } = read(html);
+            const reopen = () => openPartyAnalysis({ origin, draftNotes: notes, selectedIds: ids });
+            const actors = ids.map((id) => all.find((actor) => actor?.id === id)).filter(Boolean);
+            if (!actors.length) {
+              ui.notifications.warn("Tick at least one character.");
+              reopen();
+              return;
+            }
+            if (!notes.trim()) {
+              ui.notifications.warn("Write or paste the session notes first -- any language, bullets, shorthand all work.");
+              reopen();
+              return;
+            }
+            const plural = `${actors.length} character${actors.length === 1 ? "" : "s"}`;
+            ui.notifications.info(typeof api?.analyzePartyNotes === "function"
+              ? `Reading the notes once for ${plural}...`
+              : `Reading the notes for ${plural}, one at a time (this version has no party mode)...`);
+            let result;
+            try {
+              result = await runPartyAnalysis(api, actors, notes);
+            } catch (error) {
+              // Never lose the GM's notes: the dialog comes back with the text and the ticks intact.
+              console.error(`${MODULE_ID} | party analysis failed`, error);
+              ui.notifications.error(error?.message || "Grand Design could not analyze the party notes.");
+              reopen();
+              return;
+            }
+            reportPartyAnalysis(result);
+            const own = origin ? result.perActor.find((entry) => entry?.actorId === origin.id) : null;
+            if (origin) openGrowthManager(origin, own && !own.error ? { lastResult: partyEntryAsLastResult(own, result.party) } : {});
+          }
+        },
+        back: { icon: '<i class="fas fa-arrow-left"></i>', label: origin ? "Back" : "Cancel", callback: (html) => back(read(html).notes) }
+      },
+      default: "analyze"
+    },
+    { width: 620, height: "auto", resizable: true, classes: ["dialog", "grand-design-growth-dialog"] }
+  ).render(true);
 }
 
 /** { kind: "ai"|"fallback"|"local", text, title } -- pure, exported for tests. */
@@ -571,7 +871,7 @@ export function renderGrowthContent({
     <div class="form-group gd-rest-row"><label>Resolve progression at rest</label><select name="growth-rest-type"><option value="short">Short Rest</option><option value="long">Long Rest</option></select>${button("rest", "fas fa-bed", "Resolve Rest")}</div>
     <hr>
     <div class="form-group stacked"><label>Session Notes</label><textarea name="growth-notes" rows="8" placeholder="Write however you like — any language, bullet points, shorthand, typos are fine.&#10;- Kesh parried the captain, nat 20!&#10;- Mira kept the bees calm and harvested honey&#10;- Torv tried to pick the lock, it broke">${escapeHtml(draftNotes ?? "")}</textarea></div>
-    <div class="gd-action-row">${button("analyze", "fas fa-wand-magic-sparkles", "Analyze", { variant: "gd-primary" })}${hasLast ? button("reanalyze", "fas fa-rotate", "Re-analyze last notes") : ""}</div>
+    <div class="gd-action-row">${button("analyze", "fas fa-wand-magic-sparkles", "Analyze", { variant: "gd-primary" })}${hasLast ? button("reanalyze", "fas fa-rotate", "Re-analyze last notes") : ""}${actionButton({ action: OPEN_PARTY, icon: "fas fa-users", label: "Analyze party", disabled: busy, title: busy ? BUSY_NOTICE : "Read one set of notes for the whole party; each character keeps only what they did." })}</div>
     <p class="gd-hint">Successes and honest failed attempts both count. Things the tag list doesn't cover (beekeeping, gambling, map-making...) become <em>themes</em> and can grow into brand-new Skills. Approval is always yours.${hasLast ? ` Last notes analyzed ${escapeHtml(formatWhen(lastAnalysis.at))} — use <strong>Re-analyze</strong> to read them again (the previous reading is replaced, not added to).` : ""}</p>
     ${renderInterpretation(events, lastAnalysis, lastResult)}
     ${renderAfterAnalysis(lastResult, erosion, { canEvolve, busy, aiAttached: rowOptions.aiAttached })}
@@ -613,7 +913,9 @@ function renderInterpretation(events, lastAnalysis, lastResult) {
   const rows = interpreted.length
     ? interpreted.map((event) => `<li class="gd-event-row">${renderEventLine(event, newThemes, true)}</li>`).join("")
     : "<li><em>Nothing a character did was found in the last notes.</em></li>";
-  return `<hr><h3>How your last notes were read</h3><ul class="gd-interpretation">${rows}</ul>${renderUnderTheHood(lastAnalysis, lastResult)}`;
+  const jevLine = jevSummaryLine(lastResult?.gatewayDiagnostics?.jev, interpreted);
+  const jevHtml = jevLine ? `<p class="gd-jev-summary"><i class="fas fa-bolt"></i> ${escapeHtml(jevLine)}</p>` : "";
+  return `<hr><h3>How your last notes were read</h3>${jevHtml}<ul class="gd-interpretation">${rows}</ul>${renderUnderTheHood(lastAnalysis, lastResult)}`;
 }
 
 export function renderEventLine(event, newThemes = new Set(), withQuote = false) {
@@ -632,7 +934,7 @@ export function renderEventLine(event, newThemes = new Set(), withQuote = false)
     : "";
   return `<span class="gd-outcome gd-outcome-${escapeHtml(event?.outcome ?? "unknown")}" title="${escapeHtml(outcome.label)}"><i class="${outcome.icon}"></i></span>${flameHtml}
     ${who}<span class="gd-summary">${escapeHtml(event?.summary ?? "")}</span>${isDarkDeed(event) ? ` ${renderDarkDeedBadge(event)}` : ""}${typeof event?.consequence === "string" && event.consequence.trim() ? ` <span class="gd-consequence">&rarr; ${escapeHtml(event.consequence)}</span>` : ""}
-    <span class="gd-chips">${tags}${themes || (!tags ? '<span class="gd-chip">untagged</span>' : "")}</span>${quote}`;
+    <span class="gd-chips">${tags}${themes || (!tags ? '<span class="gd-chip">untagged</span>' : "")}${renderChips(jevEventChips(event))}</span>${quote}`;
 }
 
 
@@ -698,7 +1000,7 @@ export function renderProposal(proposal, { canEdit = false, canRetry = false, ai
     ? '<p class="gd-hint gd-red-reject-hint"><i class="fas fa-skull"></i> Rejecting a red proposal refuses the power, not the stain: Horror Rank counts the dark deeds in the notes either way.</p>'
     : "";
   return `<li class="gd-proposal${focused ? " gd-focus" : ""}" data-proposal-id="${escapeHtml(proposal.id)}">
-    <div class="gd-proposal-head"><strong>${escapeHtml(name)}</strong> ${kind} ${badge}${lineage}${red}${authoring}</div>
+    <div class="gd-proposal-head"><strong>${escapeHtml(name)}</strong> ${kind} ${badge}${renderChips(jevProposalChips(proposal))}${lineage}${red}${authoring}</div>
     <div class="gd-proposal-effect">${escapeHtml(effect)} <em>Evidence: ${escapeHtml(cited)}</em></div>
     ${actions ? `<div class="gd-proposal-actions">${actions}</div>` : ""}${redHint}
     ${details}${edit}
@@ -1553,7 +1855,15 @@ export function renderUnderTheHood(lastAnalysis, lastResult) {
   const skippedProposals = (lastResult?.adapterSkippedProposals ?? []).map((entry) => `<li>${escapeHtml(entry?.proposal?.entry?.name ?? entry?.proposal?.kind ?? "proposal")} — ${escapeHtml((entry?.errors ?? [entry?.reason]).filter(Boolean).join(" "))}</li>`).join("");
   const rejectedTags = (lastResult?.adapterRejectedTags ?? []).map((entry) => `<li>${escapeHtml((entry?.rejected ?? []).join(", "))}${entry?.movedToThemes?.length ? ` → themes: ${escapeHtml(entry.movedToThemes.join(", "))}` : ""}${entry?.remapped ? ` → ${escapeHtml(Object.entries(entry.remapped).map(([from, to]) => `${from}=${to}`).join(", "))}` : ""}</li>`).join("");
   const dropped = (lastResult?.diagnostics?.dropped ?? []).map((entry) => `<li>${escapeHtml(entry?.sentence ?? "")} — ${escapeHtml(entry?.reason ?? "")}</li>`).join("");
-  if (rows.length <= 1 && !stageRows && !skippedEvents && !skippedProposals && !rejectedTags && !dropped) return "";
+  // What Jev kept away from the model is shown verbatim, so a wrong skip is visible, never silent.
+  const jevDiag = gateway?.jev && typeof gateway.jev === "object" ? gateway.jev : null;
+  const jevSkipped = (Array.isArray(jevDiag?.skippedChunks) ? jevDiag.skippedChunks : [])
+    .map((entry) => `<li>#${escapeHtml(entry?.chunk ?? "?")}${Number.isFinite(Number(entry?.p)) && entry?.p !== null ? ` (p=${Number(entry.p).toFixed(2)})` : ""}: ${escapeHtml(entry?.text ?? "")}</li>`)
+    .join("");
+  const jevErrors = (Array.isArray(jevDiag?.errors) ? jevDiag.errors : [])
+    .map((entry) => `<li>${escapeHtml(typeof entry === "string" ? entry : [entry?.step, entry?.message ?? entry?.error ?? entry?.kind].filter(Boolean).join(": ") || "error")}</li>`)
+    .join("");
+  if (rows.length <= 1 && !stageRows && !skippedEvents && !skippedProposals && !rejectedTags && !dropped && !jevSkipped && !jevErrors) return "";
   return `<details class="gd-under-the-hood"><summary><i class="fas fa-gears"></i> Under the hood</summary>
     <ul>${rows.join("")}</ul>
     ${stageRows ? `<h4>Stages</h4><ul>${stageRows}</ul>` : ""}
@@ -1561,6 +1871,8 @@ export function renderUnderTheHood(lastAnalysis, lastResult) {
     ${skippedProposals ? `<h4>Skipped proposals</h4><ul>${skippedProposals}</ul>` : ""}
     ${rejectedTags ? `<h4>Non-canonical tags</h4><ul>${rejectedTags}</ul>` : ""}
     ${dropped ? `<h4>Sentences the local analyzer skipped</h4><ul>${dropped}</ul>` : ""}
+    ${jevSkipped ? `<h4>Passages Jev skipped (no character action)</h4><ul>${jevSkipped}</ul>` : ""}
+    ${jevErrors ? `<h4>Jev errors (analysis carried on without Jev)</h4><ul>${jevErrors}</ul>` : ""}
   </details>`;
 }
 
