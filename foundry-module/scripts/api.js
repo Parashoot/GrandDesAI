@@ -31,6 +31,7 @@ import { validateClassEntry, validateConversion, validateSkillEntry, validateTit
 import {
   generateSkillProposals,
   generateCapstoneProposal,
+  generateClassEvolutionProposal,
   growthFlags,
   normalizeGrowthEvent,
   canApproveGeneratedProposal,
@@ -1255,30 +1256,135 @@ export class GrandDesignApi {
     return runTestScenario(this);
   }
 
+  /**
+   * Every Grand Design level divisible by 10 guarantees one capstone Skill (progression.js#isCapstoneLevel),
+   * and every level in CLASS_EVOLUTION_LEVELS (20/30/50) also guarantees a Class evolution -- canon
+   * promises both automatically, so the GM should never have to separately click "Suggest proposals"
+   * to get what a level-up already earned (owner request, 2026-09-28). Resolved right here, with the
+   * same configured AI gateway and per-actor events "Suggest proposals" uses, one milestone at a
+   * time so a capstone-only request never gets handed a Class and vice versa even when one level
+   * grants both. See _resolveMilestoneReward for the guarantee that this never costs the GM the rest
+   * result: the level-up itself is persisted BEFORE any AI call, and a missing/throwing/empty AI
+   * answer always falls back to a deterministic template.
+   */
   async resolveLevelRest(actor, options) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
     const result = resolveRest(this.getLevelProgression(actor), options);
-    const updates = { [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: result.progression };
 
-    // Every Grand Design level divisible by 10 guarantees one capstone Skill proposal (see
-    // progression.js#generateCapstoneProposal) -- generated here, right when the level is crossed,
-    // and merged into the ordinary growth-proposal list so it shows up next to any tag-triggered
-    // proposals for the GM to review/approve the same way.
+    // Persisted first and unconditionally: whatever happens below (network down, AI provider
+    // misbehaving), the GM's level-up is never lost.
+    await actor.update({ [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: result.progression });
+
     let capstoneProposals = [];
-    if (result.capstoneLevelsUnlocked.length) {
+    let classProposals = [];
+    const warnings = [];
+    const milestones = [
+      ...result.capstoneLevelsUnlocked.map((level) => ({ kind: "capstone", level })),
+      ...result.classEvolutionUnlocked.map((level) => ({ kind: "class-evolution", level }))
+    ];
+
+    if (milestones.length) {
       const growth = this.getGrowth(actor);
       const registry = this.getActorRegistry(actor);
       const modifier = rollModifier(actor);
-      capstoneProposals = result.capstoneLevelsUnlocked.map((level) =>
-        generateCapstoneProposal(level, growth.events, registry, modifier, { systemId: game.system?.id })
-      );
-      updates[`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`] = mergeProposals(growth.proposals, capstoneProposals);
+      const systemId = game.system?.id;
+      const actorNames = this._actorNames(actor);
+      // Same rule requestGrowthProposals uses: events recorded for another character (or before
+      // per-character attribution existed) are not this character's evidence.
+      const ownEvents = growth.events.filter((event) => classifyActorName(event.actorName, actorNames) !== "other");
+      const config = this.getGatewayConfig();
+      for (const { kind, level } of milestones) {
+        const { proposal, usedFallback, reason } = await this._resolveMilestoneReward(actor, {
+          kind, level, ownEvents, registry, modifier, systemId, config
+        });
+        if (kind === "capstone") capstoneProposals.push(proposal);
+        else classProposals.push(proposal);
+        if (usedFallback) {
+          warnings.push(
+            `${kind === "capstone" ? "Capstone Skill" : "Class evolution"} at Grand Design level ${level}: `
+              + `used the built-in template (${reason}). The GM should review and flesh it out.`
+          );
+        }
+      }
+      await actor.update({
+        [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: mergeProposals(growth.proposals, [...capstoneProposals, ...classProposals])
+      });
     }
 
-    await actor.update(updates);
     Hooks.callAll("grand-design-ai.levelsResolved", actor, result);
-    return { ...result, capstoneProposals };
+    return { ...result, capstoneProposals, classProposals, ...(warnings.length ? { warnings } : {}) };
+  }
+
+  /**
+   * One milestone reward (a capstone Skill, or a Class evolution), tried through the AI gateway
+   * first -- same `_alwaysProposeAdapter`/events-as-evidence path `requestGrowthProposals` uses --
+   * and falling back to a deterministic template (generateCapstoneProposal /
+   * generateClassEvolutionProposal) whenever the AI can't deliver: no provider configured, the
+   * adapter throws or times out, or it returns nothing of the requested kind that validates. The
+   * rest itself is never at risk here -- this only ever produces a proposal, one way or the other.
+   */
+  async _resolveMilestoneReward(actor, { kind, level, ownEvents, registry, modifier, systemId, config }) {
+    const isCapstone = kind === "capstone";
+    const buildFallback = () => {
+      if (isCapstone) return generateCapstoneProposal(level, ownEvents, registry, modifier, { systemId });
+      const adapter = getSystemAdapter(systemId);
+      return generateClassEvolutionProposal(level, ownEvents, registry, modifier, {
+        systemId,
+        actorLevel: adapter.getCharacterLevel(actor),
+        systemClass: adapter.getCharacterClass?.(actor) ?? null
+      });
+    };
+
+    if (!this._proposalAdapter) {
+      return { proposal: buildFallback(), usedFallback: true, reason: "no AI provider is configured" };
+    }
+    // A Class-evolution milestone only produces a Class when the actor's OWN current Grand Design
+    // level is one of CLASS_EVOLUTION_LEVELS -- buildAiGatewayRequest reads that live off the actor,
+    // and the gateway's own gateProposals gate strips any Class proposal otherwise. That is only
+    // false here if this single rest crossed more than one milestone level and a later one has
+    // already been persisted above; rare enough to just use the template rather than chase it.
+    if (!isCapstone && this.getLevelProgression(actor).level !== level) {
+      return { proposal: buildFallback(), usedFallback: true, reason: "this level is no longer the actor's current Grand Design level" };
+    }
+
+    const adapter = this._alwaysProposeAdapter();
+    let output;
+    try {
+      output = await adapter({
+        actor,
+        notes: buildSuggestionNotes(actor, ownEvents),
+        events: ownEvents.slice(-15),
+        systemId,
+        proposalMode: "always",
+        milestone: { kind, level }
+      });
+    } catch (error) {
+      return { proposal: buildFallback(), usedFallback: true, reason: `the AI provider failed: ${error.message}` };
+    }
+    const candidates = Array.isArray(output) ? [] : Array.isArray(output?.proposals) ? output.proposals : [];
+    const wantedKind = isCapstone ? "skill" : "class";
+    const { accepted } = this._validateModelProposals(
+      candidates.filter((candidate) => candidate?.kind === wantedKind),
+      actor,
+      { customSynonyms: config.customSynonyms }
+    );
+    const authored = accepted[0];
+    if (!authored) {
+      return { proposal: buildFallback(), usedFallback: true, reason: "the AI did not return a usable milestone proposal" };
+    }
+    const proposal = {
+      id: isCapstone ? `proposal:capstone-${level}` : `proposal:class-evolution-${level}`,
+      kind: wantedKind,
+      status: "pending",
+      source: isCapstone ? "capstone" : "class-evolution",
+      systemId,
+      milestoneLevel: level,
+      ...(isCapstone ? { isCapstone: true } : {}),
+      evidence: Array.isArray(authored.evidence) ? authored.evidence : [],
+      entry: structuredClone(authored.entry)
+    };
+    return { proposal, usedFallback: false };
   }
 
   async clearTestScenario() {

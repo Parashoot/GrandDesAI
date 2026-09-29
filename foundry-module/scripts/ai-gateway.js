@@ -84,10 +84,12 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
     : null;
   // `fresh: true` (a GM's explicit "re-analyze") reads the notes again instead of reusing the cache.
   // `events`: already-recorded events to propose from directly (api.requestGrowthProposals); stage 1 is skipped.
-  const adapter = async ({ actor, notes, systemId, fresh = false, events = null } = {}) => {
+  // `milestone`: a guaranteed Grand Design milestone reward (api.requestGrowthProposals-style call
+  // from api.resolveLevelRest) -- see pipeline.js#runGatewayPipeline's milestone param.
+  const adapter = async ({ actor, notes, systemId, fresh = false, events = null, milestone = null } = {}) => {
     const sys = systemId ?? cfg.systemId ?? activeSystemId();
     const request = buildAiGatewayRequest(actor, notes, sys);
-    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys, extractionCache, refreshExtraction: fresh === true, presetEvents: Array.isArray(events) ? events : null });
+    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys, extractionCache, refreshExtraction: fresh === true, presetEvents: Array.isArray(events) ? events : null, milestone });
     return {
       events: result.events,
       proposals: result.proposals,

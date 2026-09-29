@@ -251,7 +251,7 @@ export function creativityTemperature(config) {
 // `mustPropose`: the GM explicitly asked for suggestions (proposalMode "always") or a level-up grant
 // allowance is waiting to be spent. Without it a careful model answers {"proposals":[]} for any
 // single-session evidence -- which is right for "when-earned" and useless for "always".
-export function buildProposalMessages({ request, config, events, themeEvidence = {}, tagEvidence = {}, allowClass, mustPropose = false }) {
+export function buildProposalMessages({ request, config, events, themeEvidence = {}, tagEvidence = {}, allowClass, mustPropose = false, milestone = null }) {
   const req = request.requirements ?? {};
   const polarity = config.allowRed
     ? req.polarityGuidance
@@ -260,9 +260,19 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
   const system = [
     "You design Grand Design growth proposals (new Skills, or a Class evolution) for a tabletop RPG character from evidence of what they actually did. Reply with JSON only: {\"proposals\":[...]}.",
     "Do not grant, approve, or claim to create any item -- the GM approves every proposal.",
-    mustPropose
-      ? `The GM has asked for suggestions now: propose at least 1 and at most ${config.maxProposals} proposals, built on the strongest evidence available even if it is a single event. Return {"proposals":[]} only when there are no events at all.`
-      : `Propose at most ${config.maxProposals} proposals, and only where the evidence genuinely supports one (repeated effort, including repeated failures). Return {"proposals":[]} when it does not.`,
+    milestone
+      ? `This is a GUARANTEED Grand Design milestone reward, not an open-ended suggestion: return EXACTLY ONE proposal.`
+      : mustPropose
+        ? `The GM has asked for suggestions now: propose at least 1 and at most ${config.maxProposals} proposals, built on the strongest evidence available even if it is a single event. Return {"proposals":[]} only when there are no events at all.`
+        : `Propose at most ${config.maxProposals} proposals, and only where the evidence genuinely supports one (repeated effort, including repeated failures). Return {"proposals":[]} when it does not.`,
+    // api.js#resolveLevelRest asks for the capstone Skill and the Class evolution as two SEPARATE
+    // milestone calls even when both land on the same level (both are divisible-by-10 AND in
+    // CLASS_EVOLUTION_LEVELS at 20/30/50) -- each call wants exactly its own kind, never the other's.
+    ...(milestone ? [
+      milestone.kind === "capstone"
+        ? `MILESTONE CAPSTONE (Grand Design level ${milestone.level}): the ONE guaranteed capstone Skill every 10th level grants, independent of any Class evolution. kind MUST be "skill", tier MUST be 3, a concrete signature ability built from the single strongest recurring activity in newEvents/tagEvidence/themeEvidence -- never a generic placeholder left for the GM to flesh out. Do not propose a Class here even if one is otherwise available; a Class evolution (when this level also has one) is requested separately.`
+        : `MILESTONE CLASS EVOLUTION (Grand Design level ${milestone.level}): the guaranteed Class evolution this level grants. kind MUST be "class", built on the character's strongest repeated evidence. Do not propose a Skill here; only the Class.`
+    ] : []),
     "Every proposal is { kind: \"skill\" | \"class\", theme?: string, evidence: [short strings citing events], entry: {...} }. The entry is never nested under skillEntry/classEntry.",
     "metadata.tags may ONLY contain values from ALLOWED TAGS; put any other concept in metadata.themes instead.",
     // Board 316705b6: "Sanctuary: Voice of Conviction" duplicated the owned "Sanctuary: Public Edict"

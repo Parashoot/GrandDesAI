@@ -423,6 +423,37 @@ export function generateCapstoneProposal(level, events, existingRegistry, modifi
     source: "capstone",
     systemId,
     isCapstone: true,
+    milestoneLevel: level,
+    evidence: topTag ? weighableEvents.filter((event) => event.tags.includes(topTag)).map((event) => event.id) : [],
+    entry
+  };
+}
+
+/**
+ * Builds the deterministic, GM-editable Class-evolution proposal for a CLASS_EVOLUTION_LEVELS
+ * milestone (20/30/50) when the AI gateway is unavailable or returns nothing usable
+ * (api.js#resolveLevelRest's _resolveMilestoneReward). Same reasoning and shape as
+ * generateCapstoneProposal above -- read whichever tag has the most weighted evidence and frame the
+ * evolution around it -- but `source: "class-evolution"` (not `isCapstone`) so approving it spends
+ * the ordinary per-rest grant allowance, exactly like any other generated Class.
+ */
+export function generateClassEvolutionProposal(level, events, existingRegistry, modifier = 0, { systemId = "pf2e", actorLevel = 1, systemClass = null } = {}) {
+  const weighableEvents = events.filter((event) => Object.prototype.hasOwnProperty.call(GROWTH_EVENT_OUTCOME_WEIGHTS, event.outcome));
+  const topTag = topWeightedTag(weighableEvents);
+  const entry = buildClassEvolutionEntry(level, topTag, modifier, systemId, actorLevel, systemClass);
+  const registryId = `class:${slugify(entry.name)}`;
+  // Same disambiguation as the capstone above: never collide with an already-approved Class of the
+  // same generated name.
+  if (existingRegistry?.classes?.[registryId]) {
+    entry.name = `${entry.name} (Level ${level})`;
+  }
+  return {
+    id: `proposal:class-evolution-${level}`,
+    kind: "class",
+    status: "pending",
+    source: "class-evolution",
+    systemId,
+    milestoneLevel: level,
     evidence: topTag ? weighableEvents.filter((event) => event.tags.includes(topTag)).map((event) => event.id) : [],
     entry
   };
@@ -472,6 +503,37 @@ function buildCapstoneEntry(level, topTag, modifier, systemId = "pf2e") {
         operation: "origin",
         sources: [],
         rationale: `Guaranteed capstone Skill unlocked at Grand Design level ${level} -- every 10th level grants one rare Skill regardless of tag evidence.`
+      }
+    }
+  };
+}
+
+// A Class needs level/power_tier/is_primary/is_secondary/system_chassis on top of the fields a Skill
+// needs (see validator.js#validateClasses, ai-gateway.js's "class" example). gameItem.kind "passive"
+// keeps this template system-neutral -- no roll formula, no PF2e/5e-specific action economy wording
+// -- since it is only ever a placeholder for the GM to flesh out, the same spirit as buildCapstoneEntry.
+function buildClassEvolutionEntry(level, topTag, modifier, systemId = "pf2e", actorLevel = 1, systemClass = null) {
+  const themeLabel = topTag ? titleCase(topTag) : "Growth";
+  const boost = systemId === "dnd5e" ? "with advantage and a +2 bonus" : "with a +4 circumstance bonus";
+  return {
+    name: `${themeLabel} Ascendant`,
+    level: Number.isInteger(actorLevel) && actorLevel >= 1 ? actorLevel : Math.max(1, level),
+    power_tier: "standard",
+    is_primary: false,
+    is_secondary: false,
+    system_chassis: systemClass ? `${systemClass} evolution (Grand Design level ${level})` : `Pending chassis review (Grand Design level ${level})`,
+    gameItem: { kind: "passive" },
+    mechanics: {
+      effect: `A Class evolution shaped by this character's ${topTag ? `${topTag}-driven` : "hard-won"} growth. Once per day, apply one narratively-appropriate benefit scaled to a Grand Design Class evolution ${boost} to the relevant check. The specific signature identity is left to the GM to flesh out to fit the character.`,
+      duration: "instant",
+      frequency: { max: 1, per: "day" }
+    },
+    metadata: {
+      tags: topTag ? [topTag] : [],
+      lineage: {
+        operation: "origin",
+        sources: [],
+        rationale: `Guaranteed Class evolution unlocked at Grand Design level ${level} -- every class-evolution level (20, 30, 50) grants one regardless of tag evidence.`
       }
     }
   };

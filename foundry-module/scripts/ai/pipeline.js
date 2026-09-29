@@ -868,9 +868,12 @@ function summarizeRejections(rejected) {
  * @param {ReturnType<typeof createExtractionCache>} [args.extractionCache] share stage 1 across calls
  * @param {boolean} [args.refreshExtraction] ignore (and replace) a cached stage-1 reading
  * @param {object[]} [args.presetEvents] already-recorded events: skip stage 1 and propose from these
+ * @param {{kind:"capstone"|"class-evolution", level:number}} [args.milestone] a guaranteed Grand
+ *   Design milestone reward (api.js#resolveLevelRest): stage 2 is told to return exactly the one
+ *   kind of proposal this milestone grants, instead of its usual open-ended suggestion behavior.
  * @returns {Promise<{events, proposals, themes, skippedEvents, skippedProposals, diagnostics}>}
  */
-export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep, extractionCache = null, refreshExtraction = false, presetEvents = null } = {}) {
+export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep, extractionCache = null, refreshExtraction = false, presetEvents = null, milestone = null } = {}) {
   const started = nowMs();
   const cfg = normalizeGatewayConfig(config);
   const sysId = systemId ?? cfg.systemId ?? request?.actor?.system ?? "pf2e";
@@ -972,7 +975,7 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
     diagnostics.proposalStage = { ran: decision.run, reason: decision.reason };
     if (decision.run) {
       try {
-        const result = await proposeStage(ownEvents, decision, ctx);
+        const result = await proposeStage(ownEvents, decision, ctx, milestone);
         proposals = result.accepted;
         skippedProposals.push(...result.skipped);
       } catch (error) {
@@ -1337,12 +1340,17 @@ export function readRedCheck(value) {
     .slice(0, 20);
 }
 
-async function proposeStage(events, decision, ctx) {
+async function proposeStage(events, decision, ctx, milestone = null) {
   const { transport, request, cfg, diagnostics } = ctx;
   const stage = { stage: "propose", chunk: null, attempts: 0, ms: 0, repairs: [], errors: [] };
   diagnostics.stages.push(stage);
-  const mustPropose = cfg.proposalMode === "always" || String(decision.reason ?? "").startsWith("grant-allowances");
-  const messages = buildProposalMessages({ request, config: cfg, events, themeEvidence: decision.themeEvidence, tagEvidence: decision.tagEvidence, allowClass: decision.allowClass, mustPropose });
+  const mustPropose = Boolean(milestone) || cfg.proposalMode === "always" || String(decision.reason ?? "").startsWith("grant-allowances");
+  // A milestone request always names its own kind explicitly (api.js#resolveLevelRest calls capstone
+  // and class-evolution separately, even when one level grants both): a capstone call never allows a
+  // Class in the same breath, and a class-evolution call always allows one, regardless of what
+  // decision.allowClass (derived from the actor's live grandDesign flag) would otherwise say.
+  const allowClass = milestone ? milestone.kind === "class-evolution" : decision.allowClass;
+  const messages = buildProposalMessages({ request, config: cfg, events, themeEvidence: decision.themeEvidence, tagEvidence: decision.tagEvidence, allowClass, mustPropose, milestone });
   const temperature = creativityTemperature(cfg);
   let items = null;
   let redFlags = [];

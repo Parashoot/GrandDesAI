@@ -719,6 +719,23 @@
    "source": "owner live test 2026-09-28",
    "created": 1790645774.221,
    "updated": 1790645774.304
+  },
+  {
+   "id": "d3882636",
+   "title": "Rest across a milestone should offer the rewards itself: an AI Class at 20/30/50 and an AI-authored capstone at every 10th level (template fallback)",
+   "status": "done",
+   "notes": [
+    "Merged + deployed. 856/857 (+1 known todo). Real model: dnd5e 49->50 Class 'Ironclad Warden' + capstone 'Ironclad: Bulwark's Interception'; pf2e 19->20 Class + capstone 'Defense: Bulwark's Vow'; no fallback. Template Class/capstone when the AI is off or fails."
+   ],
+   "tags": [
+    "progression",
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "dev-integration",
+   "source": "owner 2026-09-28",
+   "created": 1790646209.469,
+   "updated": 1790647018.637
   }
  ]
 }
