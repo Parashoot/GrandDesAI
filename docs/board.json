@@ -702,6 +702,23 @@
    "source": "salt-lantern s2",
    "created": 1790627998.313,
    "updated": 1790627998.313
+  },
+  {
+   "id": "34b63931",
+   "title": "At a Class-evolution level (20/30/50) Suggest proposals never offered a Class (prompt allowed, never asked)",
+   "status": "done",
+   "notes": [
+    "Fixed: with allowClass + mustPropose the first proposal MUST be kind class. Real model, dnd5e GD 50: 0/2 -> 2/2 runs lead with a Class ('Ironclad Bulwark', 'Ironhold Vanguard'), both valid. Deployed to live Foundry."
+   ],
+   "tags": [
+    "proposals",
+    "progression"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "owner live test 2026-09-28",
+   "created": 1790645774.221,
+   "updated": 1790645774.304
   }
  ]
 }

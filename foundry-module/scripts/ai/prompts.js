@@ -296,7 +296,9 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     // A per-proposal check with the vice list as the match key makes the decision explicit.
     ...(config.allowRed ? [`Red check, BEFORE any proposal: fill "redCheck" with one entry per newEvent, in order: { event: its summary, vice: the key from this list that it clearly matches (read the quote), else "none" }. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} Killing someone who surrendered or was helpless, torture, and breaking a captive's will always match. Ordinary fighting, stealing, lying and bargaining are "none". Then, if any event has a vice and you propose anything, one proposal MUST cite that event in its evidence and be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- that deed written up as a clean standard ability, or left out, is wrong. Every other proposal stays standard.`] : []),
     `Failures: ${req.eventOutcomePhilosophy ?? ""}`,
-    `Class rule: ${req.classProposalRule ?? ""}${allowClass ? "" : " (Class evolution is NOT available right now: skills only.)"}`,
+    // "May" was never enough: at GD level 50 the model wrote only Skills (2 of 2 real runs), so the GM
+    // who reached a Class-evolution level and asked for suggestions was never offered a Class.
+    `Class rule: ${req.classProposalRule ?? ""}${!allowClass ? " (Class evolution is NOT available right now: skills only.)" : mustPropose ? " Class evolution IS available now: the FIRST proposal MUST be kind \"class\" - a Grand Design Class built on the character's strongest repeated evidence, using the class example's field set - and any others are Skills." : ""}`,
     `Creativity: ${CREATIVITY_WORDING[config.creativity] ?? CREATIVITY_WORDING.balanced}`,
     ...(config.houseRules ? [`House rules from the GM (follow them): ${config.houseRules}`] : []),
     ...(config.toneHints ? [`Tone hints from the GM: ${config.toneHints}`] : []),
