@@ -109,37 +109,28 @@ gating (`shouldPropose`), same repair/validate/gate, same result shape as the pr
 from `config.jev` and passes it through. The adapter also exposes `.jev` (client or null) and a
 new `adapter.analyzeParty({ actors, notes, systemId })` (below).
 
-## Party mode — one extraction per party (dev-integration + dev-gateway)
+## Party mode — on top of main's extraction cache (dev-integration + dev-gateway)
 
-Board a48d97c0: a 5-PC party costs 2+ minutes because the notes are extracted once per PC.
-- `adapter.analyzeParty({ actors: [{actor, request}], notes, systemId })` (dev-gateway, in
-  `ai-gateway.js`): ONE extraction over the notes with `request.party = names`, then Jev
-  attribution when available, else the existing name heuristic is left to the caller. Returns
-  `{ events, diagnostics }` (events carry `actorName`, `jev?`). No proposals.
-- `api.analyzePartyNotes(actors, notes)` (dev-integration, `api.js`): calls `adapter.analyzeParty`
-  once; for each actor keeps the events `attributeEventsToActor` gives it (which now trusts a
-  Jev `actorName` with `event.jev.actorConfidence >= 0.6` before its own speaker heuristic);
-  `whole-party` events go to every actor; records them exactly like `analyzeSessionNotes` does
-  (same flags, `lastAnalysis` per actor with `party: true`), then runs `runProposalStageFor` per actor
-  **only** when `shouldPropose` says so (in parallel, at most 2 at a time). Adapter missing or
-  without `analyzeParty` -> falls back to calling `analyzeSessionNotes` per actor (today's path).
-  Total adapter failure -> local analyzer per actor, with the reason, as today.
-  Returns `{ perActor: [{ actorId, name, ...analyzeSessionNotes-shaped result, party: true, proposeError?, error? }],
-  party: { ms, extractionCalls, jev, mode: "party"|"per-actor", roster, skippedActors? } }`.
-- `adapter.proposeFor({ actor, request, events, systemId }) -> { proposals, skippedProposals, diagnostics }`
-  (dev-gateway, `ai-gateway.js`): stage 2 for ONE character from already-recorded events. It applies
-  `shouldPropose` itself and returns `proposals: []` (with `diagnostics.proposalStage.reason`) when
-  nothing is earned; api.js calls it for every PC and never gates on its own.
-- Party-mode failure rules: one PC's failure (record, update, proposeFor) is recorded on that PC's
-  entry (`error`/`proposeError`) and never rejects the others; `lastAnalysis` is written right after
-  a PC's events are recorded so a later failure still leaves a replaceable record; stale pending AI
-  proposals are dropped per PC only after extraction succeeded or fell back; emergent themes are
-  observed once over the union of the party's recorded events; a `whole` event carries no
-  `actorName` on the copies other PCs keep. `reanalyzeLastNotes` on a party-analysed PC re-runs the
-  stored roster with replace; roster members analysed since with different notes are used for
-  attribution only and listed in `party.skippedActors`.
-- `session-notes.js#attributeEventsToActor`: honour a confident `event.jev.actorName`; an event
-  Jev marked `whole: true` is kept by everyone.
+Re-scoped 2026-09-29 after origin/main landed `pipeline.js#createExtractionCache` (identical notes are
+read once per adapter; `fresh: true` re-reads), a required LLM `actorName`/`actorRole` per event and a
+per-event `redCheck`/`darkDeed`. What remains:
+- `api.analyzePartyNotes(actors, notes, { fresh })` (dev-integration): a THIN one-click wrapper — GM
+  check, dedupe, then main's `analyzeSessionNotes` per actor with bounded concurrency 2 and per-actor
+  failure isolation (`{ actorId, name, error }`); the cache makes it one extraction. Returns
+  `{ perActor, party: { ms, extractionCache: { hits, misses }, jev } }`. No new flags or roster.
+- `session-notes.js#attributeEventsToActor`: a confident `event.jev.actorName`
+  (`actorConfidence >= 0.6`) beats the LLM's name and the speaker heuristic; `event.jev.whole` keeps
+  the event for everyone as "the party".
+- `progression.js#normalizeGrowthEvent` persists a compact `jev` block; `_validateModelProposals`
+  keeps `proposal.jev`; the Suggest-proposals adapter rebuild passes `jevFactory: () => adapter.jev`.
+- Jev attribution in the pipeline is a SECOND OPINION on the LLM's `actorName`: it replaces it only
+  under the witness guard (the LLM named the line's speaker and Jev says the speaker was a witness),
+  otherwise adds the `actor-disputed` flag. Jev's dark-act answer is a second opinion on `darkDeed`:
+  it never lowers severity; when Jev is confident and the LLM said `none`, add flag `dark-act` and
+  theme `dark-deed` so stage 2's red check sees it.
+- `adapter.analyzeParty` / `adapter.proposeFor` are no longer required; `runProposalStageFor` stays
+  as the shared stage-2 helper if the gateway already has it (main's `presetEvents` path is the
+  equivalent entry point).
 
 ## UI (dev-ui)
 
@@ -173,5 +164,6 @@ Board a48d97c0: a 5-PC party costs 2+ minutes because the notes are extracted on
   disabled == identical output), `tests/api-party.test.mjs`.
 
 ## Change log
-- 2026-09-29 orchestrator: contract created. Owner will supply the key later, so every
+- 2026-09-29 orchestrator: contract created.
+- 2026-09-29 (later) orchestrator: origin/main 4d1611a merged; Party mode section re-scoped onto main's extraction cache and LLM actorName/darkDeed (see above). Board items re-filed: 1656f47c gateway, 45499fb2 integration, 64e3c5ae ui, 9f76030d harness, 27346aba real-Jev QA. Owner will supply the key later, so every
   measurement in this change is offline (`--sim-jev`); the real-Jev numbers are an open item.
