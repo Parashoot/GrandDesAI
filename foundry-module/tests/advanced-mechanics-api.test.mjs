@@ -6,7 +6,6 @@ import { assessIntentionalBreadth, mergeClassMechanics, mergedSystemChassis, pic
 import {
   GROWTH_EVENTS_FLAG,
   GROWTH_PROPOSALS_FLAG,
-  HORROR_RANK_POINTS_PER_RED_APPROVAL,
   LEVEL_PROGRESSION_FLAG,
   MODULE_ID,
   REGISTRY_FLAG
@@ -432,7 +431,8 @@ for (const systemId of SYSTEMS) {
       assert.equal(proposal.entry.metadata.malignance.vice, "bloodlust");
       const before = api.getHorrorRank(actor).points;
       await api.approveProposal(actor, proposal.id);
-      assert.equal(api.getHorrorRank(actor).points, before + HORROR_RANK_POINTS_PER_RED_APPROVAL);
+      // Owner decision 2026-09-29: Horror Rank comes from recorded deeds, never from approving red power.
+      assert.equal(api.getHorrorRank(actor).points, before);
     });
   });
 
@@ -463,7 +463,7 @@ for (const systemId of SYSTEMS) {
     });
   });
 
-  test(`[${systemId}] stage-2 title proposals: pending, approve -> grantTitle, red title accrues Horror Rank (d4ae9326)`, async () => {
+  test(`[${systemId}] stage-2 title proposals: pending, approve -> grantTitle, red title adds no Horror Rank on approval (d4ae9326, 21e944ed)`, async () => {
     await withFoundry(systemId, async () => {
       const api = new GrandDesignApi();
       const actor = createMockActor(systemId);
@@ -492,7 +492,7 @@ for (const systemId of SYSTEMS) {
       assert.ok(granted.item);
       const registry = api.getActorRegistry(actor);
       assert.equal(registry.titles["title:butcher-of-hollow-ford"].metadata.polarity, "red");
-      assert.equal(api.getHorrorRank(actor).points, points + HORROR_RANK_POINTS_PER_RED_APPROVAL);
+      assert.equal(api.getHorrorRank(actor).points, points, "approving a red Title adds no Horror Rank (the deed does, when recorded)");
       const ogre = titles.find((proposal) => proposal.entry.name === "Ogre-Breaker");
       await api.rejectProposal(actor, ogre.id, { reason: "not earned yet" });
       assert.equal(api.getGrowth(actor).proposals.find((proposal) => proposal.id === ogre.id).status, "rejected");

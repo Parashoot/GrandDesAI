@@ -11,6 +11,7 @@ import {
 import { weightForTag } from "./tag-weighting.js";
 import { checkForTag, pf2eLevelBasedDc, proficiencyForLevel5e, resolveRollCheck } from "./mechanics.js";
 import { flavorProposalName } from "./naming.js";
+import { normalizeDarkDeed } from "./horror-rank.js";
 
 // The weighted-evidence total a required tag needs before a proposal template fires. Calibrated
 // against "success" outcomes (weight 1 each) so the long-standing rule of thumb -- three tagged
@@ -729,6 +730,10 @@ export function normalizeGrowthEvent(event, index) {
   const actorName = optionalText(event.actorName, 120);
   const consequence = optionalText(event.consequence, 240);
   const source = GROWTH_EVENT_SOURCES.has(event.source) ? event.source : undefined;
+  // Horror Rank is derived from these (horror-rank.js#computeHorrorRank), so they must survive
+  // recording. Kept (validated, unknown values -> "none") whenever the reader supplied either field;
+  // an event without them (the local fallback analyzer, older worlds) simply has no dark deed.
+  const darkFields = event.darkDeed !== undefined || event.darkSeverity !== undefined ? normalizeDarkDeed(event) : null;
   return {
     id: event.id ?? `event:${Date.now()}-${index}`,
     summary: event.summary.trim(),
@@ -741,6 +746,7 @@ export function normalizeGrowthEvent(event, index) {
     ...(language ? { language } : {}),
     ...(actorName ? { actorName } : {}),
     ...(consequence ? { consequence } : {}),
+    ...(darkFields ?? {}),
     ...(source ? { source } : {})
   };
 }

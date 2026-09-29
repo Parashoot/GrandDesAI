@@ -6,12 +6,11 @@ import {
   GROWTH_EVENTS_FLAG,
   GROWTH_PROPOSALS_FLAG,
   HORROR_RANK_FLAG,
-  HORROR_RANK_POINTS_PER_RED_APPROVAL,
   LEVEL_PROGRESSION_FLAG,
   MODULE_ID,
   REGISTRY_FLAG
 } from "./constants.js";
-import { applyHorrorRankIncrement, normalizeHorrorRank } from "./horror-rank.js";
+import { applyHorrorRankDocks, computeHorrorRank, migrateHorrorRankState } from "./horror-rank.js";
 import { checkClassErosion } from "./class-erosion.js";
 import { applyRevivalPenalty } from "./revival-penalty.js";
 import {
@@ -175,27 +174,14 @@ export class GrandDesignApi {
       updatedAt: new Date().toISOString()
     };
     const approved = await this._approveEntries(actor, normalized, registry);
-    // Every red-polarity Class/Skill approved here (Horror Rank: constants.js#HORROR_RANK_*,
-    // horror-rank.js) adds corruption points, which may in turn dock levels off the actor's own
-    // strongest standard-polarity Class -- folded into this same actor.update call.
-    let finalRegistry = approved.registry;
-    let horrorRank = this.getHorrorRank(actor);
-    const dockedFrom = [];
-    for (const entry of [...normalized.classes, ...normalized.skills]) {
-      if (entry.metadata?.polarity !== "red") continue;
-      const result = applyHorrorRankIncrement(finalRegistry, horrorRank, HORROR_RANK_POINTS_PER_RED_APPROVAL);
-      finalRegistry = result.registry;
-      horrorRank = result.horrorRank;
-      dockedFrom.push(...result.dockedFrom);
-    }
+    // Approving red entries adds no Horror Rank (owner decision 2026-09-29): the meter is derived
+    // from the recorded deeds (_recomputeHorrorRank), not from which powers were accepted.
     await actor.update({
       [`flags.${MODULE_ID}.${ACTOR_FLAG}`]: normalized,
-      [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: finalRegistry,
-      [`flags.${MODULE_ID}.${HORROR_RANK_FLAG}`]: horrorRank
+      [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: approved.registry
     });
     Hooks.callAll("grand-design-ai.conversionApplied", actor, normalized);
-    if (dockedFrom.length) Hooks.callAll("grand-design-ai.horrorRankLevelsDocked", actor, dockedFrom);
-    return { conversion: normalized, approved: { ...approved, registry: finalRegistry } };
+    return { conversion: normalized, approved };
   }
 
   async combineSkills(actor, entry) {
@@ -717,15 +703,33 @@ export class GrandDesignApi {
   async _supersedeSources(actor, kind, sourceIds, byId) {
     const at = new Date().toISOString();
     const registry = markSuperseded(this.getActorRegistry(actor), kind, sourceIds, byId, at);
+    const bucket = kind === "class" ? registry.classes : registry.skills;
+    const byName = bucket?.[byId]?.name ?? byId;
+    // The kept Item would otherwise stay mechanically live (its rule elements / activities still
+    // usable next to the entry that replaced it). The system adapter knows how to switch an Item's
+    // mechanics off; it is feature-detected so a build without it still supersedes by name + flag.
+    let systemAdapter = null;
+    try {
+      systemAdapter = getSystemAdapter(game.system?.id);
+    } catch {
+      systemAdapter = null;
+    }
     for (const id of sourceIds) {
       const item = actor.items?.find?.((candidate) => candidate.getFlag?.(MODULE_ID, "registryId") === id);
       if (!item?.update) continue;
       const name = typeof item.name === "string" && !/\(superseded\)$/.test(item.name) ? `${item.name} (superseded)` : item.name;
       try {
-        await item.update({ ...(name ? { name } : {}), [`flags.${MODULE_ID}.superseded`]: { by: byId, at } });
+        await item.update({ ...(name ? { name } : {}), [`flags.${MODULE_ID}.superseded`]: { by: byId, byName, at } });
       } catch (error) {
         // The registry is the source of truth; a sheet Item that refuses the rename is only cosmetic.
         console.warn(`${MODULE_ID} | could not mark the superseded Item ${id}`, error);
+      }
+      if (typeof systemAdapter?.markSuperseded !== "function") continue;
+      try {
+        const update = await systemAdapter.markSuperseded(item, { by: byId, byName, at });
+        if (update && typeof update === "object" && Object.keys(update).length) await item.update(update);
+      } catch (error) {
+        console.warn(`${MODULE_ID} | could not switch off the superseded Item ${id}'s mechanics`, error);
       }
     }
     await actor.update({ [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: registry });
@@ -904,25 +908,12 @@ export class GrandDesignApi {
     const { source, postCreate } = createTitleSource(titleEntry, game.system.id);
     const [titleItem] = await actor.createEmbeddedDocuments("Item", [source]);
     if (postCreate) await postCreate(titleItem);
-    let finalRegistry = registerEntry("title", titleEntry, titleItem.id, registry);
+    const finalRegistry = registerEntry("title", titleEntry, titleItem.id, registry);
 
-    // A red-polarity Title (yes, a Title itself can be red -- e.g. an infamous, ill-gotten one)
-    // accrues Horror Rank the same as a red Class/Skill would. See applyToActor for the same logic.
-    let horrorRank = this.getHorrorRank(actor);
-    let dockedFrom = [];
-    if (titleEntry.metadata?.polarity === "red") {
-      const result = applyHorrorRankIncrement(finalRegistry, horrorRank, HORROR_RANK_POINTS_PER_RED_APPROVAL);
-      finalRegistry = result.registry;
-      horrorRank = result.horrorRank;
-      dockedFrom = result.dockedFrom;
-    }
-
-    await actor.update({
-      [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: finalRegistry,
-      [`flags.${MODULE_ID}.${HORROR_RANK_FLAG}`]: horrorRank
-    });
+    // A red Title (an infamous, ill-gotten name) adds no Horror Rank on its own: the deed it names
+    // was already counted when the notes recorded it (owner decision 2026-09-29).
+    await actor.update({ [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: finalRegistry });
     Hooks.callAll("grand-design-ai.titleGranted", actor, titleEntry, titleItem);
-    if (dockedFrom.length) Hooks.callAll("grand-design-ai.horrorRankLevelsDocked", actor, dockedFrom);
     return { item: titleItem, registry: finalRegistry, grantedSkillId, grantedItemId };
   }
 
@@ -1002,8 +993,92 @@ export class GrandDesignApi {
     return result;
   }
 
+  /**
+   * The actor's Horror Rank, derived from the dark deeds in their recorded growth events (owner
+   * decision 2026-09-29) plus any legacy baseline from a world that accrued it on red approvals.
+   * A read: it never docks (that happens when the events change, _recomputeHorrorRank).
+   * Returns { points, stage (0-3), nextThreshold, totalLevelsDocked, deeds: [{ eventId, summary,
+   * vice, severity, points }], deedPoints, legacyPoints, threshold, thresholdsDocked }.
+   */
   getHorrorRank(actor) {
-    return normalizeHorrorRank(actor?.getFlag(MODULE_ID, HORROR_RANK_FLAG));
+    const stored = migrateHorrorRankState(actor?.getFlag?.(MODULE_ID, HORROR_RANK_FLAG));
+    const computed = computeHorrorRank(this.getGrowth(actor).events, { docked: stored.thresholdsDocked, legacyPoints: stored.legacyPoints });
+    return horrorRankView(computed, stored);
+  }
+
+  /**
+   * GM/maintenance entry point: re-derives the Horror Rank from the recorded events now (also
+   * migrates a pre-2026-09-29 flag) and applies any crossing not docked yet. Normally unnecessary:
+   * recording, re-analysing and removing events already do this.
+   */
+  async recomputeHorrorRank(actor) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._recomputeHorrorRank(actor);
+  }
+
+  // Re-derives the meter after the actor's events changed. Only NEW crossings dock (the stored
+  // thresholdsDocked is a high-water mark), so a re-analysis that removes and re-records the same
+  // deeds never docks twice, and losing points never refunds a dock. Fires
+  // `grand-design-ai.horrorRankChanged(actor, state, dockedFrom)` when points, stage or docked
+  // levels changed, and keeps `grand-design-ai.horrorRankLevelsDocked(actor, dockedFrom)` for docks.
+  async _recomputeHorrorRank(actor) {
+    const raw = actor?.getFlag?.(MODULE_ID, HORROR_RANK_FLAG);
+    const stored = migrateHorrorRankState(raw);
+    const computed = computeHorrorRank(this.getGrowth(actor).events, { docked: stored.thresholdsDocked, legacyPoints: stored.legacyPoints });
+    let dockedFrom = [];
+    let registry = null;
+    let totalLevelsDocked = stored.totalLevelsDocked;
+    if (computed.newDocks > 0) {
+      const docked = applyHorrorRankDocks(this.getActorRegistry(actor), computed.newDocks);
+      dockedFrom = docked.dockedFrom;
+      registry = docked.registry;
+      totalLevelsDocked += docked.levelsDocked;
+    }
+    const next = {
+      version: 2,
+      legacyPoints: stored.legacyPoints,
+      thresholdsDocked: Math.max(stored.thresholdsDocked, computed.crossings),
+      totalLevelsDocked,
+      points: computed.points,
+      stage: computed.stage
+    };
+    const changed = raw?.version !== 2
+      || stored.points !== next.points
+      || stored.thresholdsDocked !== next.thresholdsDocked
+      || stored.totalLevelsDocked !== next.totalLevelsDocked;
+    const state = horrorRankView(computed, next);
+    if (!changed) return { state, dockedFrom, changed: false };
+    await actor.update({
+      [`flags.${MODULE_ID}.${HORROR_RANK_FLAG}`]: next,
+      ...(registry ? { [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: registry } : {})
+    });
+    if (dockedFrom.length) await this._syncDockedClassItems(actor, dockedFrom);
+    // A silent migration (same numbers, new shape) is not news for the UI.
+    const newsworthy = stored.points !== next.points || stored.stage !== next.stage || dockedFrom.length > 0;
+    if (newsworthy) globalThis.Hooks?.callAll?.("grand-design-ai.horrorRankChanged", actor, state, dockedFrom);
+    if (dockedFrom.length) globalThis.Hooks?.callAll?.("grand-design-ai.horrorRankLevelsDocked", actor, dockedFrom);
+    return { state, dockedFrom, changed: true };
+  }
+
+  // The registry is the source of truth for a Class's level, but a sheet Item that shows the level
+  // (a PF2e feat's system.level.value) would otherwise keep claiming the level Horror Rank took.
+  // dnd5e feats carry no level field; there only the module flag is updated. Cosmetic: a refusal is logged.
+  async _syncDockedClassItems(actor, dockedFrom) {
+    for (const { classId, toLevel } of dockedFrom) {
+      const item = actor.items?.find?.((candidate) => candidate.getFlag?.(MODULE_ID, "registryId") === classId);
+      if (!item?.update || !Number.isInteger(toLevel)) continue;
+      const update = { [`flags.${MODULE_ID}.level`]: toLevel };
+      if (Number.isFinite(item.system?.level?.value)) update["system.level.value"] = Math.min(20, Math.max(1, toLevel));
+      if (typeof item.name === "string" && /\b(Level|Lv\.?)\s*\d+/i.test(item.name)) {
+        update.name = item.name.replace(/\b(Level|Lv\.?)(\s*)\d+/i, (_, word, space) => `${word}${space}${toLevel}`);
+      }
+      try {
+        await item.update(update);
+      } catch (error) {
+        console.warn(`${MODULE_ID} | could not update the docked Class Item ${classId}`, error);
+      }
+    }
   }
 
   /**
@@ -1015,11 +1090,10 @@ export class GrandDesignApi {
    * so the sheet and the registry never disagree about whether an entry is still red.
    *
    * Deliberately scoped: cleansing stops the entry from counting as red for future contagion
-   * (class-merging.js#resolveMergedPolarity reads metadata.polarity, which this clears) and stops
-   * it from generating further Horror Rank on its own, but it does NOT retroactively refund Horror
-   * Rank points already accrued or un-dock levels already docked by a past threshold crossing --
-   * the corruption it already caused already happened; cleansing only stops it from being a
-   * standing source of taint going forward.
+   * (class-merging.js#resolveMergedPolarity reads metadata.polarity, which this clears). It does
+   * not touch Horror Rank at all: that is derived from the recorded deeds (not from red entries,
+   * since 2026-09-29), and cleansing a power does not unmake the deed that earned it, nor un-dock
+   * levels a past threshold crossing already took.
    */
   async cleanseEntry(actor, kind, entryId, rationale = "") {
     this._assertSupportedSystemActor(actor);
@@ -1294,15 +1368,18 @@ export class GrandDesignApi {
 
     // Re-analysis: drop the events the previous run of these same notes recorded (and their progress)
     // before recording the new interpretation, so re-running never double-counts evidence.
-    if (replaceEventIds.length) await this._removeRecordedEvents(actor, replaceEventIds);
+    if (replaceEventIds.length) await this._removeRecordedEvents(actor, replaceEventIds, { recomputeHorror: false });
 
     const recorded = [];
     let eventProposals = this.getGrowth(actor).proposals;
     for (const event of taggedEvents) {
-      const result = await this.recordGrowthEvent(actor, { ...event, source: usedAdapter ? "adapter" : "local" }, { observeThemes: false, fromAdapter: usedAdapter });
+      const result = await this.recordGrowthEvent(actor, { ...event, source: usedAdapter ? "adapter" : "local" }, { observeThemes: false, fromAdapter: usedAdapter, recomputeHorror: false });
       recorded.push(result.event);
       eventProposals = result.proposals;
     }
+    // Once per analysis, after the old reading was replaced by the new one: re-reading the same notes
+    // finds the same deeds, so the meter (and any dock) does not move twice.
+    const horror = await this._recomputeHorrorRank(actor);
     // A re-analysis of the same notes registers any newly noticed theme but does not re-count old ones.
     const newlySeenThemes = await this._observeThemes(recorded, { countExisting: !replaceEventIds.length, actor });
 
@@ -1374,6 +1451,8 @@ export class GrandDesignApi {
       themes,
       attributedToOthers,
       evolutionReady,
+      horrorRank: horror.state,
+      ...(horror.dockedFrom.length ? { horrorRankDocked: horror.dockedFrom } : {}),
       ...(adapterError ? { adapterError: adapterError.message } : {}),
       ...(localAnalysis ? { diagnostics: localAnalysis.diagnostics } : {}),
       ...(gatewayDiagnostics ? { gatewayDiagnostics } : {}),
@@ -1410,7 +1489,9 @@ export class GrandDesignApi {
     });
   }
 
-  async _removeRecordedEvents(actor, eventIds) {
+  // Removing events lowers the derived Horror Rank (never refunding a dock); a re-analysis passes
+  // `recomputeHorror: false` and re-derives once after recording the new reading.
+  async _removeRecordedEvents(actor, eventIds, { recomputeHorror = true } = {}) {
     const remove = new Set(eventIds);
     const growth = this.getGrowth(actor);
     const removed = growth.events.filter((event) => remove.has(event.id));
@@ -1436,6 +1517,7 @@ export class GrandDesignApi {
       [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
       [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: { ...levelProgression, progress: Math.max(0, levelProgression.progress - lostProgress) }
     });
+    if (recomputeHorror) await this._recomputeHorrorRank(actor);
   }
 
   /**
@@ -1707,7 +1789,9 @@ export class GrandDesignApi {
   // templates and themes for those, so minting a template or a "<Theme> Knack" placeholder as well
   // duplicated its proposals (board d8c96c43); the local path (no adapter, or one that failed) still
   // generates both.
-  async recordGrowthEvent(actor, event, { observeThemes: observe = true, fromAdapter = false } = {}) {
+  // `recomputeHorror: false` is for a caller recording a batch (an analysis) that re-derives the
+  // Horror Rank once at the end, so the UI hears one horrorRankChanged per analysis, not per event.
+  async recordGrowthEvent(actor, event, { observeThemes: observe = true, fromAdapter = false, recomputeHorror = true } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
     const growth = this.getGrowth(actor);
@@ -1760,6 +1844,7 @@ export class GrandDesignApi {
     });
     if (observe) await this._observeThemes([normalizedEvent], { actor });
     Hooks.callAll("grand-design-ai.growthEventRecorded", actor, normalizedEvent, proposals);
+    if (recomputeHorror) await this._recomputeHorrorRank(actor);
     return { event: normalizedEvent, proposals };
   }
   async approveSkillProposal(actor, id, options = {}) {
@@ -2418,24 +2503,15 @@ export class GrandDesignApi {
     if (clash && clash.name !== normalized.name) {
       throw new Error(`[${normalized.name}] would overwrite the approved ${kind === "class" ? "Class" : "Skill"} [${clash.name}] (same registry id ${normalized.metadata.id}); rename it first.`);
     }
+    // `normalized.mechanics` is the proposal's own object (lineage.js#normalizeEntry), so
+    // mechanics.structured reaches the system adapter's item builder exactly as authored/edited.
     const approved = await this._ensureFeatureItem(actor, kind, normalized, registry);
 
-    let finalRegistry = approved.registry;
-    let horrorRank = this.getHorrorRank(actor);
-    let dockedFrom = [];
-    if (normalized.metadata?.polarity === "red") {
-      const result = applyHorrorRankIncrement(finalRegistry, horrorRank, HORROR_RANK_POINTS_PER_RED_APPROVAL);
-      finalRegistry = result.registry;
-      horrorRank = result.horrorRank;
-      dockedFrom = result.dockedFrom;
-    }
-    await actor.update({
-      [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: finalRegistry,
-      [`flags.${MODULE_ID}.${HORROR_RANK_FLAG}`]: horrorRank
-    });
+    // A red Skill/Class adds no Horror Rank on approval (owner decision 2026-09-29): the deed that
+    // earned it was counted when the notes recorded it, and rejecting it would not have undone that.
+    await actor.update({ [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: approved.registry });
     Hooks.callAll("grand-design-ai.entryApproved", actor, kind, normalized);
-    if (dockedFrom.length) Hooks.callAll("grand-design-ai.horrorRankLevelsDocked", actor, dockedFrom);
-    return { ...approved, registry: finalRegistry };
+    return approved;
   }
 
   async _approveEntries(actor, conversion, registry) {
@@ -2494,6 +2570,22 @@ export class GrandDesignApi {
 
 // Per-actor record of the last notes analyzed (api.js-local on purpose: constants.js is shared).
 export const LAST_ANALYSIS_FLAG = "lastAnalysis";
+
+// The public Horror Rank shape (getHorrorRank, the horrorRankChanged hook): the derived meter plus
+// what the stored flag remembers (levels docked so far and the crossings already docked).
+function horrorRankView(computed, stored) {
+  return {
+    points: computed.points,
+    stage: computed.stage,
+    nextThreshold: computed.nextThreshold,
+    totalLevelsDocked: stored.totalLevelsDocked,
+    deeds: computed.deeds,
+    deedPoints: computed.deedPoints,
+    legacyPoints: computed.legacyPoints,
+    threshold: computed.threshold,
+    thresholdsDocked: stored.thresholdsDocked
+  };
+}
 
 // The gateway core (scripts/ai/index.js, owned by the gateway-core agent) is loaded lazily so this
 // file -- and every plain-Node test that imports it -- keeps working even if that directory is
