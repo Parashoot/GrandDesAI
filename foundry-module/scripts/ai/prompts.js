@@ -99,12 +99,16 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
       "Orla swung at the troll and got knocked flat lol. Dain's been carving a notch in his bow for every kill.",
       "- Tam ran the ferry solo all week",
       "- never lost a passenger",
-      "- harbourmaster offered him a permanent post"
+      "- harbourmaster offered him a permanent post",
+      "- a smuggler in a red coat tried to recruit him, he said he'd think about it"
     ].join("\n"),
     events: [
       { quote: "Orla swung at the troll and got knocked flat", summary: "Orla attacked the troll.", consequence: "She was knocked flat.", actorName: "Orla", tags: ["martial"], themes: ["melee"], outcome: "failure", dangerGap: "moderate", language: "en" },
       { quote: "Dain's been carving a notch in his bow for every kill", summary: "Dain carves a notch in his bow for every kill.", actorName: "Dain", tags: ["ranged"], themes: ["archery", "trophy-taking"], outcome: "success", dangerGap: "none", language: "en" },
-      { quote: "Tam ran the ferry solo all week", summary: "Tam ran the ferry alone all week.", consequence: "He never lost a passenger and the harbourmaster offered him a permanent post.", actorName: "Tam", tags: ["water", "leadership"], themes: ["ferrying"], outcome: "success", dangerGap: "none", language: "en" }
+      { quote: "Tam ran the ferry solo all week", summary: "Tam ran the ferry alone all week.", consequence: "He never lost a passenger and the harbourmaster offered him a permanent post.", actorName: "Tam", tags: ["water", "leadership"], themes: ["ferrying"], outcome: "success", dangerGap: "none", language: "en" },
+      // Board 4f3192e0: an approach or offer made TO a character is a "target" entry (the pipeline
+      // drops it); only thinking it over is no action of his.
+      { quote: "a smuggler in a red coat tried to recruit him", actorName: "Tam", actorRole: "target", summary: "A smuggler tried to recruit Tam.", tags: [], themes: ["recruitment"], outcome: "success", dangerGap: "none", language: "en" }
     ]
   },
   {
@@ -172,9 +176,9 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
 ];
 
 // Examples show the ideal, already-merged answer, so every example event is continuesPrevious:false.
-// Key order mirrors EVENT_ITEM_SCHEMA (quote, actorName, continuesPrevious first).
+// Key order mirrors EVENT_ITEM_SCHEMA (quote, actorName, actorRole, continuesPrevious first).
 function exampleBlock(examples) {
-  const shaped = (events) => events.map(({ quote, actorName = "", ...rest }) => ({ quote, actorName, continuesPrevious: false, ...rest }));
+  const shaped = (events) => events.map(({ quote, actorName = "", actorRole = "doer", ...rest }) => ({ quote, actorName, actorRole, continuesPrevious: false, ...rest }));
   return examples
     .map((ex, i) => `Example ${i + 1} notes:\n${ex.notes}\nExample ${i + 1} output:\n${JSON.stringify({ events: shaped(ex.events) })}`)
     .join("\n\n");
@@ -195,11 +199,12 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     "WHO DID IT. Notes are often a group chat pasted together, one \"Name: text\" line per player. In such a line I/me/my means Name. A line can also report what ANOTHER character did (\"Sable saw Rook push the priest\", \"she catch Tovin killing...\"): that event belongs to the DOER (Rook, Tovin), not to the one who saw or tells it, and it is recorded even though the doer never mentioned it. We/us/the party acting together = \"the party\". Leave actorName \"\" only when the notes truly do not say who.",
     "Write what was done in plain words. Never soften a deed: killing a prisoner or someone who surrendered stays exactly that in the summary, not \"dealt with a threat\" or \"tidied up a loose end\". When one line is coy (\"I may have handled a loose end\") and another line says what it was, record the deed ONCE, in the plain words, quoting the line that says it plainly (not the coy one).",
     "Habitual or ongoing actions count (\"has started taking trophies\", \"keeps sneaking out\", \"every night he prays\"), and so does an action mentioned only as a cause or aside (\"people hate us because Rhys threatened the priest\" -> Rhys threatened the priest).",
-    "NOT events: intentions or plans (\"wanted to\", \"was going to\", \"plans to\", \"next session\"), questions, attempts that explicitly never happened (\"didn't even try\", \"never got around to it\"), doing nothing, pure scenery or weather, rumours and legends, and anything out of character: reminders, notes-to-self, shopping lists, scheduling, rules questions, talk about the real players.",
+    "NOT events: intentions or plans (\"wanted to\", \"was going to\", \"plans to\", \"next session\"), questions, attempts that explicitly never happened (\"didn't even try\", \"never got around to it\"), doing nothing (including just declining or thinking over an offer: \"didn't take the deal\", \"said he'd think about it\"), pure scenery or weather, rumours and legends, and anything out of character: reminders, notes-to-self, shopping lists, scheduling, rules questions, talk about the real players.",
     "",
     "For every event give:",
     "- quote: the exact source fragment, copied verbatim in its original language (keep it short).",
     "- actorName: the name of the character who DID it (see WHO DID IT), \"the party\" for a group action, else \"\".",
+    "- actorRole: \"doer\" when actorName actually did or attempted it. \"target\" when it only happened TO them and they did nothing: they were attacked, ambushed, knocked down, read or sized up, offered a deal or a job, told a secret, given something. What they then DID (fought back, bargained, climbed) is a separate doer entry; merely declining or thinking it over is not.",
     "- continuesPrevious: true ONLY when this entry is just the result, payoff or an elaboration of the entry right before it (same person, same occasion: \"didn't lose a single guest\", \"the owner offered her a slot\", \"he adjusted the malt\"). false for any new action, even one of the same kind on another occasion.",
     `- summary: one short third-person sentence in ${lang} saying who did what.`,
     `- consequence: what came of it, if the notes say (one short ${lang} sentence), else "".`,
@@ -283,6 +288,10 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     // the name -- the old dedupe was by name only, so it sailed through. actor.existingClassesAndSkills
     // below carries each owned entry's effect, not just its name, specifically so this can be checked.
     "Never propose a Skill or Class whose mechanics (what it actually lets the character do) duplicate or closely resemble one the character already owns (actor.existingClassesAndSkills, including its effect) -- not even under a new name. Build on what they have, or cover genuinely new ground.",
+    // Board 3574bd96: without these lists two "Suggest" clicks gave "Unbroken Bastion" then
+    // "Unbroken Bulwark", and one call gave five variants of the same archery volley.
+    ...(hasProposalLists(request.actor) ? ["The same goes for actor.pendingProposals (already written and waiting for the GM) and actor.rejectedByGm (the GM turned these down): never propose one of them again, a renamed variant, or the same idea with other numbers."] : []),
+    "Each proposal in your reply must be a DIFFERENT idea (a different activity, or a clearly different use of it): never two variants of one ability.",
     // Board 3962a001: "Hexblade: Infernal Pact" (Warlock 3) granted Pact Magic + Eldritch Blast, which
     // every Warlock already has from level 1; "Shadowfingers: Sleight of Hand" granted a Rogue
     // proficiency in Sleight of Hand and Thieves' Tools, which Rogues already start with.
@@ -350,7 +359,9 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       // Blast, a Rogue is already proficient in Sleight of Hand and Thieves' Tools. Only present when
       // the system adapter can read them (ai-gateway.js#buildAiGatewayRequest); the "Never propose..."
       // rule above still applies from general class knowledge when this list is empty.
-      ...(Array.isArray(actor.ownedFeatures) && actor.ownedFeatures.length ? { ownedFeatures: actor.ownedFeatures.slice(0, 40) } : {})
+      ...(Array.isArray(actor.ownedFeatures) && actor.ownedFeatures.length ? { ownedFeatures: actor.ownedFeatures.slice(0, 40) } : {}),
+      ...(Array.isArray(actor.pendingProposals) && actor.pendingProposals.length ? { pendingProposals: nameAndEffect(actor.pendingProposals) } : {}),
+      ...(Array.isArray(actor.rejectedProposals) && actor.rejectedProposals.length ? { rejectedByGm: nameAndEffect(actor.rejectedProposals) } : {})
     },
     // The verbatim quote travels with the summary: summaries sanitize ("broke the scout's will over
     // three days" became "interrogated the scout"), which hid exactly the cues red polarity needs.
@@ -394,6 +405,17 @@ function authoringInstruction(target) {
     parts.push(`The generic placeholder being replaced is "${target.placeholder.name}"${effect}. Do NOT reuse its name or wording; write something specific to what this character actually did.`);
   }
   return parts.join(" ");
+}
+
+function hasProposalLists(actor) {
+  return Boolean((Array.isArray(actor?.pendingProposals) && actor.pendingProposals.length) || (Array.isArray(actor?.rejectedProposals) && actor.rejectedProposals.length));
+}
+
+function nameAndEffect(list) {
+  return list.slice(-15).map((item) => ({
+    name: item.name,
+    ...(typeof item.effect === "string" && item.effect.trim() ? { effect: item.effect.trim().slice(0, 200) } : {})
+  }));
 }
 
 function roundValues(map) {

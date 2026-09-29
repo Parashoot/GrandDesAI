@@ -1,5 +1,5 @@
 import { GROWTH_TAXONOMY } from "./growth-taxonomy.js";
-import { CLASS_EVOLUTION_LEVELS, DANGER_GAP_MULTIPLIERS, GROWTH_EVENT_OUTCOME_WEIGHTS, GROWTH_EVENTS_FLAG, LEVEL_PROGRESSION_FLAG, MODULE_ID, SPELL_SCHOOLS } from "./constants.js";
+import { CLASS_EVOLUTION_LEVELS, DANGER_GAP_MULTIPLIERS, GROWTH_EVENT_OUTCOME_WEIGHTS, GROWTH_EVENTS_FLAG, GROWTH_PROPOSALS_FLAG, LEVEL_PROGRESSION_FLAG, MODULE_ID, SPELL_SCHOOLS } from "./constants.js";
 import { getSystemAdapter } from "./systems/index.js";
 import { VICE_TAGS } from "./vice-taxonomy.js";
 import { validateClassEntry, validateSkillEntry } from "./validator.js";
@@ -86,9 +86,14 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
   // `events`: already-recorded events to propose from directly (api.requestGrowthProposals); stage 1 is skipped.
   // `milestone`: a guaranteed Grand Design milestone reward (api.requestGrowthProposals-style call
   // from api.resolveLevelRest) -- see pipeline.js#runGatewayPipeline's milestone param.
-  const run = async ({ actor, notes, systemId, fresh = false, events = null, milestone = null, target = null }) => {
+  const run = async ({ actor, notes, systemId, fresh = false, events = null, milestone = null, target = null, replacing = null }) => {
     const sys = systemId ?? cfg.systemId ?? activeSystemId();
     const request = buildAiGatewayRequest(actor, notes, sys);
+    // The placeholder being authored is itself pending: it must not count as the thing its own
+    // replacement duplicates (the prompt's placeholder rule already says not to reuse it).
+    if (replacing && Array.isArray(request.actor?.pendingProposals)) {
+      request.actor.pendingProposals = request.actor.pendingProposals.filter((p) => !(replacing.id ? p.id === replacing.id : p.name === replacing.name));
+    }
     // A Class request for a milestone the character has ALREADY passed (a multi-level rest, or the GM
     // resting on to 21 before asking) must not be stripped by the live-level gate: the milestone
     // level, not the current one, is what makes a Class available (board f48a1e52).
@@ -117,7 +122,7 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
       ...(proposal?.isCapstone ? { isCapstone: true, tier: 3 } : {}),
       placeholder: { name: proposal?.entry?.name ?? label ?? "placeholder", effect: proposal?.entry?.mechanics?.effect }
     };
-    return run({ actor, notes: "", systemId, events: Array.isArray(events) ? events : [], target });
+    return run({ actor, notes: "", systemId, events: Array.isArray(events) ? events : [], target, replacing: { id: proposal?.id ?? null, name: proposal?.entry?.name ?? null } });
   };
   adapter.ping = () => transport.ping();
   adapter.listModels = () => transport.listModels();
@@ -158,6 +163,29 @@ export function createChatCompletionsAdapter({ endpoint, model, getHeaders = () 
   });
 }
 
+// The newest `limit` proposals with this status, reduced to what the near-duplicate check and the
+// prompt need (the full entries would crowd the context for nothing).
+export function compactProposals(actor, status, limit = 20) {
+  const all = actor?.getFlag?.(MODULE_ID, GROWTH_PROPOSALS_FLAG);
+  if (!Array.isArray(all)) return [];
+  return all
+    .filter((proposal) => proposal?.status === status && proposal.entry?.name)
+    .slice(-limit)
+    .map((proposal) => {
+      const entry = proposal.entry;
+      return {
+        ...(proposal.id ? { id: proposal.id } : {}),
+        kind: proposal.kind === "class" ? "class" : "skill",
+        name: entry.name,
+        ...(typeof entry.mechanics?.effect === "string" ? { effect: entry.mechanics.effect.slice(0, 300) } : {}),
+        ...(typeof entry.mechanics?.trigger === "string" ? { trigger: entry.mechanics.trigger.slice(0, 160) } : {}),
+        ...(entry.gameItem?.kind ? { gameItemKind: entry.gameItem.kind } : {}),
+        tags: Array.isArray(entry.metadata?.tags) ? entry.metadata.tags : [],
+        themes: Array.isArray(entry.metadata?.themes) ? entry.metadata.themes : []
+      };
+    });
+}
+
 // systemId defaults to "pf2e" (a plain literal, never `game.system.id`) so this function stays
 // callable from plain Node tests with no Foundry `game` global; both call sites below that run
 // inside an actual Foundry world pass the real active system id explicitly.
@@ -180,6 +208,11 @@ export function buildAiGatewayRequest(actor, notes, systemId = "pf2e") {
       // nothing to report, contributes an empty list rather than failing the whole request.
       ownedFeatures: adapter.getCharacterKnownFeatures?.(actor) ?? [],
       existingGrandDesign: actor.getFlag(MODULE_ID, "registry") ?? {},
+      // Board 3574bd96: what is already waiting for the GM, and what the GM turned down. Stage 2 never
+      // saw either, so two "Suggest proposals" clicks produced "Unbroken Bastion" and then "Unbroken
+      // Bulwark". The prompt shows them and pipeline.js#gateProposals skips near-duplicates of them.
+      pendingProposals: compactProposals(actor, "pending"),
+      rejectedProposals: compactProposals(actor, "rejected"),
       grandDesign: {
         level: grandDesignLevel,
         availableGrantAllowances: Number.isInteger(progression.grantAllowances) ? progression.grantAllowances : 0,

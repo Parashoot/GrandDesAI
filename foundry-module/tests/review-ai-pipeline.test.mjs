@@ -104,7 +104,7 @@ test("dedupeEvents: two different actors' generically-phrased events must not co
 // model the reply must be exactly {"proposals":[...]}  and never mentions redCheck.
 // ---------------------------------------------------------------------------------------------
 
-test.todo("proposal repair-turn schema must not silently require a 'redCheck' field the repair message never asks for", async () => {
+test("proposal repair-turn schema must not silently require a 'redCheck' field the repair message never asks for", async () => {
   // A reaction proposal with no trigger: repairProposal() deliberately leaves this for the repair
   // turn (see the "repairProposal on a reaction with no trigger" test in ai-pipeline.test.mjs), so
   // validateSkillEntry rejects it on the first pass and validateProposals sends a real repair turn.
@@ -135,10 +135,10 @@ test.todo("proposal repair-turn schema must not silently require a 'redCheck' fi
 
   // EXPECTED (review finding 3): a repair turn whose message asks for {"proposals":[...]} only
   // should not force the model to also fill a full per-event redCheck it was never asked to redo.
-  // OBSERVED today: repairCall.schema.required still includes "redCheck" (proposalSchemaCapped is
-  // called with the same { redCheck: cfg.allowRed } as the original call), while the repair
-  // message text (the last message just pushed) promises only {"proposals":[...]} and never
-  // mentions redCheck at all -- schema and prompt disagree about what the model must return.
+  // Was observed: repairCall.schema.required still included "redCheck" (the repair turn reused
+  // { redCheck: cfg.allowRed }), while the repair message promised only {"proposals":[...]}.
+  // Fixed (board 96b5beea): the repair turn's schema is { redCheck: false }.
+  assert.ok(repairCall.schema.properties.proposals, "the repair turn still asks for proposals");
   assert.ok(!repairCall.schema.required.includes("redCheck"), "repair-turn schema should not require redCheck");
   const repairMessageText = repairCall.messages.at(-1).content;
   assert.ok(!/redCheck/i.test(repairMessageText), "sanity: the repair message text never mentions redCheck");

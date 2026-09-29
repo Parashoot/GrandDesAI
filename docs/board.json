@@ -56,7 +56,8 @@
    "title": "Re-run live PF2e Foundry check when the server is free",
    "status": "todo",
    "notes": [
-    "2026-09-29: dnd5e live verify 15/15 (live-verify.mjs). PF2e world still to run: switch to 'endex' when nobody is on it, then node foundry-module/tools/playtest/live-verify.mjs."
+    "2026-09-29: dnd5e live verify 15/15 (live-verify.mjs). PF2e world still to run: switch to 'endex' when nobody is on it, then node foundry-module/tools/playtest/live-verify.mjs.",
+    "When the world is free, also click through the 2026-09-29 dialog (per-row Approve, Details, Edit, Approve as written, Retry with AI, busy state) in BOTH worlds; dnd5e was occupied all session (users 1)."
    ],
    "tags": [
     "pf2e",
@@ -66,7 +67,7 @@
    "owner": "",
    "source": "cli",
    "created": 1790530790.132,
-   "updated": 1790662476.922,
+   "updated": 1790690119.65,
    "parent": "f2d3213f"
   },
   {
@@ -337,8 +338,11 @@
   {
    "id": "4f3192e0",
    "title": "Things done TO a character still extracted as their event: 'Tovin was offered a deal by a woman...' (success, occultism) despite the prompt rule",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "2026-09-29: event schema actorRole doer|target after actorName; target events skipped (happened-to-actor). traps+novel 82 items 1 rep: score 94.7->96.8%, traps 93.5->100%, precision 93.1->97.7%, count 89.0->90.2%; red 10 items redAcc 0.90->0.90, count 0.70->0.75. ember-road s1 rerun: Tovin's dream deal now skipped; side effect 07b9d93f (Wick's pie-tent ban skipped).",
+    "Verified 2026-09-29 v0929 rerun of ember-road s1 (dnd5e): 'a woman who wants a year of my dreams' -> skipped happened-to-actor. pf2e salt-lantern s1/s2 rerun: no target skips, per-PC counts 5/8/4/7/6 (was 5/9/4/8/6; the diffs are related deeds folded)."
+   ],
    "tags": [
     "gateway"
    ],
@@ -346,7 +350,7 @@
    "owner": "dev-gateway",
    "source": "ember-road s1 re-run 2026-09-27",
    "created": 1790543771.568,
-   "updated": 1790688187.127,
+   "updated": 1790690120.137,
    "parent": "f2d3213f"
   },
   {
@@ -522,8 +526,10 @@
   {
    "id": "ad43ec26",
    "title": "playtest.mjs saveCampaign writes to the campaign.json's internal name, not the --campaign folder: a copied campaign folder overwrites the original",
-   "status": "todo",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "Fixed 2026-09-29 (PM): loadCampaign remembers its folder (non-enumerable), save and session dirs use it. Also: report shows skipped events' summaries; nlp-scale harness blanks the analysed-PC name so redAcc is measured again (tests/harness-request-actor.test.mjs)."
+   ],
    "tags": [
     "harness"
    ],
@@ -531,7 +537,7 @@
    "owner": "",
    "source": "dev-integration 2026-09-28",
    "created": 1790622041.096,
-   "updated": 1790622041.096
+   "updated": 1790690120.313
   },
   {
    "id": "ba12b00b",
@@ -679,8 +685,10 @@
   {
    "id": "96b5beea",
    "title": "Proposal repair turn still requires redCheck in the schema though the repair prompt asks for {proposals} only - wastes numPredict (review test.todo)",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "2026-09-29: repair-turn schema { redCheck: false }; the todo is now a real test."
+   ],
    "tags": [
     "gateway"
    ],
@@ -688,7 +696,7 @@
    "owner": "dev-gateway",
    "source": "C5 review 2026-09-28",
    "created": 1790627490.291,
-   "updated": 1790688187.081
+   "updated": 1790690120.092
   },
   {
    "id": "eb3924f1",
@@ -983,9 +991,10 @@
   {
    "id": "574707d8",
    "title": "Evolved/merged names collide (name banks only use index 0) and the second evolution overwrites the first registry entry",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "skill-evolution.js:213 `${bank.mythic[0]} ${bank.nouns[0]}` makes every martial tier-3 evolution 'Minotaur Punch'; same in class-merging.js:324/329/334 and combination-skills.js:153. evolveSkillEntry sets no metadata.id, so normalizeEntry derives the same registry id and registerEntry silently replaces the earlier Skill. Fix: AI-named results; fallback picks from the whole bank by a stable hash of the source id; id collision guard."
+    "skill-evolution.js:213 `${bank.mythic[0]} ${bank.nouns[0]}` makes every martial tier-3 evolution 'Minotaur Punch'; same in class-merging.js:324/329/334 and combination-skills.js:153. evolveSkillEntry sets no metadata.id, so normalizeEntry derives the same registry id and registerEntry silently replaces the earlier Skill. Fix: AI-named results; fallback picks from the whole bank by a stable hash of the source id; id collision guard.",
+    "2026-09-29: names hash-picked from the whole bank, metadata.id <source>--evolved-t3 / class:merge-<hash> / combination:<slug>-<hash>, existingIds/existingNames wired from api, _approveEvolution refuses to overwrite a different entry. 5 martial evolutions: Titan Blow, Minotaur Onslaught, Minotaur Punch, Warlord Punch, Minotaur Punch (ids all distinct; bank has 9 pairs, existingNames moves the repeat)."
    ],
    "tags": [
     "naming",
@@ -995,7 +1004,7 @@
    "owner": "dev-progression",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.366,
-   "updated": 1790688186.927,
+   "updated": 1790690119.957,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1086,9 +1095,10 @@
   {
    "id": "b375d56c",
    "title": "Milestone capstone/Class cannot be re-asked of the AI after a template fallback or rejection",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "Fixed ids (proposal:capstone-<level>), milestones only computed when a rest crosses a level, Suggest never yields isCapstone; a rejected or template capstone leaves capstoneAllowances stuck. Fix: api.retryMilestoneReward(actor, proposalId) re-running _resolveMilestoneReward + a 'Retry with AI' button on template milestone proposals."
+    "Fixed ids (proposal:capstone-<level>), milestones only computed when a rest crosses a level, Suggest never yields isCapstone; a rejected or template capstone leaves capstoneAllowances stuck. Fix: api.retryMilestoneReward(actor, proposalId) re-running _resolveMilestoneReward + a 'Retry with AI' button on template milestone proposals.",
+    "2026-09-29 dev-integration: api.retryMilestoneReward(actor,id) -> {proposal, usedFallback, reason}; works on pending template, rejected or missing milestone; previousAttempts kept; re-analyze no longer deletes milestone/GM-edited proposals. Real model: pf2e 'Ironhold: Gravitational Anchor' (15 s), dnd5e 'Bulwark: Unyielding Grasp' (9 s), allowance still 1. UI: 'Retry with AI' on template milestones."
    ],
    "tags": [
     "progression",
@@ -1099,16 +1109,17 @@
    "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.753,
-   "updated": 1790688186.678,
+   "updated": 1790690119.739,
    "prio": 2,
    "parent": "a2cbef5e"
   },
   {
    "id": "0ed137cb",
    "title": "Fallback capstone/Class numbers are unusable (DC = 10 + Grand Design level; 'Martial check')",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "progression.js:498 dc: 10 + level uses the GD level (DC 60 at 50, 110 at 100); roll.kind 'Martial check' is not a real check; the template Class is 'Pending chassis review'. Fix: DCs from the character level (PF2e level DC table, 5e 8+prof+mod), map top tag to a real skill or save, a concrete default benefit per tag."
+    "progression.js:498 dc: 10 + level uses the GD level (DC 60 at 50, 110 at 100); roll.kind 'Martial check' is not a real check; the template Class is 'Pending chassis review'. Fix: DCs from the character level (PF2e level DC table, 5e 8+prof+mod), map top tag to a real skill or save, a concrete default benefit per tag.",
+    "2026-09-29: DCs from character level (PF2e level-DC table, 5e 8+prof+mod); top tag -> real skill/save; concrete per-tag benefit. PF2e L12 Fighter capstone: 'Fighter: Decisive Blow', @Check[athletics|dc:30]; 5e [[/check skill=ath ability=str dc=16]]. Fallback Class chassis 'Fighter evolution (Grand Design level 20)'."
    ],
    "tags": [
     "progression",
@@ -1119,16 +1130,17 @@
    "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.826,
-   "updated": 1790688186.73,
+   "updated": 1790690119.783,
    "prio": 2,
    "parent": "a2cbef5e"
   },
   {
    "id": "17c10e97",
    "title": "Every generated roll uses the Acrobatics modifier and a raw [[/r]] roll",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "api.js rollModifier reads skills.acrobatics/acr for every template and capstone (Medicine, Diplomacy, spell attacks); mechanics.js renders [[/r 1d20+N]]. Fix: resolve roll.kind to the system skill/save and emit @Check[...] (PF2e) or [[/skill ...]]/[[/save ...]] (dnd5e), [[/r]] as fallback."
+    "api.js rollModifier reads skills.acrobatics/acr for every template and capstone (Medicine, Diplomacy, spell attacks); mechanics.js renders [[/r 1d20+N]]. Fix: resolve roll.kind to the system skill/save and emit @Check[...] (PF2e) or [[/skill ...]]/[[/save ...]] (dnd5e), [[/r]] as fallback.",
+    "2026-09-29: roll.kind resolved to system skill/save/perception; sheet modifier used (model guessed +9 for +21 Athletics). Enrichers checked vs installed dnd5e 5.3.3 / pf2e 8.4.1 source. Flat [[/r]] kept in parentheses (test-scenario asserts it; follow-up 5a65746f)."
    ],
    "tags": [
     "pf2e",
@@ -1139,16 +1151,17 @@
    "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.906,
-   "updated": 1790688186.778,
+   "updated": 1790690119.827,
    "prio": 2,
    "parent": "a2cbef5e"
   },
   {
    "id": "9ebbf3c9",
    "title": "Template and fallback names ignore the naming convention (naming.js is dead code)",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "deriveClassMotif/buildClassFlavoredName (naming.js:71-95) are only imported by tests; templates ship fixed names ('Canal Step', 'Measured Strike'), fallbacks are 'Capstone: <Tag>' and '<Tag> Ascendant'. Fix: with the AI on, templates go away; off, name via buildClassFlavoredName from the actor's GD Class or systemClass."
+    "deriveClassMotif/buildClassFlavoredName (naming.js:71-95) are only imported by tests; templates ship fixed names ('Canal Step', 'Measured Strike'), fallbacks are 'Capstone: <Tag>' and '<Tag> Ascendant'. Fix: with the AI on, templates go away; off, name via buildClassFlavoredName from the actor's GD Class or systemClass.",
+    "2026-09-29: templates/fallbacks via buildClassFlavoredName ('Fighter: Martial Ascendant'); template registry ids stable so an approved template is not re-offered."
    ],
    "tags": [
     "naming"
@@ -1157,16 +1170,17 @@
    "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.982,
-   "updated": 1790688186.826,
+   "updated": 1790690119.87,
    "prio": 2,
    "parent": "a2cbef5e"
   },
   {
    "id": "a0bcfd05",
    "title": "Proposals cannot be inspected in full or edited before approval; approve is a dropdown",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "renderProposal shows name, chip, effect and evidence count only (no rationale, tags, kind, actions, polarity/red, level); templates are described as 'GM-editable' but no editor exists. Live: Reject is per row but Approve is one <select> of 12 proposals + one button. Fix: per-proposal Details expander, per-row Approve, an Edit form validated by validator.js before saving back as pending."
+    "renderProposal shows name, chip, effect and evidence count only (no rationale, tags, kind, actions, polarity/red, level); templates are described as 'GM-editable' but no editor exists. Live: Reject is per row but Approve is one <select> of 12 proposals + one button. Fix: per-proposal Details expander, per-row Approve, an Edit form validated by validator.js before saving back as pending.",
+    "2026-09-29 dev-ui: per-row Approve/Reject, Details expander (kind, source+fallback reason, roll, red, rationale, evidence), Edit form -> api.updateProposal (validated, {entry} patch, errors shown inline)."
    ],
    "tags": [
     "ui",
@@ -1176,16 +1190,17 @@
    "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.058,
-   "updated": 1790688187.221,
+   "updated": 1790690120.182,
    "prio": 2,
    "parent": "6d04ba44"
   },
   {
    "id": "5b2ff22d",
    "title": "Gateway settings unreachable: pending cap, retries, extraction cache; outputLanguage is client-scoped",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "WORLD_FLAVOR_KEYS omits pendingProposalCapExtra/Min, and buildGatewayConfig keeps only listed keys, so the cap is always default despite gateway-config.js saying a GM can lower it; CLIENT_TUNING_KEYS omits maxRetries, transientRetries, transientBackoffMs, extractionCache*; outputLanguage is table-wide but client scope. Fix: add them to the key lists and form; outputLanguage to world."
+    "WORLD_FLAVOR_KEYS omits pendingProposalCapExtra/Min, and buildGatewayConfig keeps only listed keys, so the cap is always default despite gateway-config.js saying a GM can lower it; CLIENT_TUNING_KEYS omits maxRetries, transientRetries, transientBackoffMs, extractionCache*; outputLanguage is table-wide but client scope. Fix: add them to the key lists and form; outputLanguage to world.",
+    "2026-09-29: tuning keys maxRetries/transientRetries/transientBackoffMs/extractionCache* and world keys pendingProposalCapExtra/Min + outputLanguage in the form; outputLanguage migrated client->world (GM, at ready); emptied number box = default, not 0."
    ],
    "tags": [
     "gateway",
@@ -1195,16 +1210,17 @@
    "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.136,
-   "updated": 1790688187.267,
+   "updated": 1790690120.268,
    "prio": 2,
    "parent": "567067e6"
   },
   {
    "id": "78ead05c",
    "title": "Long AI calls: dialog closes, no busy state, no per-actor lock, up to ~9 min per chunk before fallback",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "Analyze/Re-analyze/Author/Approve/Rest are footer buttons that close the v1 Dialog; no in-flight guard in api.analyzeSessionNotes (double click can double-record); timeoutMs 180 s x transient retries. Fix: run in the dialog body with a busy state (like Suggest), per-actor lock in the api, an overall deadline per analysis."
+    "Analyze/Re-analyze/Author/Approve/Rest are footer buttons that close the v1 Dialog; no in-flight guard in api.analyzeSessionNotes (double click can double-record); timeoutMs 180 s x transient retries. Fix: run in the dialog body with a busy state (like Suggest), per-actor lock in the api, an overall deadline per analysis.",
+    "2026-09-29: per-actor lock (Error 'busy:'), api.isBusy/getBusyTask, busyChanged hook, overall deadline 4x timeoutMs; dialog runs every long action in-body with spinner, footer only Close, notes survive errors. Deadline does not abort the call (5a65746f)."
    ],
    "tags": [
     "ui",
@@ -1215,16 +1231,17 @@
    "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.211,
-   "updated": 1790688186.877,
+   "updated": 1790690119.915,
    "prio": 2,
    "parent": "567067e6"
   },
   {
    "id": "7f1f20ae",
    "title": "Party notes must be analysed one character sheet at a time",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "Growth is per actor; the extraction cache exists to read shared party notes once, but the GM still opens five sheets and pastes five times. Fix: 'Analyze for party' (pick PCs, one paste) in the dialog, a scene control or /growth chat command."
+    "Growth is per actor; the extraction cache exists to read shared party notes once, but the GM still opens five sheets and pastes five times. Fix: 'Analyze for party' (pick PCs, one paste) in the dialog, a scene control or /growth chat command.",
+    "2026-09-29: themeFoldKey (stopwords, stems, order-insensitive, synonyms); foldDuplicateThemes runs on load (mergeInto, GM curation wins, keepSeparate on un-merge); per-actor counts; wrestling-instruction kept separate on purpose. Live purge = 89437d16."
    ],
    "tags": [
     "ui",
@@ -1234,7 +1251,7 @@
    "owner": "dev-progression",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.286,
-   "updated": 1790688186.978,
+   "updated": 1790690120.002,
    "prio": 2,
    "parent": "6d04ba44"
   },
@@ -1398,10 +1415,12 @@
   {
    "id": "3574bd96",
    "title": "Near-duplicate Class proposals pile up (two Suggest clicks -> 'Unbroken Bastion' + 'Unbroken Bulwark')",
-   "status": "doing",
+   "status": "done",
    "notes": [
     "Live: Briik GD50 has two almost identical Class proposals pending; findDuplicateOwnedMechanic compares against OWNED entries only, not other pending proposals. Fix: dedupe new proposals against pending ones by mechanic (keep the better-evidenced), and show 'already pending' on Suggest.",
-    "Broader: stage 2 also returns near-duplicates of each other in one run (probe: 5 archery proposals 'Longbow: Precision Volley'-like). Dedupe new proposals against each other and against pending by mechanic."
+    "Broader: stage 2 also returns near-duplicates of each other in one run (probe: 5 archery proposals 'Longbow: Precision Volley'-like). Dedupe new proposals against each other and against pending by mechanic.",
+    "2026-09-29 dev-gateway: stage 2 sees pending + rejected proposals; deterministic near-dup gate (text/concept-word/game-item overlap) -> duplicates-pending/-rejected/-sibling. Probe, two Suggest clicks: before, click 2 re-proposed 'Bulwark of the Silent Watch'; after, dnd5e 3/3 and pf2e 4/4 skipped as duplicates-pending. Residual: d21f303a, UI surfacing 43ff2ae9.",
+    "Verified 2026-09-29 v0929-dnd5e Maren, two Suggest clicks: click 1 Lavender Loaf / Stable Companion / Field Triage; click 2 repeated none, added 'Thornweave: Gnarled Snare'. pf2e Buck: click 1 +2 distinct (Aerial Tumble, Iron Palm), click 2 0 (pending cap 5, unexplained -> 43ff2ae9)."
    ],
    "tags": [
     "proposals"
@@ -1410,7 +1429,7 @@
    "owner": "dev-gateway",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.965,
-   "updated": 1790688187.034,
+   "updated": 1790690120.047,
    "prio": 2,
    "parent": "a2cbef5e"
   },
@@ -1632,8 +1651,10 @@
   {
    "id": "283ad7ca",
    "title": "Growth dialog: 'Approve as written' for placeholders now that approve refuses needsAuthoring without confirm",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "2026-09-29: placeholder rows get 'Approve as written' (confirm dialog -> approveProposal confirm:true)."
+   ],
    "tags": [
     "ui",
     "proposals"
@@ -1642,7 +1663,103 @@
    "owner": "dev-ui",
    "source": "dev-proposals 2026-09-29",
    "created": 1790662086.312,
-   "updated": 1790688187.174
+   "updated": 1790690120.224
+  },
+  {
+   "id": "07b9d93f",
+   "title": "Consequence-of-own-deed dropped as happened-to-actor: 'I got banned from a pie tent' (Wick) skipped; a ban/eviction implies the PC's own misdeed",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway",
+    "playtest"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "v0929 rerun of ember-road s1",
+   "created": 1790689954.641,
+   "updated": 1790689954.641
+  },
+  {
+   "id": "43ff2ae9",
+   "title": "Suggest shows nothing when every new proposal is a duplicate of a pending/rejected one; surface skippedProposals (duplicates-pending -> 'already pending: X', highlight duplicateOfId)",
+   "status": "todo",
+   "notes": [
+    "Also the pending cap: Buck at 5 pending -> 'Buck: 0 new proposal(s)' with no reason (v0929-pf2e)."
+   ],
+   "tags": [
+    "ui",
+    "qol",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "dev-gateway 2026-09-29",
+   "created": 1790689954.685,
+   "updated": 1790690119.555
+  },
+  {
+   "id": "d21f303a",
+   "title": "Class near-duplicates with no shared concept word slip the dedupe ('Gatewarden of the Iron Line' vs pending 'Bulwark Warden', both +1 AC beside an ally)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "proposals",
+    "gateway"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-gateway probe 2026-09-29",
+   "created": 1790689954.732,
+   "updated": 1790689954.732
+  },
+  {
+   "id": "89437d16",
+   "title": "One-shot GM clean-up for the live theme registry: recountThemeActors + purgeOrphanThemes, and reject the old per-spelling pending Knacks (proposal:emergent-pie-contest...)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "themes",
+    "ui",
+    "qol"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-progression 2026-09-29",
+   "created": 1790689954.78,
+   "updated": 1790689954.78
+  },
+  {
+   "id": "5a65746f",
+   "title": "Roll follow-ups: lineage.createFeatureSource should pass systemId to createMechanicsHtml; drop the flat [[/r]] after the system check once test-scenario.js stops asserting it; the analysis deadline does not abort the in-flight call (no AbortSignal in the pipeline); AI capstones ignore the Class motif",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "followup",
+    "gateway",
+    "dnd5e",
+    "pf2e"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-integration 2026-09-29",
+   "created": 1790689954.826,
+   "updated": 1790689954.826
+  },
+  {
+   "id": "3717963d",
+   "title": "Two PCs get the same proposal name in one session ('Athletics: Iron Grip' for Buck and Kestrel, v0929-pf2e s2); PF2e proposal says 'Strength check' / 'flat-footed' (remaster: off-guard)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "naming",
+    "pf2e"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "v0929 rerun of salt-lantern s2",
+   "created": 1790690119.606,
+   "updated": 1790690119.606
   }
  ]
 }

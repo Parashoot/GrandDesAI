@@ -79,6 +79,76 @@ export function findDuplicateOwnedMechanic(entry, ownedEntries, { textThreshold 
   return null;
 }
 
+// Board 3574bd96: two "Suggest proposals" clicks left Briik with "Unbroken Bastion" AND "Unbroken
+// Bulwark" pending, and one stage-2 call wrote five "Longbow: Precision Volley"-like archery Skills.
+// The owned-entry check above never saw pending proposals or the batch's own siblings, and the name
+// check was an exact slug match. Two entries of the same kind are near-duplicates when they
+//   - do the same thing (the owned-mechanic rule: effect/trigger text Jaccard >= 0.5, tags agree), or
+//   - share a word of their CONCEPT name (the part after "Motif:" -- every Skill of one character
+//     shares its motif by design) on the same tags/themes with some shared mechanic wording (for two
+//     Classes the shared word alone: they are alternatives for the same evolution), or
+//   - are the same kind of game item on the same tags/themes with clearly overlapping mechanics.
+// Distinct abilities of one discipline (an archery reaction vs. an archery passive with different
+// text) stay apart.
+function conceptTokens(name) {
+  const text = String(name ?? "");
+  const colon = text.indexOf(":");
+  return mechanicTokens(colon >= 0 ? text.slice(colon + 1) : text);
+}
+
+function inferEntryKind(entry) {
+  return entry && entry.tier === undefined && (entry.level !== undefined || entry.power_tier !== undefined) ? "class" : "skill";
+}
+
+// Accepts a stage-2 proposal ({kind, entry, evidence}) or a compact pending/rejected record
+// ({kind, name, effect, trigger, tags, themes, gameItemKind}) from ai-gateway.js#buildAiGatewayRequest.
+function proposalShape(candidate) {
+  const entry = candidate?.entry ?? {};
+  const name = entry.name ?? candidate?.name ?? "";
+  return {
+    kind: candidate?.kind ?? inferEntryKind(entry),
+    itemKind: entry.gameItem?.kind ?? candidate?.gameItemKind ?? null,
+    text: mechanicTokens(`${entry.mechanics?.effect ?? candidate?.effect ?? ""} ${entry.mechanics?.trigger ?? candidate?.trigger ?? ""}`),
+    concept: conceptTokens(name),
+    tags: new Set([...(entry.metadata?.tags ?? candidate?.tags ?? []), ...(entry.metadata?.themes ?? candidate?.themes ?? [])].map((t) => String(t).toLowerCase()))
+  };
+}
+
+/** Why `a` and `b` are near-duplicates ("mechanic" | "name" | "same-ground"), or null. */
+export function nearDuplicateReason(a, b, { textThreshold = 0.5, nameTextThreshold = 0.2, groundTextThreshold = 0.35, minTextTokens = 4 } = {}) {
+  const x = proposalShape(a);
+  const y = proposalShape(b);
+  const textOk = x.text.size >= minTextTokens && y.text.size >= minTextTokens;
+  const text = textOk ? jaccard(x.text, y.text) : 0;
+  const tagsAgree = !x.tags.size || !y.tags.size || jaccard(x.tags, y.tags) > 0;
+  if (textOk && text >= textThreshold && tagsAgree) return "mechanic";
+  if (x.kind !== y.kind) return null;
+  const tagOverlap = x.tags.size && y.tags.size ? jaccard(x.tags, y.tags) : 0;
+  const sharesConcept = [...x.concept].some((token) => y.concept.has(token));
+  if (sharesConcept && tagOverlap >= 0.5 && (x.kind === "class" || text >= nameTextThreshold)) return "name";
+  if (x.itemKind && x.itemKind === y.itemKind && tagOverlap >= 0.5 && text >= groundTextThreshold) return "same-ground";
+  return null;
+}
+
+export function findNearDuplicate(candidate, others, options) {
+  for (const other of others ?? []) {
+    const reason = nearDuplicateReason(candidate, other, options);
+    if (reason) return { other, reason };
+  }
+  return null;
+}
+
+// "Best-sourced": the proposal citing more distinct evidence; a tie keeps the model's own order.
+function evidenceScore(proposal) {
+  return new Set((Array.isArray(proposal?.evidence) ? proposal.evidence : []).map((e) => String(e).trim().toLowerCase()).filter(Boolean)).size;
+}
+
+function findByNameOrNearDuplicate(proposal, records) {
+  const key = slugifyTheme(proposal.entry?.name);
+  const exact = records.find((record) => slugifyTheme(record?.name ?? record?.entry?.name) === key);
+  return exact ? { other: exact, reason: "name" } : findNearDuplicate(proposal, records);
+}
+
 // Board 3962a001: system-specific vocabulary that never belongs in the other system's entries (the
 // dnd5e RULES_VOCABULARY string already asks the model not to write these, but a repair turn still let
 // "use your free action" and "if using a durability system" through). Deliberately short and
@@ -169,15 +239,31 @@ export function findDuplicateClassFeature(entry, { systemClass, systemId } = {})
 // skills, when the system adapter can read them) instead of the small hand-picked baseline table.
 // Requires a whole-word match on the full feature/skill name (>= 4 chars) to avoid a generic short
 // name coincidentally appearing inside unrelated effect text.
+//
+// Only when the proposal's BENEFIT is that feature: it grants proficiency/training/expertise in it,
+// gains or learns it outright, or is simply named after it. Merely USING it is fine. The old
+// any-mention match skipped a real capstone that just rolled an Athletics check for a PC trained in
+// Athletics (dev-integration real-model run, 2026-09-29), and the milestone fell back to a template.
 export function findDuplicateOwnedFeatureText(entry, ownedFeatures) {
   if (!Array.isArray(ownedFeatures) || !ownedFeatures.length) return null;
-  const text = `${entry?.name ?? ""} ${entry?.mechanics?.effect ?? ""}`;
+  const effect = String(entry?.mechanics?.effect ?? "");
+  const name = String(entry?.name ?? "");
+  const concept = (name.includes(":") ? name.slice(name.indexOf(":") + 1) : name).trim().toLowerCase();
   for (const feature of ownedFeatures) {
     if (typeof feature !== "string") continue;
     const trimmed = feature.trim();
     if (trimmed.length < 4) continue;
-    const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    if (new RegExp(`\\b${escaped}\\b`, "i").test(text)) return trimmed;
+    if (concept === trimmed.toLowerCase()) return trimmed;
+    const f = trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const grants = [
+      // "gain proficiency in X", "become trained in X", "expertise with Athletics and X"
+      new RegExp(`\\b(proficiency|proficient|trained|training|expert|expertise|mastery|master|legendary)\\b[^.;]{0,40}\\b${f}\\b`, "i"),
+      // "X proficiency", "X expertise"
+      new RegExp(`\\b${f}\\s+(proficiency|expertise|training)\\b`, "i"),
+      // "you gain X", "learn the X feature", "gain access to X"
+      new RegExp(`\\b(gain|gains|learn|learns|acquire|acquires|grant|grants|receive|receives)\\s+(the\\s+|access\\s+to\\s+(the\\s+)?)?${f}\\b`, "i")
+    ];
+    if (grants.some((pattern) => pattern.test(effect))) return trimmed;
   }
   return null;
 }
@@ -986,6 +1072,11 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
         proposals = result.accepted;
         skippedProposals.push(...result.skipped);
       } catch (error) {
+        // With preset events (Suggest proposals, a milestone reward, Author with AI) stage 2 is the
+        // WHOLE job and there are no newly read events to protect: swallowing a dead provider here
+        // returned an empty result, so api.js's fallback said "did not return a usable proposal"
+        // instead of naming the provider failure (dev-integration real-model run, 2026-09-29).
+        if (Array.isArray(presetEvents)) throw error;
         // Never lose good events because the optional proposal stage failed.
         if (error instanceof AiProviderUnreachableError || error instanceof AiProviderTimeoutError) diagnostics.warnings.push(`proposal stage failed: ${error.message}`);
         skippedProposals.push({ reason: "proposal-stage-failed", error: error.message });
@@ -1164,10 +1255,28 @@ function differentActors(prev, event) {
 }
 const ACTOR_TITLE_WORDS = new Set(["sir", "lady", "lord", "dame", "the", "and", "master", "mistress", "captain", "brother", "sister", "father", "mother", "old", "young", "von", "van", "del"]);
 
+// Board 4f3192e0: the model marks an entry "target" when it only happened TO the character (read,
+// offered a deal, attacked, told a secret). Not their deed, so not their evidence; kept visible in
+// skippedEvents. Deliberately NOT counted as a rejection: a chunk that is all "target" entries is a
+// correct reading ("nothing he did"), not a broken one that deserves a repair turn.
+function isTargetOnly(raw) {
+  return isPlainObject(raw) && typeof raw.actorRole === "string" && /^\s*(target|victim|recipient|passive)\b/i.test(raw.actorRole);
+}
+
 function coerceAll(items, ctx, chunkIndex) {
   const accepted = [];
   const rejected = [];
-  for (const raw of items) {
+  const happenedTo = [];
+  let droppedPrevious = false;
+  for (const original of items) {
+    if (isTargetOnly(original)) {
+      happenedTo.push({ event: original, reason: "happened-to-actor", chunk: chunkIndex });
+      droppedPrevious = true;
+      continue;
+    }
+    // A follow-up of a dropped "target" entry must not fold into the unrelated event before it.
+    const raw = droppedPrevious && isPlainObject(original) && original.continuesPrevious ? { ...original, continuesPrevious: false } : original;
+    droppedPrevious = false;
     const result = coerceEvent(raw, { customSynonyms: ctx.cfg.customSynonyms, emergentThemes: ctx.cfg.emergentThemes });
     if (result.event) {
       accepted.push(result.event);
@@ -1178,11 +1287,11 @@ function coerceAll(items, ctx, chunkIndex) {
   }
   if (ctx.cfg.mergeFollowUps === false) {
     for (const event of accepted) delete event.continuesPrevious;
-    return { accepted, rejected };
+    return { accepted, rejected, happenedTo };
   }
   const { events: folded, merged } = mergeFollowUpEvents(accepted);
   if (merged) ctx.diagnostics.coercions.push(`merged-follow-up-events:${merged}`);
-  return { accepted: folded, rejected };
+  return { accepted: folded, rejected, happenedTo };
 }
 
 async function extractChunk(job, chunkCount, ctx) {
@@ -1221,8 +1330,8 @@ async function extractChunk(job, chunkCount, ctx) {
       continue;
     }
     if (located.via !== "events") stage.repairs.push(`events-${located.via}`);
-    const { accepted, rejected } = coerceAll(located.items, ctx, job.index);
-    const candidate = { events: accepted, skipped: rejected };
+    const { accepted, rejected, happenedTo } = coerceAll(located.items, ctx, job.index);
+    const candidate = { events: accepted, skipped: [...rejected, ...happenedTo] };
     if (!best || candidate.events.length > best.events.length) best = candidate;
 
     const wasTruncated = response.truncated || parsed.repairs.includes("closed-truncated-json");
@@ -1234,7 +1343,7 @@ async function extractChunk(job, chunkCount, ctx) {
         return { events: [], skipped: [], split: halves.map((text) => ({ text, index: job.index, depth: job.depth + 1 })) };
       }
     }
-    const total = located.items.length;
+    const total = located.items.length - happenedTo.length;
     if (total > 0 && rejected.length / total > 0.5 && attempt < cfg.maxRepairAttempts) {
       const errors = summarizeRejections(rejected);
       stage.errors.push(...errors);
@@ -1294,10 +1403,10 @@ async function combinedChunk(job, chunkCount, ctx) {
       messages.push(assistantEcho(response.content), buildRepairMessage({ stage: "extract", errors: [`The top level must be {"events":[...],"proposals":[...]}, but your reply had: ${keys}.`], expectedShape: "{\"events\":[...],\"proposals\":[...]}" }));
       continue;
     }
-    const { accepted, rejected } = coerceAll(locatedEvents.items, ctx, job.index);
-    const candidate = { events: accepted, skipped: rejected, proposalBatch: batchFor(locatedProposals, messages, response, stage, cfg) };
+    const { accepted, rejected, happenedTo } = coerceAll(locatedEvents.items, ctx, job.index);
+    const candidate = { events: accepted, skipped: [...rejected, ...happenedTo], proposalBatch: batchFor(locatedProposals, messages, response, stage, cfg) };
     if (!best || candidate.events.length > best.events.length) best = candidate;
-    const total = locatedEvents.items.length;
+    const total = locatedEvents.items.length - happenedTo.length;
     if (total > 0 && rejected.length / total > 0.5 && attempt < cfg.maxRepairAttempts) {
       const errors = summarizeRejections(rejected);
       stage.errors.push(...errors);
@@ -1396,7 +1505,7 @@ async function proposeStage(events, decision, ctx, milestone = null, target = nu
   // An authoring request is for ONE kind; a model that also wrote the other kind first must not use
   // up the single slot on it.
   const wrongKind = target ? checked.accepted.filter((p) => p.kind !== target.kind) : [];
-  const gated = gateProposals(target ? checked.accepted.filter((p) => p.kind === target.kind) : checked.accepted, ctx);
+  const gated = gateProposals(target ? checked.accepted.filter((p) => p.kind === target.kind) : checked.accepted, ctx, { guaranteed: Boolean(milestone) || Boolean(target) });
   checked.skipped.push(...wrongKind.map((proposal) => ({ proposal, reason: "wrong-kind-for-target" })));
   // Surface the model's own red verdicts, and say so when it flagged a deed but still wrote nothing
   // red: the GM should know a dark act went unanswered rather than find out from the players.
@@ -1449,7 +1558,10 @@ async function validateProposals(items, conversation, ctx) {
     invalid = [];
     try {
       conversation.stage.attempts += 1;
-      const response = await transport.chat({ messages: conversation.messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: cfg.allowRed }), temperature: conversation.temperature, maxTokens: cfg.numPredict });
+      // Board 96b5beea: no redCheck here. The red verdicts were already read from the first reply,
+      // the repair message asks for {"proposals":[...]} only, and a required per-event redCheck made
+      // the model re-walk every event again, spending numPredict on a list nobody reads.
+      const response = await transport.chat({ messages: conversation.messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: false }), temperature: conversation.temperature, maxTokens: cfg.numPredict });
       conversation.stage.ms += Math.round(response.ms ?? 0);
       const parsed = parseModelJson(response.content);
       const located = locateProposals(parsed.value);
@@ -1466,8 +1578,11 @@ async function validateProposals(items, conversation, ctx) {
   return { accepted, skipped };
 }
 
-/** Class gating, dedupe against the registry and each other, and the maxProposals cap. */
-function gateProposals(accepted, ctx) {
+/**
+ * Class gating, dedupe against the registry, the GM's pending and rejected proposals and each other,
+ * and the maxProposals cap.
+ */
+function gateProposals(accepted, ctx, { guaranteed = false } = {}) {
   const { request, cfg, sysId } = ctx;
   const gd = request?.actor?.grandDesign ?? {};
   const skipped = [];
@@ -1476,20 +1591,41 @@ function gateProposals(accepted, ctx) {
   const existing = new Set(ownedEntries.map((e) => slugifyTheme(e?.name)).filter(Boolean));
   const classFeatureCtx = { systemClass: request?.actor?.systemClass, systemId: request?.actor?.system ?? sysId };
   const ownedFeatures = Array.isArray(request?.actor?.ownedFeatures) ? request.actor.ownedFeatures : [];
-  const final = [];
+  // Board 3574bd96: proposals already waiting for the GM, and ones the GM turned down. A milestone or
+  // authoring call must return its ONE guaranteed entry, so it is only checked against its siblings
+  // here; its prompt still lists the pending ones so it writes something new.
+  const pending = guaranteed || !Array.isArray(request?.actor?.pendingProposals) ? [] : request.actor.pendingProposals;
+  const rejected = guaranteed || !Array.isArray(request?.actor?.rejectedProposals) ? [] : request.actor.rejectedProposals;
+  const ownedAsProposals = ownedEntries.map((entry) => ({ kind: inferEntryKind(entry), entry }));
+  const kept = [];
   for (const proposal of accepted) {
     const key = slugifyTheme(proposal.entry.name);
     if (proposal.kind === "class" && gd.classEvolutionAvailable !== true) { skipped.push({ proposal, reason: "class-evolution-not-available" }); continue; }
     if (existing.has(key)) { skipped.push({ proposal, reason: "already-exists" }); continue; }
-    const duplicateOwned = findDuplicateOwnedMechanic(proposal.entry, ownedEntries);
+    const duplicateOwned = findDuplicateOwnedMechanic(proposal.entry, ownedEntries) ?? findNearDuplicate(proposal, ownedAsProposals)?.other.entry;
     if (duplicateOwned) { skipped.push({ proposal, reason: "duplicates-owned", duplicateOf: duplicateOwned.name }); continue; }
     const duplicateFeature = findDuplicateClassFeature(proposal.entry, classFeatureCtx);
     if (duplicateFeature) { skipped.push({ proposal, reason: "duplicates-class-feature", duplicateOf: duplicateFeature }); continue; }
     const duplicateOwnedFeature = findDuplicateOwnedFeatureText(proposal.entry, ownedFeatures);
     if (duplicateOwnedFeature) { skipped.push({ proposal, reason: "duplicates-owned-proficiency", duplicateOf: duplicateOwnedFeature }); continue; }
-    if (final.length >= cfg.maxProposals) { skipped.push({ proposal, reason: "over-max-proposals" }); continue; }
-    existing.add(key);
-    final.push(proposal);
+    const pendingDup = findByNameOrNearDuplicate(proposal, pending);
+    if (pendingDup) { skipped.push({ proposal, reason: "duplicates-pending", duplicateOf: pendingDup.other.name, similarity: pendingDup.reason, ...(pendingDup.other.id ? { duplicateOfId: pendingDup.other.id } : {}) }); continue; }
+    const rejectedDup = findByNameOrNearDuplicate(proposal, rejected);
+    if (rejectedDup) { skipped.push({ proposal, reason: "duplicates-rejected", duplicateOf: rejectedDup.other.name, similarity: rejectedDup.reason }); continue; }
+    // A sibling from this same call: keep the better-sourced of the two (the one citing more events).
+    const siblingIndex = kept.findIndex((other) => slugifyTheme(other.entry.name) === key || nearDuplicateReason(proposal, other));
+    if (siblingIndex >= 0) {
+      const sibling = kept[siblingIndex];
+      const similarity = slugifyTheme(sibling.entry.name) === key ? "name" : nearDuplicateReason(proposal, sibling);
+      const [winner, loser] = evidenceScore(proposal) > evidenceScore(sibling) ? [proposal, sibling] : [sibling, proposal];
+      kept[siblingIndex] = winner;
+      skipped.push({ proposal: loser, reason: "duplicates-sibling", duplicateOf: winner.entry.name, similarity });
+      continue;
+    }
+    kept.push(proposal);
   }
+  // Capped after the sibling dedupe, so a duplicate never takes the slot a distinct idea needed.
+  const final = kept.slice(0, cfg.maxProposals);
+  for (const proposal of kept.slice(cfg.maxProposals)) skipped.push({ proposal, reason: "over-max-proposals" });
   return { final, skipped };
 }

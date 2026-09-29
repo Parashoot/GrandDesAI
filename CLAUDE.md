@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 907 unit tests, ~30 s, no network
+npm test                                    # 1040 unit tests, ~30 s, no network
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -92,9 +92,19 @@ warning; adapter rebuilds on settings change; rest shows fallback warnings; mile
 deploys stamp a build (0.28.x) shown at ready, in the Gateway form and Under the hood. 907 tests + 1 todo.
 Foundry: the owner authorised Claude to log in as Gamemaster (no password) and drive the worlds.
 
+2026-09-29 (later): AI-authoring batch by the dev team (4 worktree agents, 13 items, commit c010773 +
+follow-up): milestone "Retry with AI" (`api.retryMilestoneReward`), fallback DCs/rolls from the character level
+as real system checks (`@Check`, `[[/check]]`, `[[/save]]`), fallbacks named by the Class motif, proposal
+Details/Edit (`api.updateProposal`)/per-row Approve/"Approve as written", in-dialog busy state + per-actor lock,
+unique evolved/merged ids and names, emergent-theme slug folding, near-duplicate proposals gated against pending
+and rejected ones, `actorRole` drops things done TO a PC, unreachable gateway settings exposed. Verified with the
+real model on reruns `playtests/v0929-dnd5e` (ember-road s1) and `v0929-pf2e` (salt-lantern s1-s2); traps+novel
+slice 96.8%, traps 100%. NOT yet clicked through in Foundry (dnd5e world occupied all session). 1040 tests.
+
 Open, in order (see the board, epic 278670bb):
-1. PF2e live verify (switch to world "endex" when free; Ollama is shared with MandoAI).
-2. AI authoring feature: milestone retry, fallback numbers/rolls, naming, near-duplicate proposals, theme slugs.
-3. Advanced mechanics feature (evolution, merge, titles, Horror Rank, combos) + registry UI.
-4. Real game items (structured damage/saves/modifiers), proposal details/edit, party analyze, Populate AI.
+1. Live verify in BOTH worlds when free: PF2e (25576f78) + the new Growth dialog (Details/Edit/Retry/busy); deploy first.
+2. Advanced mechanics feature (evolution, merge, titles, Horror Rank, combos) + registry UI.
+3. Real game items (structured damage/saves/modifiers), party analyze, Populate AI, undo/reassign events.
+4. Follow-ups from 09-29: Suggest explains "0 new" (43ff2ae9), consequence-of-own-deed skipped (07b9d93f),
+   bland tag motifs (e8ae42d0), theme registry clean-up (89437d16), roll follow-ups (5a65746f).
 5. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008.

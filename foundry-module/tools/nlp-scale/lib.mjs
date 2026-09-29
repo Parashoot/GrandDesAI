@@ -78,7 +78,11 @@ export function makeHarnessActor(systemId = "pf2e", { name = "Scale Tester", lev
 }
 
 export function buildHarnessRequest(item, systemId = "pf2e", actor = makeHarnessActor(systemId)) {
-  return buildAiGatewayRequest(actor, item.notes, systemId);
+  // Stage 2 only sees events credited to request.actor.name (2026-09-27). Corpus items name their
+  // own characters (Kesh, Tovin...), so "Scale Tester" filtered out every event and redAcc was
+  // always null. A blank name means "no analysed PC": stage 2 sees the item's events.
+  const request = buildAiGatewayRequest(actor, item.notes, systemId);
+  return { ...request, actor: { ...request.actor, name: "" } };
 }
 
 // ---- running ---------------------------------------------------------------------------------

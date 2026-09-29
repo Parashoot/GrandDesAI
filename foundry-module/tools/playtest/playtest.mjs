@@ -70,11 +70,15 @@ const safeName = (s) => String(s).trim().toLowerCase().replace(/[^a-z0-9-]+/g, "
 function loadCampaign(name) {
   const path = join(campaignDir(name), "campaign.json");
   if (!existsSync(path)) throw new Error(`no campaign "${name}" (run init first): ${path}`);
-  return JSON.parse(readFileSync(path, "utf8"));
+  // Remember the folder it came from: a copied campaign folder keeps the original's internal name,
+  // and saving by that name would overwrite the original campaign (board ad43ec26).
+  const campaign = JSON.parse(readFileSync(path, "utf8"));
+  Object.defineProperty(campaign, "folder", { value: safeName(name), enumerable: false });
+  return campaign;
 }
 
 function saveCampaign(campaign) {
-  const dir = campaignDir(campaign.name);
+  const dir = campaignDir(campaign.folder ?? campaign.name);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "campaign.json"), `${JSON.stringify(campaign, null, 1)}\n`);
 }
@@ -210,7 +214,7 @@ function cmdInit(flags) {
 async function cmdAnalyze(flags) {
   const campaign = loadCampaign(flags.campaign);
   const n = Number(flags.session ?? campaign.sessionsPlayed + 1);
-  const dir = sessionDir(campaign.name, n);
+  const dir = sessionDir(campaign.folder ?? campaign.name, n);
   const notesPath = flags.notes ?? join(dir, "notes.md");
   if (!existsSync(notesPath)) throw new Error(`no notes at ${notesPath}`);
   const notes = readFileSync(notesPath, "utf8").replace(/^---[\s\S]*?---\s*/, "").trim();
@@ -440,7 +444,7 @@ function renderReport(campaign, n, config, notes, results, hasTranscript) {
     }
     const skipped = [...(a.adapterSkippedProposals ?? []), ...(a.adapterSkippedEvents ?? [])];
     if (skipped.length) {
-      lines.push(`<details><summary>Skipped by the gateway (${skipped.length})</summary>\n\n${skipped.slice(0, 10).map((s) => `- ${s.reason ?? "invalid"}: ${JSON.stringify(s.errors ?? s.error ?? s.proposal?.entry?.name ?? "").slice(0, 200)}`).join("\n")}\n\n</details>`);
+      lines.push(`<details><summary>Skipped by the gateway (${skipped.length})</summary>\n\n${skipped.slice(0, 10).map((s) => `- ${s.reason ?? "invalid"}: ${JSON.stringify(s.errors ?? s.error ?? s.proposal?.entry?.name ?? s.proposal?.name ?? s.event?.summary ?? s.event?.quote ?? "").slice(0, 200)}`).join("\n")}\n\n</details>`);
       lines.push("");
     }
     lines.push(`GM screen: \`gm-view-${safeName(r.name)}.html\``);

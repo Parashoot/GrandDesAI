@@ -30,6 +30,12 @@ export const EVENT_ITEM_SCHEMA = {
     // + early makes the model commit to "who did this" while it is looking at the quote, which is
     // also what lets "Luz saw Tovin kill..." be recorded for Tovin rather than for the reporter.
     actorName: { type: "string" },
+    // Board 4f3192e0: did actorName DO this, or did it only happen TO them? The prompt rule alone
+    // ("something that merely happens TO a character is not their event") left "Tovin was read very
+    // well by a woman who wants a year of his dreams" as a success/occultism event for Tovin. Deciding
+    // it as a field, right after naming the character, works where the rule did not (this model
+    // follows schema fields better than prose rules). "target" entries are dropped in pipeline.js.
+    actorRole: { type: "string", enum: ["doer", "target"] },
     // Model-declared "this line is only the payoff/elaboration of the previous event". Prompting alone
     // never stopped the split (see pipeline.js#mergeFollowUpEvents); a flag lets the model record the
     // line AND lets us fold it deterministically. Right after quote so it is decided from the source.
@@ -45,7 +51,7 @@ export const EVENT_ITEM_SCHEMA = {
     dangerGap: { type: "string", enum: DANGER_GAP_VALUES },
     language: { type: "string" }
   },
-  required: ["quote", "actorName", "continuesPrevious", "summary", "tags", "themes", "outcome", "dangerGap"]
+  required: ["quote", "actorName", "actorRole", "continuesPrevious", "summary", "tags", "themes", "outcome", "dangerGap"]
 };
 
 export const EVENT_EXTRACTION_SCHEMA = {
