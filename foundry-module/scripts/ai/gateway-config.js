@@ -16,6 +16,9 @@ export const GATEWAY_DEFAULTS = Object.freeze({
   endpoint: "http://127.0.0.1:11434",
   model: "qwen3.8:27b",
   apiKey: "",
+  // Board 2d795cac: plain http:// to a private/LAN address (a home Ollama box) is refused unless the
+  // GM ticks "Allow plain HTTP to my local network". Public http is refused either way (transport.js).
+  allowPrivateHttp: false,
   temperature: 0.2,
   numCtx: 16384,
   numPredict: 3072,
@@ -98,6 +101,8 @@ export function normalizeGatewayConfig(partial = {}) {
     endpoint: nonEmptyString(input.endpoint, 2048) ?? d.endpoint,
     model: nonEmptyString(input.model, 256) ?? d.model,
     apiKey: typeof input.apiKey === "string" ? input.apiKey.trim() : d.apiKey,
+    // Strictly boolean true: a stray "on"/"false" string must never widen what may go out in plaintext.
+    allowPrivateHttp: input.allowPrivateHttp === true,
     temperature: clampNumber(input.temperature, 0, 1.5, d.temperature),
     numCtx: clampInt(input.numCtx, 2048, 262144, d.numCtx),
     numPredict: clampInt(input.numPredict, 256, 32768, d.numPredict),

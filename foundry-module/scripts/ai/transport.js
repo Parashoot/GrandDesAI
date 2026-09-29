@@ -80,15 +80,89 @@ export function safeUrlParts(endpoint) {
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
-// Notes can contain players' real names and table drama; they must never cross the network in
-// plaintext to anything but this machine. HTTPS everywhere, plain HTTP only to loopback.
-export function assertSafeEndpoint(endpoint) {
-  if (typeof endpoint !== "string") throw new Error("The AI gateway endpoint must be a URL.");
-  const url = new URL(endpoint);
-  const local = LOOPBACK_HOSTS.has(url.hostname);
-  if (url.protocol !== "https:" && !(url.protocol === "http:" && local)) {
-    throw new Error("AI endpoints must use HTTPS, except a local localhost or loopback server.");
+// The label of the opt-in, named in error messages so a GM knows exactly which box to tick.
+export const ALLOW_PRIVATE_HTTP_LABEL = "Allow plain HTTP to my local network";
+
+function parseIPv4(host) {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!m) return null;
+  const parts = m.slice(1).map(Number);
+  return parts.every((n) => n <= 255) ? parts : null;
+}
+
+function isPrivateIPv4([a, b]) {
+  return a === 10 // 10/8
+    || (a === 172 && b >= 16 && b <= 31) // 172.16/12
+    || (a === 192 && b === 168) // 192.168/16
+    || (a === 169 && b === 254); // link-local 169.254/16
+}
+
+/**
+ * True for a host on the GM's own network: RFC1918 IPv4, IPv4 link-local, IPv6 unique-local
+ * (fc00::/7) and link-local (fe80::/10), IPv4-mapped forms of those, and *.local / *.lan names.
+ * Loopback is NOT included (it is always allowed). Takes a URL `hostname` (IPv6 in brackets) or a
+ * bare host.
+ */
+export function isPrivateNetworkHost(hostname) {
+  const host = String(hostname ?? "").trim().toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
+  if (!host) return false;
+  const v4 = parseIPv4(host);
+  if (v4) return isPrivateIPv4(v4);
+  if (host.includes(":")) {
+    // WHATWG URL rewrites ::ffff:192.168.1.5 to ::ffff:c0a8:105; accept both spellings.
+    const mapped = /^::ffff:(?:(\d{1,3}(?:\.\d{1,3}){3})|([0-9a-f]{1,4}):([0-9a-f]{1,4}))$/.exec(host);
+    if (mapped) {
+      if (mapped[1]) {
+        const inner = parseIPv4(mapped[1]);
+        return Boolean(inner && isPrivateIPv4(inner));
+      }
+      const hi = parseInt(mapped[2], 16);
+      return isPrivateIPv4([hi >> 8, hi & 255]);
+    }
+    const first = host.startsWith("::") ? 0 : parseInt(host.split(":")[0], 16);
+    if (!Number.isFinite(first)) return false;
+    return (first & 0xfe00) === 0xfc00 || (first & 0xffc0) === 0xfe80;
   }
+  // mDNS / home-router names: they only resolve inside the LAN.
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.(local|lan)$/.test(host);
+}
+
+/**
+ * Why an endpoint is refused, or null when it is fine. The one rule shared by the transport guard
+ * and the settings form (ai-provider-config.js#validateEndpointUrl), so the two can never disagree.
+ * @returns {null|{ code: "invalid"|"protocol"|"private-http"|"public-http", message: string }}
+ */
+export function endpointSafetyProblem(endpoint, { allowPrivateHttp = false } = {}) {
+  if (typeof endpoint !== "string" || !endpoint.trim()) return { code: "invalid", message: "An endpoint URL is required." };
+  let url;
+  try {
+    url = new URL(endpoint.trim());
+  } catch {
+    return { code: "invalid", message: `"${endpoint}" is not a valid URL.` };
+  }
+  if (url.protocol === "https:") return null;
+  if (url.protocol !== "http:") return { code: "protocol", message: `AI endpoints must use HTTPS (got ${url.protocol.replace(/:$/, "")}).` };
+  if (LOOPBACK_HOSTS.has(url.hostname)) return null;
+  if (isPrivateNetworkHost(url.hostname)) {
+    if (allowPrivateHttp === true) return null;
+    return {
+      code: "private-http",
+      message: `Plain HTTP to ${url.hostname} (a machine on your local network) is off. Tick "${ALLOW_PRIVATE_HTTP_LABEL}" in the AI Gateway settings, or use HTTPS.`
+    };
+  }
+  return {
+    code: "public-http",
+    message: `Remote AI endpoints must use HTTPS. Plain HTTP is only allowed for this PC (localhost / 127.0.0.1) or, with "${ALLOW_PRIVATE_HTTP_LABEL}" ticked, a private LAN address (192.168.x.x, 10.x.x.x, 172.16-31.x.x, *.local).`
+  };
+}
+
+// Notes can contain players' real names and table drama; they must never cross the network in
+// plaintext to anything but this machine -- or, only when the GM opts in, their own LAN (a home
+// Ollama box). The public internet is HTTPS-only, opt-in or not.
+export function assertSafeEndpoint(endpoint, { allowPrivateHttp = false } = {}) {
+  if (typeof endpoint !== "string") throw new Error("The AI gateway endpoint must be a URL.");
+  const problem = endpointSafetyProblem(endpoint, { allowPrivateHttp });
+  if (problem) throw new Error(problem.message);
 }
 
 export function normalizeProviderKind(provider) {
@@ -141,6 +215,7 @@ const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * @param {number} [opts.retryBaseMs=400]
  * @param {Function} [opts.sleep] injectable for tests
  * @param {"json_schema"|"json_object"|"none"} [opts.responseFormat="json_schema"] openai only; starting mode
+ * @param {boolean} [opts.allowPrivateHttp=false] the GM's opt-in to plain HTTP on their own LAN (endpointSafetyProblem)
  */
 export function createTransport({
   provider = "ollama",
@@ -155,9 +230,10 @@ export function createTransport({
   maxRetries = 2,
   retryBaseMs = 400,
   sleep = defaultSleep,
-  responseFormat = "json_schema"
+  responseFormat = "json_schema",
+  allowPrivateHttp = false
 } = {}) {
-  assertSafeEndpoint(endpoint);
+  assertSafeEndpoint(endpoint, { allowPrivateHttp });
   const kind = normalizeProviderKind(provider);
   const { chatUrl, modelsUrl, notes: endpointNotes } = resolveEndpoints(kind, endpoint);
   // Per-transport memory of what this server turned out not to support, so a 400 downgrade is paid

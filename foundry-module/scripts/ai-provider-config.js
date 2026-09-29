@@ -20,6 +20,7 @@ import { CREATIVITY_LEVELS, GATEWAY_DEFAULTS, normalizeGatewayConfig, PIPELINES,
 import { MODULE_ID } from "./constants.js";
 import { GROWTH_TAXONOMY } from "./growth-taxonomy.js";
 import { BUILD, describeBuild } from "./build-info.js";
+import { ALLOW_PRIVATE_HTTP_LABEL, endpointSafetyProblem } from "./ai/transport.js";
 
 // The one place the recommended local model is named. The orchestrator confirms/adjusts it after the
 // live scale test (tools/nlp-scale); everything else reads this constant.
@@ -42,6 +43,10 @@ export const CREATIVITY_HELP = Object.freeze({
 // Individual client settings kept from v1 so an existing install keeps its provider/endpoint/model/key.
 export const CLIENT_BASIC_SETTINGS = Object.freeze({ provider: "aiProvider", endpoint: "aiEndpoint", model: "aiModel", apiKey: "aiApiKey" });
 export const AI_EXPECTED_SETTING = "aiExpected";
+// Board 2d795cac: opt-in to plain http:// on the GM's own LAN (a home Ollama box, jev-proxy on another
+// PC). Same scope as provider/endpoint (it describes where that endpoint lives), Boolean, default off.
+export const ALLOW_PRIVATE_HTTP_SETTING = "aiAllowPrivateHttp";
+export { ALLOW_PRIVATE_HTTP_LABEL };
 export const CLIENT_TUNING_SETTING = "aiGatewayClient";
 export const WORLD_FLAVOR_SETTING = "aiGatewayWorld";
 // Board 5b2ff22d: buildGatewayConfig keeps ONLY the keys listed here, so a gateway-config.js knob
@@ -117,20 +122,13 @@ export function migrateEndpoint(provider, endpoint) {
   return value.replace(/\/+$/, "");
 }
 
-/** null when fine, otherwise a human-readable reason (mirrors transport.js#assertSafeEndpoint). */
-export function validateEndpointUrl(endpoint) {
-  if (typeof endpoint !== "string" || !endpoint.trim()) return "An endpoint URL is required.";
-  let url;
-  try {
-    url = new URL(endpoint.trim());
-  } catch {
-    return `"${endpoint}" is not a valid URL.`;
-  }
-  const local = ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname);
-  if (url.protocol !== "https:" && !(url.protocol === "http:" && local)) {
-    return "Remote AI endpoints must use HTTPS (plain HTTP is only allowed for localhost / 127.0.0.1).";
-  }
-  return null;
+/**
+ * null when fine, otherwise a human-readable reason. Delegates to transport.js#endpointSafetyProblem,
+ * the rule assertSafeEndpoint enforces, so the form never accepts what the transport refuses (or the
+ * reverse). `allowPrivateHttp` is the GM's "Allow plain HTTP to my local network" box.
+ */
+export function validateEndpointUrl(endpoint, { allowPrivateHttp = false } = {}) {
+  return endpointSafetyProblem(endpoint, { allowPrivateHttp: allowPrivateHttp === true })?.message ?? null;
 }
 
 /**
@@ -156,6 +154,7 @@ export function buildGatewayConfig({ basics = {}, client = {}, world = {} } = {}
     endpoint: endpoint || GATEWAY_DEFAULTS.endpoint,
     model: model || (provider === "ollama" ? DEFAULT_OLLAMA_MODEL : ""),
     apiKey: typeof basics.apiKey === "string" ? basics.apiKey : "",
+    allowPrivateHttp: basics.allowPrivateHttp === true,
     jev: buildJevConfig(client?.jev, basics.jevApiKey)
   };
   const normalized = normalizeGatewayConfig(merged);
@@ -221,7 +220,7 @@ export function defaultGatewaySettings(provider = "ollama") {
   const preset = PROVIDER_PRESETS[provider] ?? PROVIDER_PRESETS.ollama;
   const pick = (keys) => Object.fromEntries(keys.map((key) => [key, structuredClone(GATEWAY_DEFAULTS[key])]));
   return {
-    basics: { provider, endpoint: preset.endpoint, model: preset.model, apiKey: "", jevApiKey: "" },
+    basics: { provider, endpoint: preset.endpoint, model: preset.model, apiKey: "", jevApiKey: "", allowPrivateHttp: false },
     client: { ...pick(CLIENT_TUNING_KEYS), jev: normalizeJevTuning({}) },
     world: pick(WORLD_FLAVOR_KEYS)
   };
@@ -305,10 +304,12 @@ export function formDataToSettings(formData = {}) {
     provider,
     endpoint: String(formData.endpoint ?? "").trim(),
     model: String(formData.model ?? "").trim(),
-    apiKey: String(formData.apiKey ?? "").trim()
+    apiKey: String(formData.apiKey ?? "").trim(),
+    // An unchecked checkbox is absent from formData: absent = off.
+    allowPrivateHttp: isChecked(formData.allowPrivateHttp)
   };
   if (provider !== "disabled") {
-    const endpointError = validateEndpointUrl(basics.endpoint || PROVIDER_PRESETS[provider].endpoint);
+    const endpointError = validateEndpointUrl(basics.endpoint || PROVIDER_PRESETS[provider].endpoint, { allowPrivateHttp: basics.allowPrivateHttp });
     if (endpointError) errors.push(endpointError);
     if (!basics.model && !PROVIDER_PRESETS[provider].model) errors.push("Choose a model (use Refresh models to list what the provider has).");
     if (PROVIDER_PRESETS[provider].requiresKey && !basics.apiKey) errors.push("This hosted provider needs an API key.");
@@ -392,7 +393,8 @@ export function formDataToJev(formData = {}) {
   const errors = [];
   if (tuning.enabled) {
     if (!apiKey) errors.push("Jev is switched on but has no API key (untick Use Jev, or paste the key from TypeSafe).");
-    const endpointError = validateEndpointUrl(tuning.endpoint);
+    // The same LAN opt-in covers jev-proxy running on another machine.
+    const endpointError = validateEndpointUrl(tuning.endpoint, { allowPrivateHttp: checked(formData.allowPrivateHttp) });
     if (endpointError) errors.push(`Jev endpoint: ${endpointError}`);
   }
   return { tuning, apiKey, errors };
@@ -406,6 +408,7 @@ export function formDataToJev(formData = {}) {
 export function settingsWrites({ basics = {}, client = {}, world = {} } = {}, { isGM = false } = {}) {
   const writes = Object.entries(CLIENT_BASIC_SETTINGS).map(([key, setting]) => [setting, String(basics[key] ?? "")]);
   if (basics.jevApiKey !== undefined) writes.push([CLIENT_JEV_KEY_SETTING, String(basics.jevApiKey ?? "")]);
+  if (basics.allowPrivateHttp !== undefined) writes.push([ALLOW_PRIVATE_HTTP_SETTING, basics.allowPrivateHttp === true]);
   const tuning = Object.fromEntries(CLIENT_TUNING_KEYS.filter((key) => client[key] !== undefined).map((key) => [key, client[key]]));
   if (client.jev !== undefined) tuning.jev = normalizeJevTuning(client.jev);
   writes.push([CLIENT_TUNING_SETTING, JSON.stringify(tuning)]);
@@ -414,6 +417,10 @@ export function settingsWrites({ basics = {}, client = {}, world = {} } = {}, { 
     writes.push([WORLD_FLAVOR_SETTING, JSON.stringify(flavor)]);
   }
   return writes;
+}
+
+function isChecked(value) {
+  return value === true || value === "true" || value === "on" || value === 1;
 }
 
 function parseJsonSetting(raw) {
@@ -469,6 +476,7 @@ export function registerAiProviderSettings() {
   }
   // The Jev key follows aiApiKey exactly: this browser only, and a change rebuilds the adapter.
   game.settings.register(MODULE_ID, CLIENT_JEV_KEY_SETTING, { scope: "client", config: false, type: String, default: "", onChange: () => onGatewaySettingChanged() });
+  game.settings.register(MODULE_ID, ALLOW_PRIVATE_HTTP_SETTING, { scope: basicScope, config: false, type: Boolean, default: false, onChange: () => onGatewaySettingChanged() });
   game.settings.register(MODULE_ID, CLIENT_TUNING_SETTING, { scope: "client", config: false, type: String, default: "{}", onChange: () => onGatewaySettingChanged() });
   game.settings.register(MODULE_ID, WORLD_FLAVOR_SETTING, { scope: "world", config: false, type: String, default: "{}", onChange: () => onGatewaySettingChanged() });
   // Set the first time any GM saves a real provider; what makes "no adapter at ready" a warning
@@ -492,6 +500,12 @@ export function readStoredSettings() {
     basics.jevApiKey = game.settings.get(MODULE_ID, CLIENT_JEV_KEY_SETTING) ?? "";
   } catch {
     basics.jevApiKey = "";
+  }
+  // Unreadable (not registered yet) = off: the safe default.
+  try {
+    basics.allowPrivateHttp = game.settings.get(MODULE_ID, ALLOW_PRIVATE_HTTP_SETTING) === true;
+  } catch {
+    basics.allowPrivateHttp = false;
   }
   return {
     basics,
@@ -765,7 +779,7 @@ function buildGatewaySettingsClass() {
         const box = q(".gd-jev-test-result");
         const { config } = this._configFromForm(root);
         if (box) box.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Asking Jev for its model list...';
-        const result = await testJevConnection(config.jev);
+        const result = await testJevConnection(config.jev, { allowPrivateHttp: config.allowPrivateHttp });
         if (box) box.innerHTML = renderJevTestResult(result);
       });
 
@@ -809,6 +823,13 @@ function buildGatewaySettingsClass() {
   };
 }
 
+// Board 2d795cac: GMs assumed 127.0.0.1 meant the Foundry host. AI calls run in the GM's browser, so
+// it is the GM's own PC; a model elsewhere on the LAN needs Ollama to listen there and accept the
+// Foundry origin, plus the plain-HTTP opt-in.
+export const ENDPOINT_HELP = "AI calls come from this browser, not from the Foundry server: 127.0.0.1 means the PC you are using right now. Ollama on this PC: http://127.0.0.1:11434 (an old \".../api/chat\" address still works). Ollama on another machine: on that machine set OLLAMA_HOST=0.0.0.0 and OLLAMA_ORIGINS to your Foundry URL (for example http://192.168.1.10:30000), restart Ollama, enter http://<its address>:11434 here and tick the box below. Anything outside your local network must use HTTPS.";
+export const ALLOW_PRIVATE_HTTP_HELP = "Lets plain http:// reach private addresses only (192.168.x.x, 10.x.x.x, 172.16-31.x.x, 169.254.x.x, IPv6 fc00::/7 and fe80::/10, *.local, *.lan). Your notes then cross your own network unencrypted; public addresses always need HTTPS. Also applies to the Jev endpoint.";
+export const JEV_PROXY_HELP = "TypeSafe refuses calls from browser pages, so in Foundry Jev goes through a small proxy: run \"node tools/jev-proxy.mjs\" from the module folder and set the Jev endpoint to http://127.0.0.1:8788. To run the proxy on another machine, start it with --host 0.0.0.0, set the endpoint to http://<that machine's address>:8788 and tick \"Allow plain HTTP to my local network\" above.";
+
 /** Pure HTML for the settings form (exported so it can be smoke-tested in Node). */
 export function renderGatewayForm(config, stored = {}) {
   const world = { ...GATEWAY_DEFAULTS, ...(stored.world ?? {}), ...pickDefined(config, WORLD_FLAVOR_KEYS) };
@@ -828,7 +849,9 @@ export function renderGatewayForm(config, stored = {}) {
   <fieldset><legend>Connection (follows your Foundry user; the API key stays in this browser)</legend>
     <div class="form-group"><label>Provider</label><select name="provider">${providerOptions}</select></div>
     <div class="form-group gd-ai-only"${aiOnly}><label>Endpoint</label><input name="endpoint" type="text" value="${escapeHtml(config.endpoint ?? "")}" placeholder="${escapeHtml(PROVIDER_PRESETS[provider]?.endpoint || "https://...")}"></div>
-    <p class="gd-help gd-ai-only"${aiOnly}>Ollama: http://127.0.0.1:11434 (an old ".../api/chat" address still works). Remote providers must use HTTPS.</p>
+    <p class="gd-help gd-ai-only"${aiOnly}>${escapeHtml(ENDPOINT_HELP)}</p>
+    <div class="form-group gd-ai-only"${aiOnly}><label>${escapeHtml(ALLOW_PRIVATE_HTTP_LABEL)}</label><input type="checkbox" name="allowPrivateHttp" ${config.allowPrivateHttp === true ? "checked" : ""}></div>
+    <p class="gd-help gd-ai-only"${aiOnly}>${escapeHtml(ALLOW_PRIVATE_HTTP_HELP)}</p>
     <div class="form-group gd-ai-only"${aiOnly}><label>Model</label><div class="gd-row"><input name="model" type="text" list="gd-model-list" value="${escapeHtml(config.model ?? "")}" placeholder="${escapeHtml(PROVIDER_PRESETS[provider]?.model || "model name")}"><button type="button" data-action="refresh-models"><i class="fas fa-rotate"></i> Refresh models</button></div><datalist id="gd-model-list"></datalist></div>
     <div class="form-group gd-ai-only"${aiOnly}><label>API key</label><input name="apiKey" type="password" value="${escapeHtml(config.apiKey ?? "")}" autocomplete="off" placeholder="only for hosted providers"></div>
     <div class="gd-ai-only"${aiOnly}><button type="button" data-action="test-connection"><i class="fas fa-plug"></i> Test Connection</button><div class="gd-test-result gd-help">Checks the connection, the model, and reads one sample sentence.</div></div>
@@ -894,6 +917,7 @@ export function renderJevFieldset(jevConfig, { aiOnly = "" } = {}) {
     <div class="gd-jev-body"${on ? "" : ' style="display:none"'}>
       <div class="form-group"><label>Jev API key</label><input name="jevApiKey" type="password" value="${escapeHtml(apiKey)}" autocomplete="off" placeholder="from typesafe.ai (kept in this browser only)"></div>
       <div class="form-group"><label>Jev endpoint</label><input name="jevEndpoint" type="text" value="${escapeHtml(jev.endpoint)}" placeholder="${escapeHtml(JEV_UI_DEFAULTS.endpoint)}"></div>
+      <p class="gd-help">${escapeHtml(JEV_PROXY_HELP)}</p>
       <div class="form-group"><label>Jev model</label><input name="jevModel" type="text" value="${escapeHtml(jev.model)}" placeholder="${escapeHtml(JEV_UI_DEFAULTS.model)}"></div>
       ${box("jevTriage", jev.triage, "Skip passages with no character action")}
       ${box("jevAttribution", jev.attribution, "Work out who did each deed")}
@@ -916,11 +940,11 @@ export function renderJevFieldset(jevConfig, { aiOnly = "" } = {}) {
  * { ok, ms?, models?: string[], error?, kind?, status? }. jev.js is imported lazily and its absence
  * is a readable result, so this file keeps loading on a build without the Jev client.
  */
-export async function testJevConnection(jev, { loadJev = () => import("./ai/jev.js") } = {}) {
+export async function testJevConnection(jev, { loadJev = () => import("./ai/jev.js"), allowPrivateHttp = false } = {}) {
   const apiKey = typeof jev?.apiKey === "string" ? jev.apiKey.trim() : "";
   if (!apiKey) return { ok: false, kind: "config", error: "Paste a Jev API key first." };
   const tuning = normalizeJevTuning(jev);
-  const endpointError = validateEndpointUrl(tuning.endpoint);
+  const endpointError = validateEndpointUrl(tuning.endpoint, { allowPrivateHttp });
   if (endpointError) return { ok: false, kind: "config", error: `Jev endpoint: ${endpointError}` };
   let createJevClient = null;
   try {

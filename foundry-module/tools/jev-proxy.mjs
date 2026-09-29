@@ -9,6 +9,8 @@
 // Run it on the GM's PC (the machine whose browser runs Foundry, same as Ollama):
 //   node tools/jev-proxy.mjs [--port 8788] [--upstream https://api.typesafe.ai] [--origin http://localhost:30000]
 // then set the Jev endpoint in the Gateway settings to http://127.0.0.1:8788 and click Test Jev.
+// On another machine: add --host 0.0.0.0, point the endpoint at http://<its LAN address>:8788 and tick
+// "Allow plain HTTP to my local network" (plain http is otherwise refused for non-loopback hosts).
 //
 // It never stores or injects a key: the browser sends its own Authorization header, so an origin
 // that reaches the proxy can only spend a key it already has. Only the two Jev paths are forwarded.
@@ -98,5 +100,8 @@ if (isMain) {
   createJevProxy(args).listen(args.port, args.host, () => {
     console.log(`jev-proxy: http://${args.host}:${args.port} -> ${args.upstream}${args.origins.length ? ` (origins: ${args.origins.join(", ")})` : " (any origin; the browser supplies its own key)"}`);
     console.log(`Set the Jev endpoint in Grand Design's Gateway settings to http://${args.host === "0.0.0.0" ? "127.0.0.1" : args.host}:${args.port}`);
+    // Board 2d795cac: from another PC the endpoint is this machine's LAN address, and plain HTTP to
+    // it needs the Gateway's "Allow plain HTTP to my local network" box.
+    if (args.host === "0.0.0.0") console.log(`From another PC on your network: http://<this machine's LAN address>:${args.port}, and tick "Allow plain HTTP to my local network" in the Gateway settings.`);
   });
 }

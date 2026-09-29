@@ -68,11 +68,12 @@ function activeSystemId() {
  */
 export function createGatewayAdapter(config = {}, { validators, transportFactory = createTransport, jevFactory = createJevClient } = {}) {
   const cfg = normalizeGatewayConfig(config);
-  assertSafeEndpoint(cfg.endpoint);
+  assertSafeEndpoint(cfg.endpoint, { allowPrivateHttp: cfg.allowPrivateHttp });
   if (typeof cfg.model !== "string" || !cfg.model.trim()) throw new Error("An AI model name is required.");
   const transport = transportFactory({
     provider: cfg.provider,
     endpoint: cfg.endpoint,
+    allowPrivateHttp: cfg.allowPrivateHttp,
     model: cfg.model,
     apiKey: cfg.apiKey,
     timeoutMs: cfg.timeoutMs,
@@ -255,7 +256,7 @@ export function buildAdvancedTarget({ actor, operation, sources = [], name = nul
 // truncated mid-JSON at the 4096-token default and silently fell back to the local analyzer. The v2
 // transport goes further and rewrites an Ollama /v1 endpoint to the native /api/chat automatically.
 export function createChatCompletionsAdapter({ endpoint, model, getHeaders = () => ({}), requestOptions = {}, transport = "openai", ...rest } = {}) {
-  assertSafeEndpoint(endpoint);
+  assertSafeEndpoint(endpoint, { allowPrivateHttp: rest.allowPrivateHttp === true });
   if (typeof model !== "string" || !model.trim()) throw new Error("An AI model name is required.");
   if (typeof getHeaders !== "function") throw new Error("getHeaders must be a function.");
   const { options: ollamaOpts, ...extraBody } = requestOptions && typeof requestOptions === "object" ? requestOptions : {};

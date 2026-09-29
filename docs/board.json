@@ -1293,7 +1293,8 @@
    "title": "Ollama on another LAN machine is blocked (plain http only for loopback)",
    "status": "todo",
    "notes": [
-    "validateEndpointUrl (ai-provider-config.js:77) and transport.js:85 reject http to private addresses; calls run in the GM's browser, so 127.0.0.1 is the GM's PC, not the Foundry host, and the form does not say so. Fix: opt-in checkbox for private-network http, help text on where calls originate and OLLAMA_ORIGINS."
+    "validateEndpointUrl (ai-provider-config.js:77) and transport.js:85 reject http to private addresses; calls run in the GM's browser, so 127.0.0.1 is the GM's PC, not the Foundry host, and the form does not say so. Fix: opt-in checkbox for private-network http, help text on where calls originate and OLLAMA_ORIGINS.",
+    "dev-gateway (merged 2026-09-29): opt-in 'Allow plain HTTP to my local network' (aiAllowPrivateHttp, user scope, default off) -> cfg.allowPrivateHttp; one rule endpointSafetyProblem shared by transport.js and the form (RFC1918, 169.254, fc00::/7, fe80::/10, *.local/*.lan); applies to the Jev endpoint too; help text says calls come from the browser + OLLAMA_HOST/OLLAMA_ORIGINS + jev-proxy --host 0.0.0.0. Real Node check: http://192.168.4.32:11434 off -> rejected with the opt-in hint, on -> guard passes (connection refused, Ollama on loopback); http://8.8.8.8 on -> still rejected. 1397 tests. Pending: live form click-through."
    ],
    "tags": [
     "gateway",
@@ -1303,7 +1304,7 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.436,
-   "updated": 1790661417.1431363,
+   "updated": 1790713199.391,
    "prio": 2,
    "parent": "567067e6"
   },
@@ -1971,17 +1972,17 @@
   {
    "id": "e54491dd",
    "title": "analyzePartyNotes should pass an explicit request.party roster so Jev can name a PC who never speaks and the LLM misnamed (pa-007 Kesh/Amiri: 78/80)",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "integration",
     "jev"
    ],
    "severity": "low",
-   "owner": "",
+   "owner": "pm",
    "source": "ab855163 fix",
    "created": 1790707682.557,
-   "updated": 1790707682.557
+   "updated": 1790712756.766
   }
  ]
 }

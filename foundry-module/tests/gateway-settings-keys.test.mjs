@@ -26,7 +26,8 @@ test("every gateway-config knob a GM can set is in exactly one stored layer", ()
   const overlap = CLIENT_TUNING_KEYS.filter((key) => WORLD_FLAVOR_KEYS.includes(key));
   assert.deepEqual(overlap, []);
   // Everything in GATEWAY_DEFAULTS except the connection basics is reachable from the form.
-  const basics = new Set(["provider", "endpoint", "model", "apiKey"]);
+  // allowPrivateHttp is its own user-scoped Boolean setting (aiAllowPrivateHttp), read into basics.
+  const basics = new Set(["provider", "endpoint", "model", "apiKey", "allowPrivateHttp"]);
   // `jev` is a nested sub-config (docs/jev-layer-contract.md) with its own fieldset: its knobs are
   // stored under the client tuning JSON's `jev` key via normalizeJevTuning and the key in jevApiKey.
   const nested = new Set(["jev"]);
