@@ -91,6 +91,34 @@ try {
   }, { mod: MOD, id: actorId });
   check("Suggest proposals returns AI proposals", suggest.added.length > 0, `${suggest.added.join(" | ")} (${(suggest.ms / 1000).toFixed(0)} s) pending ${suggest.pending}; skipped [${suggest.skipped.join(", ")}] returned [${suggest.returned.join(", ")}] diag ${suggest.diag}${suggest.error ? ` error ${suggest.error}` : ""}`);
 
+  // Advanced mechanics (2026-09-29): approve a Skill, evolve it (AI upgrade or the rules' fallback,
+  // with its reason), approve the evolution and check the source is superseded; a title proposal
+  // path is exercised by the unit tests (the model proposes titles only for notable deeds).
+  const advanced = await page.evaluate(async ({ mod, id }) => {
+    const api = game.modules.get(mod).api; const actor = game.actors.get(id);
+    if (typeof api.getOwnedEntries !== "function" || typeof api.requestSkillEvolution !== "function") return { missing: true };
+    const skill = api.getGrowth(actor).proposals.find((p) => p.status === "pending" && p.kind === "skill" && !p.needsAuthoring);
+    if (!skill) return { note: "no pending AI Skill to approve" };
+    // Approving a generated Skill spends a grant allowance earned at rest; give the throwaway one.
+    const lp = api.getLevelProgression(actor);
+    await actor.update({ [`flags.${mod}.levelProgression`]: { ...lp, level: Math.max(1, lp.level ?? 0), grantAllowances: 1 } });
+    await api.approveProposal(actor, skill.id, { confirm: true });
+    const owned = api.getOwnedEntries(actor).skills.find((e) => e.name === skill.entry.name);
+    if (!owned) return { note: `approved ${skill.entry.name} but getOwnedEntries does not list it` };
+    const t = Date.now(); const r = await api.requestSkillEvolution(actor, owned.id);
+    const evolvedName = r.proposal?.entry?.name;
+    await api.approveProposal(actor, r.proposal.id, { confirm: true });
+    const after = api.getOwnedEntries(actor).skills;
+    const source = after.find((e) => e.id === owned.id);
+    const evolved = after.find((e) => e.name === evolvedName);
+    return { ms: Date.now() - t, source: owned.name, evolvedName, tier: `${owned.tier}->${evolved?.tier}`, usedFallback: r.usedFallback, reason: r.reason, sourceStatus: source?.status, lineage: evolved?.lineage?.sourceNames ?? evolved?.lineage?.sources };
+  }, { mod: MOD, id: actorId });
+  if (advanced.missing) check("advanced mechanics API present", false, "getOwnedEntries/requestSkillEvolution missing");
+  else {
+    check("Evolve writes an upgrade and supersedes the source", advanced.sourceStatus === "superseded" && Boolean(advanced.evolvedName), advanced.note ?? `${advanced.source} -> ${advanced.evolvedName} (tier ${advanced.tier}, lineage ${JSON.stringify(advanced.lineage)}, ${((advanced.ms ?? 0) / 1000).toFixed(0)} s)`);
+    check("Evolve is written by the AI", advanced.usedFallback === false, advanced.usedFallback ? `fallback: ${advanced.reason}` : "ai");
+  }
+
   const milestone = await page.evaluate(async ({ mod, id }) => {
     const api = game.modules.get(mod).api; const actor = game.actors.get(id);
     const req = 100 + 19 * 35 + 19 * 19 * 4;
@@ -124,6 +152,26 @@ try {
     check("Growth dialog shows the module build", dialog.hasBuild);
   }
   await page.screenshot({ path: "tools/playtest/live-verify.png" });
+
+  // Registry panel from the sheet header (the Growth dialog is left open; the header button is enough).
+  await page.evaluate(() => { document.querySelectorAll("#notifications li").forEach((li) => li.remove()); });
+  // DOM click: the open Growth dialog can overlap the sheet header, and this checks the button's
+  // handler, not pointer hit-testing.
+  const header = await page.evaluate(() => {
+    const el = [...document.querySelectorAll(".grand-design-registry")].find((e) => e.tagName !== "FORM" && e.closest(".window-header, header"));
+    if (!el) return false;
+    el.click();
+    return true;
+  });
+  if (header) await page.waitForTimeout(2500);
+  const registry = await page.evaluate(() => {
+    const form = document.querySelector("form.grand-design-registry");
+    if (!form) return null;
+    return { text: form.innerText.slice(0, 400), superseded: /superseded/i.test(form.innerText), evolve: [...form.querySelectorAll("button")].some((b) => /Evolve/.test(b.textContent)) };
+  });
+  check("Registry panel opens from the sheet header", Boolean(registry), header ? "" : "no header button found");
+  if (registry) check("Registry lists owned Skills with Evolve and the superseded source", registry.evolve && registry.superseded, registry.text.replace(/\s+/g, " ").slice(0, 200));
+  await page.screenshot({ path: "tools/playtest/live-verify-registry.png" });
 
   if (!KEEP) {
     await page.evaluate((id) => game.actors.get(id)?.delete(), actorId);
