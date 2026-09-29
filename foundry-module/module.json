@@ -8,7 +8,7 @@
   "download": "https://github.com/Parashoot/GrandDesAI/raw/main/releases/grand-design-ai.zip",
   "compatibility": {
     "minimum": "12",
-    "verified": "13"
+    "verified": "14"
   },
   "authors": [
     {

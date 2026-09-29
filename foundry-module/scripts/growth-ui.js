@@ -1,4 +1,5 @@
 import { MODULE_ID } from "./constants.js";
+import { BUILD, describeBuild } from "./build-info.js";
 
 // The Growth dialog (AI gateway v2, 2026-09-23): "fun and easy". A GM pastes notes written however
 // they like -- any language, bullet points, shorthand -- and sees, right in the dialog, how the
@@ -20,7 +21,9 @@ const OUTCOME_ICONS = {
 export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } = {}) {
   const api = game.modules.get(MODULE_ID).api;
   let content;
+  let aiAttached = true;
   try {
+    aiAttached = safe(() => api.hasProposalAdapter(), true) !== false;
     const growth = api.getGrowth(actor);
     const progression = api.getLevelProgression(actor);
     const pending = (growth.proposals ?? []).filter((proposal) => proposal?.status === "pending");
@@ -101,6 +104,14 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
       render: (html) => {
         // Dialog v1 hands over jQuery on V12/V13; accept a bare element too.
         const root = html?.[0] ?? html;
+        // Author with AI is a footer button (created by Dialog v1, not by our HTML), so disable it here.
+        if (!aiAttached) {
+          const scope = root?.closest?.(".app, .application, .window-app") ?? root;
+          scope?.querySelectorAll?.('.dialog-button.author, [data-button="author"]').forEach((button) => {
+            button.disabled = true;
+            button.title = NO_PROVIDER_TITLE;
+          });
+        }
         root?.querySelectorAll?.('[data-action="gd-suggest-proposals"]').forEach((button) => {
           button.addEventListener("click", (event) => {
             event.preventDefault();
@@ -180,8 +191,7 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
           callback: run("rest resolution", async (html) => {
             const restType = html.find('select[name="growth-rest-type"]').val();
             const result = await api.resolveLevelRest(actor, { restType });
-            const levels = result.gainedLevels.length ? ` Reached level(s): ${result.gainedLevels.join(", ")}.` : " No level was reached.";
-            ui.notifications.info(`Grand Design ${restType} rest resolved.${levels}`);
+            reportRest(result, restType);
             openGrowthManager(actor, { lastResult });
           })
         },
@@ -194,6 +204,7 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
   dialog.render(true);
 }
 
+const NO_PROVIDER_TITLE = "Needs an AI provider. Set one in Grand Design AI Gateway settings (Game Settings > Configure Settings).";
 const SUGGEST_LABEL = "Suggest proposals";
 const SUGGEST_BUSY_LABEL = "Asking the AI for proposals... (about 10 s)";
 
@@ -245,6 +256,23 @@ export function allowanceHint(progression, pendingCount, canSuggest = true) {
 }
 
 /**
+ * Notifications for a resolveLevelRest result. Each fallback warning is permanent (the GM must
+ * review a template that stands in for the AI's Skill/Class), and any new milestone proposals are
+ * named so the GM knows to open them. Exported for tests.
+ */
+export function reportRest(result, restType = "long") {
+  const levels = result?.gainedLevels?.length ? ` Reached level(s): ${result.gainedLevels.join(", ")}.` : " No level was reached.";
+  ui.notifications.info(`Grand Design ${restType} rest resolved.${levels}`);
+  const names = [...(result?.capstoneProposals ?? []), ...(result?.classProposals ?? [])]
+    .map((proposal) => proposal?.entry?.name ?? proposal?.id)
+    .filter(Boolean);
+  if (names.length) {
+    ui.notifications.info(`New milestone proposal${names.length === 1 ? "" : "s"} waiting for your review: ${names.join(", ")}.`);
+  }
+  for (const warning of result?.warnings ?? []) ui.notifications.warn(String(warning), { permanent: true });
+}
+
+/**
  * Turns an analyzeSessionNotes result into notifications a GM can act on. The quiet case --
  * zero events -- always comes with a reason.
  */
@@ -255,10 +283,15 @@ export function reportAnalysis(result) {
   }
   const events = result?.events ?? [];
   if (events.length) {
-    const how = result.source === "adapter" ? "AI analysis" : "local keyword analysis";
     const newThemes = (result.themes ?? []).filter((theme) => theme.isNew).map((theme) => theme.label);
     const themeNote = newThemes.length ? ` New theme(s): ${newThemes.join(", ")}.` : "";
-    ui.notifications.info(`Recorded ${events.length} growth event(s) via ${how}; ${pendingCount} pending proposal(s).${themeNote}`);
+    if (result.source === "adapter") {
+      ui.notifications.info(`Recorded ${events.length} growth event(s) via AI analysis; ${pendingCount} pending proposal(s).${themeNote}`);
+    } else {
+      // A quiet info toast let a GM run on the keyword analyzer for weeks; no AI provider is a warning.
+      const reason = result?.source === "local-fallback" ? "" : " No AI provider is attached -- set one in Grand Design AI Gateway settings for fuller readings.";
+      ui.notifications.warn(`Recorded ${events.length} growth event(s) via the local keyword analyzer, not an AI; ${pendingCount} pending proposal(s).${themeNote}${reason}`);
+    }
     return;
   }
   const diagnostics = result?.diagnostics;
@@ -335,9 +368,11 @@ export function renderGrowthContent({ growth, progression, pending, lastAnalysis
 // Prominent call-to-action when allowances wait with nothing to spend them on; otherwise a small
 // secondary button under the list (more ideas are still useful when the pending list is stale).
 function renderSuggest({ stuck, allowances, status }) {
-  const button = (variant) => `<button type="button" class="gd-suggest ${variant}" data-action="gd-suggest-proposals" aria-busy="false"><i class="fas fa-lightbulb"></i> <span class="gd-suggest-label">${SUGGEST_LABEL}</span></button>`;
-  const needsProvider = status?.kind === "local"
-    ? " It needs an AI provider (set one in <em>Grand Design AI Gateway</em> settings)."
+  // With no AI attached the button would only throw "no provider": disable it and say why instead.
+  const noProvider = status?.kind === "local";
+  const button = (variant) => `<button type="button" class="gd-suggest ${variant}" data-action="gd-suggest-proposals" aria-busy="false"${noProvider ? ` disabled title="${escapeHtml(NO_PROVIDER_TITLE)}"` : ""}><i class="fas fa-lightbulb"></i> <span class="gd-suggest-label">${SUGGEST_LABEL}</span></button>`;
+  const needsProvider = noProvider
+    ? ' It needs an AI provider (set one in <a data-gd-open-gateway="1"><em>Grand Design AI Gateway</em></a> settings).'
     : "";
   if (stuck) {
     return `<div class="gd-suggest-callout"><p>${allowances} grant allowance${allowances === 1 ? " is" : "s are"} waiting, but no proposal has enough evidence yet. Ask the AI to suggest Skills or Classes now from everything already recorded; it takes about 10 seconds with a local model.${needsProvider}</p>${button("gd-suggest-primary")}</div>`;
@@ -380,13 +415,18 @@ export function renderEventLine(event, newThemes = new Set(), withQuote = false)
 export function renderProposal(proposal) {
   const effect = proposal.entry?.mechanics?.effect ?? "(no effect text on this proposal)";
   const cited = Array.isArray(proposal.evidence) && proposal.evidence.length ? `${proposal.evidence.length} event(s)` : "none cited";
+  // A milestone reward that fell back to the built-in template keeps its source ("capstone" /
+  // "class-evolution"); `usedFallback` (when the API sets it) is what says the AI did not write it.
+  const fallback = proposal.usedFallback === true ? ' <span class="gd-chip" title="The AI could not write this one; review and flesh it out.">template</span>' : "";
   const badge = proposal.source === "emergent"
     ? `<span class="gd-chip gd-theme">theme: ${escapeHtml(proposal.theme ?? "?")}</span>`
     : proposal.source === "ai-gateway"
       ? '<span class="gd-chip gd-ai">AI</span>'
-      : proposal.isCapstone
-        ? '<span class="gd-chip gd-capstone">capstone</span>'
-        : '<span class="gd-chip">template</span>';
+      : proposal.isCapstone || proposal.source === "capstone"
+        ? `<span class="gd-chip gd-capstone">capstone</span>${fallback}`
+        : proposal.source === "class-evolution"
+          ? `<span class="gd-chip gd-class">class evolution</span>${fallback}`
+          : '<span class="gd-chip">template</span>';
   const authoring = proposal.needsAuthoring ? ' <em class="gd-needs-authoring">placeholder — "Author with AI" writes real mechanics</em>' : "";
   // Approve happens through the footer button + the <select> above; Reject sits right on the
   // proposal it acts on since there is one of these per pending item, not one global target.
@@ -403,6 +443,7 @@ export function renderUnderTheHood(lastAnalysis, lastResult) {
   const push = (label, value) => {
     if (value !== undefined && value !== null && value !== "") rows.push(`<li><strong>${escapeHtml(label)}:</strong> ${escapeHtml(String(value))}</li>`);
   };
+  push("Module build", describeBuild(BUILD));
   push("Read by", lastResult?.source ?? summary.source);
   push("Model", gateway?.model ?? summary.model);
   push("Provider", gateway?.provider ?? summary.provider);
@@ -421,7 +462,7 @@ export function renderUnderTheHood(lastAnalysis, lastResult) {
   const skippedProposals = (lastResult?.adapterSkippedProposals ?? []).map((entry) => `<li>${escapeHtml(entry?.proposal?.entry?.name ?? entry?.proposal?.kind ?? "proposal")} — ${escapeHtml((entry?.errors ?? [entry?.reason]).filter(Boolean).join(" "))}</li>`).join("");
   const rejectedTags = (lastResult?.adapterRejectedTags ?? []).map((entry) => `<li>${escapeHtml((entry?.rejected ?? []).join(", "))}${entry?.movedToThemes?.length ? ` → themes: ${escapeHtml(entry.movedToThemes.join(", "))}` : ""}${entry?.remapped ? ` → ${escapeHtml(Object.entries(entry.remapped).map(([from, to]) => `${from}=${to}`).join(", "))}` : ""}</li>`).join("");
   const dropped = (lastResult?.diagnostics?.dropped ?? []).map((entry) => `<li>${escapeHtml(entry?.sentence ?? "")} — ${escapeHtml(entry?.reason ?? "")}</li>`).join("");
-  if (!rows.length && !stageRows && !skippedEvents && !skippedProposals && !rejectedTags && !dropped) return "";
+  if (rows.length <= 1 && !stageRows && !skippedEvents && !skippedProposals && !rejectedTags && !dropped) return "";
   return `<details class="gd-under-the-hood"><summary><i class="fas fa-gears"></i> Under the hood</summary>
     <ul>${rows.join("")}</ul>
     ${stageRows ? `<h4>Stages</h4><ul>${stageRows}</ul>` : ""}

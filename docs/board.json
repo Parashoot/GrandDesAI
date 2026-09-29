@@ -819,7 +819,9 @@
    "title": "AI provider is off by default in every browser and the GM is not warned (silent keyword fallback)",
    "status": "doing",
    "notes": [
-    "aiProvider/aiEndpoint/aiModel are CLIENT scope, default 'disabled' (ai-provider-config.js:257); main.js only warns when adapter creation throws, not when it returns null; a local Analyze is an info toast plus a small 'Local' chip. Live: Dvathal's 14 events are all source 'local' (2026-09-29). Fix: user scope for provider/endpoint/model (API key stays client), a world 'AI expected' flag with a sticky warning + Open AI Gateway button at ready, local-mode Analyze as a warning, hide/disable Suggest/Author with no provider."
+    "aiProvider/aiEndpoint/aiModel are CLIENT scope, default 'disabled' (ai-provider-config.js:257); main.js only warns when adapter creation throws, not when it returns null; a local Analyze is an info toast plus a small 'Local' chip. Live: Dvathal's 14 events are all source 'local' (2026-09-29). Fix: user scope for provider/endpoint/model (API key stays client), a world 'AI expected' flag with a sticky warning + Open AI Gateway button at ready, local-mode Analyze as a warning, hide/disable Suggest/Author with no provider.",
+    "dev-ui: provider/endpoint/model now user scope (v13+), key stays client; aiExpected world flag; ready warning (permanent, with Open AI Gateway link); local Analyze is a warn; Suggest disabled + Author with AI disabled with no adapter. Unit-tested pf2e+dnd5e (tests/ui-ai-visible.test.mjs). Not verified live (owner connected, users=1). Uncommitted in worktree.",
+    "PM: merged to main (880 tests, 879 pass + 1 known todo). Reopened as doing until deployed and verified live (owner was connected, dev-ui skipped the live check)."
    ],
    "tags": [
     "gateway",
@@ -827,10 +829,10 @@
     "qol"
    ],
    "severity": "high",
-   "owner": "dev-ui",
+   "owner": "pm",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.796,
-   "updated": 1790661462.906,
+   "updated": 1790661787.111,
    "prio": 1,
    "parent": "567067e6"
   },
@@ -839,17 +841,19 @@
    "title": "Gateway adapter freezes settings at ready/Save; changes elsewhere need a reload",
    "status": "doing",
    "notes": [
-    "ai-gateway.js:62 normalizes the config once; no setting has onChange. proposalMode, creativity, allowRed, houseRules, namingStyle, maxProposals, provider/model changed by another GM, the console or a script are ignored until reload; main.js:33 claims otherwise. Fix: onChange handlers rebuilding the adapter (GM, debounced), or build the pipeline config per call and cache only the transport."
+    "ai-gateway.js:62 normalizes the config once; no setting has onChange. proposalMode, creativity, allowRed, houseRules, namingStyle, maxProposals, provider/model changed by another GM, the console or a script are ignored until reload; main.js:33 claims otherwise. Fix: onChange handlers rebuilding the adapter (GM, debounced), or build the pipeline config per call and cache only the transport.",
+    "dev-ui: onChange on aiProvider/Endpoint/Model/ApiKey/GatewayClient/GatewayWorld rebuilds+reattaches adapter (GM only, 200ms debounce); provider disabled detaches; main.js comment fixed. Unit-tested. Uncommitted.",
+    "PM: merged to main (880 tests, 879 pass + 1 known todo). Reopened as doing until deployed and verified live (owner was connected, dev-ui skipped the live check)."
    ],
    "tags": [
     "gateway",
     "proposals"
    ],
    "severity": "high",
-   "owner": "dev-ui",
+   "owner": "pm",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.872,
-   "updated": 1790661462.956,
+   "updated": 1790661787.192,
    "prio": 1,
    "parent": "567067e6"
   },
@@ -879,7 +883,9 @@
    "title": "Stale live install is undetectable: version stuck at 0.28.0, no build stamp",
    "status": "doing",
    "notes": [
-    "module.json version unchanged since gateway v2; deploy-foundry-module.ps1 'verifies' matching versions, which proves nothing. The live install was 4 days behind main on 2026-09-28 and the owner could not tell; after a deploy the world must be reloaded (Briik GD50 rested on old code). Fix: deploy writes a build stamp (git SHA + time), bumps patch, logs it at ready, shows it in the Gateway form and 'Under the hood'; module.json verified 13 -> 14."
+    "module.json version unchanged since gateway v2; deploy-foundry-module.ps1 'verifies' matching versions, which proves nothing. The live install was 4 days behind main on 2026-09-28 and the owner could not tell; after a deploy the world must be reloaded (Briik GD50 rested on old code). Fix: deploy writes a build stamp (git SHA + time), bumps patch, logs it at ready, shows it in the Gateway form and 'Under the hood'; module.json verified 13 -> 14.",
+    "dev-ui: deploy script stamps deployed scripts/build-info.js (sha, time, dirty), bumps source module.json patch when HEAD sha differs from deployed stamp, verifies; ready logs build; shown in Gateway form + Under the hood; verified 14. Tested deploy to temp dir (0.28.1, no re-bump on same sha). Not deployed live.",
+    "PM: merged to main (880 tests, 879 pass + 1 known todo). Reopened as doing until deployed and verified live (owner was connected, dev-ui skipped the live check)."
    ],
    "tags": [
     "harness",
@@ -887,10 +893,10 @@
     "qol"
    ],
    "severity": "high",
-   "owner": "dev-ui",
+   "owner": "pm",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.042,
-   "updated": 1790661463.053,
+   "updated": 1790661787.352,
    "prio": 1,
    "parent": "567067e6"
   },
@@ -899,17 +905,19 @@
    "title": "Rest dialog hides milestone template fallback and labels AI Class evolutions 'template'",
    "status": "doing",
    "notes": [
-    "growth-ui.js:182-184 shows only gainedLevels; resolveLevelRest's warnings ('used the built-in template (reason)'), capstoneProposals and classProposals are dropped - breaks the 'fallback with a stated reason' rule. renderProposal has no case for source 'class-evolution', so an AI Class gets the 'template' chip. Fix: sticky warnings per entry, info naming the new milestone proposals, chip from source + usedFallback."
+    "growth-ui.js:182-184 shows only gainedLevels; resolveLevelRest's warnings ('used the built-in template (reason)'), capstoneProposals and classProposals are dropped - breaks the 'fallback with a stated reason' rule. renderProposal has no case for source 'class-evolution', so an AI Class gets the 'template' chip. Fix: sticky warnings per entry, info naming the new milestone proposals, chip from source + usedFallback.",
+    "dev-ui: growth-ui reportRest shows permanent warn per result.warnings + info naming capstone/class proposals; chip 'class evolution'/'capstone' by source, 'template' chip only if proposal.usedFallback===true (api.js does not set that flag on the proposal yet - dev-proposals could add usedFallback:true to fallback milestone proposals). Uncommitted.",
+    "PM: merged to main (880 tests, 879 pass + 1 known todo). Reopened as doing until deployed and verified live (owner was connected, dev-ui skipped the live check)."
    ],
    "tags": [
     "ui",
     "progression"
    ],
    "severity": "high",
-   "owner": "dev-ui",
+   "owner": "pm",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.118,
-   "updated": 1790661463.003,
+   "updated": 1790661787.272,
    "prio": 1,
    "parent": "567067e6"
   },
