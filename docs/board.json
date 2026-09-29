@@ -1844,7 +1844,9 @@
    "id": "1656f47c",
    "title": "Jev client + triage/attribution/verify/rank steps in the gateway (docs/jev-layer-contract.md)",
    "status": "doing",
-   "notes": [],
+   "notes": [
+    "Review (Fable) on pre-main version: MERGE AFTER FIXES. Wire format vs SDK, total fail-open, timeout, secret scrub, Jev-off equivalence all verified. Must rebase onto main: never mutate cached events (extraction cache), key dark-act on darkDeed/redCheck, drop Luz/Tovin example names from prompts, rank defaults actor to the character, skip target-role events. Sent to dev-gateway."
+   ],
    "tags": [
     "gateway",
     "jev"
@@ -1853,7 +1855,7 @@
    "owner": "dev-gateway",
    "source": "jev-layer",
    "created": 1790705519.789,
-   "updated": 1790705617.683
+   "updated": 1790705743.763
   },
   {
    "id": "45499fb2",
