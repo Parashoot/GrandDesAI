@@ -1930,7 +1930,8 @@
     "2026-09-29 local: real Jev reachable (ping 183 ms, models jev-latest/jev-preview). api.typesafe.ai refuses EVERY browser origin ('Disallowed CORS origin' for localhost:30000, 127.0.0.1, https, forge-vtt), so inside Foundry Jev always failed open. Added tools/jev-proxy.mjs (zero-dep, forwards only /v1/systemone + /v1/models, never stores a key) and Test Jev's CORS message now names it. LIVE dnd5e (tools/playtest/live-jev.mjs): direct blocked with actionable message, via proxy OK 914 ms, 4/4. Real-model party corpus runs pending.",
     "Real Jev, party corpus 26 items x1, qwen3.8:27b (reports 2026-09-29T19-47 base / 19-58 jev): score 96.2 -> 97.2%, per-PC count in bounds 95.2 -> 96.2%, idle PCs left at zero 91.7 -> 100%, credit leak 0.19 -> 0.15/item, attribution 97.4% both, red recall 100% both (dark-act false 4.5%). Jev cost +1.8 s/run p50 (11 calls/run, 0 errors); triage skipped 0 chunks (party items are single-chunk) so no speed-up here. Worst item both: pa-021. Browser: CORS blocked -> jev-proxy (see above).",
     "With the roster fix (e54491dd), real model party corpus 26x1: roster only (20-12) 97.2% / attribution 98.7% / idle-at-zero 100%; roster + real Jev (20-21) IDENTICAL 97.2% / 98.7% / 100%. Jev cost p50 1.6 s/run, p95 21.6 s (5 x 10 s timeouts in 2 runs, all failed open, no effect on results). Jev's remaining visible value: weak-evidence chips (25) and outcome-disputed flags (2) for the GM; attribution gain is now covered by the roster for everyone. Party items are single-chunk, so triage never skips: speed-up untested on long notes.",
-    "ember-road s1 with real Jev in playtest.mjs: 4 calls 0.7 s, 0 errors, same credit as without. Real Jev QA complete: reachable, CORS needs jev-proxy (live 4/4 both worlds), numbers above."
+    "ember-road s1 with real Jev in playtest.mjs: 4 calls 0.7 s, 0 errors, same credit as without. Real Jev QA complete: reachable, CORS needs jev-proxy (live 4/4 both worlds), numbers above.",
+    "Long-multiscene + novel slice, 59 items x1 (reports 21-54 base / 22-05 jev): score 93.6 -> 94.0%, count accuracy 83.1 -> 88.1%, recall 98.9% both; Jev 2.25 calls/run, p50 0.3 s; 4 outcome overrides (1 right, 0 wrong); triage skipped 0 chunks again (threshold 0.12 keeps every chunk of real notes) -> no speed-up measured anywhere yet."
    ],
    "tags": [
     "jev",
@@ -1940,7 +1941,7 @@
    "owner": "",
    "source": "jev-layer",
    "created": 1790705520.084,
-   "updated": 1790714052.951
+   "updated": 1790720146.5
   },
   {
    "id": "edfcd96e",
