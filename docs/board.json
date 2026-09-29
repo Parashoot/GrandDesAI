@@ -743,7 +743,8 @@
    "status": "doing",
    "notes": [
     "api.js:995 calls adapter.authorProposal, which ai-gateway.js never defines, so it falls back to the full adapter with a 'GM REQUEST' notes wrapper (stage 1 reads it as OOC; stage 2 never sees the instruction), under when-earned gating, no preset events, and takes accepted[0] whatever it is. Capstone/Class fallbacks are forced to a tier-1/2 Skill. Fix: adapter.authorProposal = stage 2 only (presetEvents = cited evidence, mustPropose) with a 'target' (theme/label, kind, tier, placeholder to replace), like the milestone param. Also: approveProposal ignores needsAuthoring - warn or auto-author before approving a placeholder.",
-    "dev-proposals: adapter.authorProposal (stage 2 only, presetEvents+target) built; requestProposalAuthoring keeps id/isCapstone/milestoneLevel, tier 3 forced for capstone, stated reason on failure; approveProposal refuses needsAuthoring unless confirm:true. Real qwen3.8:27b both systems: Archery Knack -> real archery Skill, capstone stays tier 3. Uncommitted in worktree; tests/ai-authoring.test.mjs."
+    "dev-proposals: adapter.authorProposal (stage 2 only, presetEvents+target) built; requestProposalAuthoring keeps id/isCapstone/milestoneLevel, tier 3 forced for capstone, stated reason on failure; approveProposal refuses needsAuthoring unless confirm:true. Real qwen3.8:27b both systems: Archery Knack -> real archery Skill, capstone stays tier 3. Uncommitted in worktree; tests/ai-authoring.test.mjs.",
+    "PM: merged (b8d3afd, 905/906 + known todo), deployed 0.28.1. Real model both systems: Archery Knack -> 'Ranger: Longshot' / 'Longshot: Ridge Sentinel' in place; no Knacks/templates for adapter events; L20 Class approved at L21. Pending live UI check in Foundry."
    ],
    "tags": [
     "proposals",
@@ -751,10 +752,10 @@
     "gateway"
    ],
    "severity": "high",
-   "owner": "dev-proposals",
+   "owner": "pm",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.497,
-   "updated": 1790662030.358,
+   "updated": 1790662086.039,
    "prio": 1,
    "parent": "a2cbef5e"
   },
@@ -764,7 +765,8 @@
    "status": "doing",
    "notes": [
     "api.js:1151-1152 recordGrowthEvent always runs generateSkillProposals + generateEmergentProposals, also for adapter events. registryHasTheme only checks APPROVED skills, so an AI proposal and 'Archery Knack' are both pending; 'archery' is both a tag and an ALSO_THEME. Neither source counts toward the pending cap. Live (EndexDND 5E): Briik has 12 pending = 5 Knack placeholders + 2 templates + 5 AI. Fix: skip templates/placeholders for adapter events (or auto-author them), suppress a theme already on a pending AI proposal, include all sources in the cap.",
-    "dev-proposals: adapter events no longer mint templates/Knacks (recordGrowthEvent fromAdapter); emergent skips themes on pending AI proposals; cap counts template+emergent+ai (placeholders dropped first). Real model, 3 archery notes, both systems: 5 pending, all ai-gateway, 0 Knack/template. Two existing tests updated to the local path."
+    "dev-proposals: adapter events no longer mint templates/Knacks (recordGrowthEvent fromAdapter); emergent skips themes on pending AI proposals; cap counts template+emergent+ai (placeholders dropped first). Real model, 3 archery notes, both systems: 5 pending, all ai-gateway, 0 Knack/template. Two existing tests updated to the local path.",
+    "PM: merged (b8d3afd, 905/906 + known todo), deployed 0.28.1. Real model both systems: Archery Knack -> 'Ranger: Longshot' / 'Longshot: Ridge Sentinel' in place; no Knacks/templates for adapter events; L20 Class approved at L21. Pending live UI check in Foundry."
    ],
    "tags": [
     "proposals",
@@ -772,10 +774,10 @@
     "gateway"
    ],
    "severity": "high",
-   "owner": "dev-proposals",
+   "owner": "pm",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.571,
-   "updated": 1790662030.396,
+   "updated": 1790662086.117,
    "prio": 1,
    "parent": "a2cbef5e"
   },
@@ -785,16 +787,17 @@
    "status": "doing",
    "notes": [
     "api.js:1165-1170 only protects authored EMERGENT proposals; a re-authored template keeps source 'template' and a stable id (proposal:measured-strike), so the next recordGrowthEvent puts the template text back. Fix: preserve anything with authoredBy 'ai-gateway' (refresh evidence only) and restamp source ai-gateway, origin template.",
-    "dev-proposals: anything authoredBy ai-gateway keeps its entry (evidence refreshed); a rewritten template becomes source ai-gateway origin template. Tested (both systems)."
+    "dev-proposals: anything authoredBy ai-gateway keeps its entry (evidence refreshed); a rewritten template becomes source ai-gateway origin template. Tested (both systems).",
+    "PM: merged (b8d3afd, 905/906 + known todo), deployed 0.28.1. Real model both systems: Archery Knack -> 'Ranger: Longshot' / 'Longshot: Ridge Sentinel' in place; no Knacks/templates for adapter events; L20 Class approved at L21. Pending live UI check in Foundry."
    ],
    "tags": [
     "proposals"
    ],
    "severity": "high",
-   "owner": "dev-proposals",
+   "owner": "pm",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.646,
-   "updated": 1790662030.434,
+   "updated": 1790662086.197,
    "prio": 1,
    "parent": "a2cbef5e"
   },
@@ -804,17 +807,18 @@
    "status": "doing",
    "notes": [
     "progression.js:782 canApproveGeneratedProposal requires CLASS_EVOLUTION_LEVELS.has(current level). The guaranteed level-20 Class is dead if the GM rests to 21 first; a multi-level rest also falls back to a template that cannot be approved. Fix: gate on proposal.milestoneLevel; pass classEvolutionAvailable for milestone calls instead of reading the live level.",
-    "dev-proposals: canApproveGeneratedProposal gates on milestoneLevel/classEvolutionLevel; adapter marks class available for milestone/target requests; live-level check dropped. Real model: L20 Class resolved at GD level 21 and approved, both systems. Also milestone template fallbacks carry usedFallback+fallbackReason on the proposal (PM add-on)."
+    "dev-proposals: canApproveGeneratedProposal gates on milestoneLevel/classEvolutionLevel; adapter marks class available for milestone/target requests; live-level check dropped. Real model: L20 Class resolved at GD level 21 and approved, both systems. Also milestone template fallbacks carry usedFallback+fallbackReason on the proposal (PM add-on).",
+    "PM: merged (b8d3afd, 905/906 + known todo), deployed 0.28.1. Real model both systems: Archery Knack -> 'Ranger: Longshot' / 'Longshot: Ridge Sentinel' in place; no Knacks/templates for adapter events; L20 Class approved at L21. Pending live UI check in Foundry."
    ],
    "tags": [
     "progression",
     "proposals"
    ],
    "severity": "high",
-   "owner": "dev-proposals",
+   "owner": "pm",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.722,
-   "updated": 1790662030.472,
+   "updated": 1790662086.274,
    "prio": 1,
    "parent": "12372a7a"
   },
@@ -1386,7 +1390,8 @@
    "title": "Near-duplicate Class proposals pile up (two Suggest clicks -> 'Unbroken Bastion' + 'Unbroken Bulwark')",
    "status": "todo",
    "notes": [
-    "Live: Briik GD50 has two almost identical Class proposals pending; findDuplicateOwnedMechanic compares against OWNED entries only, not other pending proposals. Fix: dedupe new proposals against pending ones by mechanic (keep the better-evidenced), and show 'already pending' on Suggest."
+    "Live: Briik GD50 has two almost identical Class proposals pending; findDuplicateOwnedMechanic compares against OWNED entries only, not other pending proposals. Fix: dedupe new proposals against pending ones by mechanic (keep the better-evidenced), and show 'already pending' on Suggest.",
+    "Broader: stage 2 also returns near-duplicates of each other in one run (probe: 5 archery proposals 'Longbow: Precision Volley'-like). Dedupe new proposals against each other and against pending by mechanic."
    ],
    "tags": [
     "proposals"
@@ -1395,7 +1400,7 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.965,
-   "updated": 1790661415.764479,
+   "updated": 1790662086.35,
    "prio": 2,
    "parent": "a2cbef5e"
   },
@@ -1613,6 +1618,21 @@
    "kind": "feature",
    "prio": 2,
    "parent": "278670bb"
+  },
+  {
+   "id": "283ad7ca",
+   "title": "Growth dialog: 'Approve as written' for placeholders now that approve refuses needsAuthoring without confirm",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "ui",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "dev-proposals 2026-09-29",
+   "created": 1790662086.312,
+   "updated": 1790662086.312
   }
  ]
 }
