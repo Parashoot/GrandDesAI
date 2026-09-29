@@ -91,20 +91,38 @@ function howToNote() {
   };
 }
 
+// The vault already has the shared board mirror (Project Boards/Grand Design AI/Board.md, written by
+// the board-manager skill's board.py), so this note links to it instead of keeping a second, drifting
+// copy (board 9dbd2095). refreshSharedBoard() re-renders that mirror on every export, because
+// tools/board.mjs edits docs/board.json without telling board.py.
 function boardNote() {
   const path = join(REPO, "docs", "board.json");
   if (!existsSync(path)) return null;
   const items = JSON.parse(readFileSync(path, "utf8")).items ?? [];
-  const group = (status) => items.filter((item) => item.status === status);
-  const row = (item) => `- **${item.title}** \`${item.id}\`${item.severity ? ` (${item.severity})` : ""}${item.tags?.length ? ` #${item.tags.join(" #")}` : ""}${item.owner ? ` @${item.owner}` : ""}${item.notes?.length ? `\n  - ${item.notes.at(-1)}` : ""}`;
-  const block = (label, list) => `## ${label} (${list.length})\n\n${list.length ? list.map(row).join("\n") : "(none)"}\n`;
+  const count = (status) => items.filter((item) => item.status === status).length;
+  const doing = items.filter((item) => item.status === "doing").map((item) => `- **${item.title}** \`${item.id}\`${item.owner ? ` @${item.owner}` : ""}`);
   return {
     title: "Board Snapshot",
     sources: ["docs/board.json", "tools/board.mjs"],
     tags: ["board", "tasks"],
-    blurb: "The shared task board: what is being worked on, queued, blocked and recently done.",
-    body: [block("Doing", group("doing")), block("Blocked", group("blocked")), block("To do", group("todo")), block("Done (latest 25)", group("done").sort((a, b) => b.updated - a.updated).slice(0, 25))].join("\n")
+    blurb: "Where the shared task board lives, and what is in flight right now.",
+    body: `The full board is [[Project Boards/Grand Design AI/Board|Grand Design AI Board]] (re-rendered by every vault export).\n\nTo do ${count("todo")}, doing ${count("doing")}, blocked ${count("blocked")}, done ${count("done")}.\n\n## Doing\n\n${doing.length ? doing.join("\n") : "(none)"}\n`
   };
+}
+
+/** Re-render the shared board mirror with board.py when it is installed; never fails the export. */
+function refreshSharedBoard() {
+  const script = join(homedir(), "code", ".claude", "skills", "board-manager", "scripts", "board.py");
+  if (!existsSync(script)) return "board.py not found; shared board mirror not refreshed";
+  for (const python of ["python", "py", "python3"]) {
+    try {
+      execFileSync(python, [script, "--project", "granddes", "export"], { cwd: REPO, stdio: "ignore", timeout: 60000 });
+      return "shared board mirror refreshed";
+    } catch {
+      // try the next launcher
+    }
+  }
+  return "could not run board.py; shared board mirror not refreshed";
 }
 
 async function taxonomyNote() {
@@ -298,6 +316,7 @@ async function main(argv) {
   if (!flag("dry-run")) writeFileSync(manifestPath, `${JSON.stringify({ generator: GENERATOR, generated, files: nextManifest }, null, 2)}\n`);
   console.log(`${flag("dry-run") ? "[dry run] " : ""}${projectDir}`);
   for (const action of actions) console.log(`  ${action}`);
+  if (!flag("dry-run")) console.log(`  ${refreshSharedBoard()}`);
 }
 
 main(process.argv.slice(2)).catch((error) => {
