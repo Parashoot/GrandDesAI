@@ -20,11 +20,27 @@ import {
   createFeatureSource,
   createTitleSource,
   emptyRegistry,
+  isActiveEntry,
+  markSuperseded,
   normalizeEntry,
   registerEntry
 } from "./lineage.js";
-import { mergeClassEntry } from "./class-merging.js";
-import { computeEvolutionPressure, evolveSkillEntry } from "./skill-evolution.js";
+import {
+  assessIntentionalBreadth,
+  computeMergeFocus,
+  mergeClassEntry,
+  mergeClassMechanics,
+  mergedSystemChassis,
+  pickMergeSources
+} from "./class-merging.js";
+import {
+  computeEvolutionPressure,
+  evolveSkillEntry,
+  growEvolvedMechanics,
+  resolveEvolvedTier,
+  uniqueRegistryId
+} from "./skill-evolution.js";
+import { VICE_TAGS, VICE_TAXONOMY } from "./vice-taxonomy.js";
 import { buildCombinationGrowthEvent, buildCombinationSkill } from "./combination-skills.js";
 import { clearTestScenario, runTestScenario } from "./test-scenario.js";
 import { clearAiTestScenario, runAiTestScenario } from "./ai-test-scenario.js";
@@ -249,11 +265,14 @@ export class GrandDesignApi {
    */
   checkSkillEvolutionReadiness(actor, sourceId = null) {
     const registry = this.getActorRegistry(actor);
-    const events = this.getGrowth(actor).events;
+    // Only this character's own deeds push its Skills (events recorded before per-character
+    // attribution may name someone else).
+    const events = this._ownEvents(actor);
     const tagWeights = this.getTagWeights();
+    // A superseded Skill (already evolved) is history; it is only reported when asked for by id.
     const entries = sourceId
       ? [[sourceId, registry.skills?.[sourceId]]].filter(([, entry]) => entry)
-      : Object.entries(registry.skills ?? {});
+      : Object.entries(registry.skills ?? {}).filter(([, entry]) => isActiveEntry(entry));
     if (sourceId && !entries.length) {
       throw new Error(`No approved Skill ${sourceId} exists on this actor.`);
     }
@@ -300,6 +319,418 @@ export class GrandDesignApi {
       existingIds: registry.skills ?? {},
       existingNames: Object.values(registry.skills ?? {}).map((entry) => entry?.name).filter(Boolean)
     });
+  }
+
+  /**
+   * Board ebcc3f03: the Skills whose readiness (checkSkillEvolutionReadiness) now has BOTH halves of
+   * canon's trigger -- enough practice since approval and a defining moment -- and that have no
+   * evolution already pending. Run after every analysis and rest; listed on those results as
+   * `evolutionReady: [{ skillId, name, pressure }]` and announced with the hook
+   * `grand-design-ai.evolutionReady(actor, list)` when the list is not empty.
+   */
+  _evolutionReady(actor) {
+    const pending = new Set(
+      this.getGrowth(actor).proposals
+        .filter((proposal) => proposal.status === "pending" && proposal.entry?.metadata?.lineage?.operation === "upgrade")
+        .flatMap((proposal) => proposal.entry.metadata.lineage.sources ?? [])
+    );
+    return this.checkSkillEvolutionReadiness(actor)
+      .filter((row) => row.hasCatalyst && !pending.has(row.skillId))
+      .map(({ skillId, name, tier, ...pressure }) => ({ skillId, name, tier, pressure }));
+  }
+
+  _announceEvolutionReady(actor) {
+    let ready = [];
+    try {
+      ready = this._evolutionReady(actor);
+    } catch (error) {
+      // An advisory read; it must never cost the GM the analysis or rest it rides on.
+      console.warn(`${MODULE_ID} | could not check Skill evolution readiness`, error);
+      return [];
+    }
+    if (ready.length) globalThis.Hooks?.callAll?.("grand-design-ai.evolutionReady", actor, ready);
+    return ready;
+  }
+
+  // This character's own recorded events (not those naming another character).
+  _ownEvents(actor) {
+    const names = this._actorNames(actor);
+    return this.getGrowth(actor).events.filter((event) => classifyActorName(event.actorName, names) !== "other");
+  }
+
+  /**
+   * Everything the character holds in the Grand Design registry, for the registry panel:
+   * `{ classes, skills, titles }`, each row `{ id, name, kind, tier | level, power_tier?, polarity,
+   * status: "active" | "superseded", supersededBy?, lineage: { operation, sources, sourceNames,
+   * rationale }, effect, itemId, evolutionReady? }`. Superseded entries are included (the UI dims
+   * them); `sourceNames` resolves lineage ids to names so nothing has to show a registry id.
+   */
+  getOwnedEntries(actor) {
+    const registry = this.getActorRegistry(actor);
+    let ready = new Set();
+    try {
+      ready = new Set(this._evolutionReady(actor).map((row) => row.skillId));
+    } catch {
+      // advisory only
+    }
+    const nameOf = (bucket, id) => registry[bucket]?.[id]?.name ?? id;
+    const row = (kind, bucket, id, entry) => {
+      const lineage = entry.metadata?.lineage ?? {};
+      const sources = Array.isArray(lineage.sources) ? lineage.sources : [];
+      return {
+        id,
+        name: entry.name,
+        kind,
+        ...(kind === "class" ? { level: entry.level ?? null, power_tier: entry.power_tier ?? null } : {}),
+        ...(kind === "skill" ? { tier: entry.tier ?? null } : {}),
+        polarity: entry.metadata?.polarity === "red" ? "red" : "standard",
+        ...(entry.metadata?.polarity === "red" && entry.metadata?.malignance ? { malignance: entry.metadata.malignance } : {}),
+        status: isActiveEntry(entry) ? "active" : "superseded",
+        ...(entry.supersededBy ? { supersededBy: entry.supersededBy, supersededByName: nameOf(bucket, entry.supersededBy) } : {}),
+        lineage: {
+          operation: lineage.operation ?? "origin",
+          sources,
+          sourceNames: sources.map((sourceId) => nameOf(bucket, sourceId)),
+          rationale: lineage.rationale ?? ""
+        },
+        effect: kind === "title" ? entry.achievement ?? "" : entry.mechanics?.effect ?? "",
+        itemId: entry.itemId ?? null,
+        ...(kind === "skill" ? { evolutionReady: ready.has(id) } : {}),
+        ...(entry.evolution ? { evolution: entry.evolution } : {}),
+        ...(entry.offCycleEvolution !== undefined ? { offCycleEvolution: entry.offCycleEvolution } : {})
+      };
+    };
+    const list = (kind, bucket) => Object.entries(registry[bucket] ?? {}).map(([id, entry]) => row(kind, bucket, id, entry));
+    return { classes: list("class", "classes"), skills: list("skill", "skills"), titles: list("title", "titles") };
+  }
+
+  /**
+   * Board ebcc3f03: evolve one of the character's own approved Skills into a PENDING proposal.
+   * The AI writes it first (adapter.authorAdvanced, operation "upgrade": new name, mechanics that
+   * grow the source's, rationale citing the defining moments); when there is no such entry point,
+   * no provider, a failure or nothing usable, skill-evolution.js#evolveSkillEntry builds it from the
+   * rules with grown mechanics (growEvolvedMechanics) and the reason is stated. Either way the rules
+   * own the numbers: tier = source tier + 1 (max 3) with a catalyst, held without one; the registry
+   * id and lineage { operation: "upgrade", sources: [skillId] } are set here, not trusted.
+   * Approving it (approveProposal) supersedes the source. Needs no grant allowance: the evidence
+   * that made the Skill ready is what earned it. Returns { proposal, usedFallback, reason, pressure }.
+   */
+  async requestSkillEvolution(actor, skillId) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "evolve", () => this._requestSkillEvolution(actor, skillId));
+  }
+
+  async _requestSkillEvolution(actor, skillId) {
+    const registry = this.getActorRegistry(actor);
+    const source = registry.skills?.[skillId];
+    if (!source) throw new Error(`No approved Skill ${skillId} exists on ${actor.name ?? "this character"}.`);
+    if (!isActiveEntry(source)) {
+      throw new Error(`[${source.name}] was already evolved (superseded by ${registry.skills?.[source.supersededBy]?.name ?? source.supersededBy ?? "a later Skill"}).`);
+    }
+    const growth = this.getGrowth(actor);
+    const pendingSame = growth.proposals.find((proposal) => proposal.status === "pending"
+      && proposal.entry?.metadata?.lineage?.operation === "upgrade"
+      && (proposal.entry.metadata.lineage.sources ?? []).includes(skillId));
+    if (pendingSame) {
+      throw new Error(`An evolution of [${source.name}] is already pending ("${pendingSame.entry?.name}"); approve or reject it first.`);
+    }
+    const systemId = game.system?.id;
+    const ownEvents = this._ownEvents(actor);
+    const tagWeights = this.getTagWeights();
+    const pressure = computeEvolutionPressure(source, ownEvents, { tagWeights });
+    const evolvedTier = resolveEvolvedTier(source.tier, { hasCatalyst: pressure.hasCatalyst });
+    const rejected = rejectedProposalNames(growth.proposals);
+    const existingNames = [...Object.values(registry.skills ?? {}).map((entry) => entry?.name).filter(Boolean)];
+    const fallbackEntry = evolveSkillEntry({
+      sourceSkill: source,
+      events: ownEvents,
+      tagWeights,
+      existingIds: registry.skills ?? {},
+      existingNames,
+      mechanics: growEvolvedMechanics(source.mechanics, { fromTier: source.tier, toTier: evolvedTier, hasCatalyst: pressure.hasCatalyst, systemId })
+    });
+    const matchedIds = new Set(pressure.matchedEventIds);
+    const sourcePayload = {
+      id: skillId,
+      name: source.name,
+      kind: "skill",
+      tier: source.tier,
+      effect: source.mechanics?.effect ?? "",
+      tags: source.metadata?.tags ?? [],
+      polarity: source.metadata?.polarity === "red" ? "red" : "standard",
+      definingMoments: pressure.definingMoments.map((moment) => moment.summary || moment.outcome)
+    };
+    const ai = await this._authorAdvanced(actor, {
+      operation: "upgrade",
+      sources: [sourcePayload],
+      events: ownEvents.filter((event) => matchedIds.has(event.id)).slice(-15),
+      systemId,
+      wantedKind: "skill",
+      label: `[${source.name}]`,
+      shape: (candidate, notes) => this._shapeEvolvedEntry(candidate, { source, skillId, fallbackEntry, evolvedTier, registry, rejected, notes })
+    });
+    const usedFallback = !ai.entry;
+    const entry = ai.entry ?? fallbackEntry;
+    const notReady = pressure.hasCatalyst ? null : `not ready yet (${pressure.definingMoments.length ? `${pressure.evidenceWeight} of ${pressure.evidenceThreshold} weighted evidence` : "no defining moment"}), so it refines and holds at tier ${evolvedTier}`;
+    const reason = [usedFallback ? ai.reason : null, ...(ai.notes ?? []), notReady].filter(Boolean).join("; ") || null;
+    const proposal = {
+      id: uniqueRegistryId(`proposal:evolve-${slugify(skillId.replace(/^skill:/, ""))}`, growth.proposals.map((candidate) => candidate.id)),
+      kind: "skill",
+      status: "pending",
+      source: "skill-evolution",
+      systemId,
+      requestedBy: "gm",
+      requestedAt: new Date().toISOString(),
+      evidence: pressure.definingMoments.map((moment) => moment.id).filter(Boolean),
+      lineage: { operation: "upgrade", sources: [skillId] },
+      entry,
+      ...(usedFallback ? { usedFallback: true, fallbackReason: ai.reason } : { authoredBy: "ai-gateway" })
+    };
+    await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: [...growth.proposals, proposal] });
+    globalThis.Hooks?.callAll?.("grand-design-ai.evolutionRequested", actor, proposal);
+    return { proposal, usedFallback, reason, pressure };
+  }
+
+  /**
+   * Board 7b616fea: merge two or more of the character's own active Classes into a PENDING Class
+   * proposal (conversion rules 2.3/2.4). AI first (adapter.authorAdvanced, operation "combine"),
+   * class-merging.js#mergeClassEntry with merged mechanics as the stated-reason fallback. The rules
+   * own the numbers either way: the focus score (plus `intentional`, read from the evidence by
+   * assessIntentionalBreadth unless passed) decides the power tier, off-cadence merges are capped,
+   * red is contagious, the registry id and lineage { operation: "combine", sources: classIds } are
+   * set here. `options.level` overrides the merged level (default: the highest source level).
+   * Approving it supersedes every source. Returns { proposal, usedFallback, reason, focus, intentional }.
+   */
+  async requestClassMerge(actor, classIds, options = {}) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "merge", async () => {
+      const result = await this._buildMergeProposal(actor, { classIds, ...options });
+      const proposals = this.getGrowth(actor).proposals;
+      await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: [...proposals, result.proposal] });
+      globalThis.Hooks?.callAll?.("grand-design-ai.classMergeRequested", actor, result.proposal);
+      return result;
+    });
+  }
+
+  async _buildMergeProposal(actor, { classIds, level, intentional, milestoneLevel = null, proposalId = null } = {}) {
+    const ids = [...new Set(Array.isArray(classIds) ? classIds : [])];
+    if (ids.length < 2) throw new Error("Merging Classes needs at least two different Class ids.");
+    const registry = this.getActorRegistry(actor);
+    const sourceClasses = ids.map((id) => {
+      const entry = registry.classes?.[id];
+      if (!entry) throw new Error(`No approved Class ${id} exists on ${actor.name ?? "this character"}.`);
+      if (!isActiveEntry(entry)) throw new Error(`[${entry.name}] was already merged into ${registry.classes?.[entry.supersededBy]?.name ?? entry.supersededBy ?? "another Class"}.`);
+      return entry;
+    });
+    const growth = this.getGrowth(actor);
+    const pendingSame = growth.proposals.find((proposal) => proposal.status === "pending"
+      && proposal.entry?.metadata?.lineage?.operation === "combine"
+      && sameIds(proposal.entry.metadata.lineage.sources ?? [], ids));
+    if (pendingSame) {
+      throw new Error(`A merge of ${sourceClasses.map((entry) => `[${entry.name}]`).join(" and ")} is already pending ("${pendingSame.entry?.name}"); approve or reject it first.`);
+    }
+    const systemId = game.system?.id;
+    const ownEvents = this._ownEvents(actor);
+    const { focusScore } = computeMergeFocus(sourceClasses);
+    const breadth = assessIntentionalBreadth(sourceClasses, ownEvents);
+    const isIntentional = typeof intentional === "boolean" ? intentional : breadth.intentional;
+    const mergedLevel = Number.isInteger(level) && level >= 1 ? level : Math.max(1, ...sourceClasses.map((entry) => (Number.isInteger(entry.level) ? entry.level : 1)));
+    // At a Class milestone the merge is ON the cadence by definition; asked for between milestones it
+    // is off-classing (mergeClassEntry caps it at its sources' own tier).
+    const actorLevel = Number.isInteger(milestoneLevel) ? milestoneLevel : this.getLevelProgression(actor).level;
+    const existingNames = Object.values(registry.classes ?? {}).map((entry) => entry?.name).filter(Boolean);
+    const draft = mergeClassEntry({ sourceClasses, level: mergedLevel, intentional: isIntentional, actorLevel, existingIds: registry.classes ?? {}, existingNames, gameItem: { kind: "passive" }, mechanics: { effect: "-", duration: "ongoing", frequency: { max: 1, per: "unlimited" } } });
+    const { gameItem, mechanics } = mergeClassMechanics(sourceClasses, { powerTier: draft.power_tier, systemId });
+    const fallbackEntry = {
+      ...draft,
+      ...primaryFlags(sourceClasses),
+      system_chassis: mergedSystemChassis(sourceClasses, systemId),
+      gameItem,
+      mechanics
+    };
+    const rejected = rejectedProposalNames(growth.proposals);
+    const ai = await this._authorAdvanced(actor, {
+      operation: "combine",
+      sources: ids.map((id, index) => ({
+        id,
+        name: sourceClasses[index].name,
+        kind: "class",
+        level: sourceClasses[index].level ?? null,
+        power_tier: sourceClasses[index].power_tier ?? "standard",
+        effect: sourceClasses[index].mechanics?.effect ?? "",
+        tags: sourceClasses[index].metadata?.tags ?? [],
+        focus: Math.round(focusScore * 100) / 100
+      })),
+      events: ownEvents.slice(-15),
+      systemId,
+      wantedKind: "class",
+      label: sourceClasses.map((entry) => `[${entry.name}]`).join(" + "),
+      shape: (candidate, notes) => this._shapeMergedEntry(candidate, { fallbackEntry, registry, rejected, notes })
+    });
+    const usedFallback = !ai.entry;
+    const entry = ai.entry ?? fallbackEntry;
+    const reason = [usedFallback ? ai.reason : null, ...(ai.notes ?? [])].filter(Boolean).join("; ") || null;
+    const proposal = {
+      id: proposalId ?? uniqueRegistryId(`proposal:merge-${entry.metadata.id.replace(/^class:/, "")}`, growth.proposals.map((candidate) => candidate.id)),
+      kind: "class",
+      status: "pending",
+      source: "class-merge",
+      systemId,
+      requestedAt: new Date().toISOString(),
+      ...(Number.isInteger(milestoneLevel) ? { milestoneLevel } : { requestedBy: "gm" }),
+      // Empty on purpose: a merge is earned by the Classes, not by particular events, so a re-analysis
+      // that drops events never drops it (_removeRecordedEvents keeps evidence-less proposals).
+      evidence: [],
+      intentional: isIntentional,
+      intentionalReason: typeof intentional === "boolean" ? "set by the GM" : breadth.reason,
+      focusScore: Math.round(focusScore * 100) / 100,
+      lineage: { operation: "combine", sources: ids },
+      entry,
+      ...(usedFallback ? { usedFallback: true, fallbackReason: ai.reason } : { authoredBy: "ai-gateway" })
+    };
+    return { proposal, usedFallback, reason, focus: proposal.focusScore, intentional: isIntentional };
+  }
+
+  /**
+   * One adapter.authorAdvanced call, feature-detected (dev-gateway adds it in parallel). Returns
+   * { entry, notes } with an entry the caller's `shape` fitted to the rules and that validates, or
+   * { reason } saying why the deterministic builder has to stand in. Never throws.
+   */
+  async _authorAdvanced(actor, { operation, sources, events, systemId, wantedKind, label, shape }) {
+    const adapter = this._proposalAdapter;
+    if (!adapter) return { reason: "no AI provider is configured" };
+    if (typeof adapter.authorAdvanced !== "function") {
+      return { reason: "the AI gateway has no advanced-authoring entry point (adapter.authorAdvanced) yet, so the built-in rules wrote it" };
+    }
+    let output;
+    try {
+      output = await this._callAdapterWithDeadline(
+        () => adapter.authorAdvanced({ actor, operation, sources, events, systemId }),
+        operation === "upgrade" ? "Skill evolution" : "Class merge"
+      );
+    } catch (error) {
+      return { reason: `the AI provider failed: ${error.message}` };
+    }
+    const candidates = Array.isArray(output?.proposals) ? output.proposals.filter((candidate) => candidate?.kind === wantedKind && candidate.entry && typeof candidate.entry === "object") : [];
+    const gatewaySkipped = (Array.isArray(output?.skippedProposals) ? output.skippedProposals : [])
+      .map((skip) => [skip?.proposal?.entry?.name, skip?.reason ?? skip?.errors?.join(" ")].filter(Boolean).join(": "))
+      .filter(Boolean)
+      .slice(0, 3);
+    if (!candidates.length) {
+      return { reason: `the AI did not return a ${wantedKind === "class" ? "Class" : "Skill"} for ${label}${gatewaySkipped.length ? ` (the gateway skipped ${gatewaySkipped.join("; ")})` : ""}` };
+    }
+    const notes = [];
+    const shaped = shape(candidates[0], notes);
+    const { accepted, skipped } = this._validateModelProposals([{ kind: wantedKind, evidence: candidates[0].evidence, entry: shaped }], actor, {
+      customSynonyms: this.getGatewayConfig().customSynonyms
+    });
+    if (!accepted.length) {
+      return { reason: `the AI's ${wantedKind === "class" ? "Class" : "Skill"} for ${label} did not validate (${skipped.flatMap((skip) => skip.errors ?? []).join(" ")})` };
+    }
+    return { entry: accepted[0].entry, notes };
+  }
+
+  // The AI's evolved Skill, fitted to the rules: id, tier, lineage, polarity and the evolution record
+  // come from the fallback derivation; the AI owns the name, the mechanics and the words.
+  _shapeEvolvedEntry(candidate, { source, skillId, fallbackEntry, evolvedTier, registry, rejected, notes }) {
+    const entry = structuredClone(candidate.entry);
+    entry.metadata = isPlainObject(entry.metadata) ? entry.metadata : {};
+    const name = typeof entry.name === "string" ? entry.name.trim() : "";
+    const clash = !name
+      || slugify(name) === slugify(source.name)
+      || Object.values(registry.skills ?? {}).some((owned) => slugify(owned?.name ?? "") === slugify(name))
+      || rejected.has(slugify(name));
+    if (clash) {
+      if (name) notes.push(`the AI's name "${name}" is already taken or rejected, so it is named [${fallbackEntry.name}]`);
+      entry.name = fallbackEntry.name;
+    } else {
+      entry.name = name;
+    }
+    if (entry.tier !== evolvedTier) {
+      if (Number.isInteger(entry.tier)) notes.push(`tier set to ${evolvedTier} by the evolution rules (the AI wrote ${entry.tier})`);
+      entry.tier = evolvedTier;
+    }
+    if (typeof entry.system_equivalent !== "string" || !entry.system_equivalent.trim()) entry.system_equivalent = fallbackEntry.system_equivalent;
+    if (!isPlainObject(entry.gameItem)) entry.gameItem = structuredClone(fallbackEntry.gameItem);
+    if (!isPlainObject(entry.mechanics)) entry.mechanics = structuredClone(fallbackEntry.mechanics);
+    const aiTags = [...(Array.isArray(entry.metadata.tags) ? entry.metadata.tags : []), ...(Array.isArray(entry.tags) ? entry.tags : [])];
+    delete entry.tags;
+    entry.metadata.tags = [...new Set([...aiTags, ...(source.metadata?.tags ?? [])])];
+    Object.assign(entry.metadata, polarityFor(entry.metadata, source.metadata));
+    if (entry.metadata.polarity !== "red") {
+      delete entry.metadata.polarity;
+      delete entry.metadata.malignance;
+    }
+    const rationale = entry.metadata.lineage?.rationale || candidate.rationale || fallbackEntry.metadata.lineage.rationale;
+    entry.metadata.id = fallbackEntry.metadata.id;
+    entry.metadata.lineage = { operation: "upgrade", sources: [skillId], rationale };
+    entry.evolution = fallbackEntry.evolution;
+    return entry;
+  }
+
+  // The AI's merged Class, fitted to the rules: power tier (focus score), level, primary/secondary,
+  // id, lineage and red contagion come from the derivation; the AI owns name, mechanics and words.
+  _shapeMergedEntry(candidate, { fallbackEntry, registry, rejected, notes }) {
+    const entry = structuredClone(candidate.entry);
+    entry.metadata = isPlainObject(entry.metadata) ? entry.metadata : {};
+    const name = typeof entry.name === "string" ? entry.name.trim() : "";
+    const clash = !name
+      || Object.values(registry.classes ?? {}).some((owned) => slugify(owned?.name ?? "") === slugify(name))
+      || rejected.has(slugify(name));
+    if (clash) {
+      if (name) notes.push(`the AI's name "${name}" is already taken or rejected, so it is named [${fallbackEntry.name}]`);
+      entry.name = fallbackEntry.name;
+    } else {
+      entry.name = name;
+    }
+    if (entry.power_tier !== fallbackEntry.power_tier) {
+      if (entry.power_tier) notes.push(`power tier set to ${fallbackEntry.power_tier} by the merge rules (the AI wrote ${entry.power_tier})`);
+      entry.power_tier = fallbackEntry.power_tier;
+    }
+    entry.level = fallbackEntry.level;
+    entry.is_primary = fallbackEntry.is_primary;
+    entry.is_secondary = fallbackEntry.is_secondary;
+    entry.offCycleEvolution = fallbackEntry.offCycleEvolution;
+    if (typeof entry.system_chassis !== "string" || !entry.system_chassis.trim()) entry.system_chassis = fallbackEntry.system_chassis;
+    if (!isPlainObject(entry.gameItem)) entry.gameItem = structuredClone(fallbackEntry.gameItem);
+    if (!isPlainObject(entry.mechanics)) entry.mechanics = structuredClone(fallbackEntry.mechanics);
+    const aiTags = [...(Array.isArray(entry.metadata.tags) ? entry.metadata.tags : []), ...(Array.isArray(entry.tags) ? entry.tags : [])];
+    delete entry.tags;
+    entry.metadata.tags = [...new Set([...aiTags, ...(fallbackEntry.metadata.tags ?? [])])];
+    // Red is contagious (class-merging.js): a red source makes the merge red whatever the AI wrote.
+    const red = fallbackEntry.metadata.polarity === "red" ? fallbackEntry.metadata : null;
+    Object.assign(entry.metadata, polarityFor(entry.metadata, red ?? { polarity: "standard" }));
+    if (entry.metadata.polarity !== "red") {
+      delete entry.metadata.polarity;
+      delete entry.metadata.malignance;
+    }
+    const rationale = entry.metadata.lineage?.rationale || candidate.rationale || fallbackEntry.metadata.lineage.rationale;
+    entry.metadata.id = fallbackEntry.metadata.id;
+    entry.metadata.lineage = { operation: "combine", sources: fallbackEntry.metadata.lineage.sources, rationale };
+    return entry;
+  }
+
+  // Marks the sources of an approved evolution/merge superseded in the registry and on their Items
+  // (kept, renamed "(superseded)" and flagged, so the sheet shows the history instead of losing it).
+  async _supersedeSources(actor, kind, sourceIds, byId) {
+    const at = new Date().toISOString();
+    const registry = markSuperseded(this.getActorRegistry(actor), kind, sourceIds, byId, at);
+    for (const id of sourceIds) {
+      const item = actor.items?.find?.((candidate) => candidate.getFlag?.(MODULE_ID, "registryId") === id);
+      if (!item?.update) continue;
+      const name = typeof item.name === "string" && !/\(superseded\)$/.test(item.name) ? `${item.name} (superseded)` : item.name;
+      try {
+        await item.update({ ...(name ? { name } : {}), [`flags.${MODULE_ID}.superseded`]: { by: byId, at } });
+      } catch (error) {
+        // The registry is the source of truth; a sheet Item that refuses the rename is only cosmetic.
+        console.warn(`${MODULE_ID} | could not mark the superseded Item ${id}`, error);
+      }
+    }
+    await actor.update({ [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: registry });
+    globalThis.Hooks?.callAll?.("grand-design-ai.entriesSuperseded", actor, kind, sourceIds, byId);
+    return registry;
   }
 
   // Ids of every combination any of these participants has cast, so a new one never reuses one.
@@ -428,6 +859,7 @@ export class GrandDesignApi {
       this._assertSupportedSystemActor(actor);
       const skill = this.getActorRegistry(actor).skills?.[skillId];
       if (!skill) throw new Error(`${actor.name} has no approved Skill ${skillId} to contribute.`);
+      if (!isActiveEntry(skill)) throw new Error(`${actor.name}'s [${skill.name}] has evolved into another Skill; contribute that one.`);
       return { actor, actorId: actor.id, actorName: actor.name, skill };
     });
   }
@@ -544,7 +976,10 @@ export class GrandDesignApi {
    * actually at risk. See class-erosion.js for exactly how "session" is approximated.
    */
   checkClassErosion(actor, options = {}) {
-    return checkClassErosion(this.getGrowth(actor).events, this.getActorRegistry(actor), options);
+    // A Class a merge replaced is not at risk of erosion; it is already gone.
+    const registry = this.getActorRegistry(actor);
+    const active = { ...registry, classes: Object.fromEntries(Object.entries(registry.classes ?? {}).filter(([, entry]) => isActiveEntry(entry))) };
+    return checkClassErosion(this.getGrowth(actor).events, active, options);
   }
 
   /**
@@ -929,6 +1364,8 @@ export class GrandDesignApi {
       [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
       [`flags.${MODULE_ID}.${LAST_ANALYSIS_FLAG}`]: lastAnalysis
     });
+    // Board ebcc3f03: new evidence may have pushed a Skill to evolve; say so right away.
+    const evolutionReady = this._announceEvolutionReady(actor);
     return {
       source,
       adapterConfigured: this.hasProposalAdapter(),
@@ -936,6 +1373,7 @@ export class GrandDesignApi {
       proposals,
       themes,
       attributedToOthers,
+      evolutionReady,
       ...(adapterError ? { adapterError: adapterError.message } : {}),
       ...(localAnalysis ? { diagnostics: localAnalysis.diagnostics } : {}),
       ...(gatewayDiagnostics ? { gatewayDiagnostics } : {}),
@@ -987,6 +1425,8 @@ export class GrandDesignApi {
       proposal.status !== "pending"
       || isMilestoneProposal(proposal)
       || proposal.editedAt
+      // A Skill evolution or Class merge the GM asked for is theirs, like an edit.
+      || proposal.requestedBy === "gm"
       || !Array.isArray(proposal.evidence)
       || !proposal.evidence.length
       || proposal.evidence.some((id) => !remove.has(id))
@@ -1196,15 +1636,17 @@ export class GrandDesignApi {
     const pendingNames = new Set(growth.proposals.filter((proposal) => proposal.status === "pending").map((proposal) => slugify(proposal.entry?.name ?? "")));
     const rejectedNames = rejectedProposalNames(growth.proposals);
     const known = new Set(growth.proposals.map((proposal) => proposal.id));
+    const idByName = (status) => (key) => growth.proposals.find((candidate) => candidate.status === status && slugify(candidate.entry?.name ?? "") === key)?.id ?? null;
     const added = [];
     for (const proposal of accepted) {
       const key = slugify(proposal.entry.name);
       if (known.has(proposal.id) || pendingNames.has(key)) {
-        skipped.push({ proposal, errors: [`A pending proposal named ${proposal.entry.name} already exists.`], reason: "duplicate" });
+        const duplicateOf = known.has(proposal.id) ? proposal.id : idByName("pending")(key) ?? added.find((candidate) => slugify(candidate.entry?.name ?? "") === key)?.id ?? null;
+        skipped.push({ proposal, errors: [`A pending proposal named ${proposal.entry.name} already exists.`], reason: "duplicate", duplicateOf });
         continue;
       }
       if (rejectedNames.has(key)) {
-        skipped.push({ proposal, errors: [`The GM already rejected a proposal named ${proposal.entry.name}.`], reason: "rejected" });
+        skipped.push({ proposal, errors: [`The GM already rejected a proposal named ${proposal.entry.name}.`], reason: "rejected", duplicateOf: idByName("rejected")(key) });
         continue;
       }
       known.add(proposal.id);
@@ -1214,7 +1656,7 @@ export class GrandDesignApi {
     const mergedProposals = mergeProposals(growth.proposals, added);
     // Board b81a0357: same cap as analyzeSessionNotes, applied here too since "Suggest proposals" is
     // the other place AI proposals land on the actor.
-    const { proposals, dropped: cappedOutProposals, cap: pendingCap } = capPendingAiProposals(mergedProposals, config, this.getLevelProgression(actor).grantAllowances, { countAll: true });
+    const { proposals, dropped: cappedOutProposals, cap: pendingCap, pending: pendingCount } = capPendingAiProposals(mergedProposals, config, this.getLevelProgression(actor).grantAllowances, { countAll: true });
     const cappedIds = new Set(proposals.map((p) => p.id));
     const keptAdded = added.filter((proposal) => cappedIds.has(proposal.id));
     if (keptAdded.length) {
@@ -1227,10 +1669,16 @@ export class GrandDesignApi {
       reason: "pending-cap",
       errors: [`${actor.name ?? "This character"} already has ${pendingCap} pending AI proposals; kept the strongest/newest.`]
     }));
+    // Board 43ff2ae9: "0 new proposal(s)" must come with why. Every skip (the gateway's quality gates,
+    // validation, duplicates, rejected names, the pending cap) is reported as { name, reason,
+    // duplicateOf, message } -- `proposal`/`errors` stay for older callers -- and `capReached` says
+    // when the character's pending list is full, so the GM knows to approve or reject first.
+    const capReached = cappedOutProposals.length || pendingCount >= pendingCap ? { pending: pendingCount, cap: pendingCap } : null;
     return {
       proposals,
       added: keptAdded,
-      ...(skipped.length || adapterSkipped.length || cappedSkipped.length ? { skipped: [...adapterSkipped, ...skipped, ...cappedSkipped] } : {}),
+      skipped: [...adapterSkipped, ...skipped, ...cappedSkipped].map(describeSkip),
+      capReached,
       ...(output?.gatewayDiagnostics ? { gatewayDiagnostics: output.gatewayDiagnostics } : {})
     };
   }
@@ -1333,15 +1781,33 @@ export class GrandDesignApi {
     if (proposal.needsAuthoring && this._proposalAdapter && confirm !== true) {
       throw new Error(`"${proposal.entry?.name ?? id}" is a generic placeholder: use "Author with AI" first, or approve it with confirm: true to accept it as written.`);
     }
+    const kind = proposal.kind ?? "skill";
+    const operation = proposal.entry?.metadata?.lineage?.operation ?? "origin";
     const levelProgression = this.getLevelProgression(actor);
-    const eligibility = canApproveGeneratedProposal(levelProgression, proposal);
-    if (!eligibility.valid) throw new Error(eligibility.error);
-    const approved = await this._approveEvolution(
-      actor,
-      proposal.kind ?? "skill",
-      proposal.entry,
-      proposal.entry.metadata?.lineage?.operation ?? "origin"
-    );
+    // What pays for the proposal. A Title is earned by its deed and a requested evolution/merge by the
+    // readiness or the GM's choice, so neither spends (nor needs) a grant allowance; a merge offered
+    // as a Class milestone's reward spends it like the milestone's other option.
+    const needsAllowance = proposal.isCapstone === true
+      || (kind !== "title" && !(["skill-evolution", "class-merge"].includes(proposal.source) && !Number.isInteger(proposal.milestoneLevel)));
+    if (needsAllowance) {
+      const eligibility = canApproveGeneratedProposal(levelProgression, proposal);
+      if (!eligibility.valid) throw new Error(eligibility.error);
+    }
+    let approved;
+    if (kind === "title") {
+      // grantTitle creates the Title Item and accrues Horror Rank for a red Title.
+      approved = await this.grantTitle(actor, proposal.entry);
+    } else {
+      approved = await this._approveEvolution(actor, kind, proposal.entry, operation);
+    }
+    // Conversion rules 2.3/2.4: an evolved or merged entry replaces its sources.
+    let superseded = [];
+    if (kind !== "title" && (operation === "upgrade" || operation === "combine")) {
+      superseded = proposal.entry.metadata?.lineage?.sources ?? [];
+      if (superseded.length) {
+        approved = { ...approved, registry: await this._supersedeSources(actor, kind, superseded, proposal.entry.metadata.id) };
+      }
+    }
     const proposals = growth.proposals.map((candidate) =>
       candidate.id === id ? { ...candidate, status: "approved", approvedAt: new Date().toISOString() } : candidate
     );
@@ -1351,10 +1817,10 @@ export class GrandDesignApi {
     const spend = proposal.isCapstone ? spendCapstoneAllowance : spendGrantAllowance;
     await actor.update({
       [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
-      [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: spend(levelProgression)
+      ...(needsAllowance ? { [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: spend(levelProgression) } : {})
     });
     Hooks.callAll("grand-design-ai.skillProposalApproved", actor, proposal, approved);
-    return approved;
+    return superseded.length ? { ...approved, superseded } : approved;
   }
 
   /**
@@ -1420,11 +1886,23 @@ export class GrandDesignApi {
       const { entry, errors: patchErrors } = applyProposalPatch(proposal.entry, patch, { customSynonyms: this.getGatewayConfig().customSynonyms });
       if (patchErrors.length) return { ok: false, errors: patchErrors, proposal };
       const kind = proposal.kind ?? "skill";
-      const errors = [...(kind === "class" ? validateClassEntry(entry) : validateSkillEntry(entry)).errors];
+      if (kind === "title") {
+        // A Title has no mechanics: the editor's description/effect is the deed it was earned for.
+        const deed = patch.achievement ?? patch.description ?? patch.effect;
+        if (typeof deed === "string") entry.achievement = deed.trim();
+        if (!Object.keys(entry.mechanics ?? {}).length || proposal.entry?.mechanics === undefined) delete entry.mechanics;
+      }
+      const validation = kind === "class" ? validateClassEntry(entry) : kind === "title" ? validateTitleEntry(entry) : validateSkillEntry(entry);
+      const errors = [...validation.errors];
       if (proposal.isCapstone && entry.tier !== 3) errors.push(`[${entry.name}] a capstone Skill is always tier 3.`);
-      const bucket = kind === "class" ? this.getActorRegistry(actor).classes : this.getActorRegistry(actor).skills;
-      if (typeof entry.name === "string" && bucket?.[`${kind}:${slugify(entry.name)}`]) {
-        errors.push(`[${entry.name}] is already an approved ${kind === "class" ? "Class" : "Skill"} on ${actor.name ?? "this character"}.`);
+      const registry = this.getActorRegistry(actor);
+      const bucket = kind === "class" ? registry.classes : kind === "title" ? registry.titles : registry.skills;
+      const evolvedFrom = new Set(entry.metadata?.lineage?.sources ?? []);
+      const clashId = typeof entry.name === "string" ? `${kind}:${slugify(entry.name)}` : null;
+      // The id an evolved/merged entry keeps is its own (metadata.id); only an owned entry that is not
+      // one of its sources under the same name is a clash.
+      if (clashId && bucket?.[clashId] && !evolvedFrom.has(clashId)) {
+        errors.push(`[${entry.name}] is already an approved ${kind === "class" ? "Class" : kind === "title" ? "Title" : "Skill"} on ${actor.name ?? "this character"}.`);
       }
       if (errors.length) return { ok: false, errors, proposal };
       const updated = {
@@ -1606,6 +2084,18 @@ export class GrandDesignApi {
               + `used the built-in template (${reason}). The GM should review and flesh it out.`
           );
         }
+        // Board 7b616fea: with two or more active Classes a Class milestone also offers a MERGE of the
+        // best-focused pair (conversion rules 2.3/2.4), next to the new-Class option; either spends the
+        // milestone's grant allowance.
+        if (kind === "class-evolution") {
+          const merge = await this._milestoneMerge(actor, level, registry, growth.proposals);
+          if (merge) {
+            classProposals.push(merge.proposal);
+            if (merge.usedFallback) {
+              warnings.push(`Class merge at Grand Design level ${level}: used the built-in merge rules (${merge.reason}). The GM should review it.`);
+            }
+          }
+        }
       }
       await actor.update({
         [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: mergeProposals(growth.proposals, [...capstoneProposals, ...classProposals])
@@ -1613,7 +2103,29 @@ export class GrandDesignApi {
     }
 
     Hooks.callAll("grand-design-ai.levelsResolved", actor, result);
-    return { ...result, capstoneProposals, classProposals, ...(warnings.length ? { warnings } : {}) };
+    const evolutionReady = this._announceEvolutionReady(actor);
+    return { ...result, capstoneProposals, classProposals, evolutionReady, ...(warnings.length ? { warnings } : {}) };
+  }
+
+  // The merge half of a Class milestone, or null when the character has fewer than two active
+  // Classes or already has this milestone's merge. A failure here never costs the rest: it is
+  // reported as a warning-free null (the new-Class option is still there).
+  async _milestoneMerge(actor, level, registry, existingProposals) {
+    const proposalId = `proposal:class-merge-${level}`;
+    if (existingProposals.some((candidate) => candidate.id === proposalId)) return null;
+    const active = Object.values(registry.classes ?? {}).filter(isActiveEntry);
+    const pair = pickMergeSources(active);
+    if (pair.length < 2) return null;
+    try {
+      return await this._buildMergeProposal(actor, {
+        classIds: pair.map((entry) => entry.metadata.id),
+        milestoneLevel: level,
+        proposalId
+      });
+    } catch (error) {
+      console.warn(`${MODULE_ID} | could not build the Class merge for Grand Design level ${level}`, error);
+      return null;
+    }
   }
 
   /**
@@ -1790,8 +2302,32 @@ export class GrandDesignApi {
     const registry = this.getActorRegistry(actor);
     const systemId = globalThis.game?.system?.id;
     for (const proposal of proposals) {
-      if (!proposal || !["skill", "class"].includes(proposal.kind)) {
-        skipped.push({ proposal, errors: ["AI gateway proposal kind must be skill or class."] });
+      if (!proposal || !["skill", "class", "title"].includes(proposal.kind)) {
+        skipped.push({ proposal, errors: ["AI gateway proposal kind must be skill, class or title."], reason: "invalid" });
+        continue;
+      }
+      // Board d4ae9326: Titles (named kills, rescues, infamy) have their own shape -- the deed, no
+      // mechanics -- and are granted through grantTitle on approval.
+      if (proposal.kind === "title") {
+        const { entry, error } = titleEntryFromProposal(proposal);
+        const validation = entry ? validateTitleEntry(entry) : { valid: false, errors: [error] };
+        if (!validation.valid) {
+          skipped.push({ proposal, errors: [`Invalid AI title proposal: ${validation.errors.join(" ")}`], reason: "invalid" });
+          continue;
+        }
+        const registryId = `title:${slugify(entry.name)}`;
+        if (registry.titles?.[registryId]) {
+          skipped.push({ proposal, errors: [`AI proposed an already held Title: ${entry.name}.`], reason: "owned", duplicateOf: registryId });
+          continue;
+        }
+        accepted.push({
+          id: proposal.id ?? `proposal:ai-${registryId}`,
+          kind: "title",
+          status: "pending",
+          evidence: Array.isArray(proposal.evidence) ? proposal.evidence : [],
+          entry,
+          source: "ai-gateway"
+        });
         continue;
       }
       if (!proposal.entry || typeof proposal.entry !== "object") {
@@ -1808,13 +2344,13 @@ export class GrandDesignApi {
       }
       const validation = proposal.kind === "class" ? validateClassEntry(entry) : validateSkillEntry(entry);
       if (!validation.valid) {
-        skipped.push({ proposal, errors: [`Invalid AI ${proposal.kind} proposal: ${validation.errors.join(" ")}`] });
+        skipped.push({ proposal, errors: [`Invalid AI ${proposal.kind} proposal: ${validation.errors.join(" ")}`], reason: "invalid" });
         continue;
       }
       const registryId = `${proposal.kind}:${slugify(entry.name)}`;
       const bucket = proposal.kind === "class" ? registry.classes : registry.skills;
       if (bucket?.[registryId]) {
-        skipped.push({ proposal, errors: [`AI proposed an already approved ${proposal.kind}: ${entry.name}.`] });
+        skipped.push({ proposal, errors: [`AI proposed an already approved ${proposal.kind}: ${entry.name}.`], reason: "owned", duplicateOf: registryId });
         continue;
       }
       // Board 17c10e97: the model guesses the roll bonus ("1d20+9" for a +21 Athletics); when the roll
@@ -2133,7 +2669,7 @@ function parseMilestoneId(proposalId) {
 
 const PATCH_ENTRY_FIELDS = ["name", "tier", "system_equivalent", "system_chassis", "level", "power_tier", "is_primary", "is_secondary"];
 const PATCH_MECHANICS_FIELDS = ["effect", "duration", "trigger", "requirements", "frequency", "actions", "roll"];
-const PATCH_OTHER_FIELDS = ["entry", "description", "gameItem", "mechanics", "metadata", "tags", "themes"];
+const PATCH_OTHER_FIELDS = ["entry", "description", "achievement", "gameItem", "mechanics", "metadata", "tags", "themes"];
 
 /**
  * api.updateProposal's merge. Returns { entry, errors } -- errors only for a malformed patch (unknown
@@ -2230,7 +2766,8 @@ function mergeProposals(existing, additions) {
  * and the rest are dropped, reported once with reason "pending-cap" rather than left to pile up
  * silently. Template/emergent proposals (a different accumulation mechanism, not this board item) are
  * untouched.
- * @returns {{ proposals: object[], dropped: object[], cap: number }}
+ * @returns {{ proposals: object[], dropped: object[], cap: number, pending: number }} (`pending`: the
+ *   counted pending proposals left after trimming)
  */
 function capPendingAiProposals(proposals, config, allowances, { countAll = false } = {}) {
   const cap = pendingProposalCap(config, allowances);
@@ -2240,7 +2777,7 @@ function capPendingAiProposals(proposals, config, allowances, { countAll = false
   const counted = (p) => p.status === "pending" && (countAll ? ["ai-gateway", "template", "emergent"].includes(p.source) : p.source === "ai-gateway");
   const isPlaceholder = (p) => p.source !== "ai-gateway" && p.authoredBy !== "ai-gateway" && !p.editedAt && !(p.source === "emergent" && p.needsAuthoring === false);
   const pendingAi = proposals.filter(counted);
-  if (pendingAi.length <= cap) return { proposals, dropped: [], cap };
+  if (pendingAi.length <= cap) return { proposals, dropped: [], cap, pending: pendingAi.length };
   const scored = pendingAi
     .map((p, i) => ({
       p,
@@ -2255,7 +2792,7 @@ function capPendingAiProposals(proposals, config, allowances, { countAll = false
   const keepIds = new Set(scored.slice(0, cap).map((s) => s.p.id));
   const dropped = pendingAi.filter((p) => !keepIds.has(p.id));
   const droppedIds = new Set(dropped.map((p) => p.id));
-  return { proposals: proposals.filter((p) => !droppedIds.has(p.id)), dropped, cap };
+  return { proposals: proposals.filter((p) => !droppedIds.has(p.id)), dropped, cap, pending: pendingAi.length - dropped.length };
 }
 
 // A Class the AI wrote while a Class evolution was available stays approvable after the character
@@ -2299,6 +2836,92 @@ function rejectedProposalNames(proposals) {
       .map((name) => slugify(name ?? ""))
       .filter(Boolean)
   );
+}
+
+// One skipped proposal as the Growth dialog shows it (board 43ff2ae9). Skips come from three places
+// with slightly different shapes (the gateway's skippedProposals, _validateModelProposals, the
+// duplicate/rejected/cap checks); all become { name, reason, duplicateOf, message } plus the
+// original `proposal`/`errors` for callers that read those.
+export function describeSkip(skip) {
+  const proposal = skip?.proposal ?? null;
+  const errors = Array.isArray(skip?.errors) ? skip.errors : typeof skip?.error === "string" ? [skip.error] : [];
+  const message = errors.join(" ") || (typeof skip?.message === "string" ? skip.message : "") || String(skip?.reason ?? "skipped");
+  const name = proposal?.entry?.name ?? proposal?.name ?? skip?.name ?? null;
+  return {
+    name: typeof name === "string" && name.trim() ? name.trim() : null,
+    reason: typeof skip?.reason === "string" && skip.reason ? skip.reason : "invalid",
+    duplicateOf: skip?.duplicateOf ?? null,
+    message,
+    proposal,
+    errors: errors.length ? errors : [message]
+  };
+}
+
+function sameIds(a, b) {
+  const left = [...new Set(a)].sort();
+  const right = [...new Set(b)].sort();
+  return left.length === right.length && left.every((id, index) => id === right[index]);
+}
+
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+// A merged Class takes the sources' place in the character's line-up: primary if any source was.
+function primaryFlags(sourceClasses) {
+  const isPrimary = sourceClasses.some((entry) => entry?.is_primary === true);
+  return { is_primary: isPrimary, is_secondary: !isPrimary && sourceClasses.some((entry) => entry?.is_secondary === true) };
+}
+
+function validMalignance(malignance) {
+  return isPlainObject(malignance) && VICE_TAGS.has(malignance.vice) && typeof malignance.drawback === "string" && malignance.drawback.trim()
+    ? { vice: malignance.vice, drawback: malignance.drawback.trim() }
+    : null;
+}
+
+// Red never washes out of an evolution or a merge (skill-evolution.js / class-merging.js): a red
+// source keeps the result red, with the AI's malignance when it is a valid one and the source's
+// otherwise. A standard source only turns red when the AI states a valid vice and drawback.
+function polarityFor(aiMetadata, sourceMetadata) {
+  const aiMalignance = aiMetadata?.polarity === "red" ? validMalignance(aiMetadata.malignance) : null;
+  if (sourceMetadata?.polarity === "red") {
+    return { polarity: "red", malignance: aiMalignance ?? validMalignance(sourceMetadata.malignance) ?? sourceMetadata.malignance };
+  }
+  if (aiMalignance) return { polarity: "red", malignance: aiMalignance };
+  return { polarity: "standard" };
+}
+
+// Board d4ae9326: a stage-2 title proposal ({ name, description, tags, metadata: { polarity, vice? } })
+// as a Title entry validator.js#validateTitleEntry and api.grantTitle accept. The deed is the
+// achievement text. A red Title needs a vice from the taxonomy and a stated drawback: the vice comes
+// from metadata.vice / malignance.vice / a vice tag; the drawback defaults to the infamy the vice
+// itself describes. Returns { entry } or { error }.
+export function titleEntryFromProposal(proposal) {
+  const raw = isPlainObject(proposal?.entry) ? proposal.entry : {};
+  const name = typeof raw.name === "string" ? raw.name.trim() : "";
+  if (!name) return { error: "A Title proposal needs a name." };
+  const metadataIn = isPlainObject(raw.metadata) ? raw.metadata : {};
+  const achievement = [raw.achievement, raw.description, metadataIn.achievement, proposal?.rationale]
+    .find((value) => typeof value === "string" && value.trim());
+  if (!achievement) return { error: `[${name}] needs the deed that earned it (description).` };
+  const tags = [...new Set([...(Array.isArray(raw.tags) ? raw.tags : []), ...(Array.isArray(metadataIn.tags) ? metadataIn.tags : [])]
+    .filter((tag) => typeof tag === "string" && tag.trim()).map((tag) => tag.trim()))];
+  const metadata = {
+    tags,
+    ...(Array.isArray(metadataIn.themes) && metadataIn.themes.length ? { themes: metadataIn.themes } : {}),
+    lineage: { operation: "origin", sources: [], rationale: typeof proposal?.rationale === "string" ? proposal.rationale.trim() : "" }
+  };
+  if (metadataIn.polarity === "red") {
+    const vice = [metadataIn.vice, metadataIn.malignance?.vice, ...tags].find((value) => typeof value === "string" && VICE_TAGS.has(value.trim().toLowerCase()));
+    if (!vice) return { error: `[${name}] is a red Title but names no vice from the taxonomy (${[...VICE_TAGS].join(", ")}).` };
+    const viceKey = vice.trim().toLowerCase();
+    const described = VICE_TAXONOMY.find(([tag]) => tag === viceKey)?.[1] ?? "";
+    const drawback = [metadataIn.malignance?.drawback, metadataIn.drawback].find((value) => typeof value === "string" && value.trim())
+      ?? `Infamy: those who know of the deed treat the bearer with fear and suspicion. ${described}`.trim();
+    metadata.polarity = "red";
+    metadata.malignance = { vice: viceKey, drawback: drawback.trim() };
+  }
+  return { entry: { name, achievement: achievement.trim(), metadata } };
 }
 
 function consolidationKey(classIdA, classIdB) {

@@ -1761,6 +1761,37 @@
    "source": "v0929 rerun of salt-lantern s2",
    "created": 1790690119.606,
    "updated": 1790690119.606
+  },
+  {
+   "id": "6b2a26ce",
+   "title": "Superseded Items stay mechanically active (dnd5e activity uses, PF2e feat): add markSuperseded(item) per system adapter",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "dnd5e",
+    "pf2e",
+    "progression"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "dev-integration 2026-09-29",
+   "created": 1790694227.981,
+   "updated": 1790694227.981
+  },
+  {
+   "id": "536dba59",
+   "title": "Direct upgradeSkill/combineClasses do not supersede sources; rejected milestone merge (proposal:class-merge-N) cannot be retried",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "progression",
+    "followup"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-integration 2026-09-29",
+   "created": 1790694228.027,
+   "updated": 1790694228.027
   }
  ]
 }

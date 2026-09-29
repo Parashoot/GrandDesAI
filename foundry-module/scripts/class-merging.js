@@ -312,13 +312,120 @@ export function mergeClassEntry({
   };
 }
 
+/**
+ * Whether the evidence shows DELIBERATE breadth (resolveMergedPowerTier's `intentional`), board
+ * 7b616fea: the merge offered at a Class milestone used to have no way to tell a polymath from a
+ * dabbler, so it was never passed. Two things together, both from the actor's own recorded events:
+ *   - every source Class was actually practised (MIN_EVENTS_PER_SOURCE events matching it), and
+ *   - at least one event used two of the sources AT ONCE (its tags hit two sources' distinctive
+ *     tags) -- someone mixing their disciplines on purpose, not keeping them in separate boxes.
+ * A source's "distinctive" tags are the ones no other source has; tags every source shares would
+ * make any event look like a bridge. A source with nothing distinctive falls back to all its tags.
+ * Returns { intentional, reason, perSource: { [id]: count }, bridgingEventIds }.
+ */
+export const MIN_EVENTS_PER_SOURCE = 2;
+export function assessIntentionalBreadth(sourceClasses, events) {
+  assertSources(sourceClasses);
+  const tagSets = sourceClasses.map((source) => new Set(source.metadata?.tags ?? []));
+  const distinctive = tagSets.map((set, index) => {
+    const own = [...set].filter((tag) => tagSets.every((other, j) => j === index || !other.has(tag)));
+    return new Set(own.length ? own : [...set]);
+  });
+  const list = Array.isArray(events) ? events : [];
+  const perSource = {};
+  sourceClasses.forEach((source, index) => {
+    perSource[source.metadata?.id ?? source.name] = list.filter((event) => (event?.tags ?? []).some((tag) => tagSets[index].has(tag))).length;
+  });
+  const bridgingEventIds = list
+    .filter((event) => distinctive.filter((set) => (event?.tags ?? []).some((tag) => set.has(tag))).length >= 2)
+    .map((event) => event.id)
+    .filter(Boolean);
+  const practised = Object.values(perSource).every((count) => count >= MIN_EVENTS_PER_SOURCE);
+  const intentional = practised && bridgingEventIds.length > 0;
+  const names = sourceClasses.map((source) => source.name).join(" and ");
+  const reason = intentional
+    ? `deliberate breadth: every source was practised (${Object.values(perSource).join("/")} events) and ${bridgingEventIds.length} deed(s) used ${names} together`
+    : !practised
+      ? `not intentional: some source had fewer than ${MIN_EVENTS_PER_SOURCE} recorded events (${Object.values(perSource).join("/")})`
+      : `not intentional: no recorded deed used ${names} together`;
+  return { intentional, reason, perSource, bridgingEventIds };
+}
+
+/**
+ * The pair of Classes a milestone merge offers when the character holds more than two: the most
+ * focused pair (computeMergeFocus), then the higher combined level, then id order -- deterministic,
+ * and the pair most likely to make a strong fusion rather than a grab-bag. Two Classes -> those two.
+ */
+export function pickMergeSources(activeClasses) {
+  const list = Array.isArray(activeClasses) ? activeClasses.filter(Boolean) : [];
+  if (list.length < 2) return [];
+  if (list.length === 2) return list;
+  let best = null;
+  for (let i = 0; i < list.length; i += 1) {
+    for (let j = i + 1; j < list.length; j += 1) {
+      const pair = [list[i], list[j]];
+      const focus = computeMergeFocus(pair).focusScore;
+      const level = (list[i].level ?? 0) + (list[j].level ?? 0);
+      const key = sourceSeed(pair);
+      if (!best || focus > best.focus || (focus === best.focus && (level > best.level || (level === best.level && key < best.key)))) {
+        best = { pair, focus, level, key };
+      }
+    }
+  }
+  return best.pair;
+}
+
+/**
+ * Conversion rules 2.3: a merged ("comma") Class is the PRIMARY source's chassis with the other
+ * source(s) as an archetype/multiclass layer, not a bespoke hybrid class. PF2e names the multiclass
+ * archetype dedication; dnd5e the multiclass levels/feats that play the same role.
+ */
+export function mergedSystemChassis(sourceClasses, systemId = "pf2e") {
+  const [primary, ...rest] = orderSources(sourceClasses);
+  const chassisOf = (source) => String(source.system_chassis ?? source.name ?? "").trim() || source.name;
+  const others = rest.map(chassisOf).join(" + ");
+  return systemId === "dnd5e"
+    ? `${chassisOf(primary)} chassis, with ${others} as multiclass levels or feats (merged Class, conversion rule 2.3)`
+    : `${chassisOf(primary)} chassis, with ${others} as a multiclass archetype dedication (merged Class, conversion rule 2.3)`;
+}
+
+/**
+ * The deterministic fallback's mechanics for a merged Class (the AI merge writes its own): every
+ * source's benefit carried into one passive, plus -- only when the merge actually climbed a power
+ * tier above its strongest source -- one concrete extra, worded for the system. Never invents a
+ * power the sources did not have beyond that single step.
+ */
+export function mergeClassMechanics(sourceClasses, { powerTier = "standard", systemId = "pf2e" } = {}) {
+  const ordered = orderSources(sourceClasses);
+  const parts = ordered.map((source) => {
+    const effect = typeof source.mechanics?.effect === "string" && source.mechanics.effect.trim() ? source.mechanics.effect.trim() : "its benefit as approved";
+    return `[${source.name}]: ${effect}`;
+  });
+  const highest = Math.max(...sourceClasses.map((source) => POWER_TIER_RANK[source.power_tier] ?? 0));
+  const climbed = (POWER_TIER_RANK[powerTier] ?? 0) > highest;
+  const extra = climbed
+    ? (systemId === "dnd5e"
+      ? " Merged: once per long rest, when a check tied to either discipline fails, you can reroll it and must use the new roll."
+      : " Merged: once per day, when you fail a check tied to either discipline, you get a success instead.")
+    : "";
+  const primaryFrequency = ordered.map((source) => source.mechanics?.frequency).find((frequency) => Number.isInteger(frequency?.max) && frequency.max >= 1 && typeof frequency.per === "string");
+  return {
+    gameItem: { kind: "passive" },
+    mechanics: {
+      effect: `Carries every source Class's benefit: ${parts.join(" ")}${extra}`,
+      duration: "ongoing",
+      frequency: climbed ? { max: 1, per: "day" } : primaryFrequency ?? { max: 1, per: "unlimited" }
+    }
+  };
+}
+
 /** Red is contagious: a merge with any red source is red too, since a corrupting influence doesn't cleanly separate out. */
-function resolveMergedPolarity(sourceClasses) {
+export function resolveMergedPolarity(sourceClasses) {
   return sourceClasses.some((source) => source.metadata?.polarity === "red") ? "red" : "standard";
 }
 
 /** Combines the malignance of every red source into one { vice, drawback } for the merged entry. */
-function resolveMergedMalignance(sourceClasses) {
+export function resolveMergedMalignance(sourceClasses) {
   const redSources = sourceClasses.filter((source) => source.metadata?.polarity === "red" && source.metadata?.malignance);
   if (!redSources.length) return null;
   const vice = redSources[0].metadata.malignance.vice;

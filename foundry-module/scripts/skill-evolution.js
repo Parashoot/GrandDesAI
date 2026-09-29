@@ -300,10 +300,10 @@ export function describeEvolutionRationale({ sourceSkill, evolvedTier, pressure,
     rationale = `A refinement of [${name}] rather than a true evolution: ${missing}. It sharpens, but holds at tier ${evolvedTier}.`;
   } else if (evolvedTier >= MAX_SKILL_TIER) {
     const moment = pressure.definingMoments[0];
-    rationale = `[${name}] has stopped being what it was. ${pressure.evidenceWeight} weighted evidence of relentless use, then a defining moment -- ${moment.summary || moment.outcome} -- pushed it past its own ceiling into something that no longer shares its old name.`;
+    rationale = `[${name}] has stopped being what it was. ${pressure.evidenceWeight} weighted evidence of relentless use, then a defining moment -- ${momentText(moment)} -- pushed it past its own ceiling into something that no longer shares its old name.`;
   } else {
     const moment = pressure.definingMoments[0];
-    rationale = `[${name}] evolved to tier ${evolvedTier}: ${pressure.evidenceWeight} weighted evidence of sustained use, brought to a head by ${moment.summary || moment.outcome}.`;
+    rationale = `[${name}] evolved to tier ${evolvedTier}: ${pressure.evidenceWeight} weighted evidence of sustained use, brought to a head by ${momentText(moment)}.`;
   }
   if (polarity === "red") {
     rationale += " Its malignance evolved right along with it -- what corrupted the original was never left behind.";
@@ -400,6 +400,52 @@ export function evolveSkillEntry({
   };
 }
 
+/**
+ * The deterministic fallback's answer to "what does the evolved Skill DO" (board ebcc3f03: the
+ * evolved entry used to carry the source's mechanics over unchanged, so an "evolution" was a rename
+ * with the same numbers). The AI upgrade (adapter.authorAdvanced) writes real new mechanics; this is
+ * what stands in when it cannot, and it grows the source's own mechanics rather than inventing new
+ * ones, so the GM still recognizes the Skill:
+ *   - a refinement (no catalyst) sharpens: a flat bonus on its roll and one line saying so;
+ *   - a true evolution (catalyst) also gains one more use per period (not for "unlimited"), and its
+ *     roll bonus is bigger per tier climbed;
+ *   - at the ceiling (tier 3 with a catalyst) the effect gains a critical rider on top.
+ * System wording: PF2e bonuses are typed ("circumstance"), dnd5e ones plain; the frequency and the
+ * roll formula are the same fields on both systems (the adapters read them identically).
+ * Pure: returns a new object; `mechanics` is never mutated.
+ */
+export function growEvolvedMechanics(mechanics, { fromTier = 1, toTier = fromTier, hasCatalyst = false, systemId = "pf2e" } = {}) {
+  const grown = structuredClone(mechanics ?? {});
+  const is5e = systemId === "dnd5e";
+  const climbed = Math.max(0, toTier - fromTier);
+  const bonus = hasCatalyst ? 1 + climbed : 1;
+  const bonusText = is5e ? `+${bonus} bonus` : `+${bonus} circumstance bonus`;
+  const lines = [];
+  if (grown.roll && typeof grown.roll.formula === "string") {
+    const match = /^(\d+d\d+)\s*(?:([+-])\s*(\d+))?$/i.exec(grown.roll.formula.trim());
+    if (match) {
+      const current = match[2] ? Number(`${match[2]}${match[3]}`) : 0;
+      const next = current + bonus;
+      grown.roll = { ...grown.roll, formula: `${match[1]}${next >= 0 ? "+" : "-"}${Math.abs(next)}` };
+    }
+    lines.push(`Evolved: its roll gains a ${bonusText}.`);
+  } else {
+    lines.push(`Evolved: checks made with it gain a ${bonusText}.`);
+  }
+  if (hasCatalyst && grown.frequency && Number.isInteger(grown.frequency.max) && grown.frequency.per !== "unlimited") {
+    grown.frequency = { ...grown.frequency, max: grown.frequency.max + 1 };
+    lines.push(`It can be used ${grown.frequency.max} times per ${grown.frequency.per}.`);
+  }
+  if (hasCatalyst && toTier >= MAX_SKILL_TIER) {
+    lines.push(is5e
+      ? "When you roll a 20 with it, the effect is doubled (twice the dice, twice the duration)."
+      : "On a critical success with it, the effect is doubled (twice the dice, twice the duration).");
+  }
+  const base = typeof grown.effect === "string" && grown.effect.trim() ? grown.effect.trim() : "Pending GM effect description.";
+  grown.effect = `${base} ${lines.join(" ")}`;
+  return grown;
+}
+
 function bankFor(tags) {
   const tagSet = new Set(tags);
   const category = EVOLVED_NAME_PRIORITY.find((tag) => tagSet.has(tag));
@@ -408,6 +454,12 @@ function bankFor(tags) {
 
 function redBankFor(vice) {
   return (vice && RED_EVOLVED_NAME_BANKS[vice]) ?? DEFAULT_RED_EVOLVED_NAME_BANK;
+}
+
+// A moment's summary is a full sentence ("... split the troll's skull."); inside the rationale's own
+// sentence its closing punctuation doubled up ("skull..", seen in the 2026-09-29 real-model check).
+function momentText(moment) {
+  return String(moment?.summary || moment?.outcome || "").trim().replace(/[.!?]+$/, "");
 }
 
 function round2(value) {

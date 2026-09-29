@@ -9,7 +9,7 @@
 // an entry's own malignance.drawback is a fixed, per-entry cost; Horror Rank is an accumulating,
 // actor-wide consequence that can erode an entirely different, standard-polarity Class.
 import { HORROR_RANK_LEVEL_PENALTY, HORROR_RANK_THRESHOLD } from "./constants.js";
-import { cloneRegistry } from "./lineage.js";
+import { cloneRegistry, isActiveEntry } from "./lineage.js";
 
 export function emptyHorrorRank() {
   return { points: 0, totalLevelsDocked: 0 };
@@ -68,6 +68,9 @@ export function findStrongestClass(registry, { excludeRed = false } = {}) {
   let best = null;
   for (const [id, entry] of Object.entries(registry?.classes ?? {})) {
     if (excludeRed && entry?.metadata?.polarity === "red") continue;
+    // A Class a merge replaced (lineage.js#markSuperseded) is history, not a Class the character
+    // still holds: docking it would cost nothing and spare the real one.
+    if (!isActiveEntry(entry)) continue;
     if (!Number.isInteger(entry?.level)) continue;
     if (!best || entry.level > best.entry.level) best = { id, entry };
   }
