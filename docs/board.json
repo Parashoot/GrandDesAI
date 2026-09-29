@@ -276,37 +276,37 @@
   {
    "id": "2a70b369",
    "title": "Jev client + triage/attribution/verify/rank steps in the gateway (docs/jev-layer-contract.md)",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "gateway",
     "jev"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-gateway",
    "source": "jev-layer",
    "created": 1790704404.938,
-   "updated": 1790704404.938
+   "updated": 1790704483.708
   },
   {
    "id": "485cae73",
    "title": "Party mode: one extraction per party + per-PC attribution (api.analyzePartyNotes)",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "integration",
     "jev"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "jev-layer",
    "created": 1790704404.997,
-   "updated": 1790704404.997
+   "updated": 1790704483.769
   },
   {
    "id": "642a0bda",
    "title": "Jev settings fieldset + Test Jev, Analyze party action, Jev chips in Growth dialog",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "ui",
@@ -314,25 +314,25 @@
     "qol"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "jev-layer",
    "created": 1790704405.057,
-   "updated": 1790704405.057
+   "updated": 1790704483.822
   },
   {
    "id": "e188c4f1",
    "title": "Sim Jev, --jev/--sim-jev in run.mjs and playtest, party corpus (>=20 items)",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "harness",
     "jev"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-harness",
    "source": "jev-layer",
    "created": 1790704405.113,
-   "updated": 1790704405.113
+   "updated": 1790704483.876
   },
   {
    "id": "387888a5",
