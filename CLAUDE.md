@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 1361 unit tests, ~30 s, no network
+npm test                                    # 1447 unit tests, ~30 s, no network
 node tools/nlp-scale/run.mjs --sim --party --sim-jev                   # party corpus, simulated Jev
 node tools/nlp-scale/run.mjs --jev --party                             # real Jev (TYPESAFE_API_KEY)
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
@@ -20,6 +20,8 @@ node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full co
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
 node tools/nlp-scale/run.mjs --sim --fault-rate 0.3                    # offline, simulated model
 node tools/nlp-scale/build-browser.mjs --check                         # one-file browser bundle
+node tools/jev-proxy.mjs                     # optional Jev in Foundry: CORS proxy, endpoint http://127.0.0.1:8788
+node tools/playtest/live-verify.mjs          # live check in the running world (28 checks; switch-world.mjs to change)
 powershell -ExecutionPolicy Bypass -File ..\tools\deploy-foundry-module.ps1   # deploy to Foundry
 node tools/playtest/playtest.mjs status --campaign <name>                # playtest campaigns (see skill)
 node ../tools/board.mjs                     # the shared board (docs/board.json)
@@ -50,7 +52,7 @@ Contract + change log: `docs/ai-gateway-v2-contract.md` (read it first).
 - Harness: `tools/nlp-scale/` — 322-item labeled corpus (13 categories, 14 languages), scoring,
   consistency metrics, simulated fault-injecting model.
 
-## Status (2026-09-28) and open work
+## Status (2026-09-29) and open work
 Default model **`qwen3.8:27b`**. Scale numbers: see the 2026-09-24 entries in the contract change log and
 `Scale Test Results` in the vault (extraction 97.6%, count 96.2%, traps 100%, fallback 0%).
 
@@ -132,14 +134,26 @@ said `none` (never lowers `darkDeed`), proposal `grounded`/`fit` + `weak-evidenc
 (`corpus/party/`, per-PC gold, part of C1), `--jev/--sim-jev/--party`, `playtest.mjs analyze --party`.
 Offline numbers: `--sim --party` 94.7% (attribution 91.3%) -> with sim-Jev **97.4% / 97.5%**, red recall 0 -> 100%
 (after fixing a real bug: the per-PC split honoured a Jev name the pipeline had flagged disputed). 1361 tests.
-**Not yet done:** real-Jev numbers (`TYPESAFE_API_KEY` set locally; run `run.mjs --jev --party` and
-`playtest.mjs analyze --party --jev` on ember-road s1), the Foundry click-through (Test Jev, CORS?, Analyze party,
-chips) in BOTH worlds, `node tools/vault-export.mjs`. Board: 27346aba (real-Jev QA), e54491dd, edfcd96e.
+Merged into main locally 2026-09-29 (fast-forward, not pushed).
+
+2026-09-29 (late, local): **Jev in the browser needs a proxy**: api.typesafe.ai refuses EVERY browser origin (CORS),
+so inside Foundry Jev only runs through `foundry-module/tools/jev-proxy.mjs` (endpoint http://127.0.0.1:8788; zero-dep,
+forwards only /v1/systemone + /v1/models, never stores a key); a CORS block or timeout ends Jev for the run and the
+dialog says "Jev did not run: <why>". Real numbers (party corpus 26x1): no roster 96.2% -> real Jev 97.2%; then the
+**party roster** fix (analyzePartyNotes passes the PC names to the gateway prompt + Jev; e54491dd) gives 97.2% /
+attribution 98.7% / idle-at-zero 100% WITHOUT Jev, and roster + Jev is identical. Jev today = GM-facing flags
+(weak-evidence, outcome-disputed) for ~1.6 s/run and rare 10 s timeouts; everything works without it.
+Also landed, **LIVE 28/28 in BOTH worlds** (build 9d1b59b, `tools/playtest/live-verify.mjs`): Populate uses the AI
+(PF2e stats by level, local fallback with reason; `live-populate.mjs`), delete/move a recorded event and revert an
+approval (4344c58a), opt-in plain HTTP to the LAN for Ollama / jev-proxy (2d795cac), and the owner's Horror Rank
+answers (conversion rules 6): a stage suppresses one class feat/feature (GM confirms; exact restore on stage loss),
+atonement deeds lower the meter (`atonement` field; 100% on 10 items, 0% invented on 48), restore docked levels,
+points/threshold as world settings. 1447 tests.
 
 Open, in order (see the board, epic 278670bb):
-1. Playtest the new mechanics: salt-lantern s3 (PF2e) with evolve/merge/titles/Horror Rank via playtest.mjs.
-2. Real-Jev measurement + live click-through of the Jev layer (27346aba); undo/reassign events (4344c58a), Populate AI (dee25a95).
-3. Combos (e6d9185c), death/revival (b16101a9), cleanse/consolidation (54a5058f).
-4. Follow-ups: bland tag motifs (e8ae42d0), same-name proposals across PCs, dnd5e merges restate sources,
-   structured conditions text-only, PF2e superseded frequency.
-5. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008.
+1. Playtest the new mechanics: salt-lantern s3 (PF2e) with evolve/merge/titles/Horror Rank (suppression, atonement).
+2. Combos (e6d9185c), death/revival (b16101a9), cleanse/consolidation from atonement (54a5058f).
+3. Follow-ups: Re-analyze re-reads GM-deleted deeds (0de0d5eb), bland tag motifs (e8ae42d0), same-name proposals
+   across PCs, dnd5e merges restate sources, structured conditions text-only, PF2e superseded frequency.
+4. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008. Owner question: Stage 3 lock-out is a
+   notice only (as the conversion rules say); should it also switch off class-chassis features?
