@@ -970,7 +970,7 @@
   {
    "id": "ebcc3f03",
    "title": "Skill evolution is unreachable, never triggered and structurally blocked for the AI",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "checkSkillEvolutionReadiness/buildSkillEvolutionPreview (api.js:187/219) have no callers; the AI schema hardcodes lineage.operation 'origin' (ai-gateway.js:246) and the duplicate gates block a Skill that resembles an owned one; evolved mechanics are carried over unchanged. Fix: run readiness after analysis and at rest; for ready Skills ask stage 2 for an 'upgrade' target (source id, effect, defining moments), exempt lineage sources from dup gates, evolveSkillEntry as fallback; Growth-dialog button."
    ],
@@ -981,10 +981,10 @@
     "ui"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.286,
-   "updated": 1790661418.3033483,
+   "updated": 1790693289.427,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1011,7 +1011,7 @@
   {
    "id": "7b616fea",
    "title": "Class merging / comma and prestige classes are never offered",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "Milestones produce a new origin Class only; the template is `${themeLabel} Ascendant`, power_tier standard. The schema asks for approved registry ids in lineage.sources but the prompt sends only names/effects, so an AI 'combine' fails normalizeEntry. Sources are never retired after a merge/upgrade. Fix: at a milestone with 2+ Classes send ids + focus scores, AI authors a combine (mergeClassEntry fallback, 'intentional' from evidence), mark sources superseded (conversion rules 2.3/2.4)."
    ],
@@ -1023,10 +1023,10 @@
     "dnd5e"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.443,
-   "updated": 1790661418.556193,
+   "updated": 1790693289.477,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1054,7 +1054,7 @@
   {
    "id": "d4ae9326",
    "title": "Titles have no AI path and no trigger (proposal kind must be skill or class)",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "grantTitle (api.js:367) needs a hand-written entry; _validateModelProposals rejects anything but skill/class (api.js:1473). Fix: kind 'title' in stage 2 for notable deeds (named kills, rescues, infamy), through the normal Approve/Reject flow; red titles accrue Horror Rank; GM grant from the dialog as fallback."
    ],
@@ -1065,17 +1065,17 @@
     "red"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.601,
-   "updated": 1790661418.813674,
+   "updated": 1790693289.527,
    "prio": 2,
    "parent": "7dcd587f"
   },
   {
    "id": "752369f6",
    "title": "No GM UI for owned entries or advanced actions (evolve, merge, combine, title, cleanse, consolidate, revive)",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "The Growth dialog never lists owned Classes/Skills/Titles; 13 api methods (combineSkills, upgradeSkill, upgradeClass, combineClasses, buildClassMergePreview, checkSkillEvolutionReadiness, castCombinationSkill, grantTitle, cleanseEntry, setConsolidation, checkClassErosion, applyRevivalPenalty...) are console-only; the raw JSON importer is the only other door. Fix: a 'Grand Design' registry panel with per-entry actions, each opening an (AI-authored where possible) preview before approval."
    ],
@@ -1085,10 +1085,10 @@
     "progression"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.679,
-   "updated": 1790661418.1763546,
+   "updated": 1790693289.581,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1337,7 +1337,7 @@
   {
    "id": "c4ec8cf7",
    "title": "Playtest runner cannot exercise evolve/merge/combine/title/revive/erosion",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "playtest.mjs commands: init, analyze, suggest, approve, reject, status (horror rank printed only). No playtest has ever run the advanced mechanics on either system. Fix: commands + per-session report sections for readiness, erosion, Horror Rank."
    ],
@@ -1347,10 +1347,10 @@
     "pf2e"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-harness",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.663,
-   "updated": 1790661419.0743608,
+   "updated": 1790693289.734,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1377,7 +1377,7 @@
   {
    "id": "0860fd78",
    "title": "Class erosion is computed but never shown",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "checkClassErosion (api.js:468) has no callers; sessions are approximated by calendar date. Fix: list at-risk Classes after each analysis; optional AI read of narrative absence vs neglect; a real session id."
    ],
@@ -1386,10 +1386,10 @@
     "progression"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.815,
-   "updated": 1790661417.7899277,
+   "updated": 1790693289.633,
    "prio": 2,
    "parent": "12372a7a"
   },
@@ -1668,22 +1668,22 @@
   {
    "id": "07b9d93f",
    "title": "Consequence-of-own-deed dropped as happened-to-actor: 'I got banned from a pie tent' (Wick) skipped; a ban/eviction implies the PC's own misdeed",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "gateway",
     "playtest"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-gateway",
    "source": "v0929 rerun of ember-road s1",
    "created": 1790689954.641,
-   "updated": 1790689954.641
+   "updated": 1790693289.373
   },
   {
    "id": "43ff2ae9",
    "title": "Suggest shows nothing when every new proposal is a duplicate of a pending/rejected one; surface skippedProposals (duplicates-pending -> 'already pending: X', highlight duplicateOfId)",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "Also the pending cap: Buck at 5 pending -> 'Buck: 0 new proposal(s)' with no reason (v0929-pf2e)."
    ],
@@ -1693,10 +1693,10 @@
     "proposals"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "dev-gateway 2026-09-29",
    "created": 1790689954.685,
-   "updated": 1790690119.555
+   "updated": 1790693289.683
   },
   {
    "id": "d21f303a",
