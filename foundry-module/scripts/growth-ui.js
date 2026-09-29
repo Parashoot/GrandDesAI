@@ -1,5 +1,8 @@
 import { MODULE_ID } from "./constants.js";
 import { BUILD, describeBuild } from "./build-info.js";
+// Cyclic on purpose (the panel reopens this dialog on its new proposal): both sides only touch the
+// other's exports inside functions, never at module evaluation, so either can load first.
+import { openRegistryPanel, ownedNameIndex, collectOwnedEntries, renderErosionList, activeErosion, describeAdvancedResult } from "./registry-ui.js";
 
 // The Growth dialog (AI gateway v2, 2026-09-23): "fun and easy". A GM pastes notes written however
 // they like -- any language, bullet points, shorthand -- and sees, right in the dialog, how the
@@ -35,11 +38,15 @@ const ACTIONS = Object.freeze({
   retry: { action: "gd-retry-milestone", busy: "Asking the AI again..." },
   reject: { action: "gd-reject-proposal", busy: "Rejecting..." },
   save: { action: "gd-save-proposal", busy: "Saving..." },
-  suggest: { action: "gd-suggest-proposals", busy: "Asking the AI for proposals... (about 10 s)" }
+  suggest: { action: "gd-suggest-proposals", busy: "Asking the AI for proposals... (about 10 s)" },
+  // Board 752369f6: a Skill the last analysis found ready to evolve can be evolved from here too.
+  evolve: { action: "gd-evolve-skill", busy: "The AI is evolving it..." }
 });
+// Not a long action (it only opens the panel), so it is not locked with the others.
+const OPEN_REGISTRY = "gd-open-registry";
 const LOCKABLE = Object.values(ACTIONS).map(({ action }) => `[data-action="${action}"]`).join(", ");
 
-export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } = {}) {
+export function openGrowthManager(actor, { lastResult = null, draftNotes = "", focusProposalId = null, lastSuggest = null } = {}) {
   const api = game.modules.get(MODULE_ID).api;
   let content;
   let aiAttached = true;
@@ -48,6 +55,7 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
   const canSuggest = typeof api.requestGrowthProposals === "function";
   const canEdit = typeof api.updateProposal === "function";
   const canRetry = typeof api.retryMilestoneReward === "function";
+  const canEvolve = typeof api.requestSkillEvolution === "function";
   const apiBusy = () => typeof api.isBusy === "function" && safe(() => api.isBusy(actor), false) === true;
   const busyAtOpen = apiBusy();
   try {
@@ -57,7 +65,14 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
     const pending = (growth.proposals ?? []).filter((proposal) => proposal?.status === "pending");
     const lastAnalysis = safe(() => api.getLastAnalysis(actor), null);
     const status = statusBadge(safe(() => api.getGatewayConfig(), {}), lastResult ?? lastAnalysis, aiAttached);
-    content = renderGrowthContent({ growth, progression, pending, lastAnalysis, lastResult, status, draftNotes, canSuggest, canEdit, canRetry, aiAttached, busy: busyAtOpen });
+    // Lineage by NAME (board 752369f6): an evolved/merged proposal cites its sources by id.
+    const namesById = safe(() => ownedNameIndex(collectOwnedEntries(api, actor)), new Map());
+    // Board 0860fd78: erosion is shown right after an analysis, when the GM is looking at what changed.
+    const erosion = lastResult ? safe(() => activeErosion(api, actor), []) : [];
+    content = renderGrowthContent({
+      growth, progression, pending, lastAnalysis, lastResult, status, draftNotes, canSuggest, canEdit, canRetry, aiAttached,
+      busy: busyAtOpen, namesById, focusProposalId, lastSuggest, erosion, canEvolve
+    });
   } catch (error) {
     console.error(`${MODULE_ID} | growth dialog render failed`, error);
     content = `<p>Grand Design could not render this actor's growth history: ${escapeHtml(error.message)}</p>`;
@@ -156,9 +171,23 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
         ui.notifications.warn("This version of Grand Design cannot suggest proposals on demand.");
         return false;
       }
-      const { level, message } = describeSuggestResult(await api.requestGrowthProposals(actor));
+      const result = await api.requestGrowthProposals(actor);
+      const { level, message } = describeSuggestResult(result);
       ui.notifications[level](message);
-    })
+      // Kept for the reopened dialog: a toast fades, the reasons under the button do not.
+      return { lastSuggest: { skipped: result?.skipped ?? [], capReached: result?.capReached ?? null } };
+    }),
+    [ACTIONS.evolve.action]: (root, button) => runAction(root, button, "evolve", async () => {
+      const skillId = button?.dataset?.entryId;
+      if (!canEvolve || !skillId) return false;
+      const result = await api.requestSkillEvolution(actor, skillId);
+      const { level, message } = describeAdvancedResult(result, "evolve");
+      ui.notifications[level](message, level === "warn" ? { permanent: true } : undefined);
+      return { focusProposalId: result?.proposal?.id ?? null };
+    }),
+    [OPEN_REGISTRY]: () => {
+      if (!running) openRegistryPanel(actor);
+    }
   };
 
   // The edit form is validated by the API (validator.js) and its errors are shown IN the form, which
@@ -214,6 +243,8 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
           event.preventDefault();
           handlers[action](root, button, button.dataset?.proposalId);
         });
+        // The panel's Evolve/Merge lands here on the new proposal: bring its row into view.
+        if (focusProposalId) safe(() => root?.querySelector?.(".gd-proposal.gd-focus")?.scrollIntoView?.({ block: "center" }), null);
         // Something else (another dialog, another GM, a macro) is working on this actor: the
         // buttons render disabled; reopen as soon as it is done so the fresh state shows.
         if (busyAtOpen) {
@@ -236,15 +267,16 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
   dialog.render(true);
 }
 
-const NO_PROVIDER_TITLE = "Needs an AI provider. Set one in Grand Design AI Gateway settings (Game Settings > Configure Settings).";
-const BUSY_NOTICE = "Grand Design is still working on this character (an analysis, rest or AI call is running). Wait for it to finish, then try again.";
+export const NO_PROVIDER_TITLE = "Needs an AI provider. Set one in Grand Design AI Gateway settings (Game Settings > Configure Settings).";
+export const BUSY_NOTICE = "Grand Design is still working on this character (an analysis, rest or AI call is running). Wait for it to finish, then try again.";
 const SUGGEST_LABEL = "Suggest proposals";
 
 // Busy state for any in-body action. Every action button (and any footer button) is disabled so the
-// GM cannot approve or re-analyze against a proposal list that is about to change.
-function setBusy(root, clicked, busy, busyLabel = "Working...") {
+// GM cannot approve or re-analyze against a proposal list that is about to change. Exported for the
+// registry panel, which passes its own lockable buttons and body class.
+export function setBusy(root, clicked, busy, busyLabel = "Working...", { lockable = LOCKABLE, container = ".grand-design-growth" } = {}) {
   const scope = root?.closest?.(".app, .application, .window-app") ?? root;
-  scope?.querySelectorAll?.(`${LOCKABLE}, .dialog-buttons button, .dialog-button`).forEach((button) => {
+  scope?.querySelectorAll?.(`${lockable}, .dialog-buttons button, .dialog-button`).forEach((button) => {
     if (busy) {
       button.dataset && (button.dataset.gdWasDisabled = button.disabled ? "1" : "");
       button.disabled = true;
@@ -253,7 +285,7 @@ function setBusy(root, clicked, busy, busyLabel = "Working...") {
       button.disabled = button.dataset?.gdWasDisabled === "1";
     }
   });
-  root?.querySelector?.(".grand-design-growth")?.classList.toggle("gd-busy", busy);
+  root?.querySelector?.(container)?.classList.toggle("gd-busy", busy);
   if (!clicked) return;
   clicked.setAttribute("aria-busy", busy ? "true" : "false");
   const label = clicked.querySelector(".gd-btn-label") ?? clicked.querySelector(".gd-suggest-label");
@@ -317,13 +349,97 @@ export function describeRetryResult(result) {
  */
 export function describeSuggestResult(result) {
   const added = Array.isArray(result?.added) ? result.added.length : Math.max(0, Math.floor(Number(result?.added) || 0));
+  const cap = describeCapReached(result?.capReached);
+  const reasons = [...new Set((Array.isArray(result?.skipped) ? result.skipped : []).map(describeSkippedProposal).filter(Boolean))];
+  const why = reasons.length ? ` Skipped: ${reasons.slice(0, 3).join("; ")}${reasons.length > 3 ? `; and ${reasons.length - 3} more` : ""}.` : "";
   if (added > 0) {
-    return { level: "info", message: `${added} new proposal${added === 1 ? "" : "s"} -- pick one and Approve to spend a grant allowance.` };
+    return { level: "info", message: `${added} new proposal${added === 1 ? "" : "s"} -- pick one and Approve to spend a grant allowance.${why}` };
   }
+  // Board 43ff2ae9: "nothing new" says why whenever the API told us.
+  if (cap) return { level: "warn", message: `${cap}${why}` };
+  if (reasons.length) return { level: "warn", message: `Nothing new was added.${why}` };
   return {
     level: "warn",
     message: "The AI found nothing new to propose from this character's recorded evidence yet. Analyze more session notes and try again."
   };
+}
+
+/** "5 proposals already pending -- approve or reject some first." or "" -- pure, exported for tests. */
+export function describeCapReached(capReached) {
+  if (!capReached || typeof capReached !== "object") return "";
+  const pending = Math.max(0, Math.floor(Number(capReached.pending) || 0));
+  const cap = Math.max(0, Math.floor(Number(capReached.cap) || 0));
+  const count = pending || cap;
+  if (!count) return "";
+  return `${count} proposal${count === 1 ? " is" : "s are"} already pending${cap && pending > cap ? ` (the cap is ${cap})` : ""} -- approve or reject some first.`;
+}
+
+const SKIP_LABELS = Object.freeze({
+  duplicate: "already pending",
+  pending: "already pending",
+  "already-pending": "already pending",
+  "pending-duplicate": "already pending",
+  "near-duplicate": "too close to a pending one",
+  rejected: "you rejected it before",
+  owned: "already owned",
+  "owned-duplicate": "already owned",
+  "already-owned": "already owned",
+  "class-feature": "duplicates a class feature",
+  "pending-cap": "over the pending cap",
+  cap: "over the pending cap",
+  "wrong-system": "not a rule of this game system"
+});
+
+/**
+ * One skipped Suggest candidate as a short reason, e.g. "already pending: Iron Grip". Accepts the
+ * contract shape ({ name, reason, duplicateOf }) and the older one ({ proposal, errors, reason })
+ * the API returned before dev-integration's change. Pure, exported for tests.
+ */
+export function describeSkippedProposal(skipped) {
+  if (!skipped || typeof skipped !== "object") return "";
+  const name = String(skipped.name ?? skipped.proposal?.entry?.name ?? skipped.proposal?.name ?? "").trim();
+  const duplicateOf = String(skipped.duplicateOf ?? "").trim();
+  const reason = String(skipped.reason ?? "").trim();
+  const target = duplicateOf && duplicateOf.toLowerCase() !== name.toLowerCase()
+    ? (name ? `${name} (same as ${duplicateOf})` : duplicateOf)
+    : name;
+  const label = SKIP_LABELS[reason.toLowerCase()];
+  if (label) return target ? `${label}: ${target}` : label;
+  const error = Array.isArray(skipped.errors) ? skipped.errors.find((text) => typeof text === "string" && text.trim()) : "";
+  if (error) return name && !error.includes(name) ? `${name}: ${error.trim()}` : error.trim();
+  return target ? `${target}${reason ? ` (${reason})` : ""}` : reason;
+}
+
+/** The lasting "why nothing new" note under the Suggest button (a toast fades). Exported for tests. */
+export function renderSuggestOutcome(lastSuggest) {
+  if (!lastSuggest || typeof lastSuggest !== "object") return "";
+  const cap = describeCapReached(lastSuggest.capReached);
+  const reasons = [...new Set((Array.isArray(lastSuggest.skipped) ? lastSuggest.skipped : []).map(describeSkippedProposal).filter(Boolean))];
+  if (!cap && !reasons.length) return "";
+  const items = reasons.slice(0, 8).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("");
+  const more = reasons.length > 8 ? `<li><em>...and ${reasons.length - 8} more</em></li>` : "";
+  return `<div class="gd-suggest-outcome"><p><i class="fas fa-circle-info"></i> <strong>Last suggestion:</strong> ${cap ? escapeHtml(cap) : "some ideas were not added:"}</p>${items ? `<ul>${items}${more}</ul>` : ""}</div>`;
+}
+
+/**
+ * After an analysis: Skills now ready to evolve (result.evolutionReady, contract) and Classes at
+ * risk of erosion (board 0860fd78). Empty when there is nothing to say. Exported for tests.
+ */
+export function renderAfterAnalysis(lastResult, erosion = [], { canEvolve = false, busy = false, aiAttached = true } = {}) {
+  const ready = (Array.isArray(lastResult?.evolutionReady) ? lastResult.evolutionReady : []).filter((skill) => skill?.skillId);
+  const atRisk = Array.isArray(erosion) ? erosion : [];
+  if (!ready.length && !atRisk.length) return "";
+  const readyRows = ready.map((skill) => {
+    const evolve = canEvolve
+      ? ` ${actionButton({ action: ACTIONS.evolve.action, icon: "fas fa-dna", label: "Evolve", entryId: skill.skillId, disabled: busy, title: busy ? BUSY_NOTICE : !aiAttached ? "Evolving without an AI uses the built-in rules (a stated fallback)." : "Ask the AI to write the evolved Skill; it arrives as a pending proposal." })}`
+      : "";
+    return `<li><strong>${escapeHtml(skill.name ?? skill.skillId)}</strong> is ready to evolve${Number.isFinite(Number(skill.pressure)) ? ` <span class="gd-hint">(pressure ${escapeHtml(Math.round(Number(skill.pressure) * 100) / 100)})</span>` : ""}.${evolve}</li>`;
+  }).join("");
+  return `<div class="gd-after-analysis">
+    ${readyRows ? `<h4><i class="fas fa-dna"></i> Ready to evolve</h4><ul class="gd-evolution-ready">${readyRows}</ul>` : ""}
+    ${atRisk.length ? `<h4><i class="fas fa-hourglass-half"></i> Classes at risk of erosion</h4>${renderErosionList(atRisk)}` : ""}
+    <p class="gd-hint">Open the <strong>Registry</strong> for lineage, Evolve and Merge.</p>
+  </div>`;
 }
 
 /**
@@ -409,7 +525,8 @@ export function statusBadge(config, lastRun, adapterAttached) {
 
 export function renderGrowthContent({
   growth, progression, pending, lastAnalysis, lastResult, status, draftNotes = "",
-  canSuggest = true, canEdit = false, canRetry = false, aiAttached = true, busy = false
+  canSuggest = true, canEdit = false, canRetry = false, aiAttached = true, busy = false,
+  namesById = new Map(), focusProposalId = null, lastSuggest = null, erosion = [], canEvolve = false
 }) {
   const events = Array.isArray(growth?.events) ? growth.events : [];
   pending = Array.isArray(pending) ? pending : [];
@@ -418,13 +535,13 @@ export function renderGrowthContent({
   const stuck = allowances > 0 && !pending.length;
   const hint = allowanceHint(progression, pending.length, canSuggest);
   const eventsById = new Map(events.filter((event) => event?.id).map((event) => [event.id, event]));
-  const rowOptions = { canEdit, canRetry, aiAttached: aiAttached && status?.kind !== "local", busy, eventsById };
+  const rowOptions = { canEdit, canRetry, aiAttached: aiAttached && status?.kind !== "local", busy, eventsById, namesById, focusProposalId };
   const rows = pending.length
     ? pending.map((proposal) => renderProposal(proposal, rowOptions)).join("")
     : stuck && canSuggest
       ? "" // the callout below explains the empty list and offers the way out
       : "<li>No proposal has enough evidence yet.</li>";
-  const suggest = canSuggest ? renderSuggest({ stuck, allowances, status, busy }) : "";
+  const suggest = canSuggest ? `${renderSuggest({ stuck, allowances, status, busy })}${renderSuggestOutcome(lastSuggest)}` : "";
   const eventList = events.length
     ? events.slice(-40).reverse().map((event) => `<li class="gd-event-row">${renderEventLine(event)}</li>`).join("")
     : "<li>No recorded growth events.</li>";
@@ -435,6 +552,7 @@ export function renderGrowthContent({
     <header class="gd-growth-header">
       <h3>Grand Design Level ${Number(progression?.level) || 0}/100</h3>
       <span class="gd-status gd-status-${escapeHtml(status?.kind)}" title="${escapeHtml(status?.title)}"><i class="fas ${status?.kind === "ai" ? "fa-brain" : status?.kind === "fallback" ? "fa-triangle-exclamation" : "fa-book"}"></i> ${escapeHtml(status?.text)}</span>
+      <button type="button" class="gd-action gd-open-registry" data-action="${OPEN_REGISTRY}"${busy ? " disabled" : ""} title="${busy ? escapeHtml(BUSY_NOTICE) : "Owned Classes, Skills and Titles: lineage, Evolve, Merge, erosion"}"><i class="fas fa-sitemap"></i> <span class="gd-btn-label">Registry</span></button>
     </header>
     ${busy ? `<p class="gd-busy-notice"><i class="fas fa-spinner fa-spin"></i> ${escapeHtml(BUSY_NOTICE)} This dialog refreshes by itself when it is done.</p>` : ""}
     <p><strong>${Math.floor(Number(progression?.progress) || 0)} progression</strong> toward the next level; <strong>${allowances}</strong> level-up grant allowance(s) available.</p>
@@ -445,14 +563,19 @@ export function renderGrowthContent({
     <div class="gd-action-row">${button("analyze", "fas fa-wand-magic-sparkles", "Analyze", { variant: "gd-primary" })}${hasLast ? button("reanalyze", "fas fa-rotate", "Re-analyze last notes") : ""}</div>
     <p class="gd-hint">Successes and honest failed attempts both count. Things the tag list doesn't cover (beekeeping, gambling, map-making...) become <em>themes</em> and can grow into brand-new Skills. Approval is always yours.${hasLast ? ` Last notes analyzed ${escapeHtml(formatWhen(lastAnalysis.at))} — use <strong>Re-analyze</strong> to read them again (the previous reading is replaced, not added to).` : ""}</p>
     ${renderInterpretation(events, lastAnalysis, lastResult)}
+    ${renderAfterAnalysis(lastResult, erosion, { canEvolve, busy, aiAttached: rowOptions.aiAttached })}
     <hr><h3>Pending Proposals</h3>${stuck ? suggest : ""}${rows ? `<ul class="gd-proposals">${rows}</ul>` : ""}${stuck ? "" : suggest}
     <hr><details class="gd-history"><summary>Recorded Evidence (${events.length})</summary><ul>${eventList}</ul></details>
   </form>`;
 }
 
-/** A body button (type="button": it must never submit the dialog form). */
-function actionButton({ action, icon, label, id = null, variant = "", disabled = false, title = "", aria = "" }) {
-  const idAttr = id !== null && id !== undefined ? ` data-proposal-id="${escapeHtml(id)}"` : "";
+/**
+ * A body button (type="button": it must never submit the dialog form). `id` is a proposal id,
+ * `entryId` an owned Class/Skill/Title id (registry panel, Evolve). Exported for the panel.
+ */
+export function actionButton({ action, icon, label, id = null, entryId = null, variant = "", disabled = false, title = "", aria = "" }) {
+  const idAttr = (id !== null && id !== undefined ? ` data-proposal-id="${escapeHtml(id)}"` : "")
+    + (entryId !== null && entryId !== undefined ? ` data-entry-id="${escapeHtml(entryId)}"` : "");
   return `<button type="button" class="gd-action${variant ? ` ${variant}` : ""}" data-action="${action}"${idAttr} aria-busy="false"${disabled ? " disabled" : ""}${title ? ` title="${escapeHtml(title)}"` : ""}${aria ? ` aria-label="${escapeHtml(aria)}"` : ""}><i class="${icon}"></i> <span class="gd-btn-label">${escapeHtml(label)}</span></button>`;
 }
 
@@ -520,16 +643,21 @@ export function isTemplateMilestone(proposal) {
 // emergent-theme knack. An AI-authored proposal is edited (or rejected) instead.
 function canBeAuthored(proposal) {
   if (proposal.needsAuthoring) return true;
+  // Titles have no mechanics for the AI to author: edit or reject them instead.
+  if (proposal.kind === "title") return false;
   return proposal.source !== "ai-gateway" && proposal.authoredBy !== "ai-gateway";
 }
 
 // Exported so tests can check each control directly against a proposal's status/shape, not just
 // indirectly through renderGrowthContent's own pending-only filtering.
-export function renderProposal(proposal, { canEdit = false, canRetry = false, aiAttached = true, busy = false, eventsById = new Map() } = {}) {
+export function renderProposal(proposal, { canEdit = false, canRetry = false, aiAttached = true, busy = false, eventsById = new Map(), namesById = new Map(), focusProposalId = null } = {}) {
   proposal = proposal && typeof proposal === "object" ? proposal : {};
   const entry = proposal.entry && typeof proposal.entry === "object" ? proposal.entry : {};
   const name = entry.name ?? proposal.id ?? "(unnamed proposal)";
-  const effect = entry.mechanics?.effect ?? "(no effect text on this proposal)";
+  const isTitle = proposal.kind === "title";
+  // A Title has no mechanics block (contract): its description is what it "does".
+  const effect = entry.mechanics?.effect ?? (isTitle ? entry.description : undefined) ?? "(no effect text on this proposal)";
+  const focused = focusProposalId !== null && focusProposalId !== undefined && proposal.id === focusProposalId;
   const cited = Array.isArray(proposal.evidence) && proposal.evidence.length ? `${proposal.evidence.length} event(s)` : "none cited";
   // A milestone reward that fell back to the built-in template keeps its source ("capstone" /
   // "class-evolution"); `usedFallback` (when the API sets it) is what says the AI did not write it.
@@ -543,14 +671,19 @@ export function renderProposal(proposal, { canEdit = false, canRetry = false, ai
         : proposal.source === "class-evolution"
           ? `<span class="gd-chip gd-class">class evolution</span>${fallback}`
           : '<span class="gd-chip">template</span>';
-  const kind = proposal.kind === "class" ? '<span class="gd-chip gd-kind">Class</span>' : '<span class="gd-chip gd-kind">Skill</span>';
-  const red = entry.metadata?.polarity === "red" ? ` <span class="gd-chip gd-red" title="Red (taboo) entry: it carries a real cost.">red${entry.metadata?.malignance?.vice ? `: ${escapeHtml(entry.metadata.malignance.vice)}` : ""}</span>` : "";
+  const kind = proposal.kind === "class"
+    ? '<span class="gd-chip gd-kind">Class</span>'
+    : isTitle
+      ? '<span class="gd-chip gd-kind gd-title-chip" title="A Title: a name the world knows this character by, earned by a deed.">Title</span>'
+      : '<span class="gd-chip gd-kind">Skill</span>';
+  const lineage = renderLineageChip(entry.metadata?.lineage, namesById);
+  const red =entry.metadata?.polarity === "red" ? ` <span class="gd-chip gd-red" title="Red (taboo) entry: it carries a real cost.">red${entry.metadata?.malignance?.vice ? `: ${escapeHtml(entry.metadata.malignance.vice)}` : ""}</span>` : "";
   const authoring = proposal.needsAuthoring ? ' <em class="gd-needs-authoring">placeholder — "Author with AI" writes real mechanics</em>' : "";
   const actions = proposal.status === "pending" ? renderProposalActions(proposal, { canRetry, aiAttached, busy }) : "";
-  const details = renderProposalDetails(proposal, eventsById);
+  const details = renderProposalDetails(proposal, eventsById, { open: focused, namesById });
   const edit = canEdit && proposal.status === "pending" ? renderEditForm(proposal, { busy }) : "";
-  return `<li class="gd-proposal" data-proposal-id="${escapeHtml(proposal.id)}">
-    <div class="gd-proposal-head"><strong>${escapeHtml(name)}</strong> ${kind} ${badge}${red}${authoring}</div>
+  return `<li class="gd-proposal${focused ? " gd-focus" : ""}" data-proposal-id="${escapeHtml(proposal.id)}">
+    <div class="gd-proposal-head"><strong>${escapeHtml(name)}</strong> ${kind} ${badge}${lineage}${red}${authoring}</div>
     <div class="gd-proposal-effect">${escapeHtml(effect)} <em>Evidence: ${escapeHtml(cited)}</em></div>
     ${actions ? `<div class="gd-proposal-actions">${actions}</div>` : ""}
     ${details}${edit}
@@ -591,7 +724,7 @@ const SOURCE_LABELS = {
 };
 
 /** The full proposal, read-only, in a collapsed <details>. Exported for tests. */
-export function renderProposalDetails(proposal, eventsById = new Map()) {
+export function renderProposalDetails(proposal, eventsById = new Map(), { open = false, namesById = new Map() } = {}) {
   const entry = proposal?.entry && typeof proposal.entry === "object" ? proposal.entry : {};
   const mechanics = entry.mechanics && typeof entry.mechanics === "object" ? entry.mechanics : {};
   const metadata = entry.metadata && typeof entry.metadata === "object" ? entry.metadata : {};
@@ -600,7 +733,17 @@ export function renderProposalDetails(proposal, eventsById = new Map()) {
     if (value === undefined || value === null || value === "" || (Array.isArray(value) && !value.length)) return;
     rows.push(`<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(Array.isArray(value) ? value.join(", ") : String(value))}</dd>`);
   };
-  row("Kind", proposal?.kind === "class" ? "Class" : "Skill");
+  const isTitle = proposal?.kind === "title";
+  row("Kind", proposal?.kind === "class" ? "Class" : isTitle ? "Title" : "Skill");
+  if (isTitle) {
+    row("Description", entry.description);
+    // The deed: the title's own achievement text, else the rationale that quotes it (contract).
+    row("Deed", entry.achievement ?? metadata.deed ?? proposal?.deed ?? metadata.lineage?.rationale ?? proposal?.rationale);
+  }
+  const lineage = metadata.lineage;
+  if (lineage && (lineage.operation === "upgrade" || lineage.operation === "combine")) {
+    row(lineage.operation === "upgrade" ? "Evolves" : "Merges", lineageSourceNames(lineage, namesById).join(lineage.operation === "combine" ? " + " : ", "));
+  }
   const source = SOURCE_LABELS[proposal?.source] ?? proposal?.source;
   row("Source", proposal?.authoredBy === "ai-gateway" && proposal?.source !== "ai-gateway" ? `${source} (written by the AI)` : proposal?.usedFallback ? `${source} (built-in template: the AI could not write it)` : source);
   row("Fallback reason", proposal?.fallbackReason);
@@ -610,7 +753,7 @@ export function renderProposalDetails(proposal, eventsById = new Map()) {
     row("Power tier", entry.power_tier);
     row("System chassis", entry.system_chassis);
     row("Primary / secondary", entry.is_primary ? "primary" : entry.is_secondary ? "secondary" : undefined);
-  } else {
+  } else if (!isTitle) {
     row("Tier", entry.tier);
     row("System equivalent", entry.system_equivalent);
   }
@@ -636,9 +779,40 @@ export function renderProposalDetails(proposal, eventsById = new Map()) {
     return `<li>${event ? `${event.actorName ? `<span class="gd-who">${escapeHtml(event.actorName)}:</span> ` : ""}${escapeHtml(event.summary ?? id)}` : `<code>${escapeHtml(id)}</code>`}</li>`;
   }).join("");
   const more = cited.length > 8 ? `<li><em>...and ${cited.length - 8} more</em></li>` : "";
-  return `<details class="gd-proposal-details"><summary><i class="fas fa-circle-info"></i> Details</summary>
+  return `<details class="gd-proposal-details"${open ? " open" : ""}><summary><i class="fas fa-circle-info"></i> Details</summary>
       <dl>${rows.join("")}</dl>${evidence ? `<h4>Evidence</h4><ul class="gd-proposal-evidence">${evidence}${more}</ul>` : ""}
     </details>`;
+}
+
+/**
+ * Source names of an upgrade/combine lineage, never raw ids (board 752369f6). `sources` may be ids,
+ * names, or { id, name } objects; an id the actor no longer owns reads as its prettified slug.
+ * Pure, exported for tests.
+ */
+export function lineageSourceNames(lineage, namesById = new Map()) {
+  const sources = Array.isArray(lineage?.sources) ? lineage.sources : [];
+  return sources.map((source) => {
+    if (source && typeof source === "object") return String(source.name ?? namesById?.get?.(source.id) ?? prettifyEntryId(source.id));
+    const known = namesById?.get?.(source);
+    return known ?? prettifyEntryId(source);
+  }).filter(Boolean);
+}
+
+/** "skill:iron-grip" -> "Iron Grip"; a plain name comes back as it is. Exported for tests. */
+export function prettifyEntryId(id) {
+  const text = String(id ?? "").trim();
+  const match = /^(?:class|skill|title):(.+)$/i.exec(text);
+  if (!match) return text;
+  return match[1].split(/[-_]+/).filter(Boolean).map((word) => word[0].toUpperCase() + word.slice(1)).join(" ");
+}
+
+function renderLineageChip(lineage, namesById) {
+  if (!lineage || (lineage.operation !== "upgrade" && lineage.operation !== "combine")) return "";
+  const names = lineageSourceNames(lineage, namesById);
+  if (!names.length) return "";
+  return lineage.operation === "upgrade"
+    ? ` <span class="gd-chip gd-lineage" title="Evolved from an owned Skill; approving it supersedes the source.">evolves ${escapeHtml(names.join(", "))}</span>`
+    : ` <span class="gd-chip gd-lineage" title="Merges owned Classes; approving it supersedes the sources.">merges ${escapeHtml(names.join(" + "))}</span>`;
 }
 
 function describeFrequency(frequency) {
@@ -666,6 +840,22 @@ function renderEditForm(proposal, { busy = false } = {}) {
     `<div class="form-group"><label>${escapeHtml(label)}</label><input type="${type}" data-field="${name}" value="${escapeHtml(value ?? "")}"${attrs}></div>`;
   const select = (label, name, options, value) =>
     `<div class="form-group"><label>${escapeHtml(label)}</label><select data-field="${name}">${options.map((option) => `<option value="${escapeHtml(option)}"${String(value) === option ? " selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select></div>`;
+  const tagsField = field("Tags (comma separated)", "tags", Array.isArray(entry.metadata?.tags) ? entry.metadata.tags.join(", ") : "");
+  const rationaleField = `<div class="form-group stacked"><label>Rationale</label><textarea data-field="rationale" rows="2">${escapeHtml(entry.metadata?.lineage?.rationale ?? "")}</textarea></div>`;
+  const saveButton = actionButton({ action: ACTIONS.save.action, icon: "fas fa-floppy-disk", label: "Save changes", id: proposal.id, variant: "gd-primary", disabled: busy, title: busy ? BUSY_NOTICE : "Checked by the same validator as AI proposals; stays pending until you Approve." });
+  if (proposal.kind === "title") {
+    // A Title has no tier or mechanics block (contract): name, description, tags, rationale.
+    return `<details class="gd-proposal-edit"><summary><i class="fas fa-pen"></i> Edit</summary>
+      <div class="gd-edit-form" data-proposal-id="${escapeHtml(proposal.id)}">
+        ${field("Name", "name", entry.name)}
+        <div class="form-group stacked"><label>Description</label><textarea data-field="description" rows="3">${escapeHtml(entry.description ?? "")}</textarea></div>
+        ${tagsField}
+        ${rationaleField}
+        <div class="gd-edit-errors" role="alert"></div>
+        ${saveButton}
+      </div>
+    </details>`;
+  }
   const kindFields = isClass
     ? `${field("Class level", "level", entry.level, { type: "number", attrs: ' min="1" max="20" step="1"' })}${select("Power tier", "power_tier", POWER_TIERS, entry.power_tier ?? "standard")}${field("System chassis", "system_chassis", entry.system_chassis)}`
     : `${select("Tier", "tier", SKILL_TIERS, entry.tier ?? 1)}${field("System equivalent", "system_equivalent", entry.system_equivalent)}`;
@@ -707,7 +897,8 @@ export function readEditFields(form) {
 export function buildProposalPatch(proposal, fields = {}) {
   const errors = [];
   const entry = structuredClone(proposal?.entry && typeof proposal.entry === "object" ? proposal.entry : {});
-  entry.mechanics = entry.mechanics && typeof entry.mechanics === "object" ? entry.mechanics : {};
+  // A Title carries no mechanics block (contract); do not invent an empty one on it.
+  if (proposal?.kind !== "title" || entry.mechanics) entry.mechanics = entry.mechanics && typeof entry.mechanics === "object" ? entry.mechanics : {};
   entry.metadata = entry.metadata && typeof entry.metadata === "object" ? entry.metadata : {};
   const has = (key) => Object.hasOwn(fields, key);
   const text = (key) => String(fields[key] ?? "").trim();
@@ -720,11 +911,16 @@ export function buildProposalPatch(proposal, fields = {}) {
     if (!text("name")) errors.push("A name is required.");
     else entry.name = text("name").slice(0, 120);
   }
-  if (has("effect")) {
+  if (has("effect") && entry.mechanics) {
     if (!text("effect")) errors.push("The effect cannot be empty: say what it does at the table.");
     else entry.mechanics.effect = text("effect");
   }
-  if (proposal?.kind === "class") {
+  if (proposal?.kind === "title") {
+    if (has("description")) {
+      if (!text("description")) errors.push("A Title needs a description: what the world calls them, and why.");
+      else entry.description = text("description");
+    }
+  } else if (proposal?.kind === "class") {
     if (has("level")) {
       const level = Number(text("level"));
       if (!Number.isInteger(level) || level < 1) errors.push("Class level must be a whole number of 1 or more.");
@@ -744,7 +940,7 @@ export function buildProposalPatch(proposal, fields = {}) {
     }
     if (has("system_equivalent")) optional(entry, "system_equivalent", text("system_equivalent"));
   }
-  if (has("actions")) {
+  if (has("actions") && entry.mechanics) {
     if (text("actions") === "") delete entry.mechanics.actions;
     else {
       const actions = Number(text("actions"));
@@ -752,8 +948,8 @@ export function buildProposalPatch(proposal, fields = {}) {
       else entry.mechanics.actions = actions;
     }
   }
-  if (has("trigger")) optional(entry.mechanics, "trigger", text("trigger"));
-  if (has("duration")) optional(entry.mechanics, "duration", text("duration"));
+  if (has("trigger") && entry.mechanics) optional(entry.mechanics, "trigger", text("trigger"));
+  if (has("duration") && entry.mechanics) optional(entry.mechanics, "duration", text("duration"));
   if (has("tags")) {
     entry.metadata.tags = [...new Set(text("tags").split(/[,;\n]/).map((tag) => tag.trim()).filter(Boolean))];
   }

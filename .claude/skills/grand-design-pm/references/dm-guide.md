@@ -61,3 +61,23 @@ rejected the rest - rejections are findings too ("bland", "too strong", "not wha
 
 Each character is analyzed with the SAME party notes, exactly like a GM pasting one recap into
 every character sheet. Watch who gets credited for what.
+
+## Advanced mechanics (evolve, merge, titles, erosion)
+
+Each report.md has an "Advanced mechanics" block per PC: owned entries with lineage, Skills ready to
+evolve, Classes at risk of erosion, Horror Rank, pending Titles/evolutions/merges; every AI fallback
+is a `usedFallback:` line with its reason. Once a PC owns things, exercise them like a GM would:
+
+```powershell
+node foundry-module/tools/playtest/playtest.mjs owned   --campaign <name> [--actor Wick]
+node foundry-module/tools/playtest/playtest.mjs evolve  --campaign <name> --actor Wick --skill "Riddle"
+node foundry-module/tools/playtest/playtest.mjs merge   --campaign <name> --actor Wick --classes "Rogue,Trickster"
+node foundry-module/tools/playtest/playtest.mjs titles  --campaign <name>
+node foundry-module/tools/playtest/playtest.mjs erosion --campaign <name> [--threshold 2]
+```
+
+Evolve/merge create a pending proposal; approve or reject it with `approve`/`reject` like any other
+(Titles too). Evolve a Skill the report lists as ready, and try one that is not (is the refinement
+honest?). Merge only Classes the fiction supports. Before a session, weave an eroding Class or a
+rising Horror Rank into the story. A command that prints "not available in this build" is a gap to
+file, not a bug in the playtest.

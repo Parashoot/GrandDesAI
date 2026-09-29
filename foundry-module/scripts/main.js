@@ -2,6 +2,7 @@ import { GrandDesignApi } from "./api.js";
 import { defaultAtlasAssetPath, isLegacyGithubAtlasPath } from "./atlas.js";
 import { MODULE_ID } from "./constants.js";
 import { openGrowthManager } from "./growth-ui.js";
+import { openRegistryPanel } from "./registry-ui.js";
 import { openPopulate, runPopulateAndAnnounce } from "./populate-ui.js";
 import { checkGatewayAtReady, getGatewayConfig, registerAiProviderSettings } from "./ai-provider-config.js";
 import { createEmergentThemeStore, registerEmergentThemeSettings } from "./emergent-themes-settings.js";
@@ -82,6 +83,13 @@ Hooks.on("getActorSheetHeaderButtons", (sheet, buttons) => {
     label: "Grand Design",
     onclick: () => openImporter(sheet.actor)
   });
+  // Board 752369f6: owned Classes/Skills/Titles, lineage, Evolve, Merge and erosion.
+  buttons.unshift({
+    class: "grand-design-registry",
+    icon: "fas fa-sitemap",
+    label: "Registry",
+    onclick: () => openRegistryPanel(sheet.actor)
+  });
   buttons.unshift({
     class: "grand-design-growth",
     icon: "fas fa-seedling",
@@ -160,8 +168,9 @@ Hooks.on("renderActorSheetV2", (sheet, element) => {
   const anchor = header.querySelector(".header-control");
   const importButton = buildHeaderControlButton("grand-design-import", "fa-solid fa-sparkles", "Grand Design", () => openImporter(sheet.actor));
   const growthButton = buildHeaderControlButton("grand-design-growth", "fa-solid fa-seedling", "Growth", () => openGrowthManager(sheet.actor));
-  if (anchor) anchor.before(importButton, growthButton);
-  else header.append(importButton, growthButton);
+  const registryButton = buildHeaderControlButton("grand-design-registry", "fa-solid fa-sitemap", "Grand Design Registry", () => openRegistryPanel(sheet.actor));
+  if (anchor) anchor.before(importButton, growthButton, registryButton);
+  else header.append(importButton, growthButton, registryButton);
 });
 
 // ApplicationV2 header controls are icon-only (no room for a visible label like V1's), so the

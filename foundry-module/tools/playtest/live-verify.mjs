@@ -86,9 +86,10 @@ try {
   const suggest = await page.evaluate(async ({ mod, id }) => {
     const api = game.modules.get(mod).api; const actor = game.actors.get(id);
     const t = Date.now(); const r = await api.requestGrowthProposals(actor);
-    return { ms: Date.now() - t, added: (r.added ?? []).map((p) => `${p.kind}:${p.entry?.name}`) };
+    const skipped = [...(r.skipped ?? []), ...(r.skippedProposals ?? []), ...(r.adapterSkippedProposals ?? [])].map((s) => `${s.reason ?? "invalid"}:${s.name ?? s.proposal?.entry?.name ?? s.proposal?.name ?? "?"}${s.duplicateOf ? `~${s.duplicateOf}` : ""}`);
+    return { ms: Date.now() - t, added: (r.added ?? []).map((p) => `${p.kind}:${p.entry?.name}`), skipped, keys: Object.keys(r ?? {}), diag: JSON.stringify(r?.gatewayDiagnostics ?? {}).slice(0, 1500), returned: (r.proposals ?? []).map((p) => p.entry?.name ?? p.name), pending: api.getGrowth(actor).proposals.filter((p) => p.status === "pending").length, error: r?.error };
   }, { mod: MOD, id: actorId });
-  check("Suggest proposals returns AI proposals", suggest.added.length > 0, `${suggest.added.join(" | ")} (${(suggest.ms / 1000).toFixed(0)} s)`);
+  check("Suggest proposals returns AI proposals", suggest.added.length > 0, `${suggest.added.join(" | ")} (${(suggest.ms / 1000).toFixed(0)} s) pending ${suggest.pending}; skipped [${suggest.skipped.join(", ")}] returned [${suggest.returned.join(", ")}] diag ${suggest.diag}${suggest.error ? ` error ${suggest.error}` : ""}`);
 
   const milestone = await page.evaluate(async ({ mod, id }) => {
     const api = game.modules.get(mod).api; const actor = game.actors.get(id);
@@ -103,6 +104,11 @@ try {
   // Growth dialog via the real sheet header button.
   await page.evaluate((id) => game.actors.get(id).sheet.render(true), actorId);
   await page.waitForTimeout(2500);
+  // A permanent warning toast (e.g. a rest's fallback warning) can sit over the sheet header: log
+  // what it says, then clear the toasts so the click reaches the button.
+  const toasts = await page.evaluate(() => [...document.querySelectorAll("#notifications li")].map((li) => li.textContent.trim()));
+  if (toasts.length) console.log(`toasts: ${toasts.join(" | ")}`);
+  await page.evaluate(() => { ui.notifications?.clear?.(); document.querySelectorAll("#notifications li").forEach((li) => li.remove()); });
   await page.click(".grand-design-growth");
   await page.waitForTimeout(2500);
   const dialog = await page.evaluate(() => {

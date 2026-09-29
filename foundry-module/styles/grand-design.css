@@ -148,3 +148,70 @@
 
 /* Stated payoff of a growth event ("no guest was lost"), shown after its summary. */
 .gd-consequence { opacity: 0.8; font-style: italic; }
+
+/* --- Registry panel + advanced mechanics (boards 752369f6, 0860fd78, 43ff2ae9; 2026-09-29) -------- */
+.grand-design-growth .gd-growth-header .gd-open-registry { margin-left: auto; font-size: 0.85em; }
+.grand-design-growth .gd-title-chip,
+.grand-design-registry .gd-title-chip { background: rgba(201, 154, 6, 0.2); color: #7a5d00; }
+.grand-design-growth .gd-lineage { background: rgba(46, 125, 79, 0.12); color: #2e5d3f; }
+.grand-design-growth .gd-proposal.gd-focus { outline: 2px solid rgba(46, 90, 160, 0.55); outline-offset: 2px; border-radius: 4px; }
+.grand-design-growth .gd-suggest-outcome {
+  border-left: 3px solid rgba(179, 92, 0, 0.5);
+  padding: 0.1rem 0 0.2rem 0.6rem;
+  margin: 0.3rem 0;
+  font-size: 0.9em;
+}
+.grand-design-growth .gd-suggest-outcome p { margin: 0; }
+.grand-design-growth .gd-suggest-outcome ul { list-style: disc; padding-left: 1.2rem; max-height: none; margin: 0.1rem 0; }
+.grand-design-growth .gd-after-analysis,
+.grand-design-registry .gd-erosion-callout {
+  border: 1px solid rgba(179, 92, 0, 0.4);
+  background: rgba(179, 92, 0, 0.06);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  margin: 0.4rem 0;
+}
+.grand-design-growth .gd-after-analysis h4,
+.grand-design-registry .gd-erosion-callout h4 { margin: 0.2rem 0; }
+.grand-design-growth .gd-after-analysis ul,
+.grand-design-registry ul.gd-erosion-list { list-style: none; padding-left: 0; max-height: none; margin: 0.1rem 0; }
+
+.grand-design-registry .gd-growth-header { display: flex; align-items: center; gap: 0.5rem; }
+.grand-design-registry .gd-growth-header h3 { flex: 1; margin: 0; }
+.grand-design-registry .gd-hint { font-size: 0.9em; opacity: 0.85; }
+.grand-design-registry .gd-chip {
+  display: inline-block;
+  border-radius: 0.6rem;
+  padding: 0 0.45rem;
+  font-size: 0.8em;
+  background: rgba(0, 0, 0, 0.08);
+}
+.grand-design-registry .gd-red { background: rgba(161, 42, 42, 0.15); color: #a12a2a; }
+.grand-design-registry .gd-ready { background: rgba(46, 125, 79, 0.18); color: #2e7d4f; font-weight: bold; }
+.grand-design-registry .gd-at-risk { background: rgba(179, 92, 0, 0.15); color: #8a4600; }
+.grand-design-registry .gd-action { width: auto; display: inline-flex; align-items: center; gap: 0.3rem; line-height: 1.6; padding: 0 0.6rem; flex: 0 0 auto; font-size: 0.9em; }
+.grand-design-registry .gd-action.gd-primary { font-weight: bold; }
+.grand-design-registry .gd-action.gd-ready-action { border-color: #2e7d4f; box-shadow: 0 0 4px rgba(46, 125, 79, 0.6); }
+.grand-design-registry .gd-action[aria-busy="true"] { cursor: progress; opacity: 0.75; }
+.grand-design-registry.gd-busy { cursor: progress; }
+.grand-design-registry .gd-busy-notice {
+  border: 1px solid rgba(46, 90, 160, 0.4);
+  background: rgba(46, 90, 160, 0.08);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+}
+.grand-design-registry .gd-registry-section h3 { display: flex; align-items: center; gap: 0.5rem; margin: 0.6rem 0 0.2rem; }
+.grand-design-registry .gd-registry-section h3 .gd-action { margin-left: auto; }
+.grand-design-registry ul.gd-owned-list { list-style: none; padding-left: 0; margin: 0; max-height: 18rem; overflow-y: auto; }
+.grand-design-registry .gd-owned { padding: 0.3rem 0; border-bottom: 1px dashed rgba(0, 0, 0, 0.15); }
+.grand-design-registry .gd-owned-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+.grand-design-registry .gd-owned-head input[type="checkbox"] { flex: 0 0 auto; margin: 0; }
+.grand-design-registry .gd-owned-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 0.4rem; }
+.grand-design-registry .gd-owned-lineage { font-size: 0.85em; color: #2e5d3f; }
+.grand-design-registry .gd-owned-effect { font-size: 0.9em; margin: 0.1rem 0; }
+.grand-design-registry .gd-owned-deed { font-size: 0.85em; }
+.grand-design-registry .gd-erosion-note { font-size: 0.85em; color: #8a4600; }
+.grand-design-registry .gd-owned.gd-superseded { opacity: 0.5; }
+.grand-design-registry .gd-owned.gd-superseded strong { text-decoration: line-through; }
+.grand-design-registry .gd-coming-soon-row { margin-top: 0.6rem; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.grand-design-registry .gd-coming-soon { opacity: 0.55; }

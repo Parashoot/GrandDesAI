@@ -23,12 +23,31 @@
       "NotesPlaceholder": "Write however you like — any language, bullet points, shorthand, typos are fine.",
       "UnderTheHood": "Under the hood",
       "StatusLocal": "Local",
-      "StatusFallback": "Local fallback"
+      "StatusFallback": "Local fallback",
+      "Registry": "Registry",
+      "Evolve": "Evolve",
+      "TitleChip": "Title"
     },
     "Themes": {
       "MenuName": "Emergent Themes",
       "MenuLabel": "Review Emergent Themes",
       "New": "new!"
+    },
+    "Registry": {
+      "Title": "Grand Design Registry",
+      "Open": "Registry",
+      "Classes": "Classes",
+      "Skills": "Skills",
+      "Titles": "Titles",
+      "Evolve": "Evolve",
+      "EvolveBusy": "The AI is evolving it...",
+      "Merge": "Merge selected",
+      "MergeBusy": "The AI is merging them...",
+      "MergeNeedsTwo": "Tick two or more Classes to merge first.",
+      "ReadyToEvolve": "ready to evolve",
+      "Superseded": "superseded",
+      "AtRisk": "Classes at risk of erosion",
+      "ComingSoon": "Coming soon"
     }
   }
 }

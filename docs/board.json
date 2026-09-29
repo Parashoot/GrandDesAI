@@ -57,7 +57,8 @@
    "status": "todo",
    "notes": [
     "2026-09-29: dnd5e live verify 15/15 (live-verify.mjs). PF2e world still to run: switch to 'endex' when nobody is on it, then node foundry-module/tools/playtest/live-verify.mjs.",
-    "When the world is free, also click through the 2026-09-29 dialog (per-row Approve, Details, Edit, Approve as written, Retry with AI, busy state) in BOTH worlds; dnd5e was occupied all session (users 1)."
+    "When the world is free, also click through the 2026-09-29 dialog (per-row Approve, Details, Edit, Approve as written, Retry with AI, busy state) in BOTH worlds; dnd5e was occupied all session (users 1).",
+    "2026-09-29 PF2e LIVE (world endex, pf2e 8.4.1, build 08b973e, live-verify.mjs): 14/15 - analyze 5 events via AI, no templates/Knacks, placeholder refused, Author with AI 'Archery Knack -> Fletchwright: Snap Shot', AI Class + tier-3 capstone at 19->20, dialog/build stamp, no console errors. Only FAIL = Suggest returns 0 proposals with 4 pending (same on dnd5e 14/15) -> regression from 3574bd96's pending-list prompt, sent to dev-gateway. New tools/playtest/switch-world.mjs switches worlds headlessly."
    ],
    "tags": [
     "pf2e",
@@ -67,7 +68,7 @@
    "owner": "",
    "source": "cli",
    "created": 1790530790.132,
-   "updated": 1790690119.65,
+   "updated": 1790694150.404,
    "parent": "f2d3213f"
   },
   {
