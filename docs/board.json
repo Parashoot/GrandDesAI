@@ -293,7 +293,8 @@
    "title": "Party mode: one extraction per party + per-PC attribution (api.analyzePartyNotes)",
    "status": "doing",
    "notes": [
-    "dev-integration done in worktree: api.analyzePartyNotes (one extraction, proposeFor per PC max 2 concurrent), attributeEventsToActor honours jev.actorName>=0.6 and jev.whole, reanalyzeLastNotes re-runs the party roster. 665 tests green (16 new, fakes only). Deviations: party.extractionCalls not calls; reads jev.actorName or jev.actor; skipped events reported once on party. Awaiting review + merge."
+    "dev-integration done in worktree: api.analyzePartyNotes (one extraction, proposeFor per PC max 2 concurrent), attributeEventsToActor honours jev.actorName>=0.6 and jev.whole, reanalyzeLastNotes re-runs the party roster. 665 tests green (16 new, fakes only). Deviations: party.extractionCalls not calls; reads jev.actorName or jev.actor; skipped events reported once on party. Awaiting review + merge.",
+    "Review (Fable): MERGE AFTER FIXES - party-wide reject after recording, stale-roster double count, early proposal drop, theme over-count, whole-event actorName. Sent back to dev-integration; contract updated with proposeFor + failure rules."
    ],
    "tags": [
     "integration",
@@ -303,7 +304,7 @@
    "owner": "dev-integration",
    "source": "jev-layer",
    "created": 1790704404.997,
-   "updated": 1790704903.505
+   "updated": 1790705220.605
   },
   {
    "id": "642a0bda",

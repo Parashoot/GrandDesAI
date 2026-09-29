@@ -87,7 +87,7 @@ when `apiKey` is empty.
    `diagnostics.jev.skippedChunks = [{ chunk, p, text: first 160 chars }]` so the GM can see it.
 2. **Attribution** (after dedupe/merge, when `request.party` lists >= 2 names): sets
    `event.actorName` from Jev when confidence >= 0.6 and the LLM left it empty or named a witness;
-   attaches `event.jev = { actor, actorConfidence, ... }`. Fixes board 6ca3c8e7 (a deed reported in
+   attaches `event.jev = { actorName, actorConfidence, whole, outcome, outcomeFrom?, flags }`. Fixes board 6ca3c8e7 (a deed reported in
    another player's line) by asking about the doer, not the speaker.
 3. **Verify**: if Jev's outcome differs from the LLM's with confidence >= `overrideConfidence`,
    replace it and record `event.jev.outcomeFrom = <llm outcome>`; below that, add flag
@@ -96,7 +96,9 @@ when `apiKey` is empty.
    sees it (board 9f591a25). Flags live in `event.jev.flags: string[]`.
 4. **Rank** (after stage 2): proposals sorted by `grounded + fit`, each gets `proposal.jev = {grounded, fit}`;
    `grounded < 1` adds flag `"weak-evidence"`. Never drops a proposal.
-5. `diagnostics.jev = { enabled, ran: [step...], calls, ms, skippedChunks, overrides, flags, errors }`.
+5. `diagnostics.jev = { enabled, ran: [step...], calls, ms, skippedChunks, routed, overrides, flags, errors }`.
+   `event.jev.outcome` is Jev's own outcome reading whenever verify ran (so a disputed event can say what Jev read).
+   `progression.js#normalizeGrowthEvent` persists a compact `jev` block; accepted proposals keep `proposal.jev`.
 
 New pipeline export for party mode (below): `runProposalStageFor({ transport, request, events, config, validators, systemId, jev })`
 — stage 2 alone for one character given already-extracted, already-attributed events; same
@@ -122,7 +124,20 @@ Board a48d97c0: a 5-PC party costs 2+ minutes because the notes are extracted on
   **only** when `shouldPropose` says so (in parallel, at most 2 at a time). Adapter missing or
   without `analyzeParty` -> falls back to calling `analyzeSessionNotes` per actor (today's path).
   Total adapter failure -> local analyzer per actor, with the reason, as today.
-  Returns `{ perActor: [{ actorId, name, ...analyzeSessionNotes-shaped result }], party: { ms, calls, jev } }`.
+  Returns `{ perActor: [{ actorId, name, ...analyzeSessionNotes-shaped result, party: true, proposeError?, error? }],
+  party: { ms, extractionCalls, jev, mode: "party"|"per-actor", roster, skippedActors? } }`.
+- `adapter.proposeFor({ actor, request, events, systemId }) -> { proposals, skippedProposals, diagnostics }`
+  (dev-gateway, `ai-gateway.js`): stage 2 for ONE character from already-recorded events. It applies
+  `shouldPropose` itself and returns `proposals: []` (with `diagnostics.proposalStage.reason`) when
+  nothing is earned; api.js calls it for every PC and never gates on its own.
+- Party-mode failure rules: one PC's failure (record, update, proposeFor) is recorded on that PC's
+  entry (`error`/`proposeError`) and never rejects the others; `lastAnalysis` is written right after
+  a PC's events are recorded so a later failure still leaves a replaceable record; stale pending AI
+  proposals are dropped per PC only after extraction succeeded or fell back; emergent themes are
+  observed once over the union of the party's recorded events; a `whole` event carries no
+  `actorName` on the copies other PCs keep. `reanalyzeLastNotes` on a party-analysed PC re-runs the
+  stored roster with replace; roster members analysed since with different notes are used for
+  attribution only and listed in `party.skippedActors`.
 - `session-notes.js#attributeEventsToActor`: honour a confident `event.jev.actorName`; an event
   Jev marked `whole: true` is kept by everyone.
 
