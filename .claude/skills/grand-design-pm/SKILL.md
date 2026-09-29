@@ -41,9 +41,32 @@ unfair growth, broken flow), `medium` (confusing, bland, slow), `low` (polish).
 2. Read the Status section of `CLAUDE.md`; `git log --oneline -10`; `git status --short`.
 3. Is Ollama up? `curl -s http://127.0.0.1:11434/api/tags`. Is Foundry up and is anyone on it?
    `curl -s http://localhost:30000/api/status` (never switch worlds while `users` > 0).
+   After changing module code, deploy it: `powershell -ExecutionPolicy Bypass -File tools\deploy-foundry-module.ps1`
+   (the live install goes stale otherwise - on 2026-09-28 it was four days behind main).
+
 4. Decide the session's shape: **playtest** (default when nothing is `doing` and the last playtest
    is older than the last fixes), **fix** (open `high`/`critical` items exist), or **plan** (owner
    asked). Put the goal on the board if it is not already there.
+
+## Foundry access (you may run it yourself)
+
+Local Foundry v14 at `http://localhost:30000`. Worlds: **"Endex"** (id `endex`, PF2e) and **"EndexDND 5E"**
+(id `endexdnd-5e`, dnd5e). Log in as user **`Gamemaster` with no password** (empty password field). The
+owner has authorised Claude to log in, launch worlds and drive the module there for testing - no need to ask.
+
+- Drive it headless with Playwright the way `foundry-module/tests/integration/run-live-ai-campaign.mjs`
+  does (`npm run test:live-ai`; `FOUNDRY_HEADFUL=1` to watch). Or, when the Claude Chrome extension is
+  connected, in the owner's own browser.
+- Only one connection per user: logging in as Gamemaster while the owner is on it kicks them. Check
+  `curl -s http://localhost:30000/api/status` first; if `users` > 0 and the owner is playing, ask or wait.
+  Never switch or shut down a world while `users` > 0.
+- The AI gateway settings (`aiProvider`, `aiEndpoint`, `aiModel`) are CLIENT scope - stored per browser.
+  A headless session must set them itself (`game.settings.set("grand-design-ai", "aiProvider", "ollama")`,
+  endpoint `http://127.0.0.1:11434`, model `qwen3.8:27b`) and reload; that does not change the owner's browser.
+- The gateway adapter is built at `ready`, so settings changes need a world reload.
+- Read-only live check: `node foundry-module/tools/playtest/live-audit.mjs [--actor Name] [--with-ai]` joins as
+  Gamemaster and prints the module version, settings, whether the gateway is attached, the Growth dialog's real
+  buttons, every Grand Design actor's events/pending proposals, and console errors (changes nothing).
 
 ## Playtest (you are the Dungeon Master)
 
@@ -55,8 +78,12 @@ Full procedure: [references/dm-guide.md](references/dm-guide.md). Personas:
    `node foundry-module/tools/playtest/playtest.mjs init --campaign <name> --system dnd5e --party "Name:Class:Level:persona,..."`
    3-5 PCs, each with a persona from personas.md. Mix at least one "breaker" (chaos, non-native,
    shorthand, multilingual, dark-path) with the "players who just want to play".
-2. **Play the session.** Spawn the players as sub-agents (one per PC, `model: "sonnet"` is plenty,
-   in parallel) using the player prompt in dm-guide.md. You run the table: frame a scene, collect
+2. **Play the session.** Players run on the LOCAL model, not Claude: write
+   `playtests/<campaign>/players.json` (one persona system prompt per PC, from personas.md) and send each
+   scene with `node foundry-module/tools/playtest/players.mjs --campaign <c> --session N --scene scene.txt`
+   (mistral-small3.2:24b, ~25 s for five players, zero Claude tokens; history in `sessions/NN/players-log.json`).
+   Why: a Claude sub-agent costs ~30k tokens of harness per turn, and haiku players refused to role-play
+   (ember-road s3). Use Claude sub-agents only if Ollama is down. You run the table: frame a scene, collect
    every player's declared action, roll real dice (`node -e` with `crypto.randomInt`), narrate
    results, 3-6 rounds, at least one fight, one social scene and one "downtime" beat where players
    do off-script things (the module exists for those). Save the play log as

@@ -3,8 +3,8 @@
 // the way a GM would use it -- without Foundry. The DM (a person or a Claude "DM" agent) writes
 // each session's notes; this script feeds them through the REAL module API (api.js ->
 // analyzeSessionNotes -> the AI gateway against a local Ollama model), keeps every character's
-// Grand Design state between sessions, resolves rests, approves proposals the way the DM decides,
-// and writes what the GM would actually see: a readable report plus the real Growth dialog HTML.
+// Grand Design state between sessions, resolves rests, approves or rejects proposals the way the DM
+// decides, and writes what the GM would actually see: a readable report plus the real Growth dialog HTML.
 //
 // Why without Foundry: a playtest needs dozens of analyses across sessions and both systems; the
 // module's pure API runs in Node against mock actors (same pattern as tests/api-gateway-v2), so a
@@ -16,8 +16,22 @@
 //   node tools/playtest/playtest.mjs analyze --campaign ember-road --session 1 [--notes file]
 //        [--for all|Brakka,Wick] [--rest short|long|none] [--approve none|first|all]
 //        [--proposal-mode when-earned|always|never] [--model qwen3.8:27b] [--sim]
-//   node tools/playtest/playtest.mjs approve --campaign ember-road --actor Wick --proposal <id|name>
+//   node tools/playtest/playtest.mjs suggest --campaign ember-road --actor Maren[,Tovin]   ("Suggest proposals")
+//   node tools/playtest/playtest.mjs approve --campaign ember-road --actor Wick --proposal <id|name> [--confirm]
+//        (any pending kind: skill, class, title, an evolution or a merge)
+//   node tools/playtest/playtest.mjs reject  --campaign ember-road --actor Wick --proposal <id|name> [--reason "..."]
 //   node tools/playtest/playtest.mjs status  --campaign ember-road [--json]
+// Advanced mechanics (the registry panel; each says "not available in this build" when the API lacks it):
+//   node tools/playtest/playtest.mjs owned   --campaign ember-road [--actor Wick[,Maren]] [--json]
+//        owned Classes/Skills/Titles with lineage, evolution-ready Skills, eroding Classes, Horror Rank
+//   node tools/playtest/playtest.mjs evolve  --campaign ember-road --actor Wick --skill <name|id> [--sim]
+//        api.requestSkillEvolution -> a pending upgrade proposal (approve it with approve)
+//   node tools/playtest/playtest.mjs merge   --campaign ember-road --actor Wick --classes <a>,<b> [--sim]
+//        api.requestClassMerge -> a pending combine proposal
+//   node tools/playtest/playtest.mjs titles  --campaign ember-road [--actor Wick]     owned + pending Titles
+//   node tools/playtest/playtest.mjs erosion --campaign ember-road [--actor Wick] [--threshold N]
+// Every report.md also carries a per-PC "Advanced mechanics" block and a `usedFallback:` line for each
+// AI call that fell back (analysis, milestone rewards at rest, fallback proposals).
 //
 // Files (foundry-module/playtests/<campaign>/):
 //   campaign.json                    party, every actor's module flags, items, emergent themes
@@ -41,25 +55,9 @@ const { createGatewayAdapter } = await import("../../scripts/ai-gateway.js");
 const { MODULE_ID } = await import("../../scripts/constants.js");
 const { normalizeGatewayConfig } = await import("../../scripts/ai/gateway-config.js");
 const { renderGrowthContent, statusBadge } = await import("../../scripts/growth-ui.js");
+const { parseArgs, parseList, selectParty, resolveEntry, collectAdvanced, renderAdvancedSection, fallbackLines, describeRequestResult, NOT_AVAILABLE } = await import("./lib.mjs");
 
 // ---- args & files -----------------------------------------------------------------------------
-
-function parseArgs(argv) {
-  const [cmd, ...rest] = argv;
-  const flags = {};
-  for (let i = 0; i < rest.length; i += 1) {
-    const arg = rest[i];
-    if (!arg.startsWith("--")) continue;
-    const key = arg.slice(2);
-    const next = rest[i + 1];
-    if (next === undefined || next.startsWith("--")) flags[key] = true;
-    else {
-      flags[key] = next;
-      i += 1;
-    }
-  }
-  return { cmd, flags };
-}
 
 const campaignDir = (name) => join(PLAYTESTS, safeName(name));
 const sessionDir = (name, n) => join(campaignDir(name), "sessions", String(n).padStart(2, "0"));
@@ -68,11 +66,15 @@ const safeName = (s) => String(s).trim().toLowerCase().replace(/[^a-z0-9-]+/g, "
 function loadCampaign(name) {
   const path = join(campaignDir(name), "campaign.json");
   if (!existsSync(path)) throw new Error(`no campaign "${name}" (run init first): ${path}`);
-  return JSON.parse(readFileSync(path, "utf8"));
+  // Remember the folder it came from: a copied campaign folder keeps the original's internal name,
+  // and saving by that name would overwrite the original campaign (board ad43ec26).
+  const campaign = JSON.parse(readFileSync(path, "utf8"));
+  Object.defineProperty(campaign, "folder", { value: safeName(name), enumerable: false });
+  return campaign;
 }
 
 function saveCampaign(campaign) {
-  const dir = campaignDir(campaign.name);
+  const dir = campaignDir(campaign.folder ?? campaign.name);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "campaign.json"), `${JSON.stringify(campaign, null, 1)}\n`);
 }
@@ -106,6 +108,13 @@ function makeActor(record, systemId) {
       id: source._id,
       getFlag: (scope, key) => source.flags?.[scope]?.[key],
       update: async (changes) => Object.assign(source, changes),
+      // dnd5e 4+ Items get their activities after creation (systems/dnd5e-adapter.js postCreate).
+      createActivity: async (type, data = {}) => {
+        const id = `act${Math.random().toString(36).slice(2, 10)}`;
+        source.system ??= {};
+        source.system.activities = { ...(source.system.activities ?? {}), [id]: { _id: id, type, ...structuredClone(data) } };
+        return source.system.activities[id];
+      },
       delete: async () => {
         record.items = record.items.filter((item) => item._id !== source._id);
       }
@@ -201,7 +210,7 @@ function cmdInit(flags) {
 async function cmdAnalyze(flags) {
   const campaign = loadCampaign(flags.campaign);
   const n = Number(flags.session ?? campaign.sessionsPlayed + 1);
-  const dir = sessionDir(campaign.name, n);
+  const dir = sessionDir(campaign.folder ?? campaign.name, n);
   const notesPath = flags.notes ?? join(dir, "notes.md");
   if (!existsSync(notesPath)) throw new Error(`no notes at ${notesPath}`);
   const notes = readFileSync(notesPath, "utf8").replace(/^---[\s\S]*?---\s*/, "").trim();
@@ -249,7 +258,16 @@ async function cmdAnalyze(flags) {
       status: statusBadge(config, { source: analysis?.source ?? "local-fallback" }, true)
     });
     writeGmView(dir, pc.name, campaign, html);
-    results.push({ name: pc.name, className: pc.className, persona: pc.persona, restType: rest, ms, error, analysis, before, after: { progression, pending: pending.length }, restResult, approved, pending });
+    // Advanced mechanics after the analysis/rest/approvals: what the DM looks at before the next
+    // session (who can evolve, which Class is eroding, Horror Rank). A read; never fails the session.
+    let advanced;
+    try {
+      advanced = collectAdvanced(api, actor, { analysis, restResult });
+    } catch (e) {
+      advanced = { error: e.message };
+    }
+    const fallbacks = error ? [] : fallbackLines({ analysis, restResult, pending });
+    results.push({ name: pc.name, className: pc.className, persona: pc.persona, restType: rest, ms, error, analysis, before, after: { progression, pending: pending.length }, restResult, approved, pending, advanced, fallbacks });
     console.log(`${pc.name}: ${error ? `ERROR ${error}` : `${analysis.source}, ${analysis.events.length} events, ${pending.length} pending proposals`} (${(ms / 1000).toFixed(1)}s)`);
   }
   campaign.sessionsPlayed = Math.max(campaign.sessionsPlayed, n);
@@ -270,10 +288,60 @@ function cmdApprove(flags) {
     const ref = String(flags.proposal ?? "").toLowerCase();
     const proposal = api.getGrowth(actor).proposals.find((p) => p.status === "pending" && (p.id === flags.proposal || String(p.entry?.name ?? "").toLowerCase().includes(ref)));
     if (!proposal) throw new Error(`no pending proposal matches ${flags.proposal}`);
-    const done = await api.approveProposal(actor, proposal.id);
+    // Any pending kind (skill, class, title, an upgrade/combine) goes through the same approveProposal the
+    // Growth dialog uses; --confirm approves a generic placeholder as written (api needsAuthoring guard).
+    const done = await api.approveProposal(actor, proposal.id, flags.confirm === true ? { confirm: true } : {});
     saveCampaign(campaign);
-    console.log(`approved ${proposal.entry?.name} for ${pc.name} -> item ${done?.item?.name ?? "(none)"}`);
+    const op = proposal.entry?.metadata?.lineage?.operation;
+    console.log(`approved ${proposal.entry?.name} [${proposal.kind ?? "skill"}${op && op !== "origin" ? `/${op}` : ""}] for ${pc.name} -> item ${done?.item?.name ?? "(none)"}`);
   })();
+}
+
+// The GM's "no" (api.rejectProposal): mirrors cmdApprove exactly except for which API call it makes
+// and that it prints the optional reason. Like approve, only a currently-pending proposal matches.
+function cmdReject(flags) {
+  return (async () => {
+    const campaign = loadCampaign(flags.campaign);
+    const pc = campaign.party.find((p) => p.name.toLowerCase() === String(flags.actor ?? "").toLowerCase());
+    if (!pc) throw new Error(`no party member ${flags.actor}`);
+    const { api } = await buildApi(campaign, { ...flags, sim: true });
+    const actor = makeActor(pc, campaign.system);
+    const ref = String(flags.proposal ?? "").toLowerCase();
+    const proposal = api.getGrowth(actor).proposals.find((p) => p.status === "pending" && (p.id === flags.proposal || String(p.entry?.name ?? "").toLowerCase().includes(ref)));
+    if (!proposal) throw new Error(`no pending proposal matches ${flags.proposal}`);
+    const done = await api.rejectProposal(actor, proposal.id, { reason: flags.reason });
+    saveCampaign(campaign);
+    console.log(`rejected ${proposal.entry?.name} for ${pc.name}${done?.rejectedReason ? ` (${done.rejectedReason})` : ""}`);
+  })();
+}
+
+// The Growth dialog's "Suggest proposals" button (api.requestGrowthProposals): what a GM clicks when a
+// grant allowance is waiting and nothing is pending. Real model; prints what the GM would read.
+async function cmdSuggest(flags) {
+  const campaign = loadCampaign(flags.campaign);
+  const names = String(flags.actor ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const pcs = campaign.party.filter((p) => names.includes(p.name.toLowerCase()));
+  if (!pcs.length) throw new Error("usage: suggest --campaign <name> --actor Name[,Name]");
+  const { api } = await buildApi(campaign, flags);
+  for (const pc of pcs) {
+    const actor = makeActor(pc, campaign.system);
+    const started = Date.now();
+    try {
+      const result = await api.requestGrowthProposals(actor);
+      const created = result?.added ?? [];
+      console.log(`${pc.name}: ${created.length} new proposal(s) (${((Date.now() - started) / 1000).toFixed(1)}s)`);
+      if (flags.debug) console.log(JSON.stringify({ skipped: result?.skipped, diag: result?.gatewayDiagnostics }, null, 1).slice(0, 4000));
+    } catch (e) {
+      console.log(`${pc.name}: ERROR ${e.message}`);
+    }
+    saveCampaign(campaign);
+    for (const p of api.getGrowth(actor).proposals.filter((x) => x.status === "pending")) {
+      const md = p.entry?.metadata ?? {};
+      console.log(`  * ${p.entry?.name} [${p.kind ?? ""}/${p.entry?.gameItem?.kind ?? ""}, tier ${p.entry?.tier ?? "-"}]${md.polarity === "red" ? ` RED ${md.malignance?.vice}: ${md.malignance?.drawback}` : ""}`);
+      console.log(`      ${p.entry?.mechanics?.effect ?? ""} (${JSON.stringify(p.entry?.mechanics?.frequency ?? {})})`);
+      console.log(`      evidence: ${(p.evidence ?? []).join(" / ")}`);
+    }
+  }
 }
 
 async function cmdStatus(flags) {
@@ -304,6 +372,125 @@ async function cmdStatus(flags) {
     console.log(`- ${r.name} the ${r.className}${r.persona ? ` [${r.persona}]` : ""}: GD level ${r.gdLevel}, progress ${r.progress}, allowances ${r.grantAllowances}, ${r.events} events`);
     if (r.skills.length || r.classes.length) console.log(`    owns: ${[...r.classes, ...r.skills].join(", ")}`);
     if (r.pending.length) console.log(`    pending: ${r.pending.join(" | ")}`);
+  }
+}
+
+// ---- advanced mechanics (evolve / merge / titles / erosion) ----------------------------------------
+// The API for these lands separately (requestSkillEvolution, requestClassMerge, getOwnedEntries, title
+// proposals); every command feature-detects and says "not available in this build" instead of failing,
+// and shows what today's API can (previews, registry, readiness) so the DM still sees the state.
+
+function findPc(campaign, name, usage) {
+  const pc = campaign.party.find((p) => p.name.toLowerCase() === String(name ?? "").trim().toLowerCase());
+  if (!pc) throw new Error(name && name !== true ? `no party member ${name}` : usage);
+  return pc;
+}
+
+// `owned [--actor X[,Y]] [--json]`: owned entries with lineage, evolution readiness, erosion, Horror Rank.
+async function cmdOwned(flags) {
+  const campaign = loadCampaign(flags.campaign);
+  const { api } = await buildApi(campaign, { ...flags, sim: true });
+  const pcs = selectParty(campaign.party, flags.actor);
+  const rows = pcs.map((pc) => ({ name: pc.name, ...collectAdvanced(api, makeActor(pc, campaign.system), { erosionThreshold: Number(flags.threshold) || undefined }) }));
+  if (flags.json) return console.log(JSON.stringify(rows, null, 1));
+  for (const row of rows) console.log(renderAdvancedSection(row, { heading: `## ${row.name}` }));
+}
+
+// `evolve --actor X --skill <name|id>`: the registry panel's Evolve button (api.requestSkillEvolution).
+async function cmdEvolve(flags) {
+  const usage = "usage: evolve --campaign <name> --actor X --skill <name|id> [--sim]";
+  const campaign = loadCampaign(flags.campaign);
+  const pc = findPc(campaign, flags.actor, usage);
+  const { api } = await buildApi(campaign, flags);
+  const actor = makeActor(pc, campaign.system);
+  const { owned } = collectAdvanced(api, actor);
+  const skill = resolveEntry(owned.skills, flags.skill, "Skill");
+  if (skill.status === "superseded") throw new Error(`${skill.name} is superseded (already evolved)`);
+  const readiness = api.checkSkillEvolutionReadiness(actor, skill.id)[0];
+  console.log(`${pc.name} / ${skill.name}: evidence ${readiness?.evidenceWeight ?? "?"}/${readiness?.evidenceThreshold ?? "?"}, defining moments ${readiness?.definingMoments?.length ?? 0}, ready ${readiness?.hasCatalyst ? "yes" : "no"}`);
+  if (typeof api.requestSkillEvolution !== "function") {
+    console.log(`requestSkillEvolution ${NOT_AVAILABLE}`);
+    try {
+      const preview = api.buildSkillEvolutionPreview(actor, { sourceId: skill.id });
+      console.log(`  preview (buildSkillEvolutionPreview, nothing saved): "${preview.name}" tier ${preview.tier}${preview.evolution?.catalyst === false ? " (refinement, no catalyst)" : ""}`);
+    } catch (e) {
+      console.log(`  preview failed: ${e.message}`);
+    }
+    return;
+  }
+  const started = Date.now();
+  const result = await api.requestSkillEvolution(actor, skill.id);
+  saveCampaign(campaign);
+  console.log(`${describeRequestResult("evolve", result)} (${((Date.now() - started) / 1000).toFixed(1)}s)`);
+  printProposal(result?.proposal);
+}
+
+// `merge --actor X --classes a,b`: the registry panel's Merge action (api.requestClassMerge).
+async function cmdMerge(flags) {
+  const usage = "usage: merge --campaign <name> --actor X --classes <name|id>,<name|id>[,...] [--sim]";
+  const campaign = loadCampaign(flags.campaign);
+  const pc = findPc(campaign, flags.actor, usage);
+  const refs = parseList(flags.classes);
+  if (refs.length < 2) throw new Error(`${usage} (at least two Classes)`);
+  const { api } = await buildApi(campaign, flags);
+  const actor = makeActor(pc, campaign.system);
+  const { owned } = collectAdvanced(api, actor);
+  const classes = refs.map((ref) => resolveEntry(owned.classes, ref, "Class"));
+  if (new Set(classes.map((c) => c.id)).size < classes.length) throw new Error("the same Class is named twice");
+  const stale = classes.filter((c) => c.status === "superseded");
+  if (stale.length) throw new Error(`superseded (already merged): ${stale.map((c) => c.name).join(", ")}`);
+  const ids = classes.map((c) => c.id);
+  if (typeof api.requestClassMerge !== "function") {
+    console.log(`requestClassMerge ${NOT_AVAILABLE}`);
+    // The preview needs a level; the strongest source's is the natural starting point for a merge.
+    const level = Math.max(1, ...classes.map((c) => Number(c.level) || 1));
+    try {
+      const preview = api.buildClassMergePreview(actor, { sourceIds: ids, level });
+      console.log(`  preview (buildClassMergePreview, nothing saved): "${preview.name}" level ${preview.level ?? "?"}, ${preview.power_tier ?? "?"}${preview.offCycleEvolution ? " (off-cycle)" : ""}`);
+    } catch (e) {
+      console.log(`  preview failed: ${e.message}`);
+    }
+    return;
+  }
+  const started = Date.now();
+  const result = await api.requestClassMerge(actor, ids);
+  saveCampaign(campaign);
+  console.log(`${describeRequestResult(`merge ${classes.map((c) => c.name).join(" + ")}`, result)} (${((Date.now() - started) / 1000).toFixed(1)}s)`);
+  printProposal(result?.proposal);
+}
+
+function printProposal(p) {
+  if (!p) return;
+  const e = p.entry ?? {};
+  console.log(`  id ${p.id}; approve with: approve --actor <X> --proposal ${p.id}`);
+  if (e.mechanics?.effect) console.log(`  ${e.mechanics.effect}`);
+  if (e.metadata?.lineage?.rationale ?? p.rationale) console.log(`  why: ${e.metadata?.lineage?.rationale ?? p.rationale}`);
+}
+
+// `titles [--actor X]`: owned Titles and pending title proposals (kind "title").
+async function cmdTitles(flags) {
+  const campaign = loadCampaign(flags.campaign);
+  const { api } = await buildApi(campaign, { ...flags, sim: true });
+  for (const pc of selectParty(campaign.party, flags.actor)) {
+    const actor = makeActor(pc, campaign.system);
+    const { owned } = collectAdvanced(api, actor);
+    const pending = api.getGrowth(actor).proposals.filter((p) => p.status === "pending" && p.kind === "title");
+    console.log(`${pc.name}: ${owned.titles.length} Title(s), ${pending.length} pending`);
+    for (const t of owned.titles) console.log(`  owns [${t.name}]${t.polarity === "red" ? " RED" : ""}${t.effect ? ` - ${t.effect}` : ""}`);
+    for (const p of pending) console.log(`  pending [${p.entry?.name}]${p.entry?.metadata?.polarity === "red" ? ` RED${p.entry?.metadata?.vice ? ` (${p.entry.metadata.vice})` : ""}` : ""} ${p.id}${p.rationale ? ` - ${p.rationale}` : ""}`);
+  }
+}
+
+// `erosion [--actor X] [--threshold N]`: api.checkClassErosion, Classes whose behaviour stopped.
+async function cmdErosion(flags) {
+  const campaign = loadCampaign(flags.campaign);
+  const { api } = await buildApi(campaign, { ...flags, sim: true });
+  const threshold = Number(flags.threshold) || undefined;
+  for (const pc of selectParty(campaign.party, flags.actor)) {
+    const actor = makeActor(pc, campaign.system);
+    const atRisk = api.checkClassErosion(actor, threshold ? { sessionThreshold: threshold } : {});
+    const hr = api.getHorrorRank(actor);
+    console.log(`${pc.name}: ${atRisk.length ? atRisk.map((c) => `${c.name} at risk (${c.neverSeen ? "never seen in play" : `${c.sessionsSinceLastSeen} session(s) since its tags`})`).join("; ") : "no Class at risk"}; Horror Rank ${hr.points} pt, ${hr.totalLevelsDocked} level(s) docked`);
   }
 }
 
@@ -342,6 +529,8 @@ function renderReport(campaign, n, config, notes, results, hasTranscript) {
     const a = r.analysis;
     const fell = a.source !== "adapter";
     lines.push(`- Read by: **${a.source}**${fell ? ` -- FALLBACK${a.adapterError ? `: ${a.adapterError}` : ""}` : ""} in ${(r.ms / 1000).toFixed(1)}s`);
+    // Every AI fallback (analysis, milestone rewards at rest, fallback proposals), stated with its reason.
+    for (const f of (r.fallbacks ?? []).filter((line) => !line.startsWith("analysis read by"))) lines.push(`- usedFallback: ${f}`);
     const p0 = r.before.progression;
     const p1 = r.after.progression;
     lines.push(`- Grand Design level ${p0.level ?? 0} -> ${p1.level ?? 0}, progress ${Math.round(p0.progress ?? 0)} -> ${Math.round(p1.progress ?? 0)}, grant allowances ${p1.grantAllowances ?? 0}`);
@@ -369,9 +558,11 @@ function renderReport(campaign, n, config, notes, results, hasTranscript) {
     if (!r.pending.length) lines.push("_None._");
     for (const p of r.pending) {
       const e = p.entry ?? {};
-      const kind = e.gameItem?.kind ?? p.kind;
-      const red = e.metadata?.polarity === "red" ? ` **RED (${e.metadata?.malignance?.vice ?? "?"})** drawback: ${e.metadata?.malignance?.drawback ?? "?"}` : "";
-      lines.push(`- **${e.name ?? p.id}** (${kind}${e.tier ? `, tier ${e.tier}` : ""}, ${p.source ?? "?"})${red}`);
+      const kind = p.kind === "title" ? "TITLE" : e.gameItem?.kind ?? p.kind;
+      const op = e.metadata?.lineage?.operation;
+      const red = e.metadata?.polarity === "red" ? ` **RED (${e.metadata?.malignance?.vice ?? e.metadata?.vice ?? "?"})** drawback: ${e.metadata?.malignance?.drawback ?? "?"}` : "";
+      lines.push(`- **${e.name ?? p.id}** (${kind}${e.tier ? `, tier ${e.tier}` : ""}${op === "upgrade" || op === "combine" ? `, ${op}` : ""}, ${p.source ?? "?"})${red}`);
+      if (p.usedFallback) lines.push(`  - usedFallback${p.fallbackReason ? `: ${p.fallbackReason}` : ""}`);
       if (e.mechanics?.effect) lines.push(`  - ${e.mechanics.effect}`);
       const freq = e.mechanics?.frequency;
       const extra = [freq ? `${freq.max}/${freq.per}` : "", e.mechanics?.trigger ? `trigger: ${e.mechanics.trigger}` : "", e.system_equivalent ? `≈ ${e.system_equivalent}` : ""].filter(Boolean).join(" · ");
@@ -384,9 +575,11 @@ function renderReport(campaign, n, config, notes, results, hasTranscript) {
     }
     const skipped = [...(a.adapterSkippedProposals ?? []), ...(a.adapterSkippedEvents ?? [])];
     if (skipped.length) {
-      lines.push(`<details><summary>Skipped by the gateway (${skipped.length})</summary>\n\n${skipped.slice(0, 10).map((s) => `- ${s.reason ?? "invalid"}: ${JSON.stringify(s.errors ?? s.error ?? s.proposal?.entry?.name ?? "").slice(0, 200)}`).join("\n")}\n\n</details>`);
+      lines.push(`<details><summary>Skipped by the gateway (${skipped.length})</summary>\n\n${skipped.slice(0, 10).map((s) => `- ${s.reason ?? "invalid"}: ${JSON.stringify(s.errors ?? s.error ?? s.proposal?.entry?.name ?? s.proposal?.name ?? s.event?.summary ?? s.event?.quote ?? "").slice(0, 200)}`).join("\n")}\n\n</details>`);
       lines.push("");
     }
+    if (r.advanced?.error) lines.push(`### Advanced mechanics\n\n**ERROR reading advanced state:** ${r.advanced.error}\n`);
+    else if (r.advanced) lines.push(renderAdvancedSection(r.advanced));
     lines.push(`GM screen: \`gm-view-${safeName(r.name)}.html\``);
     lines.push("");
   }
@@ -402,9 +595,16 @@ try {
   if (cmd === "init") cmdInit(flags);
   else if (cmd === "analyze") await cmdAnalyze(flags);
   else if (cmd === "approve") await cmdApprove(flags);
+  else if (cmd === "reject") await cmdReject(flags);
+  else if (cmd === "suggest") await cmdSuggest(flags);
   else if (cmd === "status") await cmdStatus(flags);
+  else if (cmd === "owned") await cmdOwned(flags);
+  else if (cmd === "evolve") await cmdEvolve(flags);
+  else if (cmd === "merge") await cmdMerge(flags);
+  else if (cmd === "titles") await cmdTitles(flags);
+  else if (cmd === "erosion") await cmdErosion(flags);
   else {
-    console.error("commands: init | analyze | approve | status  (see the header of this file)");
+    console.error("commands: init | analyze | suggest | approve | reject | status | owned | evolve | merge | titles | erosion  (see the header of this file)");
     process.exit(1);
   }
 } catch (error) {

@@ -176,14 +176,10 @@ for (const systemId of SYSTEMS) {
 
   test(`[${systemId}] three beekeeping sessions yield a pending emergent proposal`, () => withFoundry(systemId, async () => {
     const api = new GrandDesignApi();
-    let n = 0;
-    api.setProposalAdapter(async () => {
-      n += 1;
-      return { events: [ev(`Maren tended the hives, session ${["one", "two", "three"][n - 1]}.`, [], ["beekeeping"])], proposals: [] };
-    });
+    // Local path (no adapter read the notes): with an adapter, stage 2 owns themes (board d8c96c43).
     const actor = createMockActor(systemId);
     let result;
-    for (let i = 0; i < 3; i += 1) result = await api.analyzeSessionNotes(actor, `Session ${i + 1}: Maren tended the hives.`);
+    for (let i = 0; i < 3; i += 1) result = await api.recordGrowthEvent(actor, ev(`Maren tended the hives, session ${i + 1}.`, [], ["beekeeping"]));
     const emergent = result.proposals.find((p) => p.id === "proposal:emergent-beekeeping");
     assert.ok(emergent, JSON.stringify(result.proposals.map((p) => p.id)));
     assert.equal(emergent.status, "pending");
@@ -234,6 +230,28 @@ for (const systemId of SYSTEMS) {
     await api.reanalyzeLastNotes(actor);
     assert.equal(api.getGrowth(actor).events.length, 2);
     assert.equal(api.getLevelProgression(actor).progress, progressBefore);
+  }));
+
+  test(`[${systemId}] re-analyze asks the gateway for a fresh reading; a normal analysis may share one`, () => withFoundry(systemId, async () => {
+    const api = new GrandDesignApi();
+    const seen = [];
+    api.setProposalAdapter(async (args) => { seen.push(args.fresh === true); return { events: [ev("Maren fought.", ["martial"])], proposals: [] }; });
+    const actor = createMockActor(systemId);
+    await api.analyzeSessionNotes(actor, "Maren fought.");
+    await api.reanalyzeLastNotes(actor);
+    assert.deepEqual(seen, [false, true]);
+  }));
+
+  test(`[${systemId}] Suggest proposals hands the adapter the recorded events, not just a notes wrapper`, () => withFoundry(systemId, async () => {
+    const api = new GrandDesignApi();
+    let seen = null;
+    api.setProposalAdapter(async (args) => { seen = args; return { events: [ev("Maren fought.", ["martial"])], proposals: [] }; });
+    const actor = createMockActor(systemId);
+    await api.analyzeSessionNotes(actor, "Maren fought.");
+    seen = null;
+    await api.requestGrowthProposals(actor);
+    assert.deepEqual(seen.events.map((e) => e.summary), ["Maren fought."]);
+    assert.match(seen.notes, /GM REQUEST/);
   }));
 
   test(`[${systemId}] emergentThemes disabled in the gateway config: themes dropped, flagged on the result`, () => withFoundry(systemId, async () => {

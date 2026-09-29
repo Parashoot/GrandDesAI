@@ -5,7 +5,9 @@
    "id": "40f4431d",
    "title": "Residual event over-splits on 15 hard corpus items (bl-005, cs-es-04, rd-003...)",
    "status": "todo",
-   "notes": [],
+   "notes": [
+    "2026-09-27 A/B, 89 items (novel, long-multiscene, red, bullets), 1 rep: main count 89.9% / score 95.9% vs branch (actorName required + follow-up fold allowed onto the party/the named recipient) 87.6% / 95.2%; long-multiscene count 93->100%, novel 89->84%, red 80->70%. Remaining splits: 'lent out eleven books' after 'started a lending library', 'has stopped praying' after desecration."
+   ],
    "tags": [
     "gateway"
    ],
@@ -13,13 +15,16 @@
    "owner": "",
    "source": "scale 2026-09-24",
    "created": 1790530789.995,
-   "updated": 1790530789.995
+   "updated": 1790620957.1823535,
+   "parent": "f2d3213f"
   },
   {
    "id": "9f591a25",
    "title": "Red polarity misses: rd-006 life bargain, rd-008 kill trophies, rd-010 raising the dead",
    "status": "todo",
-   "notes": [],
+   "notes": [
+    "2026-09-27: rd-006 and rd-010 now red after 72dbac48's redCheck field; rd-008 (kill trophies) still standard."
+   ],
    "tags": [
     "red",
     "proposals"
@@ -28,7 +33,8 @@
    "owner": "",
    "source": "scale 2026-09-24",
    "created": 1790530790.04,
-   "updated": 1790530790.04
+   "updated": 1790620957.1823542,
+   "parent": "f2d3213f"
   },
   {
    "id": "99b7c053",
@@ -42,13 +48,19 @@
    "owner": "",
    "source": "scale 2026-09-24",
    "created": 1790530790.086,
-   "updated": 1790530790.086
+   "updated": 1790620957.1823545,
+   "parent": "f2d3213f"
   },
   {
    "id": "25576f78",
    "title": "Re-run live PF2e Foundry check when the server is free",
-   "status": "todo",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "2026-09-29: dnd5e live verify 15/15 (live-verify.mjs). PF2e world still to run: switch to 'endex' when nobody is on it, then node foundry-module/tools/playtest/live-verify.mjs.",
+    "When the world is free, also click through the 2026-09-29 dialog (per-row Approve, Details, Edit, Approve as written, Retry with AI, busy state) in BOTH worlds; dnd5e was occupied all session (users 1).",
+    "2026-09-29 PF2e LIVE (world endex, pf2e 8.4.1, build 08b973e, live-verify.mjs): 14/15 - analyze 5 events via AI, no templates/Knacks, placeholder refused, Author with AI 'Archery Knack -> Fletchwright: Snap Shot', AI Class + tier-3 capstone at 19->20, dialog/build stamp, no console errors. Only FAIL = Suggest returns 0 proposals with 4 pending (same on dnd5e 14/15) -> regression from 3574bd96's pending-list prompt, sent to dev-gateway. New tools/playtest/switch-world.mjs switches worlds headlessly.",
+    "LIVE 2026-09-29 build 3e75e8e, live-verify.mjs 19/19 in BOTH worlds (endex pf2e 8.4.1, endexdnd-5e dnd5e 5.3.3). switch-world.mjs switches worlds headlessly."
+   ],
    "tags": [
     "pf2e",
     "qa"
@@ -57,7 +69,8 @@
    "owner": "",
    "source": "cli",
    "created": 1790530790.132,
-   "updated": 1790530790.132
+   "updated": 1790695000.022,
+   "parent": "f2d3213f"
   },
   {
    "id": "137fb08b",
@@ -80,9 +93,10 @@
   {
    "id": "a48d97c0",
    "title": "Party-wide analysis costs 20-36 s per PC (2+ min for 5): analyse notes once per party, then attribute events per character",
-   "status": "todo",
+   "status": "done",
    "notes": [
-    "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it."
+    "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it.",
+    "2026-09-27 extraction cache (pipeline.js#createExtractionCache, per adapter, LRU 20 / TTL 30 min, fresh:true bypass). ember-road-verify s1, 5 PCs: 62 s total (35 s first PC incl. extraction, then 2.4-9 s each) vs 20-36 s per PC before."
    ],
    "tags": [
     "gateway",
@@ -93,15 +107,16 @@
    "owner": "",
    "source": "ember-road-s1",
    "created": 1790531180.022,
-   "updated": 1790532373.318
+   "updated": 1790547158.351
   },
   {
    "id": "6ca3c8e7",
    "title": "Dark deed stated in ANOTHER player's line is dropped: Luz 'catch Tovin killing a goblin that was surrender' -> no Tovin event; Tovin's coy 'tidied up a loose end' became stealth success, no red signal",
-   "status": "todo",
+   "status": "done",
    "notes": [
     "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it.",
-    "Still reproduces after the merge: Tovin's events = 'torched a troll', 'lost a bet', 'quietly eliminated a loose end' [deception]; Luz's report of the kill is not attributed to Tovin."
+    "Still reproduces after the merge: Tovin's events = 'torched a troll', 'lost a bet', 'quietly eliminated a loose end' [deception]; Luz's report of the kill is not attributed to Tovin.",
+    "2026-09-27 resumed WIP (squash of worktree-agent-a731ff0e1fe12d515) + tests (tests/ai-attribution-cache.test.mjs). Real model, fresh ember-road-verify s1: Tovin now 'killed a goblin that was surrendering on the bridge' [killing-the-surrendered], credited to Tovin only; the coy 'loose end' event is gone. Red half split into 72dbac48."
    ],
    "tags": [
     "gateway",
@@ -111,7 +126,7 @@
    "owner": "",
    "source": "ember-road-s1",
    "created": 1790531180.068,
-   "updated": 1790532373.363
+   "updated": 1790547158.273
   },
   {
    "id": "92539102",
@@ -152,9 +167,10 @@
   {
    "id": "c284b5ec",
    "title": "Missed events from the chat recap: Wick's 'lost the party's 40g rigging dice' (cheating failure) and 'lost my dagger to the river' not recorded",
-   "status": "todo",
+   "status": "done",
    "notes": [
-    "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it."
+    "WIP on branch worktree-agent-a731ff0e1fe12d515 (dev-gateway stopped by a rate limit mid-change; untested) - resume or restart from it.",
+    "2026-09-27 real model ember-road-verify s1: Wick now has 'lost his dagger to the river' (failure) and 'tried to cheat at dice by rigging them' (failure, deception/thievery, themes gambling,cheating)."
    ],
    "tags": [
     "gateway"
@@ -163,7 +179,7 @@
    "owner": "",
    "source": "ember-road-s1",
    "created": 1790531180.204,
-   "updated": 1790532373.227
+   "updated": 1790547158.312
   },
   {
    "id": "8549eb33",
@@ -211,7 +227,8 @@
    "owner": "",
    "source": "cli",
    "created": 1790531510.815,
-   "updated": 1790531510.815
+   "updated": 1790620957.1823552,
+   "parent": "f2d3213f"
   },
   {
    "id": "d5814c1e",
@@ -226,7 +243,8 @@
    "owner": "",
    "source": "cli",
    "created": 1790531510.858,
-   "updated": 1790531510.858
+   "updated": 1790620957.1823556,
+   "parent": "f2d3213f"
   },
   {
    "id": "3785ed76",
@@ -241,110 +259,1651 @@
    "owner": "",
    "source": "cli",
    "created": 1790531510.903,
-   "updated": 1790531510.903
+   "updated": 1790620957.1823559,
+   "parent": "f2d3213f"
   },
   {
    "id": "92dfc0b7",
    "title": "C4 cloud: test coverage for non-AI progression rules (docs/cloud-work.md)",
-   "status": "todo",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "102 tests added across 7 new files (rules-class-erosion, rules-horror-rank, rules-revival-penalty, rules-combination-skills, rules-skill-evolution, rules-lineage, rules-class-merging .test.mjs). Covers: class-erosion session-threshold/neverSeen math; horror-rank threshold-crossing docking + red-exclusion; revival-penalty one-shot docking (including red targets); combination-skills resonance/band/power/naming/malignance-contagion (previously 0 tests); skill-evolution defining-moment/evidence-weight/tier-climb/naming (previously 0 tests); lineage normalizeEntry error paths + class/title registerEntry fields + createTitleSource/createCombinationSource on both pf2e and dnd5e (previously untested); class-merging off-classing (offCycle cap) which was only exercised incidentally via the api test. npm test: 766/766 green, no todo/skip -- no bugs found, only test gaps."
+   ],
    "tags": [
     "cloud",
     "harness"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-harness",
    "source": "cli",
    "created": 1790531510.948,
-   "updated": 1790531510.948
+   "updated": 1790548217.082
   },
   {
    "id": "c829f2a7",
    "title": "C5 cloud: cold review of the AI pipeline, findings as todo tests (docs/cloud-work.md)",
-   "status": "todo",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "2026-09-27: reviewer agent stopped by the session limit before writing anything (worktree agent-ae0b36baa42de76bf, empty). Restart on a cheaper model.",
+    "3 findings: 2 high (pipeline.js differentActors false-negative on common/title words merges different actors' events, misattributing tags; pipeline.js dedupeEvents/normalize.js eventDedupeKey has no actorName in its key so two PCs' generic same-summary events silently collapse into one, losing the second PC's event), 1 medium (pipeline.js validateProposals repair turn reuses proposalSchemaCapped with redCheck required even though the repair message promises {proposals:[...]} only -- schema/prompt drift, wastes repair token budget). Findings + repro + test.todo proofs in docs/reviews/ai-pipeline-review.md and foundry-module/tests/review-ai-pipeline.test.mjs. npm test: 795 tests, 792 pass, 0 fail, 3 todo."
+   ],
    "tags": [
     "cloud",
     "gateway"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "reviewer",
    "source": "cli",
    "created": 1790531510.992,
-   "updated": 1790531510.992
+   "updated": 1790627490.334,
+   "parent": "f2d3213f"
   },
   {
-   "id": "2a70b369",
-   "title": "Jev client + triage/attribution/verify/rank steps in the gateway (docs/jev-layer-contract.md)",
-   "status": "doing",
+   "id": "72dbac48",
+   "title": "Stage 2 ignores a red-worthy event: Tovin 'killed a goblin that was surrendering' (theme killing-the-surrendered) never cited, proposal built on 'torched a troll' + 'offered a deal' -> standard 'Infernal Pact'",
+   "status": "done",
    "notes": [
-    "dev-gateway done in worktree: jev.js client + 4 helpers, pipeline triage/attribution/verify/rank, runProposalStageFor, adapter.analyzeParty/proposeFor. 701 tests green (52 new). Jev-off identical on 3864/3864 corpus variants; sim --limit 40 = 100.0%, fault 0.3 = 93.1% (same as HEAD). Deviations: transport errors not retried, helpers batch 12, attribution override guarded by witness check (else actor-disputed flag), apiKey redacted to '' + hasApiKey. Under review."
+    "2026-09-27 fix: required stage-2 schema field redCheck [{event, vice}] before proposals (schemas.js#RED_CHECK_SCHEMA) + diagnostics.redCheck and a warning when a flagged deed got no red proposal. red-polarity slice (proposal-mode always, 1 rep): redAcc 0.70 -> 0.90 (rd-006, rd-010 now red; rd-008 still standard).",
+    "Also: stage 2 now sees only the analysed PC's events (pipeline.js, attributeEventsToActor) -- before, Luz's redCheck flagged Tovin's kill. ember-road s1 re-run (proposal-mode always, archived in sessions/01/rerun-2026-09-27): Tovin 'Hexblade: The Quiet End' red/cruelty citing the kill; Luz, and every other PC, standard and citing only their own events. npm test 664/664."
    ],
+   "tags": [
+    "gateway",
+    "red",
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "ember-road s1 re-run 2026-09-27",
+   "created": 1790543771.492,
+   "updated": 1790547158.39
+  },
+  {
+   "id": "3962a001",
+   "title": "Proposal duplicates the class's own feature: 'Hexblade: Infernal Pact' grants Warlock Pact Magic/Eldritch Blast to a Warlock 3",
+   "status": "done",
+   "notes": [
+    "s2 again: 'Shadowfingers: Sleight of Hand' grants Sleight of Hand + Thieves' Tools proficiency to a Rogue 3.",
+    "s3: system terms still slip - 'if using a durability system', 'use your free action' (dnd5e).",
+    "PM merge: wrong-system terms with an exact PF2e equivalent are now rewritten (Craft->Crafting, staggered->slowed 1, 'X for 1 round'->'until the end of your next turn'); bare class motifs re-coined from theme/tag instead of skipped. Real model on a salt-lantern copy: Buck Suggest 0 -> 3 proposals (skip had emptied it)."
+   ],
+   "tags": [
+    "proposals",
+    "dnd5e"
+   ],
+   "severity": "medium",
+   "owner": "dev-proposals",
+   "source": "ember-road s1 re-run 2026-09-27",
+   "created": 1790543771.53,
+   "updated": 1790629463.251,
+   "parent": "f2d3213f"
+  },
+  {
+   "id": "4f3192e0",
+   "title": "Things done TO a character still extracted as their event: 'Tovin was offered a deal by a woman...' (success, occultism) despite the prompt rule",
+   "status": "done",
+   "notes": [
+    "2026-09-29: event schema actorRole doer|target after actorName; target events skipped (happened-to-actor). traps+novel 82 items 1 rep: score 94.7->96.8%, traps 93.5->100%, precision 93.1->97.7%, count 89.0->90.2%; red 10 items redAcc 0.90->0.90, count 0.70->0.75. ember-road s1 rerun: Tovin's dream deal now skipped; side effect 07b9d93f (Wick's pie-tent ban skipped).",
+    "Verified 2026-09-29 v0929 rerun of ember-road s1 (dnd5e): 'a woman who wants a year of my dreams' -> skipped happened-to-actor. pf2e salt-lantern s1/s2 rerun: no target skips, per-PC counts 5/8/4/7/6 (was 5/9/4/8/6; the diffs are related deeds folded)."
+   ],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "low",
+   "owner": "dev-gateway",
+   "source": "ember-road s1 re-run 2026-09-27",
+   "created": 1790543771.568,
+   "updated": 1790690120.137,
+   "parent": "f2d3213f"
+  },
+  {
+   "id": "d96d85c6",
+   "title": "Suggest proposals returned nothing: stage 1 read the 'GM REQUEST' wrapper as OOC -> 0 events -> 0 proposals",
+   "status": "done",
+   "notes": [
+    "Fix: adapter/pipeline accept presetEvents (recorded events) and skip stage 1; api.requestGrowthProposals passes events: ownEvents.slice(-15). Real model, Maren: 0 -> 3 proposals (26 s), each citing her own events. Tests: presetEvents skip extraction; api passes events (both systems). npm test 667/667."
+   ],
+   "tags": [
+    "gateway",
+    "integration"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "ember-road s2 prep 2026-09-27",
+   "created": 1790547721.162,
+   "updated": 1790547730.342
+  },
+  {
+   "id": "0cd50d30",
+   "title": "s2: Maren's use of her approved Skill (Thorn Lash pinned the thrall at the wagon) not extracted as her event; 'maren thorn lash ... wick finished it off' became only Wick's kill",
+   "status": "done",
+   "notes": [
+    "Fixed (pipeline.js NEW_OCCASION regex). Root cause confirmed via real-model probe + report.json: stage-1 correctly emitted Thorn Lash as its own event, but flagged continuesPrevious:true; the fold regex did not treat 'then' as a new-occasion marker, so mergeFollowUpEvents silently joined it into Entangle (report.json's merged quote 'maren entangle only got 1 of 4 ... then Thorn Lash...' matches the merge code's join pattern exactly). Fix: 'then' now blocks the fold regardless of the model's flag, plus a reinforcing few-shot (Rin/Web/Ensnaring Strike/Dorn). New unit tests reproduce the exact pre-fix shape and assert both events survive. Real model: baseline probe never reproduced the merge in 13 reps of the actual s2 notes (low-probability flake); post-fix, Thorn Lash+kill stayed separate in all 9 reps too -- the guard is now structural, not just probabilistic. npm test 774/774 green.",
+    "PM verified s3 on main: 'Maren used Thorn Lash on the third guard', 'Maren healed the guard with Field Triage', Luz Public Edict, Brakka Bottleneck, Wick Oxwhip - all approved-Skill uses credited."
+   ],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "dev-gateway",
+   "source": "ember-road s2",
+   "created": 1790550835.426,
+   "updated": 1790624440.161,
+   "parent": "f2d3213f"
+  },
+  {
+   "id": "649aeb9f",
+   "title": "s2: two spells in one line merged into one event with one outcome: 'luz sanctuary on Oren (shrugged off), sacred flame, guiding bolt missed' -> 'Luz cast Sacred Flame and Guiding Bolt' failure (Sacred Flame hit)",
+   "status": "done",
+   "notes": [
+    "Mitigated (prompts.js few-shot), not a pipeline-merge bug: confirmed the real session's merged event ('Luz cast Sacred Flame and Guiding Bolt') was emitted by stage-1 as ONE JSON event, not folded by mergeFollowUpEvents (whose join never rewrites .summary, which the real event's summary structure ruled out). Fix: new few-shot teaching that several named abilities in a comma list with a result word on only the last one are still N separate events (Kade/Mage Armor/Fireball). Real model: separate in all 13 baseline reps AND all 9 post-fix reps of the actual s2 notes -- did not reproduce the merge either way in this sampling (it's a rarer model flake than 40d30e3d), so this is evidence-based prevention, not a reproduced-then-verified fix. Regression sanity: 112-item run (novel-activities/long-multiscene/bullets-fragments/traps) score 96.4%, count 90.2%, fallback 0%, traps 100% -- no regression. npm test 774/774 green."
+   ],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "medium",
+   "owner": "dev-gateway",
+   "source": "ember-road s2",
+   "created": 1790550835.466,
+   "updated": 1790624165.49,
+   "parent": "f2d3213f"
+  },
+  {
+   "id": "40d30e3d",
+   "title": "s2: Maren's baking with Oren (amazing bread, drew out his testimony) not extracted; cottagecore downtime is the persona's growth",
+   "status": "done",
+   "notes": [
+    "Fixed (prompts.js few-shot), the most reproducible of the three: 'bread w/ Oren was amazing' was never emitted by stage-1 at all in 5 of 13 baseline real-model reps of the actual s2 notes (~38% miss rate), confirmed by grepping the raw stage-1 JSON for 'bread' before any coercion ran -- an elliptical, implied-verb evaluative clause ('X with Y was amazing/lovely', actor carried from the previous sentence) reads as scenery, not a doer's action. Fix: new few-shot (Nessa/tomatoes-rotted/Stew with Bael) teaching the pattern is still that character's event, themed craft/cooking. Real model: present in 9/9 post-fix reps of the actual notes.md vs 8/13 baseline (~62%) -- clear improvement, though stage-1 extraction is stochastic at temp 0.2-0.3 so this is not a 100% guarantee. Regression sanity: 112-item run score 96.4%, count 90.2%, fallback 0%. npm test 774/774 green."
+   ],
+   "tags": [
+    "gateway",
+    "themes"
+   ],
+   "severity": "medium",
+   "owner": "dev-gateway",
+   "source": "ember-road s2",
+   "created": 1790550835.509,
+   "updated": 1790624172.528,
+   "parent": "f2d3213f"
+  },
+  {
+   "id": "f2d3213f",
+   "title": "Tech debt & misc",
+   "status": "todo",
+   "notes": [
+    "Catch-all: tech debt, follow-ups and loose tasks live here until they are done or a real parent exists (then re-parent them). Never mark this feature done."
+   ],
+   "tags": [
+    "catch-all",
+    "tech-debt"
+   ],
+   "owner": "",
+   "source": "board-manager",
+   "created": 1790620957.182335,
+   "updated": 1790620957.182335,
+   "kind": "feature",
+   "prio": 3,
+   "ref": "TD1"
+  },
+  {
+   "id": "9dbd2095",
+   "title": "vault-export.mjs: Board Snapshot duplicates vault Project Boards/Grand Design AI (board-manager mirror); link to it or drop the snapshot",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "followup",
+    "docs"
+   ],
+   "owner": "",
+   "source": "pm",
+   "created": 1790621010.870982,
+   "updated": 1790621010.870982,
+   "severity": "low",
+   "parent": "f2d3213f"
+  },
+  {
+   "id": "1ce03b72",
+   "title": "ember-road s2 approvals + review, fix s2 high item, play s3 (haiku players)",
+   "status": "done",
+   "notes": [],
+   "tags": [
+    "playtest"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "owner 2026-09-28",
+   "created": 1790621060.738,
+   "updated": 1790624440.201
+  },
+  {
+   "id": "7c026881",
+   "title": "No way to reject/dismiss a proposal (api, growth-ui, playtest runner): rejected proposals stay pending forever and block re-suggestion by name",
+   "status": "done",
+   "notes": [
+    "api.rejectProposal(actor, id, {reason}) added (GM only, idempotent, never deletes evidence, Hook grand-design-ai.proposalRejected); rejected excluded from pending everywhere (dialog, requestGrowthProposals dup-check, analyzeSessionNotes merge) and a rejected NAME (not just id) is skipped by both the gateway and template proposal paths. growth-ui.js: per-proposal Reject button (delegated click handler; only rendered for status===pending). playtest.mjs: reject --campaign X --actor Name --proposal <id|name> [--reason], mirrors approve. New tests/reject-proposal.test.mjs: 16 tests (8 x pf2e/dnd5e + 2 UI), all green -- npm test 787/787 pass (was 769). Verified end to end on an isolated copy (playtests/reject-check, internal name field fixed so saveCampaign didn't collide with playtests/ember-road/campaign.json -- caught and reverted an accidental write to the real ember-road data from the first attempt): rejected Brakka's real 'Warden's Duty: Gatekeeper' (the s2 example), confirmed status=rejected+reason+rejectedAt on disk and gone from status's pending list; ember-road itself left untouched (git status clean). No lang/*.json changes -- growth-ui.js has Growth.* keys declared but never calls game.i18n.localize, so there was no localization pattern to extend.",
+    "PM verified on main: npm test 787/787; real ember-road GM rejections via 'playtest.mjs reject' with reasons (Gatekeeper, Honeycomb, Warden's Bargain, Shadowfingers) -> gone from pending, status rejected + rejectedReason."
+   ],
+   "tags": [
+    "ui",
+    "proposals",
+    "qol"
+   ],
+   "severity": "high",
+   "owner": "dev-integration",
+   "source": "ember-road s2",
+   "created": 1790621174.852,
+   "updated": 1790622041.138
+  },
+  {
+   "id": "c438b5e2",
+   "title": "Proposal names copy a 5e skill name as the second half ('Oxwhip: Animal Handling', 'Shadowfingers: Sleight of Hand'); one PC's proposals share a motif ('Sanctuary:' x3)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "naming"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "ember-road s2",
+   "created": 1790621174.894,
+   "updated": 1790621174.894
+  },
+  {
+   "id": "beef7277",
+   "title": "Balance: tier-1 'Shieldwall: Bottleneck' = advantage on every attack at a chokepoint, unlimited",
+   "status": "todo",
+   "notes": [
+    "salt-lantern s1 (pf2e): 'Salt-Wind Precision' +1 circumstance to all ranged Strikes, unlimited; 'Champion's Bulwark' +1 AC to every adjacent ally, unlimited - both rejected as too strong at tier 1.",
+    "salt-lantern s2: 'Salt-Wind: Piercing Volley' - the second Strike automatically succeeds (broken, rejected)."
+   ],
+   "tags": [
+    "proposals",
+    "dnd5e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s2",
+   "created": 1790621174.933,
+   "updated": 1790628007.489
+  },
+  {
+   "id": "ad43ec26",
+   "title": "playtest.mjs saveCampaign writes to the campaign.json's internal name, not the --campaign folder: a copied campaign folder overwrites the original",
+   "status": "done",
+   "notes": [
+    "Fixed 2026-09-29 (PM): loadCampaign remembers its folder (non-enumerable), save and session dirs use it. Also: report shows skipped events' summaries; nlp-scale harness blanks the analysed-PC name so redAcc is measured again (tests/harness-request-actor.test.mjs)."
+   ],
+   "tags": [
+    "harness"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-integration 2026-09-28",
+   "created": 1790622041.096,
+   "updated": 1790690120.313
+  },
+  {
+   "id": "ba12b00b",
+   "title": "s3: deed softened again: 'pressed the burning lantern into his chest until he agreed' (a yielded man) -> 'Tovin threatened a surrendered guard with a burning lantern' (interrogation)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway",
+    "red"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s3",
+   "created": 1790624439.956,
+   "updated": 1790624439.956
+  },
+  {
+   "id": "60460603",
+   "title": "s3: two deeds in one event: 'threw a dagger ... and used Oxwhip to send Steve through a door'; 'fixed his gear and attempted shield drills' = success though the drills failed",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "ember-road s3",
+   "created": 1790624439.998,
+   "updated": 1790624439.998
+  },
+  {
+   "id": "316705b6",
+   "title": "Proposals duplicate an OWNED Skill by mechanic (Luz 'Voice of Conviction' = her Public Edict); registry dedupe is by name only",
+   "status": "done",
+   "notes": [
+    "salt-lantern s2 (pf2e): 'Roguecraft: Salt Spray' (ranged Strike, blinded) duplicates Pim's owned Improvised Blinding."
+   ],
+   "tags": [
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "dev-proposals",
+   "source": "ember-road s3",
+   "created": 1790624440.04,
+   "updated": 1790629463.289
+  },
+  {
+   "id": "b81a0357",
+   "title": "Pending proposals grow without limit (Tovin 5, Luz 4 pending for 1 allowance each): cap or roll up per actor",
+   "status": "done",
+   "notes": [
+    "salt-lantern s2: after one approval each, Doro 4 / Kestrel 4 / Pim 3 / Buck 3 pending."
+   ],
+   "tags": [
+    "proposals",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "dev-proposals",
+   "source": "ember-road s3",
+   "created": 1790624440.081,
+   "updated": 1790629463.326
+  },
+  {
+   "id": "e8ae42d0",
+   "title": "pf2e naming: motif is the bare class name ('Monk: Aerial Momentum', 'Ranger: Salt-Wind Shot', 'Champion's Bulwark/Insight/Devotion') despite the naming rule",
+   "status": "todo",
+   "notes": [
+    "Bare class motifs are now re-coined (pipeline.js recoinMotif), but from a tag the result is bland ('Athletics: Iron Grip', 'Society: Coastal Scribe'); keep open for a better coinage."
+   ],
+   "tags": [
+    "naming",
+    "pf2e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "salt-lantern s1",
+   "created": 1790627348.998,
+   "updated": 1790629463.475
+  },
+  {
+   "id": "7cb2c568",
+   "title": "pf2e terms in proposals: 'staggered' (not a PF2e condition), 'blinded for 1 round' (PF2e: until the end of your next turn), 'Craft check' (Crafting)",
+   "status": "done",
+   "notes": [],
+   "tags": [
+    "proposals",
+    "pf2e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "salt-lantern s1",
+   "created": 1790627349.04,
+   "updated": 1790629463.438
+  },
+  {
+   "id": "9cda8ea5",
+   "title": "Failure-magnet gets no learning-from-failure proposal: Buck's 4 failures (arm-wrestling x2 sessions, backflip, harbourmaster) never cited; design says failures are evidence",
+   "status": "todo",
+   "notes": [
+    "salt-lantern s2: with repetition it works - 'Monk: Grappler's Resilience' cites 3 sessions of arm-wrestling failures (approved). Remaining gap: single-session failures."
+   ],
+   "tags": [
+    "proposals",
+    "progression"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "salt-lantern s1",
+   "created": 1790627349.083,
+   "updated": 1790628007.452
+  },
+  {
+   "id": "ef3663ee",
+   "title": "dedupeEvents/eventDedupeKey ignore actorName: two PCs' events with the same summary+outcome ('Picked a lock.') collapse into one, the second PC's deed silently dropped (review test.todo)",
+   "status": "done",
+   "notes": [
+    "Fixed: actorName is part of eventDedupeKey; review test promoted from todo."
+   ],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "C5 review 2026-09-28",
+   "created": 1790627490.203,
+   "updated": 1790629463.362
+  },
+  {
+   "id": "754f317e",
+   "title": "differentActors (mergeFollowUpEvents) matches any shared 3+ letter word incl. titles ('Sir'): 'Sir Aldric stole...' folds into Tovin's event, Aldric's deed and credit lost; use significantTokens (review test.todo)",
+   "status": "done",
+   "notes": [
+    "Fixed: whole-word token match excluding titles (sir, lady, captain...); review test promoted from todo."
+   ],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "C5 review 2026-09-28",
+   "created": 1790627490.247,
+   "updated": 1790629463.399
+  },
+  {
+   "id": "96b5beea",
+   "title": "Proposal repair turn still requires redCheck in the schema though the repair prompt asks for {proposals} only - wastes numPredict (review test.todo)",
+   "status": "done",
+   "notes": [
+    "2026-09-29: repair-turn schema { redCheck: false }; the todo is now a real test."
+   ],
+   "tags": [
+    "gateway"
+   ],
+   "severity": "low",
+   "owner": "dev-gateway",
+   "source": "C5 review 2026-09-28",
+   "created": 1790627490.291,
+   "updated": 1790690120.092
+  },
+  {
+   "id": "eb3924f1",
+   "title": "s2 pf2e misread: 'doro crit the chest lock 27' -> 'Doro picked the chest lock' (lockpicking) though he smashed it; 'glafka light scout nothing' read as success",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway",
+    "pf2e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "salt-lantern s2",
+   "created": 1790627998.313,
+   "updated": 1790627998.313
+  },
+  {
+   "id": "34b63931",
+   "title": "At a Class-evolution level (20/30/50) Suggest proposals never offered a Class (prompt allowed, never asked)",
+   "status": "done",
+   "notes": [
+    "Fixed: with allowClass + mustPropose the first proposal MUST be kind class. Real model, dnd5e GD 50: 0/2 -> 2/2 runs lead with a Class ('Ironclad Bulwark', 'Ironhold Vanguard'), both valid. Deployed to live Foundry."
+   ],
+   "tags": [
+    "proposals",
+    "progression"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "owner live test 2026-09-28",
+   "created": 1790645774.221,
+   "updated": 1790645774.304
+  },
+  {
+   "id": "d3882636",
+   "title": "Rest across a milestone should offer the rewards itself: an AI Class at 20/30/50 and an AI-authored capstone at every 10th level (template fallback)",
+   "status": "done",
+   "notes": [
+    "Merged + deployed. 856/857 (+1 known todo). Real model: dnd5e 49->50 Class 'Ironclad Warden' + capstone 'Ironclad: Bulwark's Interception'; pf2e 19->20 Class + capstone 'Defense: Bulwark's Vow'; no fallback. Template Class/capstone when the AI is off or fails."
+   ],
+   "tags": [
+    "progression",
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "dev-integration",
+   "source": "owner 2026-09-28",
+   "created": 1790646209.469,
+   "updated": 1790647018.637
+  },
+  {
+   "id": "3d80edf3",
+   "title": "'Author with AI' never tells the model what to author (placeholders like 'Archery Knack' stay generic)",
+   "status": "done",
+   "notes": [
+    "api.js:995 calls adapter.authorProposal, which ai-gateway.js never defines, so it falls back to the full adapter with a 'GM REQUEST' notes wrapper (stage 1 reads it as OOC; stage 2 never sees the instruction), under when-earned gating, no preset events, and takes accepted[0] whatever it is. Capstone/Class fallbacks are forced to a tier-1/2 Skill. Fix: adapter.authorProposal = stage 2 only (presetEvents = cited evidence, mustPropose) with a 'target' (theme/label, kind, tier, placeholder to replace), like the milestone param. Also: approveProposal ignores needsAuthoring - warn or auto-author before approving a placeholder.",
+    "dev-proposals: adapter.authorProposal (stage 2 only, presetEvents+target) built; requestProposalAuthoring keeps id/isCapstone/milestoneLevel, tier 3 forced for capstone, stated reason on failure; approveProposal refuses needsAuthoring unless confirm:true. Real qwen3.8:27b both systems: Archery Knack -> real archery Skill, capstone stays tier 3. Uncommitted in worktree; tests/ai-authoring.test.mjs.",
+    "PM: merged (b8d3afd, 905/906 + known todo), deployed 0.28.1. Real model both systems: Archery Knack -> 'Ranger: Longshot' / 'Longshot: Ridge Sentinel' in place; no Knacks/templates for adapter events; L20 Class approved at L21. Pending live UI check in Foundry.",
+    "Verified live (EndexDND 5E, build c579a64, tools/playtest/live-verify.mjs 15/15): user-scope settings, adapter attaches on change, AI expected flag, AI analyze with no templates/Knacks, placeholder approve refused, Author with AI in place (Archery Knack -> 'Fletch: Precision Shot'), Suggest, rest 19->20 AI Class + tier-3 capstone, build stamp in log and dialog, no console errors. PF2e live run deferred (Ollama shared with MandoAI tonight)."
+   ],
+   "tags": [
+    "proposals",
+    "themes",
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "pm",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.497,
+   "updated": 1790662476.29,
+   "prio": 1,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "d8c96c43",
+   "title": "Templates and '<Theme> Knack' placeholders are minted even when the AI read the notes, duplicating AI proposals",
+   "status": "done",
+   "notes": [
+    "api.js:1151-1152 recordGrowthEvent always runs generateSkillProposals + generateEmergentProposals, also for adapter events. registryHasTheme only checks APPROVED skills, so an AI proposal and 'Archery Knack' are both pending; 'archery' is both a tag and an ALSO_THEME. Neither source counts toward the pending cap. Live (EndexDND 5E): Briik has 12 pending = 5 Knack placeholders + 2 templates + 5 AI. Fix: skip templates/placeholders for adapter events (or auto-author them), suppress a theme already on a pending AI proposal, include all sources in the cap.",
+    "dev-proposals: adapter events no longer mint templates/Knacks (recordGrowthEvent fromAdapter); emergent skips themes on pending AI proposals; cap counts template+emergent+ai (placeholders dropped first). Real model, 3 archery notes, both systems: 5 pending, all ai-gateway, 0 Knack/template. Two existing tests updated to the local path.",
+    "PM: merged (b8d3afd, 905/906 + known todo), deployed 0.28.1. Real model both systems: Archery Knack -> 'Ranger: Longshot' / 'Longshot: Ridge Sentinel' in place; no Knacks/templates for adapter events; L20 Class approved at L21. Pending live UI check in Foundry.",
+    "Verified live (EndexDND 5E, build c579a64, tools/playtest/live-verify.mjs 15/15): user-scope settings, adapter attaches on change, AI expected flag, AI analyze with no templates/Knacks, placeholder approve refused, Author with AI in place (Archery Knack -> 'Fletch: Precision Shot'), Suggest, rest 19->20 AI Class + tier-3 capstone, build stamp in log and dialog, no console errors. PF2e live run deferred (Ollama shared with MandoAI tonight)."
+   ],
+   "tags": [
+    "proposals",
+    "themes",
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "pm",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.571,
+   "updated": 1790662476.373,
+   "prio": 1,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "0a1c8463",
+   "title": "An AI-rewritten template proposal is overwritten by the next recorded event",
+   "status": "done",
+   "notes": [
+    "api.js:1165-1170 only protects authored EMERGENT proposals; a re-authored template keeps source 'template' and a stable id (proposal:measured-strike), so the next recordGrowthEvent puts the template text back. Fix: preserve anything with authoredBy 'ai-gateway' (refresh evidence only) and restamp source ai-gateway, origin template.",
+    "dev-proposals: anything authoredBy ai-gateway keeps its entry (evidence refreshed); a rewritten template becomes source ai-gateway origin template. Tested (both systems).",
+    "PM: merged (b8d3afd, 905/906 + known todo), deployed 0.28.1. Real model both systems: Archery Knack -> 'Ranger: Longshot' / 'Longshot: Ridge Sentinel' in place; no Knacks/templates for adapter events; L20 Class approved at L21. Pending live UI check in Foundry.",
+    "Verified live (EndexDND 5E, build c579a64, tools/playtest/live-verify.mjs 15/15): user-scope settings, adapter attaches on change, AI expected flag, AI analyze with no templates/Knacks, placeholder approve refused, Author with AI in place (Archery Knack -> 'Fletch: Precision Shot'), Suggest, rest 19->20 AI Class + tier-3 capstone, build stamp in log and dialog, no console errors. PF2e live run deferred (Ollama shared with MandoAI tonight)."
+   ],
+   "tags": [
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "pm",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.646,
+   "updated": 1790662476.459,
+   "prio": 1,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "f48a1e52",
+   "title": "A Class-evolution proposal can no longer be approved once the character levels past the milestone",
+   "status": "done",
+   "notes": [
+    "progression.js:782 canApproveGeneratedProposal requires CLASS_EVOLUTION_LEVELS.has(current level). The guaranteed level-20 Class is dead if the GM rests to 21 first; a multi-level rest also falls back to a template that cannot be approved. Fix: gate on proposal.milestoneLevel; pass classEvolutionAvailable for milestone calls instead of reading the live level.",
+    "dev-proposals: canApproveGeneratedProposal gates on milestoneLevel/classEvolutionLevel; adapter marks class available for milestone/target requests; live-level check dropped. Real model: L20 Class resolved at GD level 21 and approved, both systems. Also milestone template fallbacks carry usedFallback+fallbackReason on the proposal (PM add-on).",
+    "PM: merged (b8d3afd, 905/906 + known todo), deployed 0.28.1. Real model both systems: Archery Knack -> 'Ranger: Longshot' / 'Longshot: Ridge Sentinel' in place; no Knacks/templates for adapter events; L20 Class approved at L21. Pending live UI check in Foundry.",
+    "Verified live (EndexDND 5E, build c579a64, tools/playtest/live-verify.mjs 15/15): user-scope settings, adapter attaches on change, AI expected flag, AI analyze with no templates/Knacks, placeholder approve refused, Author with AI in place (Archery Knack -> 'Fletch: Precision Shot'), Suggest, rest 19->20 AI Class + tier-3 capstone, build stamp in log and dialog, no console errors. PF2e live run deferred (Ollama shared with MandoAI tonight)."
+   ],
+   "tags": [
+    "progression",
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "pm",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.722,
+   "updated": 1790662476.543,
+   "prio": 1,
+   "parent": "12372a7a"
+  },
+  {
+   "id": "51f276b4",
+   "title": "AI provider is off by default in every browser and the GM is not warned (silent keyword fallback)",
+   "status": "done",
+   "notes": [
+    "aiProvider/aiEndpoint/aiModel are CLIENT scope, default 'disabled' (ai-provider-config.js:257); main.js only warns when adapter creation throws, not when it returns null; a local Analyze is an info toast plus a small 'Local' chip. Live: Dvathal's 14 events are all source 'local' (2026-09-29). Fix: user scope for provider/endpoint/model (API key stays client), a world 'AI expected' flag with a sticky warning + Open AI Gateway button at ready, local-mode Analyze as a warning, hide/disable Suggest/Author with no provider.",
+    "dev-ui: provider/endpoint/model now user scope (v13+), key stays client; aiExpected world flag; ready warning (permanent, with Open AI Gateway link); local Analyze is a warn; Suggest disabled + Author with AI disabled with no adapter. Unit-tested pf2e+dnd5e (tests/ui-ai-visible.test.mjs). Not verified live (owner connected, users=1). Uncommitted in worktree.",
+    "PM: merged to main (880 tests, 879 pass + 1 known todo). Reopened as doing until deployed and verified live (owner was connected, dev-ui skipped the live check).",
+    "Verified live (EndexDND 5E, build c579a64, tools/playtest/live-verify.mjs 15/15): user-scope settings, adapter attaches on change, AI expected flag, AI analyze with no templates/Knacks, placeholder approve refused, Author with AI in place (Archery Knack -> 'Fletch: Precision Shot'), Suggest, rest 19->20 AI Class + tier-3 capstone, build stamp in log and dialog, no console errors. PF2e live run deferred (Ollama shared with MandoAI tonight)."
+   ],
+   "tags": [
+    "gateway",
+    "ui",
+    "qol"
+   ],
+   "severity": "high",
+   "owner": "pm",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.796,
+   "updated": 1790662476.627,
+   "prio": 1,
+   "parent": "567067e6"
+  },
+  {
+   "id": "5286a3ba",
+   "title": "Gateway adapter freezes settings at ready/Save; changes elsewhere need a reload",
+   "status": "done",
+   "notes": [
+    "ai-gateway.js:62 normalizes the config once; no setting has onChange. proposalMode, creativity, allowRed, houseRules, namingStyle, maxProposals, provider/model changed by another GM, the console or a script are ignored until reload; main.js:33 claims otherwise. Fix: onChange handlers rebuilding the adapter (GM, debounced), or build the pipeline config per call and cache only the transport.",
+    "dev-ui: onChange on aiProvider/Endpoint/Model/ApiKey/GatewayClient/GatewayWorld rebuilds+reattaches adapter (GM only, 200ms debounce); provider disabled detaches; main.js comment fixed. Unit-tested. Uncommitted.",
+    "PM: merged to main (880 tests, 879 pass + 1 known todo). Reopened as doing until deployed and verified live (owner was connected, dev-ui skipped the live check).",
+    "Verified live (EndexDND 5E, build c579a64, tools/playtest/live-verify.mjs 15/15): user-scope settings, adapter attaches on change, AI expected flag, AI analyze with no templates/Knacks, placeholder approve refused, Author with AI in place (Archery Knack -> 'Fletch: Precision Shot'), Suggest, rest 19->20 AI Class + tier-3 capstone, build stamp in log and dialog, no console errors. PF2e live run deferred (Ollama shared with MandoAI tonight)."
+   ],
+   "tags": [
+    "gateway",
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "pm",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.872,
+   "updated": 1790662476.711,
+   "prio": 1,
+   "parent": "567067e6"
+  },
+  {
+   "id": "dee25a95",
+   "title": "Populate never uses the AI (setPopulateAdapter never called) though its dialog says it does; PF2e gets 5e stat blocks",
+   "status": "todo",
+   "notes": [
+    "api.js:1411 setPopulateAdapter has no caller; populate-ui.js says 'Uses your configured AI provider when one is set'. populate.js:410-416 awaits an adapter with no try/catch; MONSTER_TEMPLATES are 5e CR blocks and PF2e sets level = round(cr). Fix: gateway-backed populate adapter with schema, try/catch local fallback, per-system stat builders, optional AI Grand Design Class for NPCs."
+   ],
+   "tags": [
+    "gateway",
+    "pf2e",
+    "dnd5e",
+    "ui"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.947,
+   "updated": 1790661419.9989858,
+   "prio": 2,
+   "parent": "6d04ba44"
+  },
+  {
+   "id": "30f2b191",
+   "title": "Stale live install is undetectable: version stuck at 0.28.0, no build stamp",
+   "status": "done",
+   "notes": [
+    "module.json version unchanged since gateway v2; deploy-foundry-module.ps1 'verifies' matching versions, which proves nothing. The live install was 4 days behind main on 2026-09-28 and the owner could not tell; after a deploy the world must be reloaded (Briik GD50 rested on old code). Fix: deploy writes a build stamp (git SHA + time), bumps patch, logs it at ready, shows it in the Gateway form and 'Under the hood'; module.json verified 13 -> 14.",
+    "dev-ui: deploy script stamps deployed scripts/build-info.js (sha, time, dirty), bumps source module.json patch when HEAD sha differs from deployed stamp, verifies; ready logs build; shown in Gateway form + Under the hood; verified 14. Tested deploy to temp dir (0.28.1, no re-bump on same sha). Not deployed live.",
+    "PM: merged to main (880 tests, 879 pass + 1 known todo). Reopened as doing until deployed and verified live (owner was connected, dev-ui skipped the live check).",
+    "Verified live (EndexDND 5E, build c579a64, tools/playtest/live-verify.mjs 15/15): user-scope settings, adapter attaches on change, AI expected flag, AI analyze with no templates/Knacks, placeholder approve refused, Author with AI in place (Archery Knack -> 'Fletch: Precision Shot'), Suggest, rest 19->20 AI Class + tier-3 capstone, build stamp in log and dialog, no console errors. PF2e live run deferred (Ollama shared with MandoAI tonight)."
+   ],
+   "tags": [
+    "harness",
+    "docs",
+    "qol"
+   ],
+   "severity": "high",
+   "owner": "pm",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.042,
+   "updated": 1790662476.879,
+   "prio": 1,
+   "parent": "567067e6"
+  },
+  {
+   "id": "db092299",
+   "title": "Rest dialog hides milestone template fallback and labels AI Class evolutions 'template'",
+   "status": "done",
+   "notes": [
+    "growth-ui.js:182-184 shows only gainedLevels; resolveLevelRest's warnings ('used the built-in template (reason)'), capstoneProposals and classProposals are dropped - breaks the 'fallback with a stated reason' rule. renderProposal has no case for source 'class-evolution', so an AI Class gets the 'template' chip. Fix: sticky warnings per entry, info naming the new milestone proposals, chip from source + usedFallback.",
+    "dev-ui: growth-ui reportRest shows permanent warn per result.warnings + info naming capstone/class proposals; chip 'class evolution'/'capstone' by source, 'template' chip only if proposal.usedFallback===true (api.js does not set that flag on the proposal yet - dev-proposals could add usedFallback:true to fallback milestone proposals). Uncommitted.",
+    "PM: merged to main (880 tests, 879 pass + 1 known todo). Reopened as doing until deployed and verified live (owner was connected, dev-ui skipped the live check).",
+    "Verified live (EndexDND 5E, build c579a64, tools/playtest/live-verify.mjs 15/15): user-scope settings, adapter attaches on change, AI expected flag, AI analyze with no templates/Knacks, placeholder approve refused, Author with AI in place (Archery Knack -> 'Fletch: Precision Shot'), Suggest, rest 19->20 AI Class + tier-3 capstone, build stamp in log and dialog, no console errors. PF2e live run deferred (Ollama shared with MandoAI tonight)."
+   ],
+   "tags": [
+    "ui",
+    "progression"
+   ],
+   "severity": "high",
+   "owner": "pm",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.118,
+   "updated": 1790662476.795,
+   "prio": 1,
+   "parent": "567067e6"
+  },
+  {
+   "id": "5a0cea2e",
+   "title": "Approved Skills/Classes become description-only item stubs (no damage, saves, modifiers, frequency)",
+   "status": "done",
+   "notes": [
+    "pf2e-adapter.js:13-42: no system.frequency, traits or rule elements (a '+1 circumstance' is never applied), spells without damage/defense/range. dnd5e-adapter.js:137-181: activities without damage parts, save ability/DC or attack bonus. Only text + [[/r]]. Fix: optional structured fields in the proposal schema (damage, save, modifier, range/area) filled by the AI, mapped to PF2e rule elements/spell data and dnd5e activity damage/save; templates too.",
+    "LIVE 2026-09-29 build e091fe9, live-verify.mjs 22/22 in BOTH worlds: approved AI Skills carry real data (dnd5e activity on 'Archer: Windstep'; PF2e frequency on 'Archer's Eye: Piercing Focus'). dev-systems raw Item.create validation: dnd5e 12/12 (save activity, damage, template, uses, AE +1 AC toggles 10->11), PF2e 10/10 (FlatModifier + RollOption, frequency, spell damage/defense/area). Model probe: 76/77 proposals carry structured, no wrong-system words. AI numbers clamped by tier/level on acceptance; GM edits reported only. Gaps: conditions are text only, 5e advantage on attacks text only, prose/structured mismatch not checked."
+   ],
+   "tags": [
+    "pf2e",
+    "dnd5e",
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "dev-systems",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.193,
+   "updated": 1790697391.534,
+   "prio": 2,
+   "parent": "6d04ba44"
+  },
+  {
+   "id": "ebcc3f03",
+   "title": "Skill evolution is unreachable, never triggered and structurally blocked for the AI",
+   "status": "done",
+   "notes": [
+    "checkSkillEvolutionReadiness/buildSkillEvolutionPreview (api.js:187/219) have no callers; the AI schema hardcodes lineage.operation 'origin' (ai-gateway.js:246) and the duplicate gates block a Skill that resembles an owned one; evolved mechanics are carried over unchanged. Fix: run readiness after analysis and at rest; for ready Skills ask stage 2 for an 'upgrade' target (source id, effect, defining moments), exempt lineage sources from dup gates, evolveSkillEntry as fallback; Growth-dialog button.",
+    "LIVE 2026-09-29 build 3e75e8e, live-verify.mjs 19/19 in BOTH worlds (endex pf2e 8.4.1, endexdnd-5e dnd5e 5.3.3): approve Skill -> requestSkillEvolution written by the AI ('Longbow: Precision Shot' -> 'Longbow: Piercing Volley'; 5e 'Fletch: Precision Shot' -> 'Fletch: Apple Shot'), approve -> source superseded, shown dimmed in the Registry. Probe: tier-1 'Ridgeshot: Steady Aim' + 3 defining moments -> PF2e 'Ridgeshot: Vanishing Trajectory' t2, 5e 'Ridgeshot: Unwavering Line' t2. Superseded Items still mechanically live -> follow-up."
+   ],
+   "tags": [
+    "progression",
+    "proposals",
+    "gateway",
+    "ui"
+   ],
+   "severity": "high",
+   "owner": "dev-integration",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.286,
+   "updated": 1790694999.653,
+   "prio": 2,
+   "parent": "7dcd587f"
+  },
+  {
+   "id": "574707d8",
+   "title": "Evolved/merged names collide (name banks only use index 0) and the second evolution overwrites the first registry entry",
+   "status": "done",
+   "notes": [
+    "skill-evolution.js:213 `${bank.mythic[0]} ${bank.nouns[0]}` makes every martial tier-3 evolution 'Minotaur Punch'; same in class-merging.js:324/329/334 and combination-skills.js:153. evolveSkillEntry sets no metadata.id, so normalizeEntry derives the same registry id and registerEntry silently replaces the earlier Skill. Fix: AI-named results; fallback picks from the whole bank by a stable hash of the source id; id collision guard.",
+    "2026-09-29: names hash-picked from the whole bank, metadata.id <source>--evolved-t3 / class:merge-<hash> / combination:<slug>-<hash>, existingIds/existingNames wired from api, _approveEvolution refuses to overwrite a different entry. 5 martial evolutions: Titan Blow, Minotaur Onslaught, Minotaur Punch, Warlord Punch, Minotaur Punch (ids all distinct; bank has 9 pairs, existingNames moves the repeat)."
+   ],
+   "tags": [
+    "naming",
+    "progression"
+   ],
+   "severity": "high",
+   "owner": "dev-progression",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.366,
+   "updated": 1790690119.957,
+   "prio": 2,
+   "parent": "7dcd587f"
+  },
+  {
+   "id": "7b616fea",
+   "title": "Class merging / comma and prestige classes are never offered",
+   "status": "done",
+   "notes": [
+    "Milestones produce a new origin Class only; the template is `${themeLabel} Ascendant`, power_tier standard. The schema asks for approved registry ids in lineage.sources but the prompt sends only names/effects, so an AI 'combine' fails normalizeEntry. Sources are never retired after a merge/upgrade. Fix: at a milestone with 2+ Classes send ids + focus scores, AI authors a combine (mergeClassEntry fallback, 'intentional' from evidence), mark sources superseded (conversion rules 2.3/2.4).",
+    "Real-model probe (dev-gateway): Ridge Archer L14 + Hearth Healer L9, focus 0.2 -> standard, L14; PF2e 'Ridge Sentinel' (ranged hit -> free Treat Wounds), 5e 'Ridgekeeper of the Wounded Line' (weak: mostly restates sources). Rules fallback verified live on the API side (dev-integration: 'Warrior of Bridge Guard', rule-2.3 chassis per system). Milestone merge option at 20/30/50 with 2+ Classes; approval supersedes sources. Not clicked live (live-verify has no 2-Class actor yet)."
+   ],
+   "tags": [
+    "progression",
+    "proposals",
+    "gateway",
+    "pf2e",
+    "dnd5e"
+   ],
+   "severity": "high",
+   "owner": "dev-integration",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.443,
+   "updated": 1790694999.7,
+   "prio": 2,
+   "parent": "7dcd587f"
+  },
+  {
+   "id": "21e944ed",
+   "title": "Horror Rank is invisible, dodgeable by rejecting red proposals, and differs from the design's stage clock",
+   "status": "done",
+   "notes": [
+    "Points accrue only on red APPROVAL and rejectProposal accepts red proposals; docking changes only the registry flag, never items; no listener for grand-design-ai.horrorRankLevelsDocked; conversion rules section 6 describes a 4-stage clock with feat suppression and lock-out that the code lacks; the AI never sees Horror Rank. Fix: meter + docking notices in the dialog, decide the model, make red proposals non-refusable or let rejection accrue, AI-written stage consequences.",
+    "Owner decision 2026-09-29: Horror Rank accrues from red DEEDS recorded in the notes (not approvals); rejecting a red Skill refuses the power, not the stain.",
+    "LIVE 2026-09-29 build e091fe9, live-verify.mjs 22/22 in BOTH worlds: AI-read 'dragged the bandit who had thrown down his sword ... pushed him off, laughing' -> cruelty/serious, Horror Rank 0 -> 15, shown in the Registry. Corpus (red+traps, 50 items, 1 rep): darkDeedAcc 90% (vice+severity), dark FP 0% on 40 traps, score 97.8%. ember-road s1 rerun (v0929b-dnd5e): Tovin 15 points for the surrendering goblin, everyone else 0. Approval no longer accrues; legacy points kept as baseline. Open owner questions in conversion rules section 6 (feat suppression, atonement, 5/15/40 + 100 threshold)."
+   ],
+   "tags": [
+    "red",
+    "ui",
+    "progression",
+    "docs"
+   ],
+   "severity": "high",
+   "owner": "dev-integration",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.521,
+   "updated": 1790697391.487,
+   "prio": 2,
+   "parent": "7dcd587f"
+  },
+  {
+   "id": "d4ae9326",
+   "title": "Titles have no AI path and no trigger (proposal kind must be skill or class)",
+   "status": "done",
+   "notes": [
+    "grantTitle (api.js:367) needs a hand-written entry; _validateModelProposals rejects anything but skill/class (api.js:1473). Fix: kind 'title' in stage 2 for notable deeds (named kills, rescues, infamy), through the normal Approve/Reject flow; red titles accrue Horror Rank; GM grant from the dialog as fallback.",
+    "Probe: named kill -> 'Trollbane' on both systems; ordinary session -> no title. api accepts kind 'title' -> grantTitle; red title +25 Horror Rank (unit test). Titles only when stage 2 runs (Suggest/allowance)."
+   ],
+   "tags": [
+    "proposals",
+    "gateway",
+    "ui",
+    "red"
+   ],
+   "severity": "high",
+   "owner": "dev-integration",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.601,
+   "updated": 1790694999.746,
+   "prio": 2,
+   "parent": "7dcd587f"
+  },
+  {
+   "id": "752369f6",
+   "title": "No GM UI for owned entries or advanced actions (evolve, merge, combine, title, cleanse, consolidate, revive)",
+   "status": "done",
+   "notes": [
+    "The Growth dialog never lists owned Classes/Skills/Titles; 13 api methods (combineSkills, upgradeSkill, upgradeClass, combineClasses, buildClassMergePreview, checkSkillEvolutionReadiness, castCombinationSkill, grantTitle, cleanseEntry, setConsolidation, checkClassErosion, applyRevivalPenalty...) are console-only; the raw JSON importer is the only other door. Fix: a 'Grand Design' registry panel with per-entry actions, each opening an (AI-authored where possible) preview before approval.",
+    "LIVE 2026-09-29 build 3e75e8e, live-verify.mjs 19/19 in BOTH worlds (endex pf2e 8.4.1, endexdnd-5e dnd5e 5.3.3): Registry panel opens from the sheet header, lists owned Skills with Evolve and the superseded source. Combine Skills/Cleanse/Consolidate/Revive are disabled 'Coming soon'."
+   ],
+   "tags": [
+    "ui",
+    "qol",
+    "progression"
+   ],
+   "severity": "high",
+   "owner": "dev-ui",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.679,
+   "updated": 1790694999.837,
+   "prio": 2,
+   "parent": "7dcd587f"
+  },
+  {
+   "id": "b375d56c",
+   "title": "Milestone capstone/Class cannot be re-asked of the AI after a template fallback or rejection",
+   "status": "done",
+   "notes": [
+    "Fixed ids (proposal:capstone-<level>), milestones only computed when a rest crosses a level, Suggest never yields isCapstone; a rejected or template capstone leaves capstoneAllowances stuck. Fix: api.retryMilestoneReward(actor, proposalId) re-running _resolveMilestoneReward + a 'Retry with AI' button on template milestone proposals.",
+    "2026-09-29 dev-integration: api.retryMilestoneReward(actor,id) -> {proposal, usedFallback, reason}; works on pending template, rejected or missing milestone; previousAttempts kept; re-analyze no longer deletes milestone/GM-edited proposals. Real model: pf2e 'Ironhold: Gravitational Anchor' (15 s), dnd5e 'Bulwark: Unyielding Grasp' (9 s), allowance still 1. UI: 'Retry with AI' on template milestones."
+   ],
+   "tags": [
+    "progression",
+    "proposals",
+    "ui"
+   ],
+   "severity": "medium",
+   "owner": "dev-integration",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.753,
+   "updated": 1790690119.739,
+   "prio": 2,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "0ed137cb",
+   "title": "Fallback capstone/Class numbers are unusable (DC = 10 + Grand Design level; 'Martial check')",
+   "status": "done",
+   "notes": [
+    "progression.js:498 dc: 10 + level uses the GD level (DC 60 at 50, 110 at 100); roll.kind 'Martial check' is not a real check; the template Class is 'Pending chassis review'. Fix: DCs from the character level (PF2e level DC table, 5e 8+prof+mod), map top tag to a real skill or save, a concrete default benefit per tag.",
+    "2026-09-29: DCs from character level (PF2e level-DC table, 5e 8+prof+mod); top tag -> real skill/save; concrete per-tag benefit. PF2e L12 Fighter capstone: 'Fighter: Decisive Blow', @Check[athletics|dc:30]; 5e [[/check skill=ath ability=str dc=16]]. Fallback Class chassis 'Fighter evolution (Grand Design level 20)'."
+   ],
+   "tags": [
+    "progression",
+    "pf2e",
+    "dnd5e"
+   ],
+   "severity": "medium",
+   "owner": "dev-integration",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.826,
+   "updated": 1790690119.783,
+   "prio": 2,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "17c10e97",
+   "title": "Every generated roll uses the Acrobatics modifier and a raw [[/r]] roll",
+   "status": "done",
+   "notes": [
+    "api.js rollModifier reads skills.acrobatics/acr for every template and capstone (Medicine, Diplomacy, spell attacks); mechanics.js renders [[/r 1d20+N]]. Fix: resolve roll.kind to the system skill/save and emit @Check[...] (PF2e) or [[/skill ...]]/[[/save ...]] (dnd5e), [[/r]] as fallback.",
+    "2026-09-29: roll.kind resolved to system skill/save/perception; sheet modifier used (model guessed +9 for +21 Athletics). Enrichers checked vs installed dnd5e 5.3.3 / pf2e 8.4.1 source. Flat [[/r]] kept in parentheses (test-scenario asserts it; follow-up 5a65746f)."
+   ],
+   "tags": [
+    "pf2e",
+    "dnd5e",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "dev-integration",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.906,
+   "updated": 1790690119.827,
+   "prio": 2,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "9ebbf3c9",
+   "title": "Template and fallback names ignore the naming convention (naming.js is dead code)",
+   "status": "done",
+   "notes": [
+    "deriveClassMotif/buildClassFlavoredName (naming.js:71-95) are only imported by tests; templates ship fixed names ('Canal Step', 'Measured Strike'), fallbacks are 'Capstone: <Tag>' and '<Tag> Ascendant'. Fix: with the AI on, templates go away; off, name via buildClassFlavoredName from the actor's GD Class or systemClass.",
+    "2026-09-29: templates/fallbacks via buildClassFlavoredName ('Fighter: Martial Ascendant'); template registry ids stable so an approved template is not re-offered."
+   ],
+   "tags": [
+    "naming"
+   ],
+   "severity": "medium",
+   "owner": "dev-integration",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.982,
+   "updated": 1790690119.87,
+   "prio": 2,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "a0bcfd05",
+   "title": "Proposals cannot be inspected in full or edited before approval; approve is a dropdown",
+   "status": "done",
+   "notes": [
+    "renderProposal shows name, chip, effect and evidence count only (no rationale, tags, kind, actions, polarity/red, level); templates are described as 'GM-editable' but no editor exists. Live: Reject is per row but Approve is one <select> of 12 proposals + one button. Fix: per-proposal Details expander, per-row Approve, an Edit form validated by validator.js before saving back as pending.",
+    "2026-09-29 dev-ui: per-row Approve/Reject, Details expander (kind, source+fallback reason, roll, red, rationale, evidence), Edit form -> api.updateProposal (validated, {entry} patch, errors shown inline)."
+   ],
+   "tags": [
+    "ui",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "dev-ui",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.058,
+   "updated": 1790690120.182,
+   "prio": 2,
+   "parent": "6d04ba44"
+  },
+  {
+   "id": "5b2ff22d",
+   "title": "Gateway settings unreachable: pending cap, retries, extraction cache; outputLanguage is client-scoped",
+   "status": "done",
+   "notes": [
+    "WORLD_FLAVOR_KEYS omits pendingProposalCapExtra/Min, and buildGatewayConfig keeps only listed keys, so the cap is always default despite gateway-config.js saying a GM can lower it; CLIENT_TUNING_KEYS omits maxRetries, transientRetries, transientBackoffMs, extractionCache*; outputLanguage is table-wide but client scope. Fix: add them to the key lists and form; outputLanguage to world.",
+    "2026-09-29: tuning keys maxRetries/transientRetries/transientBackoffMs/extractionCache* and world keys pendingProposalCapExtra/Min + outputLanguage in the form; outputLanguage migrated client->world (GM, at ready); emptied number box = default, not 0."
+   ],
+   "tags": [
+    "gateway",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "dev-ui",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.136,
+   "updated": 1790690120.268,
+   "prio": 2,
+   "parent": "567067e6"
+  },
+  {
+   "id": "78ead05c",
+   "title": "Long AI calls: dialog closes, no busy state, no per-actor lock, up to ~9 min per chunk before fallback",
+   "status": "done",
+   "notes": [
+    "Analyze/Re-analyze/Author/Approve/Rest are footer buttons that close the v1 Dialog; no in-flight guard in api.analyzeSessionNotes (double click can double-record); timeoutMs 180 s x transient retries. Fix: run in the dialog body with a busy state (like Suggest), per-actor lock in the api, an overall deadline per analysis.",
+    "2026-09-29: per-actor lock (Error 'busy:'), api.isBusy/getBusyTask, busyChanged hook, overall deadline 4x timeoutMs; dialog runs every long action in-body with spinner, footer only Close, notes survive errors. Deadline does not abort the call (5a65746f)."
+   ],
+   "tags": [
+    "ui",
+    "gateway",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "dev-integration",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.211,
+   "updated": 1790690119.915,
+   "prio": 2,
+   "parent": "567067e6"
+  },
+  {
+   "id": "7f1f20ae",
+   "title": "Party notes must be analysed one character sheet at a time",
+   "status": "done",
+   "notes": [
+    "Growth is per actor; the extraction cache exists to read shared party notes once, but the GM still opens five sheets and pastes five times. Fix: 'Analyze for party' (pick PCs, one paste) in the dialog, a scene control or /growth chat command.",
+    "2026-09-29: themeFoldKey (stopwords, stems, order-insensitive, synonyms); foldDuplicateThemes runs on load (mergeInto, GM curation wins, keepSeparate on un-merge); per-actor counts; wrestling-instruction kept separate on purpose. Live purge = 89437d16."
+   ],
+   "tags": [
+    "ui",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "dev-progression",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.286,
+   "updated": 1790690120.002,
+   "prio": 2,
+   "parent": "6d04ba44"
+  },
+  {
+   "id": "4344c58a",
+   "title": "No way to delete or reassign a recorded event, or undo an approval",
+   "status": "todo",
+   "notes": [
+    "_removeRecordedEvents is private; Re-analyze only replaces the LAST notes' events, so an older misattributed event counts forever. Fix: per-event delete/reassign under Recorded Evidence with progress recomputed, and 'revert approval'."
+   ],
+   "tags": [
+    "ui",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.361,
+   "updated": 1790661419.871753,
+   "prio": 2,
+   "parent": "6d04ba44"
+  },
+  {
+   "id": "2d795cac",
+   "title": "Ollama on another LAN machine is blocked (plain http only for loopback)",
+   "status": "todo",
+   "notes": [
+    "validateEndpointUrl (ai-provider-config.js:77) and transport.js:85 reject http to private addresses; calls run in the GM's browser, so 127.0.0.1 is the GM's PC, not the Foundry host, and the form does not say so. Fix: opt-in checkbox for private-network http, help text on where calls originate and OLLAMA_ORIGINS."
+   ],
+   "tags": [
+    "gateway",
+    "docs"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.436,
+   "updated": 1790661417.1431363,
+   "prio": 2,
+   "parent": "567067e6"
+  },
+  {
+   "id": "aab65e42",
+   "title": "Live integration check bypasses the real setup path and covers one system's scenario",
+   "status": "todo",
+   "notes": [
+    "run-live-ai-campaign.mjs sets settings itself and attaches the adapter; ai-test-scenario forces proposalMode 'always'; untested: defaults and ready wiring, build stamp, Suggest, Reject, Author, milestone rests, dialog rendering. Messages name the old menu 'Configure AI Provider' (now 'Configure AI Gateway'); 'real PF2e Item' text on dnd5e. Fix: assert defaults + build stamp, drive the real Growth dialog in both worlds (see tools/playtest/live-audit.mjs)."
+   ],
+   "tags": [
+    "harness",
+    "pf2e",
+    "dnd5e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.513,
+   "updated": 1790661417.2745056,
+   "prio": 2,
+   "parent": "567067e6"
+  },
+  {
+   "id": "e6d9185c",
+   "title": "Joint casts in notes are not detected; combination Skills need a GM-typed effect",
+   "status": "todo",
+   "notes": [
+    "castCombinationSkill requires an effect; preview placeholder 'Pending GM effect description.' (api.js:254). 'Maren and Luz wove Thorn Lash with Sacred Flame' becomes separate events; no combinedWith field. Fix: event field linking co-actors and their approved Skills, a 'Cast combination' suggestion with an AI-written effect scaled to power, banks + GM effect as fallback."
+   ],
+   "tags": [
+    "gateway",
+    "proposals",
+    "ui",
+    "naming"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.588,
+   "updated": 1790661418.9467118,
+   "prio": 2,
+   "parent": "7dcd587f"
+  },
+  {
+   "id": "c4ec8cf7",
+   "title": "Playtest runner cannot exercise evolve/merge/combine/title/revive/erosion",
+   "status": "done",
+   "notes": [
+    "playtest.mjs commands: init, analyze, suggest, approve, reject, status (horror rank printed only). No playtest has ever run the advanced mechanics on either system. Fix: commands + per-session report sections for readiness, erosion, Horror Rank.",
+    "playtest.mjs owned/evolve/merge/titles/erosion + Advanced mechanics report section (dev-harness), exercised on a scratch campaign; dm-guide step added."
+   ],
+   "tags": [
+    "harness",
+    "dnd5e",
+    "pf2e"
+   ],
+   "severity": "medium",
+   "owner": "dev-harness",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.663,
+   "updated": 1790694999.976,
+   "prio": 2,
+   "parent": "7dcd587f"
+  },
+  {
+   "id": "b16101a9",
+   "title": "Death and resurrection in notes are not detected; revival penalty is API-only",
+   "status": "todo",
+   "notes": [
+    "applyRevivalPenalty (api.js:481) has no callers; the event schema has no death/revival signal. Fix: extraction flag, a confirm prompt in the dialog, AI-written narrative cost with the fixed 10-level dock as the mechanic."
+   ],
+   "tags": [
+    "gateway",
+    "ui",
+    "progression"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.739,
+   "updated": 1790661417.9167593,
+   "prio": 2,
+   "parent": "12372a7a"
+  },
+  {
+   "id": "0860fd78",
+   "title": "Class erosion is computed but never shown",
+   "status": "done",
+   "notes": [
+    "checkClassErosion (api.js:468) has no callers; sessions are approximated by calendar date. Fix: list at-risk Classes after each analysis; optional AI read of narrative absence vs neglect; a real session id.",
+    "Erosion callouts in the Registry and after Analyze (checkClassErosion, active Classes only); unit-tested, not exercised live (needs sessions of absence)."
+   ],
+   "tags": [
+    "ui",
+    "progression"
+   ],
+   "severity": "medium",
+   "owner": "dev-ui",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.815,
+   "updated": 1790694999.883,
+   "prio": 2,
+   "parent": "12372a7a"
+  },
+  {
+   "id": "7f220b07",
+   "title": "Emergent-theme registry has duplicate slugs and test-actor themes, each spawning its own Knack",
+   "status": "todo",
+   "notes": [
+    "Live world registry: trophy-taking/taking-trophies, pie-eating/pie-contest, wrestling/arm-wrestling/wrestling-instruction, holding-line vs holding-the-line, carving/whittling; test actors' themes (rig-building, geothermal-magic, tunnel-clearing) share the world list. Fix: fold near-duplicate slugs (stem/synonym/embedding), per-actor theme counts for proposals, a purge for deleted/test actors."
+   ],
+   "tags": [
+    "themes",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.888,
+   "updated": 1790661415.8967242,
+   "prio": 2,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "3574bd96",
+   "title": "Near-duplicate Class proposals pile up (two Suggest clicks -> 'Unbroken Bastion' + 'Unbroken Bulwark')",
+   "status": "done",
+   "notes": [
+    "Live: Briik GD50 has two almost identical Class proposals pending; findDuplicateOwnedMechanic compares against OWNED entries only, not other pending proposals. Fix: dedupe new proposals against pending ones by mechanic (keep the better-evidenced), and show 'already pending' on Suggest.",
+    "Broader: stage 2 also returns near-duplicates of each other in one run (probe: 5 archery proposals 'Longbow: Precision Volley'-like). Dedupe new proposals against each other and against pending by mechanic.",
+    "2026-09-29 dev-gateway: stage 2 sees pending + rejected proposals; deterministic near-dup gate (text/concept-word/game-item overlap) -> duplicates-pending/-rejected/-sibling. Probe, two Suggest clicks: before, click 2 re-proposed 'Bulwark of the Silent Watch'; after, dnd5e 3/3 and pf2e 4/4 skipped as duplicates-pending. Residual: d21f303a, UI surfacing 43ff2ae9.",
+    "Verified 2026-09-29 v0929-dnd5e Maren, two Suggest clicks: click 1 Lavender Loaf / Stable Companion / Field Triage; click 2 repeated none, added 'Thornweave: Gnarled Snare'. pf2e Buck: click 1 +2 distinct (Aerial Tumble, Iron Palm), click 2 0 (pending cap 5, unexplained -> 43ff2ae9)."
+   ],
+   "tags": [
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "dev-gateway",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.965,
+   "updated": 1790690120.047,
+   "prio": 2,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "f798f444",
+   "title": "Sessions read by the keyword fallback can never be re-read by the AI",
+   "status": "todo",
+   "notes": [
+    "Only the last notes are stored (LAST_ANALYSIS_FLAG); earlier sessions read by the fallback analyzer (no themes, keyword tags) stay that way. Fix: short per-actor notes history with source; 'Re-read fallback sessions with AI'."
+   ],
+   "tags": [
+    "gateway",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.042,
+   "updated": 1790661416.0285523,
+   "prio": 2,
+   "parent": "a2cbef5e"
+  },
+  {
+   "id": "dec6d76c",
+   "title": "Counter-leveling differs from design (multiplier vs full level on a +2 encounter); 'dire' rest missing from UI",
+   "status": "todo",
+   "notes": [
+    "progressionForEvent multiplies by 1.5/2.5 where conversion rules 6.1 award a full level; resolveRest supports dire but the dialog offers Short/Long only. Fix: decide the rule, align docs or code, expose Dire."
+   ],
+   "tags": [
+    "docs",
+    "progression",
+    "ui"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.118,
+   "updated": 1790661417.6626618,
+   "prio": 2,
+   "parent": "12372a7a"
+  },
+  {
+   "id": "54a5058f",
+   "title": "AI could suggest Class consolidation and redemption (cleanse) from evidence",
+   "status": "todo",
+   "notes": [
+    "setConsolidation and cleanseEntry have no callers or UI. Fix: tag atonement events in extraction; stage 2 proposes cleanse/consolidation for GM approval."
+   ],
+   "tags": [
+    "red",
+    "proposals",
+    "ui"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.194,
+   "updated": 1790661419.2064748,
+   "prio": 2,
+   "parent": "7dcd587f"
+  },
+  {
+   "id": "b9a22e1a",
+   "title": "Atlas step of the core loop (link approved growth to the campaign atlas) is not implemented",
+   "status": "todo",
+   "notes": [
+    "GAME_DESIGN core loop step 5; atlas.js only resolves asset paths, sketch maps used by test-scenario only. Fix: scope it out of the design doc or link approvals to atlas Journal/Scene notes."
+   ],
+   "tags": [
+    "docs"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.271,
+   "updated": 1790661420.1333697,
+   "prio": 3
+  },
+  {
+   "id": "e8c5fd7f",
+   "title": "Item descriptions show raw registry ids in the Lineage line",
+   "status": "todo",
+   "notes": [
+    "lineage.js:141-151 renders 'sources: class:foo, class:bar' to players. Fix: render source names."
+   ],
+   "tags": [
+    "qol",
+    "naming"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.346,
+   "updated": 1790661420.2640681,
+   "prio": 3
+  },
+  {
+   "id": "b5df25bd",
+   "title": "lang/en.json is unused (no i18n calls); v1 Dialog/FormApplication deprecated on v14",
+   "status": "todo",
+   "notes": [
+    "No game.i18n in scripts; en.json lacks Reject/Suggest strings anyway. Fix: localize or delete en.json; plan the ApplicationV2 move."
+   ],
+   "tags": [
+    "docs",
+    "qol"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.423,
+   "updated": 1790661420.3918724,
+   "prio": 3
+  },
+  {
+   "id": "01e232b6",
+   "title": "Tag Reweighting accepts misspelled tags silently",
+   "status": "todo",
+   "notes": [
+    "tag-weighting.js:35-42 accepts any free text; 'mobilty' saves and does nothing. Fix: dropdown of taxonomy tags or validation against GROWTH_TAXONOMY."
+   ],
+   "tags": [
+    "ui",
+    "qol"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.498,
+   "updated": 1790661420.521236,
+   "prio": 3
+  },
+  {
+   "id": "278670bb",
+   "title": "AI-first Grand Design: the AI authors every growth moment, visibly",
+   "status": "todo",
+   "notes": [
+    "From the 2026-09-29 gap audit (3 code audits + live Foundry audit; filed as 40 tasks). AC: with a provider configured, no template/placeholder reaches the GM where the AI could author it; the GM always sees when the AI was not used and why; every Grand Design mechanic is reachable from the UI."
+   ],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661414.2267287,
+   "updated": 1790661414.3597393,
+   "kind": "epic",
+   "prio": 1
+  },
+  {
+   "id": "a2cbef5e",
+   "title": "AI authors proposals instead of templates and placeholders",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661414.6338055,
+   "updated": 1790661414.6338055,
+   "kind": "feature",
+   "prio": 1,
+   "parent": "278670bb"
+  },
+  {
+   "id": "567067e6",
+   "title": "AI is on, current and visibly used (settings, defaults, warnings, deploys)",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661416.1670356,
+   "updated": 1790661416.1670356,
+   "kind": "feature",
+   "prio": 1,
+   "parent": "278670bb"
+  },
+  {
+   "id": "12372a7a",
+   "title": "Milestones and progression rules work end to end",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661417.406303,
+   "updated": 1790661417.406303,
+   "kind": "feature",
+   "prio": 2,
+   "parent": "278670bb"
+  },
+  {
+   "id": "7dcd587f",
+   "title": "Advanced mechanics reachable from the UI and AI-driven (evolve, merge, titles, Horror Rank, combos)",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661418.0482519,
+   "updated": 1790661418.0482519,
+   "kind": "feature",
+   "prio": 2,
+   "parent": "278670bb"
+  },
+  {
+   "id": "6d04ba44",
+   "title": "Approved growth becomes real game items; GM workflow (inspect, edit, party, undo, Populate)",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661419.354566,
+   "updated": 1790661419.354566,
+   "kind": "feature",
+   "prio": 2,
+   "parent": "278670bb"
+  },
+  {
+   "id": "283ad7ca",
+   "title": "Growth dialog: 'Approve as written' for placeholders now that approve refuses needsAuthoring without confirm",
+   "status": "done",
+   "notes": [
+    "2026-09-29: placeholder rows get 'Approve as written' (confirm dialog -> approveProposal confirm:true)."
+   ],
+   "tags": [
+    "ui",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "dev-ui",
+   "source": "dev-proposals 2026-09-29",
+   "created": 1790662086.312,
+   "updated": 1790690120.224
+  },
+  {
+   "id": "07b9d93f",
+   "title": "Consequence-of-own-deed dropped as happened-to-actor: 'I got banned from a pie tent' (Wick) skipped; a ban/eviction implies the PC's own misdeed",
+   "status": "done",
+   "notes": [
+    "Fixed: isConsequenceOfOwnDeed turns banned/evicted/arrested/thrown-out target entries into the doer's failure (unless 'framed/falsely'); tr-039 (Wick's pie tent) and tr-040 at 100%; traps+red slice 96.9 -> 97.0%, traps 100%."
+   ],
+   "tags": [
+    "gateway",
+    "playtest"
+   ],
+   "severity": "medium",
+   "owner": "dev-gateway",
+   "source": "v0929 rerun of ember-road s1",
+   "created": 1790689954.641,
+   "updated": 1790694999.791
+  },
+  {
+   "id": "43ff2ae9",
+   "title": "Suggest shows nothing when every new proposal is a duplicate of a pending/rejected one; surface skippedProposals (duplicates-pending -> 'already pending: X', highlight duplicateOfId)",
+   "status": "done",
+   "notes": [
+    "Also the pending cap: Buck at 5 pending -> 'Buck: 0 new proposal(s)' with no reason (v0929-pf2e).",
+    "LIVE 2026-09-29 build 3e75e8e, live-verify.mjs 19/19 in BOTH worlds (endex pf2e 8.4.1, endexdnd-5e dnd5e 5.3.3): Suggest now returns skipped + capReached and the UI states them ('skipped [pending-cap:Decoy Carving Knack]'). The empty-Suggest regression got a prompt fix + propose-retry turn: Suggest passed in both worlds."
+   ],
+   "tags": [
+    "ui",
+    "qol",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "dev-ui",
+   "source": "dev-gateway 2026-09-29",
+   "created": 1790689954.685,
+   "updated": 1790694999.929
+  },
+  {
+   "id": "d21f303a",
+   "title": "Class near-duplicates with no shared concept word slip the dedupe ('Gatewarden of the Iron Line' vs pending 'Bulwark Warden', both +1 AC beside an ally)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "proposals",
+    "gateway"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-gateway probe 2026-09-29",
+   "created": 1790689954.732,
+   "updated": 1790689954.732
+  },
+  {
+   "id": "89437d16",
+   "title": "One-shot GM clean-up for the live theme registry: recountThemeActors + purgeOrphanThemes, and reject the old per-spelling pending Knacks (proposal:emergent-pie-contest...)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "themes",
+    "ui",
+    "qol"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-progression 2026-09-29",
+   "created": 1790689954.78,
+   "updated": 1790689954.78
+  },
+  {
+   "id": "5a65746f",
+   "title": "Roll follow-ups: lineage.createFeatureSource should pass systemId to createMechanicsHtml; drop the flat [[/r]] after the system check once test-scenario.js stops asserting it; the analysis deadline does not abort the in-flight call (no AbortSignal in the pipeline); AI capstones ignore the Class motif",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "followup",
+    "gateway",
+    "dnd5e",
+    "pf2e"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-integration 2026-09-29",
+   "created": 1790689954.826,
+   "updated": 1790689954.826
+  },
+  {
+   "id": "3717963d",
+   "title": "Two PCs get the same proposal name in one session ('Athletics: Iron Grip' for Buck and Kestrel, v0929-pf2e s2); PF2e proposal says 'Strength check' / 'flat-footed' (remaster: off-guard)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "naming",
+    "pf2e"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "v0929 rerun of salt-lantern s2",
+   "created": 1790690119.606,
+   "updated": 1790690119.606
+  },
+  {
+   "id": "6b2a26ce",
+   "title": "Superseded Items stay mechanically active (dnd5e activity uses, PF2e feat): add markSuperseded(item) per system adapter",
+   "status": "done",
+   "notes": [
+    "LIVE 2026-09-29 build e091fe9, live-verify.mjs 22/22 in BOTH worlds: superseded dnd5e Item has 0 activities; PF2e superseded Item has 0 rules (frequency still reads 1 -> follow-up)."
+   ],
+   "tags": [
+    "dnd5e",
+    "pf2e",
+    "progression"
+   ],
+   "severity": "medium",
+   "owner": "dev-systems",
+   "source": "dev-integration 2026-09-29",
+   "created": 1790694227.981,
+   "updated": 1790697391.58
+  },
+  {
+   "id": "536dba59",
+   "title": "Direct upgradeSkill/combineClasses do not supersede sources; rejected milestone merge (proposal:class-merge-N) cannot be retried",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "progression",
+    "followup"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-integration 2026-09-29",
+   "created": 1790694228.027,
+   "updated": 1790694228.027
+  },
+  {
+   "id": "1817a21f",
+   "title": "dnd5e class merge restates both sources' effects ('Ridgekeeper of the Wounded Line' +2 temp HP); live-verify has no 2-Class actor to exercise Merge and titles in Foundry",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "proposals",
+    "dnd5e",
+    "harness"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-gateway probe 2026-09-29",
+   "created": 1790695000.07,
+   "updated": 1790695000.07
+  },
+  {
+   "id": "14248053",
+   "title": "PF2e superseded Item keeps frequency.max 1 live (markSupersededPf2e sets 0?); structured conditions are text only (no PF2e condition link / 5e status effect); prose vs structured mismatch unchecked (a reaction gained 1d8+3 the prose lacks)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "pf2e",
+    "dnd5e",
+    "proposals"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "live verify 2026-09-29 batch 3",
+   "created": 1790697391.628,
+   "updated": 1790697391.628
+  },
+  {
+   "id": "1656f47c",
+   "title": "Jev client + triage/attribution/verify/rank steps in the gateway (docs/jev-layer-contract.md)",
+   "status": "todo",
+   "notes": [],
    "tags": [
     "gateway",
     "jev"
    ],
    "severity": "medium",
-   "owner": "dev-gateway",
+   "owner": "",
    "source": "jev-layer",
-   "created": 1790704404.938,
-   "updated": 1790705339.611
+   "created": 1790705519.789,
+   "updated": 1790705519.789
   },
   {
-   "id": "485cae73",
-   "title": "Party mode: one extraction per party + per-PC attribution (api.analyzePartyNotes)",
-   "status": "doing",
-   "notes": [
-    "dev-integration done in worktree: api.analyzePartyNotes (one extraction, proposeFor per PC max 2 concurrent), attributeEventsToActor honours jev.actorName>=0.6 and jev.whole, reanalyzeLastNotes re-runs the party roster. 665 tests green (16 new, fakes only). Deviations: party.extractionCalls not calls; reads jev.actorName or jev.actor; skipped events reported once on party. Awaiting review + merge.",
-    "Review (Fable): MERGE AFTER FIXES - party-wide reject after recording, stale-roster double count, early proposal drop, theme over-count, whole-event actorName. Sent back to dev-integration; contract updated with proposeFor + failure rules."
-   ],
+   "id": "45499fb2",
+   "title": "Party mode: one-click api.analyzePartyNotes over the extraction cache + Jev attribution trust",
+   "status": "todo",
+   "notes": [],
    "tags": [
     "integration",
     "jev"
    ],
    "severity": "medium",
-   "owner": "dev-integration",
+   "owner": "",
    "source": "jev-layer",
-   "created": 1790704404.997,
-   "updated": 1790705220.605
+   "created": 1790705519.873,
+   "updated": 1790705519.873
   },
   {
-   "id": "642a0bda",
+   "id": "64e3c5ae",
    "title": "Jev settings fieldset + Test Jev, Analyze party action, Jev chips in Growth dialog",
-   "status": "doing",
-   "notes": [
-    "dev-ui done in worktree: jevApiKey client setting, Jev fieldset + Test Jev, Analyze party picker, chips + Jev summary line. 688 tests green (39 new). Needs: progression.js keep event.jev, api.js keep proposal.jev (sent to dev-integration); event.jev.outcome + diagnostics.jev.routed (sent to dev-gateway). Awaiting review + merge.",
-    "Review (Fable): MERGE AFTER FIXES - Foundry wiring (register/read-back/persist) untested; step= on number inputs; fallback message. Secret flow, escaping, v14 API, Jev-off equivalence verified. Sent back to dev-ui."
-   ],
+   "status": "todo",
+   "notes": [],
    "tags": [
     "ui",
     "jev",
     "qol"
    ],
    "severity": "medium",
-   "owner": "dev-ui",
+   "owner": "",
    "source": "jev-layer",
-   "created": 1790704405.057,
-   "updated": 1790705378.043
+   "created": 1790705519.937,
+   "updated": 1790705519.937
   },
   {
-   "id": "e188c4f1",
+   "id": "9f76030d",
    "title": "Sim Jev, --jev/--sim-jev in run.mjs and playtest, party corpus (>=20 items)",
-   "status": "doing",
+   "status": "todo",
    "notes": [],
    "tags": [
     "harness",
     "jev"
    ],
    "severity": "medium",
-   "owner": "dev-harness",
+   "owner": "",
    "source": "jev-layer",
-   "created": 1790704405.113,
-   "updated": 1790704483.876
+   "created": 1790705519.999,
+   "updated": 1790705519.999
   },
   {
-   "id": "387888a5",
-   "title": "Real-Jev measurement once the owner adds TYPESAFE_API_KEY (+ CORS check from Foundry browser)",
+   "id": "27346aba",
+   "title": "Real-Jev measurement once TYPESAFE_API_KEY is set locally (+ CORS check from the Foundry browser)",
    "status": "todo",
    "notes": [],
    "tags": [
@@ -354,12 +1913,12 @@
    "severity": "medium",
    "owner": "",
    "source": "jev-layer",
-   "created": 1790704405.179,
-   "updated": 1790704405.179
+   "created": 1790705520.084,
+   "updated": 1790705520.084
   },
   {
-   "id": "defdfd8b",
-   "title": "growth-ui/ai-provider-config: migrate v1 Dialog to DialogV2 and add game.i18n.localize pass (en.json keys exist, code hard-codes English)",
+   "id": "edfcd96e",
+   "title": "growth-ui/ai-provider-config: DialogV2 migration + game.i18n.localize pass",
    "status": "todo",
    "notes": [],
    "tags": [
@@ -369,8 +1928,8 @@
    "severity": "low",
    "owner": "",
    "source": "jev-layer review",
-   "created": 1790705378.091,
-   "updated": 1790705378.091
+   "created": 1790705520.149,
+   "updated": 1790705520.149
   }
  ]
 }

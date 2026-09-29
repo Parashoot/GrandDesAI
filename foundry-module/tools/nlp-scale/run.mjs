@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 
 import { createTransport } from "../../scripts/ai/transport.js";
 import { normalizeGatewayConfig } from "../../scripts/ai/gateway-config.js";
-import { loadCorpusFromArrays, renderMarkdown, renderSummaryTable, runScale } from "./lib.mjs";
+import { darkLine, loadCorpusFromArrays, renderMarkdown, renderSummaryTable, runScale } from "./lib.mjs";
 import { createSimModel } from "./sim-model.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -146,9 +146,12 @@ async function main() {
   console.log("");
   console.log(renderSummaryTable(state.summary));
   console.log("");
+  const pctOrDash = (v) => (v === null || v === undefined ? "  –  " : (v * 100).toFixed(1).padStart(5) + "%");
   for (const [category, g] of Object.entries(state.summary.byCategory)) {
-    console.log(`${category.padEnd(22)} score ${(g.score * 100).toFixed(1).padStart(5)}%  F1 ${g.f1 === null ? "  –  " : (g.f1 * 100).toFixed(1).padStart(5) + "%"}  fallback ${(g.fallbackRate * 100).toFixed(1)}%`);
+    console.log(`${category.padEnd(22)} score ${(g.score * 100).toFixed(1).padStart(5)}%  F1 ${pctOrDash(g.f1)}  fallback ${(g.fallbackRate * 100).toFixed(1)}%  dark deed ${pctOrDash(g.darkDeedAcc)}  dark FP ${pctOrDash(g.darkFalseRate)}`);
   }
+  console.log("");
+  console.log(`Dark deeds: ${darkLine(state.summary.overall)}`);
   console.log("");
   console.log(`Reports: ${base}.json\n         ${base}.md`);
   if (sim) console.log(`Sim stats: ${JSON.stringify(sim.stats)}`);

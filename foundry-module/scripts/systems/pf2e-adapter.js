@@ -3,6 +3,8 @@
 // createFeatureSource() logic, unchanged in behavior, extracted here so it lives alongside its
 // dnd5e counterpart behind the shared systems/index.js dispatch instead of being the only path.
 
+import { diceFormula, pf2eSaveFor, readStructuredFor, skillKeyFor, slug, stripSupersededLine, supersededLine } from "./structured.js";
+
 export const SYSTEM_ID = "pf2e";
 export const SYSTEM_LABEL = "Pathfinder Second Edition";
 // Handed to the AI gateway's proposal prompt so generated mechanics read like this system's rules.
@@ -36,9 +38,192 @@ export function buildItemSourcePf2e(kind, entry) {
     system.traits = { value: entry.gameItem.traits ?? [] };
   }
 
+  // Structured mechanics (batch 3): real rule elements, frequency, traits and spell data. Entries
+  // without a structured block skip this entirely and come out exactly as before.
+  const structured = readStructuredFor(entry, "pf2e");
+  const descriptionHtml = structured ? applyStructuredPf2e(type, system, entry, structured) : "";
+
   // Nothing more to do after the embedded Item exists -- PF2e models everything through flat
   // system.* fields set above, with no equivalent of dnd5e's separate "Activity" documents.
-  return { source: { type, system }, postCreate: null };
+  return { source: { type, system }, postCreate: null, descriptionHtml };
+}
+
+// --- Structured mechanics -> PF2e item data -----------------------------------------------------
+// Field shapes checked against the installed pf2e 8.4.1 source: FrequencyField { max, per } with per
+// in CONFIG.PF2E.frequencies (turn, round, PT1M, PT10M, PT1H, PT24H, day, ...); spells still use
+// template.json (damage is a record of { formula, kinds, type, category, materials, applyMod },
+// defense { save: { statistic, basic } } or { passive: { statistic } }, area { type, value },
+// range { value: "30 feet" }); rule elements FlatModifier { selector, type, value, predicate } and
+// RollOption { domain, option, toggleable }. Inline enrichers match the compendium's own text:
+// @Damage[2d6[fire]], @Check[reflex|against:class-spell|basic], @Template[type:cone|distance:15].
+
+// PF2e has no "per encounter" and no rests. An encounter plus the 10-minute Refocus is PF2e's own
+// cadence for "recharges between fights"; a D&D short / long rest maps to an hour / a day.
+const PF2E_FREQUENCY_BY_PER = {
+  turn: "turn", round: "round", encounter: "PT10M", hour: "PT1H", day: "day", "short-rest": "PT1H", "long-rest": "day"
+};
+const PF2E_DAMAGE_TRAITS = new Set([
+  "acid", "cold", "electricity", "fire", "sonic", "force", "mental", "poison", "vitality", "void", "spirit"
+]);
+// PF2e templates are burst / cone / emanation / line; the 5e solids become a burst of that radius.
+const PF2E_TEMPLATE_BY_AREA = {
+  cone: "cone", burst: "burst", emanation: "emanation", line: "line", sphere: "burst", cube: "burst", cylinder: "burst"
+};
+const PF2E_ROLL_OPTION_PATTERN = /^[a-z0-9][a-z0-9:-]*$/;
+
+function isActivated(s) {
+  return Boolean(s.damage || s.heal || s.save || s.attack);
+}
+
+// A passive Skill's modifiers are always on. Anything the character USES (an action, a feat with a
+// damage/save effect) gates them behind a sheet toggle the player switches on while it applies --
+// otherwise "1/encounter: +1 AC" would be a permanent +1 AC.
+function modifiersAlwaysOn(type, entry, s) {
+  if (type === "weapon") return true;
+  return type === "feat" && (entry.gameItem.kind === "passive" || !isActivated(s));
+}
+
+// PF2e has no advantage. The nearest fixed effect is a +1 circumstance bonus to the same roll
+// (the contract marks advantage dnd5e-only; a model or a GM edit can still put it on a PF2e entry).
+function advantageAsModifier(s) {
+  const on = s.advantage?.on;
+  if (!on || on.startsWith("check:")) return s;
+  const modifier = { value: 1, type: "circumstance", selector: on === "attack" ? "attack" : on };
+  if (s.advantage.condition) modifier.predicate = s.advantage.condition;
+  return { ...s, modifiers: [...(s.modifiers ?? []), modifier] };
+}
+
+function applyStructuredPf2e(type, system, entry, structured) {
+  const s = advantageAsModifier(structured);
+  const optionSlug = `grand-design:${slug(entry.name) || "ability"}`;
+  const alwaysOn = modifiersAlwaysOn(type, entry, s);
+  const traits = new Set(system.traits?.value ?? []);
+  for (const part of s.damage ?? []) if (PF2E_DAMAGE_TRAITS.has(part.type)) traits.add(part.type);
+  if (s.attack) traits.add("attack");
+  if (s.heal) traits.add("healing");
+
+  if (type === "feat" || type === "action") {
+    if (type === "feat" && isActivated(s) && entry.gameItem.kind !== "passive") {
+      system.actionType = { value: "action" };
+      system.actions = { value: clampActions(entry.mechanics.actions) };
+    }
+    if (type === "action") {
+      if (system.actionType?.value === "action") system.actions = { value: clampActions(entry.mechanics.actions) };
+      system.category = isActivated(s) ? "offensive" : "defensive";
+    }
+    system.traits = { ...(system.traits ?? {}), value: [...traits] };
+    if (s.uses) system.frequency = { max: s.uses.max, per: PF2E_FREQUENCY_BY_PER[s.uses.per] ?? "day" };
+  } else if (type === "spell") {
+    system.traits = { ...(system.traits ?? {}), value: [...traits] };
+    const damage = {};
+    for (const part of s.damage ?? []) {
+      damage[damageId(Object.keys(damage).length)] = { formula: diceFormula(part), kinds: ["damage"], type: part.type, category: null, materials: [], applyMod: false };
+    }
+    if (s.heal) {
+      damage[damageId(Object.keys(damage).length)] = { formula: diceFormula(s.heal), kinds: ["healing"], type: "untyped", category: null, materials: [], applyMod: false };
+    }
+    if (Object.keys(damage).length) system.damage = damage;
+    if (s.save) system.defense = { save: { statistic: pf2eSaveFor(s.save.save), basic: s.save.basic } };
+    else if (s.attack) system.defense = { passive: { statistic: "ac" } };
+    if (s.area) system.area = { type: PF2E_TEMPLATE_BY_AREA[s.area.type], value: s.area.value };
+    if (s.range) system.range = { value: `${s.range.value} feet` };
+  }
+  const rules = rulesPf2e(entry, s, optionSlug, alwaysOn, type);
+  if (rules.length) system.rules = rules;
+  return describeStructuredPf2e(entry, s, alwaysOn);
+}
+
+function rulesPf2e(entry, s, optionSlug, alwaysOn, type) {
+  const modifiers = s.modifiers ?? [];
+  if (!modifiers.length) return [];
+  const rules = [];
+  if (!alwaysOn) {
+    rules.push({ key: "RollOption", domain: "all", option: optionSlug, toggleable: true, label: `${entry.name} (active)` });
+  }
+  for (const modifier of modifiers) {
+    const predicate = [];
+    if (!alwaysOn) predicate.push(optionSlug);
+    // The model's predicate is kept only when it already is a roll option ("target:trait:undead");
+    // prose ("against undead") stays in the description instead of becoming a never-true predicate.
+    if (modifier.predicate && PF2E_ROLL_OPTION_PATTERN.test(modifier.predicate)) predicate.push(modifier.predicate);
+    const rule = { key: "FlatModifier", selector: pf2eSelector(modifier.selector, type), type: modifier.type, value: modifier.value, label: entry.name };
+    if (predicate.length) rule.predicate = predicate;
+    rules.push(rule);
+  }
+  return rules;
+}
+
+function pf2eSelector(selector, itemType) {
+  // On a weapon, attack/damage modifiers belong to that weapon only, not to every Strike.
+  if (itemType === "weapon" && (selector === "attack" || selector === "damage")) return `{item|_id}-${selector}`;
+  if (selector === "attack") return "attack-roll";
+  if (selector === "save:all") return "saving-throw";
+  if (selector.startsWith("save:")) return pf2eSaveFor(selector.slice(5)) ?? "saving-throw";
+  if (selector.startsWith("skill:")) return skillKeyFor(selector.slice(6), "pf2e") ?? "skill-check";
+  return selector; // ac, damage, perception, initiative are PF2e selectors as they stand
+}
+
+function describeStructuredPf2e(entry, s, alwaysOn) {
+  const lines = [];
+  if (s.attack) lines.push(`Make a ${s.attack.kind === "spell" ? "spell attack roll" : `${s.attack.kind} Strike`} against the target's AC.`);
+  if (s.damage) lines.push(`Damage: @Damage[${s.damage.map((part) => `${enricherFormula(part)}[${part.type}]`).join(",")}]`);
+  if (s.save) {
+    const dc = typeof s.save.dc === "number" ? `dc:${s.save.dc}` : "against:class-spell";
+    lines.push(`Save: @Check[${pf2eSaveFor(s.save.save)}|${dc}${s.save.basic ? "|basic" : ""}]`);
+  }
+  if (s.heal) lines.push(`Healing: @Damage[${enricherFormula(s.heal)}[healing]]`);
+  if (s.area) lines.push(`Area: @Template[type:${PF2E_TEMPLATE_BY_AREA[s.area.type]}|distance:${s.area.value}]`);
+  if (s.range) lines.push(`Range: ${s.range.value} feet`);
+  if (s.condition) {
+    lines.push(`Condition: ${escapeHtmlPf2e(s.condition.id)}${s.condition.value ? ` ${s.condition.value}` : ""}${s.condition.duration ? ` (${escapeHtmlPf2e(s.condition.duration)})` : ""}`);
+  }
+  for (const modifier of s.modifiers ?? []) {
+    const kind = modifier.value > 0 ? "bonus" : "penalty";
+    lines.push(`${modifier.value > 0 ? "+" : ""}${modifier.value} ${modifier.type} ${kind} to ${escapeHtmlPf2e(selectorLabel(modifier.selector))}${modifier.predicate ? ` (${escapeHtmlPf2e(modifier.predicate)})` : ""}`);
+  }
+  if ((s.modifiers ?? []).length && !alwaysOn) lines.push(`Toggle "${escapeHtmlPf2e(entry.name)} (active)" on the character sheet while it applies.`);
+  if (s.uses) lines.push(`Uses: ${s.uses.max} per ${s.uses.per.replace("-", " ")}`);
+  return lines.length ? `<p><strong>Rules:</strong></p><ul>${lines.map((line) => `<li>${line}</li>`).join("")}</ul>` : "";
+}
+
+export function selectorLabel(selector) {
+  if (selector === "ac") return "AC";
+  if (selector === "save:all") return "saving throws";
+  if (selector.startsWith("save:")) return `${selector.slice(5)} saves`;
+  if (selector.startsWith("skill:")) return `${selector.slice(6)} checks`;
+  return `${selector} rolls`;
+}
+
+function enricherFormula(dice) {
+  return dice.bonus ? `(${diceFormula(dice)})` : diceFormula(dice);
+}
+
+function damageId(index) {
+  return `grandDesignDmg${String(index).padStart(2, "0")}`;
+}
+
+function clampActions(actions) {
+  return [1, 2, 3].includes(actions) ? actions : 1;
+}
+
+/**
+ * Switches a superseded Skill/Class Item's mechanics off (contract section 4) and returns the
+ * update for item.update(). The rule elements move to a flag (a GM can restore them by hand), the
+ * frequency is spent, and the description opens with "Superseded by X". The Item itself stays: it
+ * is the record the new entry's lineage points at. `by` is the superseding entry's name.
+ */
+export function markSupersededPf2e(item, { by } = {}) {
+  const system = item?._source?.system ?? item?.system ?? {};
+  const rules = Array.isArray(system.rules) ? system.rules : [];
+  const update = {
+    "system.rules": [],
+    "system.description.value": supersededLine(by) + stripSupersededLine(system.description?.value ?? ""),
+    "flags.grand-design-ai.superseded": true
+  };
+  // Re-marking must not overwrite the stash with the already-emptied rules.
+  if (rules.length) update["flags.grand-design-ai.supersededRules"] = structuredClone(rules);
+  if (system.frequency) update["system.frequency.value"] = 0;
+  return update;
 }
 
 export function getCharacterLevelPf2e(actor) {
@@ -54,6 +239,33 @@ export function getCharacterClassPf2e(actor) {
   const items = actor?.items;
   const found = typeof items?.find === "function" ? items.find((item) => item?.type === "class") : undefined;
   return typeof found?.name === "string" && found.name.trim() ? found.name.trim() : null;
+}
+
+// Board 3962a001: a proposal must never hand the character proficiency in a skill or feat it is
+// already trained in. Returns the character's own class/ancestry/background feat names plus any
+// skill trained (rank >= 1), so the proposal prompt (and pipeline.js's deterministic backstop) can
+// see what is already on the sheet. Best-effort and additive, same as getCharacterClassPf2e above:
+// a plain harness object or an unusual sheet just contributes less, never throws.
+export function getCharacterKnownFeaturesPf2e(actor) {
+  const names = new Set();
+  const items = typeof actor?.items?.filter === "function"
+    ? actor.items.filter((item) => ["feat", "class", "background", "ancestry"].includes(item?.type))
+    : [];
+  for (const item of items) if (typeof item?.name === "string" && item.name.trim()) names.add(item.name.trim());
+  const skills = actor?.system?.skills;
+  if (skills && typeof skills === "object") {
+    for (const [key, skill] of Object.entries(skills)) {
+      const rank = Number(skill?.rank ?? 0);
+      if (rank < 1) continue;
+      const label = typeof skill?.label === "string" && skill.label.trim() ? skill.label.trim() : titleCase(key);
+      if (label) names.add(label);
+    }
+  }
+  return [...names];
+}
+
+function titleCase(value) {
+  return String(value ?? "").replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
 }
 
 export function equivalentLabelPf2e(kind, entry) {

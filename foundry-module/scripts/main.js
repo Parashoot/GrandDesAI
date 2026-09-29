@@ -1,9 +1,10 @@
 import { GrandDesignApi } from "./api.js";
 import { defaultAtlasAssetPath, isLegacyGithubAtlasPath } from "./atlas.js";
 import { MODULE_ID } from "./constants.js";
-import { openGrowthManager } from "./growth-ui.js";
+import { createHorrorRankNotifier, openGrowthManager } from "./growth-ui.js";
+import { openRegistryPanel } from "./registry-ui.js";
 import { openPopulate, runPopulateAndAnnounce } from "./populate-ui.js";
-import { createConfiguredAiAdapter, getGatewayConfig, registerAiProviderSettings } from "./ai-provider-config.js";
+import { checkGatewayAtReady, getGatewayConfig, registerAiProviderSettings } from "./ai-provider-config.js";
 import { createEmergentThemeStore, registerEmergentThemeSettings } from "./emergent-themes-settings.js";
 import { registerTagWeightingSettings, getConfiguredTagWeights } from "./tag-weighting-settings.js";
 import { isSupportedSystem, supportedSystemIds } from "./systems/index.js";
@@ -30,8 +31,10 @@ Hooks.once("init", () => {
   });
   game.modules.get(MODULE_ID).api = new GrandDesignApi();
   game.modules.get(MODULE_ID).api.setTagWeightsProvider(getConfiguredTagWeights);
-  // AI gateway v2: the api reads the merged client+world gateway config fresh on every call (so a
-  // settings change applies to the next analysis without a reload), and keeps the world's seen
+  // AI gateway v2: the api reads the merged gateway config fresh on every call, so per-call tuning
+  // (proposal mode, creativity, house rules...) follows a settings change at once. The adapter itself
+  // (provider/endpoint/model/key) is rebuilt by the settings' onChange handlers in
+  // ai-provider-config.js (GM only, debounced). The api also keeps the world's seen
   // emergent themes in the `emergentThemes` world setting.
   game.modules.get(MODULE_ID).api.setGatewayConfigProvider(getGatewayConfig);
   game.modules.get(MODULE_ID).api.setEmergentThemeStore(createEmergentThemeStore());
@@ -49,15 +52,10 @@ Hooks.once("ready", async () => {
     );
   }
   if (game.user.isGM) {
-    try {
-      // createConfiguredAiAdapter builds the v2 adapter via ai-gateway.js#createGatewayAdapter
-      // from the full normalized gateway config (null when the provider is "disabled").
-      const adapter = createConfiguredAiAdapter();
-      if (adapter) game.modules.get(MODULE_ID).api.setProposalAdapter(adapter);
-    } catch (error) {
-      console.warn(`${MODULE_ID} | AI provider is not configured`, error);
-      ui.notifications.warn(`Grand Design AI Gateway is not ready (${error.message}) -- notes will be read by the local analyzer until it is fixed in the module settings.`);
-    }
+    // Migrates old per-browser provider settings, builds the adapter (later setting changes rebuild
+    // it through onChange handlers), logs the build, and warns permanently when this world expects
+    // an AI but none is attached -- a silent keyword-analyzer fallback is what cost a GM 14 events.
+    await checkGatewayAtReady();
   }
   if (game.user.isGM && game.settings.get(MODULE_ID, "runTestScenarioOnLaunch")) {
     if (game.system.id !== "pf2e") {
@@ -73,6 +71,28 @@ Hooks.once("ready", async () => {
   }
 });
 
+// Board 21e944ed: Horror Rank changes used to happen silently (nothing listened). The GM now gets a
+// lasting notice naming the Class and the levels it lost, and one when the stage moves. The API fires
+// horrorRankChanged (batch 3 contract) and may still fire horrorRankLevelsDocked for the same
+// docking; the notifier announces it once.
+const horrorRankNotifier = createHorrorRankNotifier({
+  notify: (level, message) => ui.notifications[level]?.(message, level === "warn" ? { permanent: true } : undefined),
+  className: (actor, classId) => {
+    try {
+      const registry = game.modules.get(MODULE_ID).api.getActorRegistry(actor);
+      return registry?.classes?.[classId]?.name ?? null;
+    } catch {
+      return null;
+    }
+  }
+});
+Hooks.on("grand-design-ai.horrorRankChanged", (actor, state, dockedFrom) => {
+  if (game.user.isGM) horrorRankNotifier.changed(actor, state, dockedFrom);
+});
+Hooks.on("grand-design-ai.horrorRankLevelsDocked", (actor, dockedFrom) => {
+  if (game.user.isGM) horrorRankNotifier.docked(actor, dockedFrom);
+});
+
 // Legacy Application (V1) sheet header hook. Still relevant for any system/version whose actor
 // sheets have not migrated off the V1 Application framework.
 Hooks.on("getActorSheetHeaderButtons", (sheet, buttons) => {
@@ -84,6 +104,13 @@ Hooks.on("getActorSheetHeaderButtons", (sheet, buttons) => {
     icon: "fas fa-sparkles",
     label: "Grand Design",
     onclick: () => openImporter(sheet.actor)
+  });
+  // Board 752369f6: owned Classes/Skills/Titles, lineage, Evolve, Merge and erosion.
+  buttons.unshift({
+    class: "grand-design-registry",
+    icon: "fas fa-sitemap",
+    label: "Registry",
+    onclick: () => openRegistryPanel(sheet.actor)
   });
   buttons.unshift({
     class: "grand-design-growth",
@@ -163,8 +190,9 @@ Hooks.on("renderActorSheetV2", (sheet, element) => {
   const anchor = header.querySelector(".header-control");
   const importButton = buildHeaderControlButton("grand-design-import", "fa-solid fa-sparkles", "Grand Design", () => openImporter(sheet.actor));
   const growthButton = buildHeaderControlButton("grand-design-growth", "fa-solid fa-seedling", "Growth", () => openGrowthManager(sheet.actor));
-  if (anchor) anchor.before(importButton, growthButton);
-  else header.append(importButton, growthButton);
+  const registryButton = buildHeaderControlButton("grand-design-registry", "fa-solid fa-sitemap", "Grand Design Registry", () => openRegistryPanel(sheet.actor));
+  if (anchor) anchor.before(importButton, growthButton, registryButton);
+  else header.append(importButton, growthButton, registryButton);
 });
 
 // ApplicationV2 header controls are icon-only (no room for a visible label like V1's), so the

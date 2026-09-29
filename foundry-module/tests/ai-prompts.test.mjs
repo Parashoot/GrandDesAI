@@ -96,7 +96,7 @@ test("stage-2 red check lists every vice, and disappears when the table disables
   const { VICE_TAGS } = await import("../scripts/vice-taxonomy.js");
   const request = buildAiGatewayRequest(actor, "notes", "dnd5e");
   const on = systemText(buildProposalMessages({ request, config: { ...config, allowRed: true }, events }));
-  assert.match(on, /Red check, for EVERY proposal/);
+  assert.match(on, /Red check, BEFORE any proposal: fill "redCheck"/);
   for (const vice of VICE_TAGS) assert.match(on, new RegExp(`${vice}: `));
   const off = systemText(buildProposalMessages({ request, config: { ...config, allowRed: false }, events }));
   assert.doesNotMatch(off, /Red check/);

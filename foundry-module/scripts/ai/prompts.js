@@ -84,7 +84,7 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
     events: [
       { quote: "mira nat20 persuasion w/ the guard captain", summary: "Mira persuaded the guard captain brilliantly.", actorName: "Mira", tags: ["diplomacy"], themes: ["persuasion"], outcome: "criticalSuccess", dangerGap: "none", language: "en" },
       { quote: "torv rolled a 3 on stealth vs DC 15, got spotted", summary: "Torv tried to sneak past.", consequence: "He was spotted.", actorName: "Torv", tags: ["stealth"], themes: ["sneaking"], outcome: "failure", dangerGap: "none", language: "en" },
-      { quote: "ogre almost tpk'd us lol, we ran", summary: "The party fled from an ogre that nearly killed them all.", actorName: "", tags: ["mobility"], themes: ["escape"], outcome: "success", dangerGap: "severe", language: "en" }
+      { quote: "ogre almost tpk'd us lol, we ran", summary: "The party fled from an ogre that nearly killed them all.", actorName: "the party", tags: ["mobility"], themes: ["escape"], outcome: "success", dangerGap: "severe", language: "en" }
     ]
   },
   {
@@ -99,12 +99,16 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
       "Orla swung at the troll and got knocked flat lol. Dain's been carving a notch in his bow for every kill.",
       "- Tam ran the ferry solo all week",
       "- never lost a passenger",
-      "- harbourmaster offered him a permanent post"
+      "- harbourmaster offered him a permanent post",
+      "- a smuggler in a red coat tried to recruit him, he said he'd think about it"
     ].join("\n"),
     events: [
       { quote: "Orla swung at the troll and got knocked flat", summary: "Orla attacked the troll.", consequence: "She was knocked flat.", actorName: "Orla", tags: ["martial"], themes: ["melee"], outcome: "failure", dangerGap: "moderate", language: "en" },
       { quote: "Dain's been carving a notch in his bow for every kill", summary: "Dain carves a notch in his bow for every kill.", actorName: "Dain", tags: ["ranged"], themes: ["archery", "trophy-taking"], outcome: "success", dangerGap: "none", language: "en" },
-      { quote: "Tam ran the ferry solo all week", summary: "Tam ran the ferry alone all week.", consequence: "He never lost a passenger and the harbourmaster offered him a permanent post.", actorName: "Tam", tags: ["water", "leadership"], themes: ["ferrying"], outcome: "success", dangerGap: "none", language: "en" }
+      { quote: "Tam ran the ferry solo all week", summary: "Tam ran the ferry alone all week.", consequence: "He never lost a passenger and the harbourmaster offered him a permanent post.", actorName: "Tam", tags: ["water", "leadership"], themes: ["ferrying"], outcome: "success", dangerGap: "none", language: "en" },
+      // Board 4f3192e0: an approach or offer made TO a character is a "target" entry (the pipeline
+      // drops it); only thinking it over is no action of his.
+      { quote: "a smuggler in a red coat tried to recruit him", actorName: "Tam", actorRole: "target", summary: "A smuggler tried to recruit Tam.", tags: [], themes: ["recruitment"], outcome: "success", dangerGap: "none", language: "en" }
     ]
   },
   {
@@ -113,12 +117,72 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
       { quote: "Bram kept the monastery's beehives", summary: "Bram tended the monastery's beehives.", actorName: "Bram", tags: ["nature"], themes: ["beekeeping"], outcome: "success", dangerGap: "none", language: "en" },
       { quote: "sold the honey at market for a good price", summary: "Bram sold honey at the market for a good price.", actorName: "Bram", tags: [], themes: ["trading", "beekeeping"], outcome: "success", dangerGap: "none", language: "en" }
     ]
+  },
+  // A pasted group-chat recap (ember-road s1). Three things the model got wrong there, each shown once:
+  // "I/my" in a "Name:" line is Name; a deed one player reports about another is the DOER's event,
+  // in plain words (it had become nobody's event, or "dealt with a loose end"); and "lost 30g
+  // rigging cards" is a cheating attempt that failed, not an item that went missing (the model
+  // said so when asked why it skipped "lost the party's 40g rigging dice").
+  {
+    notes: [
+      "Rook: snuck us past the cultists 😎 and I may have 'handled' the old priest, don't ask",
+      "Sable: Sable see Rook push the old priest off the tower when he already give up. very bad. I pray for him after",
+      "Ivo: lost 30g of the party's money rigging cards lol (i was so close)",
+      "GM: next week the catacombs, someone bring snacks"
+    ].join("\n"),
+    events: [
+      { quote: "snuck us past the cultists", summary: "Rook sneaked the party past the cultists.", actorName: "Rook", tags: ["stealth", "support"], themes: ["sneaking"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "Sable see Rook push the old priest off the tower when he already give up", summary: "Rook pushed the old priest off the tower after the priest had surrendered.", actorName: "Rook", tags: ["athletics"], themes: ["killing-the-surrendered"], outcome: "success", darkDeed: "cruelty", darkSeverity: "serious", dangerGap: "none", language: "en" },
+      { quote: "I pray for him after", summary: "Sable prayed for the old priest.", actorName: "Sable", tags: ["religion"], themes: ["prayer"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "lost 30g of the party's money rigging cards", summary: "Ivo tried to cheat at cards by rigging them.", consequence: "He lost 30 gold of the party's money.", actorName: "Ivo", tags: ["deception", "thievery"], themes: ["gambling", "cheating"], outcome: "failure", dangerGap: "none", language: "en" }
+    ]
+  },
+  // Three more things ember-road s2 got wrong, each shown once (board 0cd50d30, 649aeb9f, 40d30e3d):
+  // (1) a second ability by the SAME actor right after a first one, joined by "then", is a new
+  // action, not the first one's payoff, even mid-combat (Thorn Lash was folded into Entangle and
+  // lost as its own event); continuesPrevious is false for it, same as the "kesh ... then he kick
+  // door" example above.
+  {
+    notes: "Rin's Web only tangled 1 of 3 raiders. Then her Ensnaring Strike caught the one going for the cart, holding it in place. Dorn finished it off with his axe.",
+    events: [
+      { quote: "Rin's Web only tangled 1 of 3 raiders", summary: "Rin cast Web on the raiders.", consequence: "It only tangled 1 of 3.", actorName: "Rin", tags: ["arcana"], themes: ["web"], outcome: "failure", dangerGap: "none", language: "en" },
+      { quote: "Then her Ensnaring Strike caught the one going for the cart, holding it in place", summary: "Rin used Ensnaring Strike on the raider going for the cart.", consequence: "It held the raider in place.", actorName: "Rin", tags: ["martial"], themes: ["ensnaring-strike"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "Dorn finished it off with his axe", summary: "Dorn killed the ensnared raider with his axe.", actorName: "Dorn", tags: ["martial"], themes: ["finishing-blow"], outcome: "success", dangerGap: "none", language: "en" }
+    ]
+  },
+  // (2) several named abilities in one comma list, with an outcome word attached to only the last
+  // one, are still that many separate events -- one per ability, not one event covering all of
+  // them (the model had merged "sacred flame, guiding bolt missed" into a single failed event,
+  // losing that Sacred Flame hit). The ability with no stated result defaults to success.
+  {
+    notes: "Kade cast Mage Armor, Fireball fizzled.",
+    events: [
+      { quote: "cast Mage Armor", summary: "Kade cast Mage Armor.", actorName: "Kade", tags: ["arcana"], themes: ["mage-armor"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "Fireball fizzled", summary: "Kade cast Fireball.", consequence: "It fizzled.", actorName: "Kade", tags: ["arcana"], themes: ["fireball"], outcome: "failure", dangerGap: "none", language: "en" }
+    ]
+  },
+  // (3) an activity can be named only by its result, with the verb left out and the actor only
+  // named in an earlier sentence ("Stew with Bael was wonderful" = she made stew with him): still
+  // her event, not scenery, and not folded into the unrelated failure before it (the model had
+  // dropped "bread w/ Oren was amazing" entirely).
+  {
+    notes: "Nessa's tomatoes in the flooded row rotted. Stew with Bael was wonderful, he finally told her about the sunken bell. She got the miller to grind their grain for free.",
+    events: [
+      { quote: "Nessa's tomatoes in the flooded row rotted", summary: "Nessa's tomatoes rotted in the flooded row.", actorName: "Nessa", tags: ["nature"], themes: ["gardening"], outcome: "failure", dangerGap: "none", language: "en" },
+      { quote: "Stew with Bael was wonderful", summary: "Nessa made stew with Bael.", consequence: "It was wonderful, and he finally told her about the sunken bell.", actorName: "Nessa", tags: ["craft"], themes: ["cooking"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "got the miller to grind their grain for free", summary: "Nessa persuaded the miller to grind their grain for free.", actorName: "Nessa", tags: ["diplomacy"], themes: ["negotiating"], outcome: "success", dangerGap: "none", language: "en" }
+    ]
   }
 ];
 
 // Examples show the ideal, already-merged answer, so every example event is continuesPrevious:false.
+// Key order mirrors EVENT_ITEM_SCHEMA (quote, actorName, actorRole, continuesPrevious first; darkDeed
+// and darkSeverity right after outcome, "none" unless the example says otherwise -- which also
+// shows the model that "none" is the normal answer, cheating at cards included).
 function exampleBlock(examples) {
-  const shaped = (events) => events.map(({ quote, ...rest }) => ({ quote, continuesPrevious: false, ...rest }));
+  const shaped = (events) => events.map(({ quote, actorName = "", actorRole = "doer", summary, consequence, tags, themes, outcome, darkDeed = "none", darkSeverity = "none", ...rest }) => ({
+    quote, actorName, actorRole, continuesPrevious: false, summary, ...(consequence !== undefined ? { consequence } : {}), tags, themes, outcome, darkDeed, darkSeverity, ...rest
+  }));
   return examples
     .map((ex, i) => `Example ${i + 1} notes:\n${ex.notes}\nExample ${i + 1} output:\n${JSON.stringify({ events: shaped(ex.events) })}`)
     .join("\n\n");
@@ -134,19 +198,30 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     "",
     "An EVENT is one thing a character actually attempted or did, whether it worked or not. One event per distinct action -- split compound sentences with several actions, and do not repeat the same action twice.",
     "An event INCLUDES its result. Whatever came of the action goes in that event's consequence field and outcome, NEVER in a new event: they got hurt, stung or knocked out; the crowd cheered or cried; the goods sold out or someone bought one; they were thrown out, moved on or offered a job; nobody was lost; the animal finally let them near; a fever broke; visions came; they learned the secret; the crit landed on the final blow; they won 2 of 3. A second line or bullet that only states such a result belongs to the event above it. Also no event that just restates or elaborates the same activity by the same person (\"brewed the ale\" + \"adjusted the malt\" is one brewing event).",
-    "Do not add a scene-level event (\"the party fought the warband\") when you also list what each character did in it. Something that merely happens TO a character (attacked, scared off, knocked down) is not their event.",
+    "Do not add a scene-level event (\"the party fought the warband\") when you also list what each character did in it. Something that merely happens TO a character (attacked, scared off, knocked down, read or sized up by someone, offered a deal, told a secret) is not their event. But money or gear lost BY DOING something is that doing, as a failure: \"lost 40g rigging dice\" = cheated at dice and lost 40g. Likewise a punishment stated on its own (\"got banned from the pie tent\", \"got arrested\") stands for the misdeed that earned it: that character's event, as a failure.",
+    "",
+    "WHO DID IT. Notes are often a group chat pasted together, one \"Name: text\" line per player. In such a line I/me/my means Name. A line can also report what ANOTHER character did (\"Sable saw Rook push the priest\", \"she catch Tovin killing...\"): that event belongs to the DOER (Rook, Tovin), not to the one who saw or tells it, and it is recorded even though the doer never mentioned it. We/us/the party acting together = \"the party\". Leave actorName \"\" only when the notes truly do not say who.",
+    "Write what was done in plain words. Never soften a deed: killing a prisoner or someone who surrendered stays exactly that in the summary, not \"dealt with a threat\" or \"tidied up a loose end\". When one line is coy (\"I may have handled a loose end\") and another line says what it was, record the deed ONCE, in the plain words, quoting the line that says it plainly (not the coy one).",
     "Habitual or ongoing actions count (\"has started taking trophies\", \"keeps sneaking out\", \"every night he prays\"), and so does an action mentioned only as a cause or aside (\"people hate us because Rhys threatened the priest\" -> Rhys threatened the priest).",
-    "NOT events: intentions or plans (\"wanted to\", \"was going to\", \"plans to\", \"next session\"), questions, attempts that explicitly never happened (\"didn't even try\", \"never got around to it\"), doing nothing, pure scenery or weather, rumours and legends, and anything out of character: reminders, notes-to-self, shopping lists, scheduling, rules questions, talk about the real players.",
+    "NOT events: intentions or plans (\"wanted to\", \"was going to\", \"plans to\", \"next session\"), questions, attempts that explicitly never happened (\"didn't even try\", \"never got around to it\"), doing nothing (including just declining or thinking over an offer: \"didn't take the deal\", \"said he'd think about it\"), pure scenery or weather, rumours and legends, and anything out of character: reminders, notes-to-self, shopping lists, scheduling, rules questions, talk about the real players.",
     "",
     "For every event give:",
     "- quote: the exact source fragment, copied verbatim in its original language (keep it short).",
+    "- actorName: the name of the character who DID it (see WHO DID IT), \"the party\" for a group action, else \"\".",
+    "- actorRole: \"doer\" when actorName actually did or attempted it. \"target\" when it only happened TO them and they did nothing: they were attacked, ambushed, knocked down, read or sized up, offered a deal or a job, told a secret, given something. What they then DID (fought back, bargained, climbed) is a separate doer entry; merely declining or thinking it over is not.",
+    // Board 07b9d93f (ember-road s1): "I got banned from a pie tent" was dropped as "target". A
+    // punishment is never random: it is the only trace in the notes of something the PC did.
+    "  Being banned, barred, thrown or kicked out, evicted, arrested, jailed, fined or run out of town is NOT \"target\": it is the result of the character's own misbehaviour, so it is a doer entry with outcome failure (\"got banned from the pie tent\" = misbehaved at the pie tent and was banned; summary says what they did as far as the notes tell, consequence says the ban).",
     "- continuesPrevious: true ONLY when this entry is just the result, payoff or an elaboration of the entry right before it (same person, same occasion: \"didn't lose a single guest\", \"the owner offered her a slot\", \"he adjusted the malt\"). false for any new action, even one of the same kind on another occasion.",
     `- summary: one short third-person sentence in ${lang} saying who did what.`,
     `- consequence: what came of it, if the notes say (one short ${lang} sentence), else "".`,
-    "- actorName: who did it, if the notes say (else \"\").",
     "- tags: 0-3 tags from ALLOWED TAGS that genuinely fit. Only these exact words.",
     "- themes: 1-3 short lowercase English slugs naming the SPECIFIC activity (e.g. lockpicking, beekeeping, innkeeping, gambling, cartography, brewing, poetry, haggling). Always give themes. If no tag fits, still record the event with tags [] and themes -- never drop an activity because no tag fits.",
     "- outcome: criticalSuccess | success | failure | criticalFailure. Failures are valuable evidence: always record them. criticalSuccess ONLY for nat 20 / crit / an explicitly spectacular result (a plain win with a nice payoff is just success). nat 1 / fumble / crit fail / badly hurt / backfired = criticalFailure. \"almost\"/\"nearly\" ... but = failure. A low roll or missed DC = failure. Attacked but got beaten, knocked out or flattened = failure. No outcome stated = success.",
+    // Batch 3 (board 21e944ed): Horror Rank now accrues from these, so false alarms cost a real
+    // character levels -- hence the long "none" list and the explicit "done TO them" exclusion.
+    `- darkDeed: "none" for almost every event. Only when what the DOER did is a genuinely vile, taboo act, the key it matches: ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice} (${meaning.replace(/\.$/, "")})`).join("; ")}. Killing someone who surrendered or was helpless (cruelty), torture (cruelty), breaking a captive's will (subjugation), eating a person (desecration), defiling a grave or holy relic (desecration), selling out an ally who trusted them (betrayal) = a dark deed. NOT dark deeds (\"none\"): fighting and killing in battle, self-defence, stealing, lying, bluffing, cheating at cards or dice, threatening, hard bargaining, smuggling, spying, drinking, a morally gray job, anything only planned, refused or thought about, and anything done TO the character.`,
+    "- darkSeverity: \"none\" when darkDeed is \"none\". Otherwise minor (a petty or small cruelty or betrayal), serious (killing a surrendered or helpless foe, torturing for information, betraying an ally), or monstrous (torture for pleasure, massacring innocents, eating a person). Being punished (banned, evicted, arrested) is never itself a dark deed.",
     "- dangerGap: severe only if they survived or beat a threat hopelessly beyond them; moderate for a clearly stronger or outnumbering foe; otherwise none. It is about the power gap, not the dice roll.",
     "- language: language code of the quote (en, es, pt, fr, de, it, el, tl, ja, ...).",
     "",
@@ -161,9 +236,14 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     "Output exactly {\"events\":[...]}. If nothing happened, output {\"events\":[]}."
   ].join("\n");
 
-  const actorName = request?.actor?.name ? `The notes are for the character "${request.actor.name}"${request.actor.systemLabel ? ` (${request.actor.systemLabel})` : ""}. Record actions by other characters too, with their actorName.\n` : "";
+  // Deliberately NOT naming the character being analysed. It used to say "The notes are for the
+  // character X", which (a) made the same party recap produce a different extraction per character,
+  // so it had to be re-run for every sheet (20-36 s each, ember-road s1), and (b) nudged the model to
+  // credit unnamed or first-person lines to X. Reading the notes is the same job whoever's sheet they
+  // were pasted into; per-character credit is decided afterwards from actorName. `request` is still
+  // accepted (unused) so callers need not change.
   const chunkLine = chunkCount > 1 ? `This is part ${chunkIndex + 1} of ${chunkCount} of the notes.\n` : "";
-  const user = `${actorName}${chunkLine}NOTES:\n<<<\n${notesChunk}\n>>>`;
+  const user = `${chunkLine}NOTES:\n<<<\n${notesChunk}\n>>>`;
   return [
     { role: "system", content: system },
     { role: "user", content: user }
@@ -187,7 +267,7 @@ export function creativityTemperature(config) {
 // `mustPropose`: the GM explicitly asked for suggestions (proposalMode "always") or a level-up grant
 // allowance is waiting to be spent. Without it a careful model answers {"proposals":[]} for any
 // single-session evidence -- which is right for "when-earned" and useless for "always".
-export function buildProposalMessages({ request, config, events, themeEvidence = {}, tagEvidence = {}, allowClass, mustPropose = false }) {
+export function buildProposalMessages({ request, config, events, themeEvidence = {}, tagEvidence = {}, allowClass, mustPropose = false, milestone = null, target = null, titles = false }) {
   const req = request.requirements ?? {};
   const polarity = config.allowRed
     ? req.polarityGuidance
@@ -196,11 +276,42 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
   const system = [
     "You design Grand Design growth proposals (new Skills, or a Class evolution) for a tabletop RPG character from evidence of what they actually did. Reply with JSON only: {\"proposals\":[...]}.",
     "Do not grant, approve, or claim to create any item -- the GM approves every proposal.",
-    mustPropose
-      ? `The GM has asked for suggestions now: propose at least 1 and at most ${config.maxProposals} proposals, built on the strongest evidence available even if it is a single event. Return {"proposals":[]} only when there are no events at all.`
-      : `Propose at most ${config.maxProposals} proposals, and only where the evidence genuinely supports one (repeated effort, including repeated failures). Return {"proposals":[]} when it does not.`,
+    target?.operation === "upgrade" || target?.operation === "combine"
+      ? `This is an ${target.operation === "upgrade" ? "EVOLUTION" : "MERGE"} request from the GM for entries the character already owns: return EXACTLY ONE proposal.`
+      : target
+      ? `This is an AUTHORING request: the GM asked you to write the real proposal for one placeholder, so return EXACTLY ONE proposal.`
+      : milestone
+      ? `This is a GUARANTEED Grand Design milestone reward, not an open-ended suggestion: return EXACTLY ONE proposal.`
+      : mustPropose
+        ? `The GM has asked for suggestions now: propose at least 1 and at most ${config.maxProposals} proposals, built on the strongest evidence available even if it is a single event. Return {"proposals":[]} only when there are no events at all.`
+        : `Propose at most ${config.maxProposals} proposals, and only where the evidence genuinely supports one (repeated effort, including repeated failures). Return {"proposals":[]} when it does not.`,
+    // api.js#resolveLevelRest asks for the capstone Skill and the Class evolution as two SEPARATE
+    // milestone calls even when both land on the same level (both are divisible-by-10 AND in
+    // CLASS_EVOLUTION_LEVELS at 20/30/50) -- each call wants exactly its own kind, never the other's.
+    ...(target ? [authoringInstruction(target)] : []),
+    ...(milestone ? [
+      milestone.kind === "capstone"
+        ? `MILESTONE CAPSTONE (Grand Design level ${milestone.level}): the ONE guaranteed capstone Skill every 10th level grants, independent of any Class evolution. kind MUST be "skill", tier MUST be 3, a concrete signature ability built from the single strongest recurring activity in newEvents/tagEvidence/themeEvidence -- never a generic placeholder left for the GM to flesh out. Do not propose a Class here even if one is otherwise available; a Class evolution (when this level also has one) is requested separately.`
+        : `MILESTONE CLASS EVOLUTION (Grand Design level ${milestone.level}): the guaranteed Class evolution this level grants. kind MUST be "class", built on the character's strongest repeated evidence. Do not propose a Skill here; only the Class.`
+    ] : []),
     "Every proposal is { kind: \"skill\" | \"class\", theme?: string, evidence: [short strings citing events], entry: {...} }. The entry is never nested under skillEntry/classEntry.",
     "metadata.tags may ONLY contain values from ALLOWED TAGS; put any other concept in metadata.themes instead.",
+    // Board 316705b6: "Sanctuary: Voice of Conviction" duplicated the owned "Sanctuary: Public Edict"
+    // (same Persuasion/Intimidation-vs-one-foe-then-Wisdom-save mechanic) under a new second half of
+    // the name -- the old dedupe was by name only, so it sailed through. actor.existingClassesAndSkills
+    // below carries each owned entry's effect, not just its name, specifically so this can be checked.
+    "Never propose a Skill or Class whose mechanics (what it actually lets the character do) duplicate or closely resemble one the character already owns (actor.existingClassesAndSkills, including its effect) -- not even under a new name. Build on what they have, or cover genuinely new ground.",
+    // Board 3574bd96: without these lists two "Suggest" clicks gave "Unbroken Bastion" then
+    // "Unbroken Bulwark", and one call gave five variants of the same archery volley.
+    ...(hasProposalLists(request.actor) ? ["The same goes for actor.pendingProposals (already written and waiting for the GM) and actor.rejectedByGm (the GM turned these down): never propose one of them again, a renamed variant, or the same idea with other numbers."
+      // Live regression 2026-09-29: with 4 archery ideas pending, the rule above alone made the model
+      // answer {"proposals":[]} to a GM who had just pressed Suggest.
+      + (mustPropose ? " If they already cover the obvious idea, that is a reason to look further, not to return nothing: build on another activity or theme in newEvents, or a different kind of ability (reaction, action, spell, weapon technique) with a different effect." : "")] : []),
+    "Each proposal in your reply must be a DIFFERENT idea (a different activity, or a clearly different use of it): never two variants of one ability.",
+    // Board 3962a001: "Hexblade: Infernal Pact" (Warlock 3) granted Pact Magic + Eldritch Blast, which
+    // every Warlock already has from level 1; "Shadowfingers: Sleight of Hand" granted a Rogue
+    // proficiency in Sleight of Hand and Thieves' Tools, which Rogues already start with.
+    "Never propose a Skill or Class that just restates a feature, spell, or proficiency the character's own base class already grants by this system's core rules (actor.systemClass) -- for example a Warlock already has Pact Magic and Eldritch Blast, a Rogue is already proficient with Thieves' Tools and its signature skills. A Grand Design proposal is something ADDITIONAL beyond that baseline chassis, never a reskin of it.",
     // The ">= 3" threshold made the model answer {"proposals":[]} for every single-event novel
     // activity even when the GM had asked for suggestions (20 of 22 empty "always" runs, 2026-09-24).
     mustPropose
@@ -209,15 +320,25 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     `Always include on every entry: name, gameItem.kind, mechanics.effect, mechanics.frequency {max >= 1, per: round|minute|hour|day|encounter|unlimited}, metadata.tags. A skill also needs tier (1, 2 or 3) and system_equivalent. A class also needs level, power_tier, is_primary, is_secondary, system_chassis.`,
     `Extra fields required per gameItem.kind: ${JSON.stringify(req.requiredFieldsByKind ?? {})}`,
     ...(req.rulesVocabulary ? [`Rules vocabulary -- write every effect, trigger and roll in THIS system's terms (the examples below only show the field shape): ${req.rulesVocabulary}`] : []),
-    `Naming: ${req.namingConvention ?? ""} Take the class motif from the character's Grand Design classes if it has any, else from actor.systemClass; never from the character's personal name. The motif is ONE evocative word you coin from that class plus this entry's own activity (for example a Ranger's trapping skill might be "Snarewright:", a Cleric's brewing skill "Altarbrew:"; never copy these example words), never the bare class name itself ("Fighter: ..." is wrong), and each proposal gets its own motif.`,
+    // Board 3962a001. Each list names the OTHER system's vocabulary plus terms that are neither
+    // system's real rules (an invented "durability system"; salt-lantern s1's "staggered", a flat
+    // round-count duration on a PF2e condition, "Craft check" for PF2e's Crafting skill).
+    request.actor?.system === "dnd5e"
+      ? "Never write: \"free action\" (that is PF2e's action economy), \"circumstance bonus\", \"off-guard\"/\"flat-footed\", \"per encounter\" (5e uses short/long rest or per turn), or an invented subsystem like a \"durability system\" this table never established."
+      : "Never write: \"bonus action\" (that is 5e's action economy), \"short rest\"/\"long rest\" (PF2e frequency is per round/minute/hour/day), \"staggered\" (not a PF2e condition), \"Craft check\" (PF2e's skill is Crafting), a PF2e condition given a flat \"for N rounds\" duration instead of its own rules (PF2e conditions run \"until the end of your next turn\" or count down a value), or an invented subsystem like a \"durability system\" this table never established.",
+    structuredInstruction(request.actor?.system),
+    `Naming: ${req.namingConvention ?? ""} Take the class motif from the character's Grand Design classes if it has any, else from actor.systemClass; never from the character's personal name. The motif is ONE evocative word you coin from that class plus this entry's own activity (for example a Ranger's trapping skill might be "Snarewright:", a Cleric's brewing skill "Altarbrew:"; never copy these example words), never the bare class name itself or its possessive ("Fighter: ..." and "Champion's Bulwark" are both wrong), and each proposal gets its own motif.`,
     ...(config.namingStyle ? [`GM naming style (takes priority): ${config.namingStyle}`] : []),
     `Polarity: ${polarity}`,
     // The guidance alone ("almost every proposal is standard") made the model pick standard even
     // for "broke the captured scout's will over three days" (3 of 8 red-worthy items were red).
     // A per-proposal check with the vice list as the match key makes the decision explicit.
-    ...(config.allowRed ? [`Red check, for EVERY proposal before you write it: compare its evidence (read the quotes) with this list. If one clearly matches, the proposal MUST be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- a matching pattern written up as a clean standard ability is wrong. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} If nothing matches, stay standard.`] : []),
+    ...(config.allowRed ? [`Red check, BEFORE any proposal: fill "redCheck" with one entry per newEvent, in order: { event: its summary, vice: the key from this list that it clearly matches (read the quote), else "none" }. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} Killing someone who surrendered or was helpless, torture, and breaking a captive's will always match. A newEvent that carries darkDeed was already read as that vice from its quote: use that key unless the quote plainly shows no such deed. Ordinary fighting, stealing, lying and bargaining are "none". Then, if any event has a vice and you propose anything, one proposal MUST cite that event in its evidence and be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- that deed written up as a clean standard ability, or left out, is wrong. Every other proposal stays standard.`] : []),
+    ...(titles ? [titleInstruction(config)] : []),
     `Failures: ${req.eventOutcomePhilosophy ?? ""}`,
-    `Class rule: ${req.classProposalRule ?? ""}${allowClass ? "" : " (Class evolution is NOT available right now: skills only.)"}`,
+    // "May" was never enough: at GD level 50 the model wrote only Skills (2 of 2 real runs), so the GM
+    // who reached a Class-evolution level and asked for suggestions was never offered a Class.
+    `Class rule: ${req.classProposalRule ?? ""}${!allowClass ? " (Class evolution is NOT available right now: skills only.)" : mustPropose ? " Class evolution IS available now: the FIRST proposal MUST be kind \"class\" - a Grand Design Class built on the character's strongest repeated evidence, using the class example's field set - and any others are Skills." : ""}`,
     `Creativity: ${CREATIVITY_WORDING[config.creativity] ?? CREATIVITY_WORDING.balanced}`,
     ...(config.houseRules ? [`House rules from the GM (follow them): ${config.houseRules}`] : []),
     ...(config.toneHints ? [`Tone hints from the GM: ${config.toneHints}`] : []),
@@ -228,10 +349,22 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
 
   const actor = request.actor ?? {};
   const registry = actor.existingGrandDesign ?? {};
-  const existingNames = [
-    ...Object.values(registry.classes ?? {}).map((entry) => entry?.name).filter(Boolean),
-    ...Object.values(registry.skills ?? {}).map((entry) => entry?.name).filter(Boolean)
-  ];
+  // Board 316705b6: only the NAME used to travel here, so the model had no way to notice that
+  // "Sanctuary: Voice of Conviction" was the same Persuasion/Intimidation-vs-one-foe-then-Wisdom-save
+  // mechanic as the owned "Sanctuary: Public Edict" under a different second half of the name. Each
+  // owned entry's effect now travels with its name (short: this is context, not the whole entry).
+  const existingEntries = [
+    ...Object.values(registry.classes ?? {}),
+    ...Object.values(registry.skills ?? {})
+  ]
+    .filter((entry) => entry?.name)
+    .map((entry) => ({
+      name: entry.name,
+      ...(typeof entry.mechanics?.effect === "string" && entry.mechanics.effect.trim()
+        ? { effect: entry.mechanics.effect.trim().slice(0, 200) }
+        : {})
+    }));
+  const ownedTitles = Object.values(registry.titles ?? {}).map((entry) => entry?.name).filter((name) => typeof name === "string" && name.trim()).slice(0, 20);
   const payload = {
     actor: {
       name: actor.name,
@@ -239,7 +372,16 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       level: actor.level,
       ...(actor.systemClass ? { systemClass: actor.systemClass } : {}),
       grandDesign: actor.grandDesign,
-      existingClassesAndSkills: existingNames.slice(0, 40)
+      existingClassesAndSkills: existingEntries.slice(0, 40),
+      // Board 3962a001: the character's own native class features/proficiencies (from the actual
+      // character sheet, outside Grand Design) -- a Warlock 3 already has Pact Magic and Eldritch
+      // Blast, a Rogue is already proficient in Sleight of Hand and Thieves' Tools. Only present when
+      // the system adapter can read them (ai-gateway.js#buildAiGatewayRequest); the "Never propose..."
+      // rule above still applies from general class knowledge when this list is empty.
+      ...(Array.isArray(actor.ownedFeatures) && actor.ownedFeatures.length ? { ownedFeatures: actor.ownedFeatures.slice(0, 40) } : {}),
+      ...(Array.isArray(actor.pendingProposals) && actor.pendingProposals.length ? { pendingProposals: nameAndEffect(actor.pendingProposals) } : {}),
+      ...(Array.isArray(actor.rejectedProposals) && actor.rejectedProposals.length ? { rejectedByGm: nameAndEffect(actor.rejectedProposals) } : {}),
+      ...(titles && ownedTitles.length ? { titles: ownedTitles } : {})
     },
     // The verbatim quote travels with the summary: summaries sanitize ("broke the scout's will over
     // three days" became "interrogated the scout"), which hid exactly the cues red polarity needs.
@@ -251,6 +393,9 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       themes: event.themes,
       outcome: event.outcome,
       ...(event.dangerGap ? { dangerGap: event.dangerGap } : {}),
+      // Batch 3: the vice stage 1 already read off the quote. Only when there is one, so the red
+      // check sees a flag on the rare dark event instead of "none" noise on every event.
+      ...(event.darkDeed && event.darkDeed !== "none" ? { darkDeed: event.darkDeed, darkSeverity: event.darkSeverity } : {}),
       ...(event.actorName ? { actorName: event.actorName } : {})
     })),
     tagEvidence: roundValues(tagEvidence),
@@ -261,6 +406,112 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     { role: "system", content: system },
     { role: "user", content: JSON.stringify(payload) }
   ];
+}
+
+// Batch 3 (board 5a0cea2e): approved growth used to become description-only Items. The schema's
+// per-system enums (structured.js) already stop wrong-system words; this says WHAT to fill, in the
+// words of this system's rules, so the numbers match the prose rather than being invented beside it.
+export function structuredInstruction(systemId) {
+  const common = "mechanics.structured: the SAME effect as data the character sheet can roll -- fill every part the effect text states, with the same numbers, and leave out every part it does not ({} only for a purely narrative ability). range and area are in feet.";
+  if (systemId === "dnd5e") {
+    return [
+      common,
+      "D&D 5e fields: attack {kind: melee|ranged|spell} when it makes an attack roll; damage [{dice: \"2d6\", type: acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder, bonus?}]; heal {dice, bonus?}; save {save: str|dex|con|int|wis|cha (the saving throw's ability), dc: \"spell\" (your spell save DC), \"class\" (8 + proficiency + ability) or a number}; advantage {on: attack|save:<ability>|skill:<skill>|check:<ability>, condition: when it applies} -- 5e's way to grant an edge, preferred over small bonuses; modifiers [{value, type: untyped, selector: ac|attack|damage|perception|initiative|save:<ability>|skill:<skill>}] (5e bonuses have no type);",
+      "range {value, units: \"ft\"}; area {type: cone|sphere|cube|cylinder|line|emanation, value}; condition {id: blinded|charmed|deafened|exhaustion|frightened|grappled|incapacitated|invisible|paralyzed|petrified|poisoned|prone|restrained|stunned|unconscious, value only for exhaustion, duration: e.g. \"until the end of your next turn\" or \"1 minute\"}; uses {max, per: turn|short-rest|long-rest|day}. Skills: acrobatics, animal-handling, arcana, athletics, deception, history, insight, intimidation, investigation, medicine, nature, performance, persuasion, religion, sleight-of-hand, stealth, survival."
+    ].join(" ");
+  }
+  return [
+    common,
+    "Pathfinder 2e fields: attack {kind: melee|ranged|spell} when it makes a Strike or spell attack; damage [{dice: \"2d6\", type: acid|bludgeoning|cold|electricity|fire|force|mental|piercing|poison|slashing|sonic|spirit|vitality|void|bleed, bonus?}]; heal {dice, bonus?}; save {save: fortitude|reflex|will, dc: \"class\" (your class DC), \"spell\" (your spell DC) or a number, basic: true for a basic save (no damage on a critical success, half on a success, double on a critical failure)}; modifiers [{value, type: circumstance|status|item, selector: ac|attack|damage|perception|initiative|save:fortitude|save:reflex|save:will|skill:<skill>, predicate?: when it applies}] -- PF2e has no advantage, use a circumstance or status bonus;",
+    "range {value, units: \"ft\"}; area {type: cone|burst|emanation|line, value}; condition {id: a PF2e condition slug such as frightened, off-guard, sickened, slowed, stunned, clumsy, enfeebled, stupefied, drained, dazzled, grabbed, immobilized, restrained, prone, fascinated, fleeing, value for valued conditions (frightened 1, slowed 1), duration: e.g. \"until the end of your next turn\" (a valued condition counts down on its own)}; uses {max, per: turn|round|encounter|hour|day}. Skills: acrobatics, arcana, athletics, crafting, deception, diplomacy, intimidation, medicine, nature, occultism, performance, religion, society, stealth, survival, thievery."
+  ].join(" ");
+}
+
+// api.js#requestProposalAuthoring: the GM pressed "Author with AI" on a placeholder ("<Theme> Knack",
+// a template, a capstone). Without this the model was never told WHAT to author (board 3d80edf3).
+function authoringInstruction(target) {
+  if (target.operation === "upgrade" || target.operation === "combine") return advancedInstruction(target);
+  const kind = target.kind === "class" ? "class" : "skill";
+  const what = target.label || target.theme || "the activity in newEvents";
+  const parts = [
+    `AUTHORING TARGET: replace the placeholder with ONE real ${kind === "class" ? "Class evolution" : "Skill"} built around "${what}"${target.theme ? ` (theme: ${target.theme}; put it in metadata.themes)` : ""}. kind MUST be "${kind}".`
+  ];
+  if (kind === "skill") {
+    if (Number.isInteger(target.tier)) parts.push(`tier MUST be ${target.tier}${target.isCapstone ? " (a capstone: the character's rare signature ability)" : ""}.`);
+    else parts.push("Keep it modest: tier 1 or 2.");
+  } else {
+    parts.push("Build it on the character's strongest repeated evidence, using the class example's field set. Do not return a Skill.");
+  }
+  parts.push("Cite the newEvents you used as evidence; they are exactly the deeds already recorded for this placeholder. Give it concrete mechanics in this system's own terms.");
+  if (target.placeholder?.name) {
+    const effect = typeof target.placeholder.effect === "string" ? ` -- "${target.placeholder.effect.slice(0, 200)}"` : "";
+    parts.push(`The generic placeholder being replaced is "${target.placeholder.name}"${effect}. Do NOT reuse its name or wording; write something specific to what this character actually did.`);
+  }
+  return parts.join(" ");
+}
+
+// Boards ebcc3f03 / d4ae9326 (api.requestSkillEvolution / requestClassMerge): canon's [Power Strike]
+// -> [Minotaur Punch], and comma classes. The deterministic fallbacks (skill-evolution.js,
+// class-merging.js) could only rename and re-tier the source; the model is asked for what they
+// cannot do -- mechanics that GROW from the source's, in this system's terms, named in the actor's
+// motif. Tier / power tier / lineage are decided in code (pipeline.js#applyAdvancedTarget), so the
+// prompt states them as facts rather than asking the model to work them out.
+function advancedInstruction(target) {
+  const sources = (target.sources ?? []).map((source) => {
+    const out = { name: source.name };
+    for (const key of ["tier", "level", "power_tier", "focus", "polarity"]) if (source[key] !== undefined && source[key] !== null && source[key] !== "") out[key] = source[key];
+    if (typeof source.effect === "string" && source.effect.trim()) out.effect = source.effect.trim().slice(0, 300);
+    if (Array.isArray(source.tags) && source.tags.length) out.tags = source.tags.slice(0, 8);
+    if (Array.isArray(source.definingMoments) && source.definingMoments.length) out.definingMoments = source.definingMoments.slice(0, 6).map((m) => String(m).slice(0, 200));
+    return out;
+  });
+  const nameRule = target.name
+    ? `The GM already chose the name: "${target.name}" -- use exactly that.`
+    : "Give it a NEW name (never a source's name, never the source name plus \"Greater\"/\"II\"/\"Improved\"), in the character's own class motif per the naming rules.";
+  if (target.operation === "upgrade") {
+    return [
+      `SKILL EVOLUTION: the character's Skill below has been used and tested enough to EVOLVE. Return ONE proposal, kind "skill", tier ${target.tier}: the evolved form of this Skill.`,
+      `SOURCE SKILL: ${JSON.stringify(sources[0] ?? {})}`,
+      "Building on the source(s) is the point here: the rule against duplicating owned entries does not apply to them (it still applies to everything else the character owns).",
+      "The evolved Skill is the same ability grown stronger and stranger, NOT a copy with a bigger number and NOT an unrelated new ability: keep its core action/trigger recognisable, then add what the defining moments (and newEvents) show it has become -- a wider reach, an extra rider effect, a new use, fewer limits. Its effect text must differ from the source's.",
+      `${nameRule} Evidence: cite the defining moments. metadata.lineage: { operation: "upgrade", sources: [the source id], rationale: one sentence quoting or naming the defining moments that made it evolve }.`,
+      sources[0]?.polarity === "red" ? "The source is a red (taboo) Skill: the evolved form stays metadata.polarity \"red\" with the same vice and a drawback at least as heavy." : "Keep the source's polarity."
+    ].join(" ");
+  }
+  return [
+    `CLASS MERGE: the character's Classes below fuse into ONE Class. Return ONE proposal, kind "class", level ${target.level ?? "the highest source level"}, power_tier "${target.powerTier ?? "standard"}"${target.focusNote ? ` (${target.focusNote})` : ""}.`,
+    `SOURCE CLASSES: ${JSON.stringify(sources)}`,
+    "Building on the source(s) is the point here: the rule against duplicating owned entries does not apply to them (it still applies to everything else the character owns).",
+    "The merged Class keeps the heart of every source and makes them work TOGETHER in one concrete mechanic -- not a list of both sources' effects glued together, and not one source ignoring the other. Take the primary source (highest level/power) as the chassis.",
+    `${nameRule} Evidence: cite what the sources did together. metadata.lineage: { operation: "combine", sources: [every source id], rationale: one sentence on why these belong together }.`,
+    sources.some((s) => s.polarity === "red") ? "A source is red (taboo): the merged Class stays metadata.polarity \"red\" with that vice and a drawback that carries forward." : "",
+    "is_primary true, is_secondary false."
+  ].filter(Boolean).join(" ");
+}
+
+// Board 7b616fea. Canon: [Trollbane], [Hero of Liscor], [Butcher of the Bridge] -- a name others give
+// for a deed. Sparing by design: the "almost always []" line and the one-item cap are what keep a
+// merely good session from minting a title every time.
+function titleInstruction(config) {
+  return [
+    "TITLES (rare): besides proposals you may fill \"titles\" with AT MOST ONE Title -- a name the world would call this character for ONE notable deed in newEvents. Only for: a named or notorious foe killed or driven off (\"Trollbane\"), a rescue people will talk about, a feat of infamy, or a reputation the notes state outright (\"the whole town calls her ...\"). Ordinary fights, checks, downtime and good sessions earn NO title: leave titles [] (almost always).",
+    "A title: deed = the exact quote from newEvents it is for; name = a short epithet (\"Trollbane\", \"The Bridge-Holder\", never the character's own name or class); description = one sentence on what people say about them; tags from ALLOWED TAGS. No mechanics.",
+    config.allowRed
+      ? "A title for a vile deed (the red check's vices) is polarity \"red\" with vice <that key> and drawback = how people now treat the bearer; otherwise polarity \"standard\", vice \"none\"."
+      : "polarity is always \"standard\", vice \"none\".",
+    "Never repeat a title the character already has (actor.titles) or one in pendingProposals/rejectedByGm."
+  ].join(" ");
+}
+
+function hasProposalLists(actor) {
+  return Boolean((Array.isArray(actor?.pendingProposals) && actor.pendingProposals.length) || (Array.isArray(actor?.rejectedProposals) && actor.rejectedProposals.length));
+}
+
+function nameAndEffect(list) {
+  return list.slice(-15).map((item) => ({
+    name: item.name,
+    ...(typeof item.effect === "string" && item.effect.trim() ? { effect: item.effect.trim().slice(0, 200) } : {})
+  }));
 }
 
 function roundValues(map) {

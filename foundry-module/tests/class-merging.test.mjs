@@ -11,6 +11,19 @@ import {
 } from "../scripts/class-merging.js";
 import { validateClassEntry } from "../scripts/validator.js";
 
+// Legendary titles are picked from every epithet x role x domain combination by a stable hash of the
+// source ids (board 574707d8), so tests assert the bank, not index 0.
+function assertLegendaryTitle(name, bank) {
+  const match = /^The (.+?) (.+) of (.+)$/.exec(name);
+  assert.ok(match, `"${name}" has the "The <epithet> <role> of <domain>" shape`);
+  const ok = bank.epithets.some((epithet) => bank.roles.some((role) => bank.domains.some((domain) =>
+    name === `The ${epithet} ${role} of ${domain}`)));
+  assert.ok(ok, `"${name}" is built from the expected bank`);
+}
+const OCCULT_BANK = { epithets: ["Ephemeral", "Veiled", "Half-Remembered"], roles: ["Purveyor", "Custodian", "Wanderer"], domains: ["Lost Dreams", "the Unspoken Hour", "the Dreaming Dark"] };
+const POLYMATH_BANK = { epithets: ["Boundless", "All-Walking", "Ever-Learning"], roles: ["Polymath", "Virtuoso", "Sage"], domains: ["Ten Thousand Paths", "Every Discipline", "No Single Road"] };
+const BLOODLUST_BANK = { epithets: ["Blood-Soaked", "Unrepentant", "Ravenous"], roles: ["Reaver", "Butcher", "Executioner"], domains: ["a Thousand Kills", "the Endless Slaughter", "the Red Ledger"] };
+
 // Three thematically disjoint sources (no tag overlap at all -> focus 0), used throughout the
 // intentional-generalism tests below so the "unrewarded scatter" vs. "deliberate breadth" cases
 // differ ONLY in the `intentional` flag, not in the underlying focus math.
@@ -106,7 +119,12 @@ test("a tightly focused, prestige-tier merge at the level-50 checkpoint earns a 
 
   assert.equal(focusScore, 1, "identical tag sets are maximally focused");
   assert.equal(powerTier, "prestige");
-  assert.equal(name, "The Ephemeral Purveyor of Lost Dreams");
+  assertLegendaryTitle(name, OCCULT_BANK);
+  assert.equal(
+    buildMergedClassName({ sourceClasses: [dreamWarden, veiledSeer], powerTier, focusScore, level: LEGENDARY_TITLE_LEVEL }),
+    name,
+    "the same sources in any order get the same title"
+  );
 });
 
 test("the same tightly focused pair below level 50 still gets the comma name, not the legendary title", () => {
@@ -220,7 +238,7 @@ test("an intentional generalist that reaches level 50 at prestige earns its own 
   const tier = resolveMergedPowerTier(sources, focusScore, { intentional: true });
   assert.equal(tier, "prestige");
   const name = buildMergedClassName({ sourceClasses: sources, powerTier: tier, focusScore, level: LEGENDARY_TITLE_LEVEL, intentional: true });
-  assert.equal(name, "The Boundless Polymath of Ten Thousand Paths");
+  assertLegendaryTitle(name, POLYMATH_BANK);
 });
 
 test("describeMergeRationale calls out intentional breadth explicitly, distinct from an uncommitted scatter", () => {
@@ -291,5 +309,5 @@ test("a red merge that reaches the legendary checkpoint gets a dark, vice-keyed 
   const { focusScore } = computeMergeFocus([a, b]);
   assert.ok(focusScore >= 0.5, `expected a tightly focused red pair, got ${focusScore}`);
   const name = buildMergedClassName({ sourceClasses: [a, b], powerTier: "prestige", focusScore, level: LEGENDARY_TITLE_LEVEL, polarity: "red", vice: "bloodlust" });
-  assert.equal(name, "The Blood-Soaked Reaver of a Thousand Kills");
+  assertLegendaryTitle(name, BLOODLUST_BANK);
 });

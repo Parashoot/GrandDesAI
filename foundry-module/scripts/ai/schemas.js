@@ -14,7 +14,8 @@
 //
 // Pure ESM, zero Foundry globals.
 
-import { CANONICAL_TAGS, OUTCOMES } from "./normalize.js";
+import { CANONICAL_TAGS, OUTCOMES, DARK_SEVERITIES } from "./normalize.js";
+import { structuredMechanicsSchema } from "./structured.js";
 import { FREQUENCY_PERIODS, GRAND_DESIGN_ITEM_KINDS, SPELL_SCHOOLS } from "../constants.js";
 import { VICE_TAGS } from "../vice-taxonomy.js";
 
@@ -24,6 +25,18 @@ export const EVENT_ITEM_SCHEMA = {
   type: "object",
   properties: {
     quote: { type: "string" },
+    // The DOER, decided right after the source fragment and before anything is summarized. It used to
+    // be optional and late in the object, and qwen3.8 then omitted it on every event of a party recap
+    // (ember-road s1: 0 of 18 events named) -- so per-character credit had nothing to go on. Required
+    // + early makes the model commit to "who did this" while it is looking at the quote, which is
+    // also what lets "Luz saw Tovin kill..." be recorded for Tovin rather than for the reporter.
+    actorName: { type: "string" },
+    // Board 4f3192e0: did actorName DO this, or did it only happen TO them? The prompt rule alone
+    // ("something that merely happens TO a character is not their event") left "Tovin was read very
+    // well by a woman who wants a year of his dreams" as a success/occultism event for Tovin. Deciding
+    // it as a field, right after naming the character, works where the rule did not (this model
+    // follows schema fields better than prose rules). "target" entries are dropped in pipeline.js.
+    actorRole: { type: "string", enum: ["doer", "target"] },
     // Model-declared "this line is only the payoff/elaboration of the previous event". Prompting alone
     // never stopped the split (see pipeline.js#mergeFollowUpEvents); a flag lets the model record the
     // line AND lets us fold it deterministically. Right after quote so it is decided from the source.
@@ -33,14 +46,19 @@ export const EVENT_ITEM_SCHEMA = {
     // ("didn't lose a single guest", "the owner offered her a slot") and emits it as a second event,
     // which inflates evidence and was the main count error in the 2026-09-24 corpus run.
     consequence: { type: "string" },
-    actorName: { type: "string" },
     tags: { type: "array", items: { type: "string", enum: CANONICAL_TAGS } },
     themes: { type: "array", items: { type: "string" } },
     outcome: { type: "string", enum: OUTCOMES },
+    // Batch 3 (board 21e944ed): Horror Rank accrues from the red DEEDS the notes record, so the vice
+    // is decided per event, at extraction, while the model is looking at the quote -- the same
+    // "a required field beats a prompt rule" lesson as continuesPrevious and the stage-2 redCheck.
+    // Right after outcome (contract section 1); "none" is the overwhelmingly common answer.
+    darkDeed: { type: "string", enum: ["none", ...VICE_TAGS] },
+    darkSeverity: { type: "string", enum: DARK_SEVERITIES },
     dangerGap: { type: "string", enum: DANGER_GAP_VALUES },
     language: { type: "string" }
   },
-  required: ["quote", "continuesPrevious", "summary", "tags", "themes", "outcome", "dangerGap"]
+  required: ["quote", "actorName", "actorRole", "continuesPrevious", "summary", "tags", "themes", "outcome", "darkDeed", "darkSeverity", "dangerGap"]
 };
 
 export const EVENT_EXTRACTION_SCHEMA = {
@@ -51,30 +69,42 @@ export const EVENT_EXTRACTION_SCHEMA = {
   required: ["events"]
 };
 
-const MECHANICS_SCHEMA = {
-  type: "object",
-  properties: {
-    effect: { type: "string" },
-    duration: { type: "string" },
-    frequency: {
-      type: "object",
-      properties: {
-        max: { type: "integer" },
-        per: { type: "string", enum: [...FREQUENCY_PERIODS] }
+// Batch 3 (board 5a0cea2e): `structured` carries the numbers a system adapter turns into real item
+// data (structured.js). REQUIRED, with every sub-field optional: an optional block is one this
+// model simply never writes (schema fields beat prompt rules), while a required object it may leave
+// {} for a purely narrative ability. It comes right after `effect`, so the numbers are copied out of
+// the prose the model has just written instead of the prose being written to fit the numbers.
+function mechanicsSchema(systemId) {
+  return {
+    type: "object",
+    properties: {
+      effect: { type: "string" },
+      structured: structuredMechanicsSchema(systemId),
+      duration: { type: "string" },
+      frequency: {
+        type: "object",
+        properties: {
+          max: { type: "integer" },
+          per: { type: "string", enum: [...FREQUENCY_PERIODS] }
+        },
+        required: ["max", "per"]
       },
-      required: ["max", "per"]
+      actions: { type: "integer" },
+      trigger: { type: "string" },
+      roll: {
+        type: "object",
+        properties: { kind: { type: "string" }, formula: { type: "string" } }
+      }
     },
-    actions: { type: "integer" },
-    trigger: { type: "string" },
-    roll: {
-      type: "object",
-      properties: { kind: { type: "string" }, formula: { type: "string" } }
-    }
-  },
-  required: ["effect", "frequency"]
-};
+    required: ["effect", "structured", "frequency"]
+  };
+}
 
-export const PROPOSAL_ENTRY_SCHEMA = {
+export const PROPOSAL_ENTRY_SCHEMA = proposalEntrySchema(null);
+
+/** The proposal entry schema with this system's structured-mechanics vocabulary (null = the contract superset). */
+export function proposalEntrySchema(systemId) {
+  return {
   type: "object",
   properties: {
     name: { type: "string" },
@@ -97,7 +127,7 @@ export const PROPOSAL_ENTRY_SCHEMA = {
       },
       required: ["kind"]
     },
-    mechanics: MECHANICS_SCHEMA,
+    mechanics: mechanicsSchema(systemId),
     metadata: {
       type: "object",
       properties: {
@@ -121,18 +151,23 @@ export const PROPOSAL_ENTRY_SCHEMA = {
     }
   },
   required: ["name", "gameItem", "mechanics", "metadata"]
-};
+  };
+}
 
-export const PROPOSAL_ITEM_SCHEMA = {
-  type: "object",
-  properties: {
-    kind: { type: "string", enum: ["skill", "class"] },
-    theme: { type: "string" },
-    evidence: { type: "array", items: { type: "string" } },
-    entry: PROPOSAL_ENTRY_SCHEMA
-  },
-  required: ["kind", "entry", "evidence"]
-};
+function proposalItemSchema(entry) {
+  return {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["skill", "class"] },
+      theme: { type: "string" },
+      evidence: { type: "array", items: { type: "string" } },
+      entry
+    },
+    required: ["kind", "entry", "evidence"]
+  };
+}
+
+export const PROPOSAL_ITEM_SCHEMA = proposalItemSchema(PROPOSAL_ENTRY_SCHEMA);
 
 export const PROPOSAL_SCHEMA = {
   type: "object",
@@ -146,11 +181,53 @@ export const PROPOSAL_SCHEMA = {
 // looped out 15+ near-duplicate proposals per call (the pipeline kept 3) -- a grammar-level maxItems
 // stops the decoder at the cap instead of burning the output budget. Tagged so schemaName() still
 // recognizes it for the OpenAI json_schema name.
-export function proposalSchemaCapped(maxProposals) {
+// `redCheck: true` puts a per-event vice verdict BEFORE the proposals. The prompt-only red check
+// was skipped when the model built its proposal on other events: ember-road s1 "Tovin killed a
+// goblin that was surrendering" (theme killing-the-surrendered) was never cited, and the one
+// proposal was a clean "Infernal Pact". A required field is decided event by event, first.
+export const RED_CHECK_SCHEMA = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: { event: { type: "string" }, vice: { type: "string", enum: ["none", ...VICE_TAGS] } },
+    required: ["event", "vice"]
+  }
+};
+
+// Board 7b616fea: a Title ([Trollbane], [Hero of the Bridge]) is a name the world gives a character
+// for ONE deed, with no mechanics block -- so it gets its own small list instead of the Skill/Class
+// entry shape (whose required gameItem/mechanics would make the model invent a rules effect for it).
+// `deed` comes first so the model grounds the title in a quoted line before naming it. The list is
+// not required and is capped at one: titles are rare, and a required list is one a model feels it
+// must fill.
+export const TITLE_ITEM_SCHEMA = {
+  type: "object",
+  properties: {
+    deed: { type: "string" },
+    name: { type: "string" },
+    description: { type: "string" },
+    polarity: { type: "string", enum: ["standard", "red"] },
+    vice: { type: "string", enum: ["none", ...VICE_TAGS] },
+    drawback: { type: "string" },
+    tags: { type: "array", items: { type: "string", enum: CANONICAL_TAGS } }
+  },
+  required: ["deed", "name", "description", "polarity"]
+};
+
+// `systemId` swaps in that system's structured-mechanics enums (structured.js); omitted, the
+// contract's cross-system superset is used.
+export function proposalSchemaCapped(maxProposals, { redCheck = false, titles = false, systemId = null } = {}) {
   const max = Number.isInteger(maxProposals) && maxProposals > 0 ? maxProposals : 3;
+  const items = systemId ? proposalItemSchema(proposalEntrySchema(systemId)) : PROPOSAL_ITEM_SCHEMA;
+  const proposals = { type: "array", items, maxItems: max };
   return {
     ...PROPOSAL_SCHEMA,
-    properties: { proposals: { ...PROPOSAL_SCHEMA.properties.proposals, maxItems: max } },
+    properties: {
+      ...(redCheck ? { redCheck: RED_CHECK_SCHEMA } : {}),
+      proposals,
+      ...(titles ? { titles: { type: "array", items: TITLE_ITEM_SCHEMA, maxItems: 1 } } : {})
+    },
+    required: redCheck ? ["redCheck", "proposals"] : PROPOSAL_SCHEMA.required,
     [CAPPED_OF]: PROPOSAL_SCHEMA
   };
 }

@@ -1,6 +1,6 @@
 # ember-road - session 1 - module report
 
-System **dnd5e**, model `qwen3.8:27b`, proposals `when-earned`, analysed 2026-09-27 18:05. The played scene is in `transcript.md`.
+System **dnd5e**, model `qwen3.8:27b`, proposals `when-earned`, analysed 2026-09-27 22:18. The played scene is in `transcript.md`.
 
 ## Session notes (as the DM wrote them)
 
@@ -20,16 +20,16 @@ System **dnd5e**, model `qwen3.8:27b`, proposals `when-earned`, analysed 2026-09
 
 ## Brakka the Fighter (player: the-tank)
 
-- Read by: **adapter** in 21.0s
+- Read by: **adapter** in 24.4s
 - Grand Design level 0 -> 0, progress 0 -> 88, grant allowances 0
 - Long rest: no level gained
 
 ### What the module read (2 events)
 
 - **Brakka:** Brakka held the bridge against a troll and kept the goblins in line until the watch arrived. — `success` (danger: severe) [defense, leadership, ~holding-a-line, ~crowd-control]
-- **Brakka:** Brakka won two fights in the pit and lost the third to the champion. — `success` [martial, ~arena-fighting]
+- **Brakka:** Brakka fought in the pit, winning two bouts and losing the third to the champion. — `success` [martial, ~brawling, ~competition]
 
-New emergent themes: holding-a-line, crowd-control, arena-fighting
+New emergent themes: holding-a-line, crowd-control, brawling, competition
 
 ### Proposals waiting for the GM (0)
 
@@ -39,18 +39,19 @@ GM screen: `gm-view-brakka.html`
 
 ## Wick the Rogue (player: chaos-gremlin)
 
-- Read by: **adapter** in 20.9s
-- Grand Design level 0 -> 0, progress 0 -> 81, grant allowances 0
+- Read by: **adapter** in 0.0s
+- Grand Design level 0 -> 0, progress 0 -> 88, grant allowances 0
 - Long rest: no level gained
 
-### What the module read (4 events)
+### What the module read (5 events)
 
-- **Wick:** Wick rode an ox into a fight with a troll. — `success` (danger: severe) [nature, ~mounting, ~combat]
+- **Wick:** Wick rode an ox into a fight with a troll. — `success` (danger: severe) [nature, ~horsemanship, ~combat]
 - **Wick:** Wick lost his dagger to the river. — `failure` [~losing-gear]
-- **Wick:** Steve the ox lost a race by sitting down. — `failure` [~racing]
-- **Wick:** Wick was banned from a pie tent. — `failure` [~social-conflict]
+- **Wick:** Wick's ox, Steve, lost a race by sitting down. — `failure` [nature, ~animal-racing]
+- **Wick:** Wick was banned from a pie tent. — `failure` [~social-mishap]
+- **Wick:** Wick tried to cheat at dice by rigging them. — `failure` [deception, thievery, ~gambling, ~cheating]
 
-New emergent themes: mounting, combat, losing-gear, racing, social-conflict
+New emergent themes: horsemanship, combat, losing-gear, animal-racing, social-mishap, gambling, cheating
 
 ### Proposals waiting for the GM (0)
 
@@ -60,21 +61,21 @@ GM screen: `gm-view-wick.html`
 
 ## Maren the Druid (player: cottagecore)
 
-- Read by: **adapter** in 20.4s
+- Read by: **adapter** in 0.0s
 - Grand Design level 0 -> 1, progress 0 -> 75, grant allowances 1
 - Long rest: reached Grand Design level 1
 
 ### What the module read (7 events)
 
-- **Maren:** Maren rooted three out of four goblins in place with entangle. — `success` [primal, spellcasting, ~crowd-control]
+- **Maren:** Maren used entangle to root three of four goblins in place. — `success` [primal, spellcasting, ~crowd-control]
 - **Maren:** Maren healed Brakka. — `success` [medicine, support, ~healing]
-- **Maren:** Maren thorn-whipped the last goblin into the burning railing. — `success` [primal, fire, spellcasting, ~combat]
-- **Maren:** Maren patched up the surrendered goblins. — `success` [medicine, support, ~first-aid]
+- **Maren:** Maren thorn-whipped the last goblin into the burning railing. — `success` [primal, spellcasting, ~combat]
+- **Maren:** Maren treated the surrendered goblins. — `success` [medicine, ~first-aid]
 - **Maren:** Maren sold out of honey. — `success` [~trading]
-- **Maren:** Maren placed second in the bake-off with a lavender honey loaf. — `success` [craft, ~baking, ~competition]
-- **Maren:** Maren adopted a stable cat. — `success` [nature, ~pet-adoption]
+- **Maren:** Maren placed second in a bake-off with a lavender honey loaf. — `success` [craft, ~baking, ~competition]
+- **Maren:** Maren adopted a stable cat. — `success` [nature, ~pet-ownership]
 
-New emergent themes: healing, first-aid, trading, baking, competition, pet-adoption
+New emergent themes: healing, first-aid, trading, baking, pet-ownership
 
 ### Proposals waiting for the GM (0)
 
@@ -84,17 +85,17 @@ GM screen: `gm-view-maren.html`
 
 ## Tovin the Warlock (player: dark-path)
 
-- Read by: **adapter** in 20.3s
+- Read by: **adapter** in 0.0s
 - Grand Design level 0 -> 0, progress 0 -> 94, grant allowances 0
 - Long rest: no level gained
 
 ### What the module read (3 events)
 
-- **Tovin:** Tovin torched a troll. — `success` (danger: severe) [fire, ~burning, ~combat]
+- **Tovin:** Tovin torched a troll. — `success` (danger: severe) [fire, spellcasting, ~combat]
 - **Tovin:** Tovin lost a bet in the pit. — `failure` [~gambling]
-- **Tovin:** Tovin quietly eliminated a loose end on the bridge. — `success` [deception, ~cover-up, ~secret-action]
+- **Tovin:** Tovin killed a goblin that was surrendering on the bridge. — `success` [martial, ~killing-the-surrendered]
 
-New emergent themes: burning, gambling, cover-up, secret-action
+New emergent themes: killing-the-surrendered
 
 ### Proposals waiting for the GM (0)
 
@@ -104,17 +105,16 @@ GM screen: `gm-view-tovin.html`
 
 ## Luz the Cleric (player: non-native)
 
-- Read by: **adapter** in 21.8s
-- Grand Design level 0 -> 0, progress 0 -> 75, grant allowances 0
+- Read by: **adapter** in 0.0s
+- Grand Design level 0 -> 0, progress 0 -> 50, grant allowances 0
 - Long rest: no level gained
 
-### What the module read (3 events)
+### What the module read (2 events)
 
-- **Luz:** Luz healed Brakka to full health after the troll fight. — `success` [medicine, divine, support, spellcasting, ~healing]
-- **Luz:** Luz witnessed Tovin killing a surrendering goblin. — `success` [lore, ~witnessing, ~moral-conflict]
-- **Luz:** Luz led the dawn blessing at the temple. — `success` [religion, divine, leadership, ~ritual]
+- **Luz:** Luz healed Brakka to full health after the troll fight. — `success` [medicine, divine, support, ~healing]
+- **Luz:** Luz led the dawn blessing at the temple. — `success` [religion, ~ritual, ~prayer]
 
-New emergent themes: witnessing, moral-conflict, ritual
+New emergent themes: ritual, prayer
 
 ### Proposals waiting for the GM (0)
 

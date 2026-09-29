@@ -1,0 +1,2764 @@
+{
+ "campaign": "salt-lantern",
+ "system": "pf2e",
+ "session": 2,
+ "model": "qwen3.8:27b",
+ "proposalMode": "when-earned",
+ "at": "2026-09-28T20:37:44.894Z",
+ "notes": "sl s2 (typed on my phone sorry)\n\ndrowned chapel under the reef\n- buck read rest of logbook (learned the script lol) - salt mother = sea hag, keeper traded the light for his drowned daughter\n- doro champ devotion crit? no just success, +1 next save. hit the chest w/ hammer, bounced\n- pim peeked in chest untrained arcana CF, brine to face. then yeeted the chest onto the altar right to the hag 🤦\n- ione talked thru the chest (dip succ) - its MARIS the daughter trapped inside as seawater kid. glafka light scout nothing\n- buck jumped for altar fail, then ARM WRESTLED the hag's hand coming out of the water & lost by 1 (23 v 24) got dragged under 😭\n- kestrel shot the altar 8 dmg, hag shows up + 2 drowned sailors\n\nfight\n- r1 doro nat1 smashed a pew. hag nat1 on doro too lmao\n- pim improvised blinding w/ salt SUCC, hag blinded. swam to buck\n- buck underwater: water ballet trip nat1, kick miss, wall run fail. fort save succ held breath\n- kestrel salt-wind shot hit 7, 2nd miss\n- ione begged hag to let maris go CF, cantrip missed, sailor hit her 10\n- r2 doro crit the chest lock 27 🔓 buck failed to yank chest but NAT20 ripped the lid off!!\n- ione fire on hag 13, shoved the sailor off her\n- pim tried to tow ione to shore nat1 both sank\n- kestrel shot at chest miss\n- maris out, back to a girl by dawn. hag let go + melted into the tide (got away)\n\nweek in brinemouth\n- doro shield drills fail, helped at fish market (dip succ), scholar lore on salt mother (arc succ), arm wrestling NAT 20 champion of the tavern 🏆\n- pim dried his stuff nat1 = thieves tools ruined, tried to steal shiny fish scales fail, arm wrestling fail\n- ione texts w/ scholar succ, lighthouse inscriptions fail, \"θα μάθω να παλεύω με το χέρι\" learned arm wrestling... fail\n- buck arm wrestling AGAIN fail (3 sessions straight), taught maris a cartwheel succ ❤️, diving contest vs fisherman fail\n- kestrel archery fail, gozreh temple lore succ, WON the arm wrestling tournament\n- town pays half the new lens we owe the rest\n\nnext: the hag got away. bring hero points. does blinded stack w/ off-guard? ask doro lol",
+ "results": [
+  {
+   "name": "Doro",
+   "className": "Champion",
+   "persona": "rules-lawyer",
+   "restType": "long",
+   "ms": 32154,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790627844425-6",
+      "summary": "Doro used Champion Devotion.",
+      "tags": [
+       "divine"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:24.425Z",
+      "themes": [
+       "champion-devotion"
+      ],
+      "quote": "doro champ devotion crit? no just success, +1 next save",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844426-7",
+      "summary": "Doro hit the chest with a hammer.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:24.426Z",
+      "themes": [
+       "striking"
+      ],
+      "quote": "hit the chest w/ hammer, bounced",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844426-8",
+      "summary": "Doro smashed a pew.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "criticalFailure",
+      "occurredAt": "2026-09-28T20:37:24.426Z",
+      "themes": [
+       "smashing"
+      ],
+      "quote": "doro nat1 smashed a pew",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844426-9",
+      "summary": "Doro picked the chest lock.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-28T20:37:24.426Z",
+      "themes": [
+       "lockpicking"
+      ],
+      "quote": "doro crit the chest lock 27",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844427-10",
+      "summary": "Doro practiced shield drills.",
+      "tags": [
+       "defense"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:24.427Z",
+      "themes": [
+       "shield-drills"
+      ],
+      "quote": "doro shield drills fail",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844427-11",
+      "summary": "Doro helped at the fish market.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:24.427Z",
+      "themes": [
+       "marketwork"
+      ],
+      "quote": "helped at fish market (dip succ)",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844427-12",
+      "summary": "Doro researched lore on the Salt Mother.",
+      "tags": [
+       "arcana",
+       "lore"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:24.427Z",
+      "themes": [
+       "research"
+      ],
+      "quote": "scholar lore on salt mother (arc succ)",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844427-13",
+      "summary": "Doro won the tavern arm wrestling championship.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-28T20:37:24.427Z",
+      "themes": [
+       "arm-wrestling"
+      ],
+      "quote": "arm wrestling NAT 20 champion of the tavern",
+      "language": "en",
+      "actorName": "Doro",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [
+     {
+      "id": "proposal:ai-skill:champion-s-bulwark",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Doro deciphered the keeper's logbook in the old coastal script (Society, success)",
+       "Doro used Raise a Shield and Shield Block, then hit crab A with his warhammer",
+       "Doro used Demanding Challenge to draw crab B onto himself"
+      ],
+      "entry": {
+       "name": "Champion's Bulwark",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "While you are adjacent to an ally, they gain a +1 circumstance bonus to their AC and Fortitude saves against attacks from creatures you have threatened or are currently engaging.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "while adjacent"
+       },
+       "metadata": {
+        "tags": [
+         "defense",
+         "martial",
+         "leadership"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Doro demonstrated a consistent pattern of using defensive actions (Shield Block) and taunting (Demanding Challenge) to protect allies and control enemy focus, embodying the Champion's role as a protector."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Champion's defensive aura or similar martial feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:26:54.099Z",
+      "rejectedAt": "2026-09-28T20:28:39.380Z",
+      "rejectedReason": "permanent +1 AC to every adjacent ally is too strong at tier 1; evidence cites the logbook"
+     },
+     {
+      "id": "proposal:ai-skill:champion-s-insight",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Doro deciphered the keeper's logbook in the old coastal script (Society, success)"
+      ],
+      "entry": {
+       "name": "Champion's Insight",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt a Society check to decipher a text, symbol, or clue. On a success, you gain one piece of relevant information. On a critical success, you gain two pieces of information or a significant advantage in the current situation.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "duration": "instant",
+        "actions": 2,
+        "roll": {
+         "kind": "Society check",
+         "formula": "1d20+4"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "society",
+         "lore"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Doro successfully deciphered a complex logbook in an old script, showing a dedicated ability to extract knowledge from obscure sources, which complements the Champion's role in understanding the world they protect."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Society skill action or feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:26:54.099Z"
+     },
+     {
+      "id": "proposal:ai-skill:champion-s-devotion",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Doro made an offering at the temple of Gozreh (success)"
+      ],
+      "entry": {
+       "name": "Champion's Devotion",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a Religion check to gain a boon from your deity. On a success, you gain a +1 circumstance bonus to your next saving throw or skill check. On a critical success, you gain a +2 circumstance bonus and can use this ability again immediately.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "until the end of the current turn or next check",
+        "actions": 1,
+        "roll": {
+         "kind": "Religion check",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "religion",
+         "divine"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Doro made a successful offering at the temple of Gozreh, indicating a strong connection to divine power and a willingness to seek aid from their deity, which is a core aspect of the Champion class."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Champion's divine boon or similar feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:26:54.100Z",
+      "approvedAt": "2026-09-28T20:28:39.047Z"
+     }
+    ],
+    "themes": [
+     {
+      "slug": "champion-devotion",
+      "label": "Champion Devotion",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "striking",
+      "label": "Striking",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "smashing",
+      "label": "Smashing",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "lockpicking",
+      "label": "Lockpicking",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "shield-drills",
+      "label": "Shield Drills",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "marketwork",
+      "label": "Marketwork",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "research",
+      "label": "Research",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "arm-wrestling",
+      "label": "Arm Wrestling",
+      "count": 1,
+      "isNew": false
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Buck",
+      "summary": "Buck read the rest of the logbook and learned the script."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim peeked into the chest using untrained arcana."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim threw the chest onto the altar towards the hag."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione talked through the chest."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione used Glafka Light to scout."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck jumped for the altar."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck arm-wrestled the hag's hand."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel shot the altar."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim improvised a blinding attack with salt."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck attempted underwater maneuvers including a trip, kick, and wall run."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck held his breath."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel fired a salt-wind shot."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione begged the hag to let Maris go and cast a cantrip."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck ripped the chest lid off."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione cast fire on the hag and shoved a sailor."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim tried to tow Ione to shore."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel shot at the chest."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim dried his gear."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim tried to steal shiny fish scales."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim lost an arm wrestling match."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione communicated with a scholar."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione tried to read lighthouse inscriptions."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione tried to learn arm wrestling."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck lost another arm wrestling match."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck taught Maris a cartwheel."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck lost a diving contest against a fisherman."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel failed an archery attempt."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel researched Gozreh temple lore."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel won the arm wrestling tournament."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 32128,
+       "repairs": [],
+       "errors": []
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": false,
+      "reason": "not-yet-earned"
+     },
+     "totalMs": 32147,
+     "extractionCache": "miss",
+     "proposalEvents": {
+      "own": 8,
+      "total": 37
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 1,
+     "progress": 6.25,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:25:38.885Z",
+     "lastRestType": "long"
+    },
+    "pending": 1
+   },
+   "after": {
+    "progression": {
+     "level": 2,
+     "progress": 47.25,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:24.428Z",
+     "lastRestType": "long"
+    },
+    "pending": 1
+   },
+   "restResult": {
+    "progression": {
+     "level": 2,
+     "progress": 47.25,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:24.428Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [
+     2
+    ],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": [
+    {
+     "id": "proposal:ai-skill:champion-s-insight",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Doro deciphered the keeper's logbook in the old coastal script (Society, success)"
+     ],
+     "entry": {
+      "name": "Champion's Insight",
+      "gameItem": {
+       "kind": "action"
+      },
+      "mechanics": {
+       "effect": "Attempt a Society check to decipher a text, symbol, or clue. On a success, you gain one piece of relevant information. On a critical success, you gain two pieces of information or a significant advantage in the current situation.",
+       "frequency": {
+        "max": 1,
+        "per": "hour"
+       },
+       "duration": "instant",
+       "actions": 2,
+       "roll": {
+        "kind": "Society check",
+        "formula": "1d20+4"
+       }
+      },
+      "metadata": {
+       "tags": [
+        "society",
+        "lore"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Doro successfully deciphered a complex logbook in an old script, showing a dedicated ability to extract knowledge from obscure sources, which complements the Champion's role in understanding the world they protect."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Society skill action or feat (Pathfinder Second Edition)"
+     },
+     "source": "ai-gateway",
+     "requestedAt": "2026-09-28T20:26:54.099Z"
+    }
+   ]
+  },
+  {
+   "name": "Pim",
+   "className": "Rogue",
+   "persona": "texter",
+   "restType": "long",
+   "ms": 3,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790627844436-10",
+      "summary": "Pim peeked into the chest using untrained arcana.",
+      "tags": [
+       "arcana"
+      ],
+      "outcome": "criticalFailure",
+      "occurredAt": "2026-09-28T20:37:24.436Z",
+      "themes": [
+       "investigating"
+      ],
+      "quote": "pim peeked in chest untrained arcana CF, brine to face",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844436-11",
+      "summary": "Pim threw the chest onto the altar towards the hag.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:24.436Z",
+      "themes": [
+       "throwing"
+      ],
+      "quote": "yeeted the chest onto the altar right to the hag",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844436-12",
+      "summary": "Pim improvised a blinding attack with salt.",
+      "tags": [
+       "deception"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:24.436Z",
+      "themes": [
+       "improvised-attack"
+      ],
+      "quote": "pim improvised blinding w/ salt SUCC, hag blinded",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844436-13",
+      "summary": "Pim tried to tow Ione to shore.",
+      "tags": [
+       "water"
+      ],
+      "outcome": "criticalFailure",
+      "occurredAt": "2026-09-28T20:37:24.436Z",
+      "themes": [
+       "towing"
+      ],
+      "quote": "pim tried to tow ione to shore nat1 both sank",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844436-14",
+      "summary": "Pim dried his gear.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "criticalFailure",
+      "occurredAt": "2026-09-28T20:37:24.436Z",
+      "themes": [
+       "gear-maintenance"
+      ],
+      "quote": "pim dried his stuff nat1 = thieves tools ruined",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844436-15",
+      "summary": "Pim tried to steal shiny fish scales.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:24.436Z",
+      "themes": [
+       "pickpocketing"
+      ],
+      "quote": "tried to steal shiny fish scales fail",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844436-16",
+      "summary": "Pim lost an arm wrestling match.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:24.436Z",
+      "themes": [
+       "arm-wrestling"
+      ],
+      "quote": "arm wrestling fail",
+      "language": "en",
+      "actorName": "Pim",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [
+     {
+      "id": "proposal:ai-skill:shadowstep-silent-theft",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Pim sneaked behind the keeper (criticalSuccess)",
+       "Pim stole snacks from the fish market without being seen (success)",
+       "Pim found and pocketed a brass spyglass behind the desk (success)"
+      ],
+      "entry": {
+       "name": "Shadowstep: Silent Theft",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt a Thievery check to steal a small item from an adjacent creature or location without their knowledge. On a success, you gain the item and remain undetected. On a critical success, you also gain a +1 circumstance bonus to your next Stealth check.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Thievery check",
+         "formula": "1d20+4"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "thievery",
+         "stealth"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Pim demonstrated consistent success in stealthy theft and looting, including a critical success in sneaking and successful pickpocketing."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Thievery skill action (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:27:24.012Z"
+     },
+     {
+      "id": "proposal:ai-skill:roguecraft-improvised-blinding",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Pim threw salt in the keeper's eyes (success)",
+       "Pim knocked the great lens off the gallery rail (success)"
+      ],
+      "entry": {
+       "name": "Roguecraft: Improvised Blinding",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a Deception check to distract or blind an adjacent creature using a non-lethal improvised method (e.g., throwing salt, dust, or debris). On a success, the target is blinded for 1 round. On a critical success, the target is also staggered.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Deception check",
+         "formula": "1d20+3"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "deception",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Pim successfully used improvised methods to blind and distract enemies, showing a knack for creative, non-standard combat tactics."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Deception skill action (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:27:24.012Z",
+      "approvedAt": "2026-09-28T20:28:39.131Z"
+     }
+    ],
+    "themes": [
+     {
+      "slug": "investigating",
+      "label": "Investigating",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "throwing",
+      "label": "Throwing",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "improvised-attack",
+      "label": "Improvised Attack",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "towing",
+      "label": "Towing",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "gear-maintenance",
+      "label": "Gear Maintenance",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "pickpocketing",
+      "label": "Pickpocketing",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "arm-wrestling",
+      "label": "Arm Wrestling",
+      "count": 1,
+      "isNew": false
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Buck",
+      "summary": "Buck read the rest of the logbook and learned the script."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro used Champion Devotion."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro hit the chest with a hammer."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione talked through the chest."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione used Glafka Light to scout."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck jumped for the altar."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck arm-wrestled the hag's hand."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel shot the altar."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro smashed a pew."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck attempted underwater maneuvers including a trip, kick, and wall run."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck held his breath."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel fired a salt-wind shot."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione begged the hag to let Maris go and cast a cantrip."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro picked the chest lock."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck ripped the chest lid off."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione cast fire on the hag and shoved a sailor."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel shot at the chest."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro practiced shield drills."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro helped at the fish market."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro researched lore on the Salt Mother."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro won the tavern arm wrestling championship."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione communicated with a scholar."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione tried to read lighthouse inscriptions."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione tried to learn arm wrestling."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck lost another arm wrestling match."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck taught Maris a cartwheel."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck lost a diving contest against a fisherman."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel failed an archery attempt."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel researched Gozreh temple lore."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel won the arm wrestling tournament."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 32128,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": false,
+      "reason": "not-yet-earned"
+     },
+     "totalMs": 1,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 7,
+      "total": 37
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 1,
+     "progress": 65,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:25:38.894Z",
+     "lastRestType": "long"
+    },
+    "pending": 1
+   },
+   "after": {
+    "progression": {
+     "level": 2,
+     "progress": 26,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:24.437Z",
+     "lastRestType": "long"
+    },
+    "pending": 1
+   },
+   "restResult": {
+    "progression": {
+     "level": 2,
+     "progress": 26,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:24.437Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [
+     2
+    ],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": [
+    {
+     "id": "proposal:ai-skill:shadowstep-silent-theft",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Pim sneaked behind the keeper (criticalSuccess)",
+      "Pim stole snacks from the fish market without being seen (success)",
+      "Pim found and pocketed a brass spyglass behind the desk (success)"
+     ],
+     "entry": {
+      "name": "Shadowstep: Silent Theft",
+      "gameItem": {
+       "kind": "action"
+      },
+      "mechanics": {
+       "effect": "Attempt a Thievery check to steal a small item from an adjacent creature or location without their knowledge. On a success, you gain the item and remain undetected. On a critical success, you also gain a +1 circumstance bonus to your next Stealth check.",
+       "frequency": {
+        "max": 1,
+        "per": "encounter"
+       },
+       "roll": {
+        "kind": "Thievery check",
+        "formula": "1d20+4"
+       },
+       "actions": 1
+      },
+      "metadata": {
+       "tags": [
+        "thievery",
+        "stealth"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Pim demonstrated consistent success in stealthy theft and looting, including a critical success in sneaking and successful pickpocketing."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Thievery skill action (Pathfinder Second Edition)"
+     },
+     "source": "ai-gateway",
+     "requestedAt": "2026-09-28T20:27:24.012Z"
+    }
+   ]
+  },
+  {
+   "name": "Ione",
+   "className": "Wizard",
+   "persona": "polyglot",
+   "restType": "long",
+   "ms": 2,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790627844439-5",
+      "summary": "Ione talked through the chest.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:24.439Z",
+      "themes": [
+       "persuasion"
+      ],
+      "quote": "ione talked thru the chest (dip succ)",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844439-6",
+      "summary": "Ione used Glafka Light to scout.",
+      "tags": [
+       "arcana"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:24.439Z",
+      "themes": [
+       "scouting"
+      ],
+      "quote": "glafka light scout nothing",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844439-7",
+      "summary": "Ione begged the hag to let Maris go and cast a cantrip.",
+      "tags": [
+       "diplomacy",
+       "spellcasting"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:24.439Z",
+      "themes": [
+       "persuasion",
+       "cantrip"
+      ],
+      "quote": "ione begged hag to let maris go CF, cantrip missed, sailor hit her 10",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844439-8",
+      "summary": "Ione cast fire on the hag and shoved a sailor.",
+      "tags": [
+       "spellcasting",
+       "athletics"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:24.439Z",
+      "themes": [
+       "fire-magic",
+       "shoving"
+      ],
+      "quote": "ione fire on hag 13, shoved the sailor off her",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844439-9",
+      "summary": "Ione communicated with a scholar.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:24.439Z",
+      "themes": [
+       "communication"
+      ],
+      "quote": "ione texts w/ scholar succ",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844439-10",
+      "summary": "Ione tried to read lighthouse inscriptions.",
+      "tags": [
+       "lore"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:24.439Z",
+      "themes": [
+       "deciphering"
+      ],
+      "quote": "lighthouse inscriptions fail",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627844440-11",
+      "summary": "Ione tried to learn arm wrestling.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:24.440Z",
+      "themes": [
+       "arm-wrestling"
+      ],
+      "quote": "learned arm wrestling... fail",
+      "language": "en",
+      "actorName": "Ione",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [],
+    "themes": [
+     {
+      "slug": "persuasion",
+      "label": "Persuasion",
+      "count": 2,
+      "isNew": false
+     },
+     {
+      "slug": "scouting",
+      "label": "Scouting",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "cantrip",
+      "label": "Cantrip",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "fire-magic",
+      "label": "Fire Magic",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "shoving",
+      "label": "Shoving",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "communication",
+      "label": "Communication",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "deciphering",
+      "label": "Deciphering",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "arm-wrestling",
+      "label": "Arm Wrestling",
+      "count": 1,
+      "isNew": false
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Buck",
+      "summary": "Buck read the rest of the logbook and learned the script."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro used Champion Devotion."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro hit the chest with a hammer."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim peeked into the chest using untrained arcana."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim threw the chest onto the altar towards the hag."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck jumped for the altar."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck arm-wrestled the hag's hand."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel shot the altar."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro smashed a pew."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim improvised a blinding attack with salt."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck attempted underwater maneuvers including a trip, kick, and wall run."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck held his breath."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel fired a salt-wind shot."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro picked the chest lock."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck ripped the chest lid off."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim tried to tow Ione to shore."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel shot at the chest."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro practiced shield drills."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro helped at the fish market."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro researched lore on the Salt Mother."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro won the tavern arm wrestling championship."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim dried his gear."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim tried to steal shiny fish scales."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim lost an arm wrestling match."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck lost another arm wrestling match."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck taught Maris a cartwheel."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck lost a diving contest against a fisherman."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel failed an archery attempt."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel researched Gozreh temple lore."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel won the arm wrestling tournament."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 32128,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": false,
+      "reason": "not-yet-earned"
+     },
+     "totalMs": 0,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 7,
+      "total": 37
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 50,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:25:38.896Z",
+     "lastRestType": "long"
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 1,
+     "progress": 68.75,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:24.440Z",
+     "lastRestType": "long"
+    },
+    "pending": 0
+   },
+   "restResult": {
+    "progression": {
+     "level": 1,
+     "progress": 68.75,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:24.440Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [
+     1
+    ],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": []
+  },
+  {
+   "name": "Buck",
+   "className": "Monk",
+   "persona": "failure-magnet",
+   "restType": "long",
+   "ms": 16830,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790627861269-9",
+      "summary": "Buck read the rest of the logbook and learned the script.",
+      "tags": [
+       "lore"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:41.269Z",
+      "themes": [
+       "reading",
+       "deciphering"
+      ],
+      "quote": "buck read rest of logbook (learned the script lol)",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627861269-10",
+      "summary": "Buck jumped for the altar.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:41.269Z",
+      "themes": [
+       "jumping"
+      ],
+      "quote": "buck jumped for altar fail",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627861269-11",
+      "summary": "Buck arm-wrestled the hag's hand.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:41.269Z",
+      "dangerGap": "moderate",
+      "themes": [
+       "arm-wrestling"
+      ],
+      "quote": "ARM WRESTLED the hag's hand coming out of the water & lost by 1 (23 v 24) got dragged under",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627861269-12",
+      "summary": "Buck attempted underwater maneuvers including a trip, kick, and wall run.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:41.269Z",
+      "themes": [
+       "underwater-combat"
+      ],
+      "quote": "buck underwater: water ballet trip nat1, kick miss, wall run fail",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627861269-13",
+      "summary": "Buck held his breath.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:41.269Z",
+      "themes": [
+       "breath-control"
+      ],
+      "quote": "fort save succ held breath",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627861269-14",
+      "summary": "Buck ripped the chest lid off.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-28T20:37:41.269Z",
+      "themes": [
+       "force"
+      ],
+      "quote": "buck failed to yank chest but NAT20 ripped the lid off",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627861270-15",
+      "summary": "Buck lost another arm wrestling match.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:41.270Z",
+      "themes": [
+       "arm-wrestling"
+      ],
+      "quote": "buck arm wrestling AGAIN fail (3 sessions straight)",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627861270-16",
+      "summary": "Buck taught Maris a cartwheel.",
+      "tags": [
+       "acrobatics"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:41.270Z",
+      "themes": [
+       "teaching"
+      ],
+      "quote": "taught maris a cartwheel succ",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627861270-17",
+      "summary": "Buck lost a diving contest against a fisherman.",
+      "tags": [
+       "water"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:41.270Z",
+      "themes": [
+       "diving"
+      ],
+      "quote": "diving contest vs fisherman fail",
+      "language": "en",
+      "actorName": "Buck",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [
+     {
+      "id": "proposal:ai-skill:monk-aerial-momentum",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Buck flying-kicked his way up the spiral stair (Acrobatics success!)",
+       "actually landed his flying kick, knocking the lens out of its hands",
+       "face-planted when his backflip off the rail failed"
+      ],
+      "entry": {
+       "name": "Monk: Aerial Momentum",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a melee Strike with your foot or hand. If you succeed, you can use your reaction to move up to 10 feet in a straight line away from the target, gaining a +1 circumstance bonus to your next Acrobatics check to avoid a trip or grapple.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 1,
+        "roll": {
+         "kind": "Melee attack",
+         "formula": "1d20+6"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "acrobatics",
+         "martial",
+         "mobility"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Buck demonstrated a distinct pattern of using acrobatic movement (flying kicks, backflips) as part of his combat style, successfully combining mobility with martial strikes despite a failure in a high-risk maneuver."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Monk's Flurry of Blows variant or Acrobatics combat feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:27:55.336Z",
+      "approvedAt": "2026-09-28T20:28:39.215Z"
+     },
+     {
+      "id": "proposal:ai-skill:monk-disruptive-grasp",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Buck grabbed the spyglass off Pim, flashed light in the keeper's eyes",
+       "Buck broke the grip with Athletics"
+      ],
+      "entry": {
+       "name": "Monk: Disruptive Grasp",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt to Disarm or Grapple a target. On a success, the target is off-guard against your next Strike. On a critical success, the target is also blinded for 1 round.",
+        "frequency": {
+         "max": 1,
+         "per": "minute"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Athletics check",
+         "formula": "1d20+6"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "athletics",
+         "deception",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Buck successfully used a combination of grabbing an item to blind an opponent and breaking a physical grip, showing a tactical blend of Athletics and Deception in close-quarters control."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Grapple/Disarm action with a conditional bonus (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:27:55.336Z"
+     },
+     {
+      "id": "proposal:ai-skill:monk-grappler-s-resilience",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Buck arm-wrestled the hag's hand... lost by 1 (23 v 24)",
+       "buck arm wrestling AGAIN fail (3 sessions straight)",
+       "buck underwater: water ballet trip nat1, kick miss, wall run fail"
+      ],
+      "entry": {
+       "name": "Monk: Grappler's Resilience",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you fail an Athletics check to Grapple or Trip, you gain a +1 circumstance bonus to your next Athletics check to Grapple or Trip within 1 minute. If you fail again, you gain a +2 circumstance bonus to your next such check.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "1 minute"
+       },
+       "metadata": {
+        "tags": [
+         "athletics",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeated failures in arm-wrestling and grappling (3 sessions straight) demonstrate a pattern of persistent effort against physical resistance, suggesting a learned resilience to failure in these specific contexts."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Pathfinder 2e Martial feat (e.g., Improved Grapple or similar defensive/resilient feat)"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:monk-aquatic-flow",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "buck underwater: water ballet trip nat1, kick miss, wall run fail",
+       "fort save succ held breath",
+       "diving contest vs fisherman fail"
+      ],
+      "entry": {
+       "name": "Monk: Aquatic Flow",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "You are proficient in the Athletics skill for underwater actions. You gain a +1 circumstance bonus to Athletics checks to Swim or Move while underwater.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "while underwater"
+       },
+       "metadata": {
+        "tags": [
+         "athletics",
+         "water"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Multiple underwater attempts (trip, kick, wall run, breath holding, diving) show repeated engagement with aquatic environments, indicating a developing proficiency in underwater movement and combat."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Pathfinder 2e Swim proficiency or similar aquatic skill feat"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:monk-burst-of-force",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "buck failed to yank chest but NAT20 ripped the lid off",
+       "buck arm wrestling AGAIN fail (3 sessions straight)"
+      ],
+      "entry": {
+       "name": "Monk: Burst of Force",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make an Athletics check to force an object or creature. On a critical success, you deal 1d6 bludgeoning damage to the target and push it 5 feet.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant",
+        "actions": 2,
+        "roll": {
+         "kind": "Athletics check",
+         "formula": "1d20+7"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "athletics",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "A critical success in ripping a chest lid off after a failure demonstrates the ability to channel focused force into a decisive burst, a pattern that can be formalized as a skill."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Pathfinder 2e Martial action (e.g., Shove or similar force-based action)"
+      },
+      "source": "ai-gateway"
+     }
+    ],
+    "themes": [
+     {
+      "slug": "reading",
+      "label": "Reading",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "deciphering",
+      "label": "Deciphering",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "jumping",
+      "label": "Jumping",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "arm-wrestling",
+      "label": "Arm Wrestling",
+      "count": 2,
+      "isNew": false
+     },
+     {
+      "slug": "underwater-combat",
+      "label": "Underwater Combat",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "breath-control",
+      "label": "Breath Control",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "force",
+      "label": "Force",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "teaching",
+      "label": "Teaching",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "diving",
+      "label": "Diving",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Doro",
+      "summary": "Doro used Champion Devotion."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro hit the chest with a hammer."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim peeked into the chest using untrained arcana."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim threw the chest onto the altar towards the hag."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione talked through the chest."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione used Glafka Light to scout."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel shot the altar."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro smashed a pew."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim improvised a blinding attack with salt."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel fired a salt-wind shot."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione begged the hag to let Maris go and cast a cantrip."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro picked the chest lock."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione cast fire on the hag and shoved a sailor."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim tried to tow Ione to shore."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel shot at the chest."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro practiced shield drills."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro helped at the fish market."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro researched lore on the Salt Mother."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro won the tavern arm wrestling championship."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim dried his gear."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim tried to steal shiny fish scales."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim lost an arm wrestling match."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione communicated with a scholar."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione tried to read lighthouse inscriptions."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione tried to learn arm wrestling."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel failed an archery attempt."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel researched Gozreh temple lore."
+     },
+     {
+      "actorName": "Kestrel",
+      "summary": "Kestrel won the arm wrestling tournament."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 32128,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      },
+      {
+       "stage": "propose",
+       "chunk": null,
+       "attempts": 1,
+       "ms": 16825,
+       "repairs": [],
+       "errors": []
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": true,
+      "reason": "evidence>=3: tag:athletics, tag:acrobatics"
+     },
+     "totalMs": 16827,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 9,
+      "total": 37
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 1,
+     "progress": 43.75,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:25:38.899Z",
+     "lastRestType": "long"
+    },
+    "pending": 1
+   },
+   "after": {
+    "progression": {
+     "level": 2,
+     "progress": 54.125,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:41.271Z",
+     "lastRestType": "long"
+    },
+    "pending": 4
+   },
+   "restResult": {
+    "progression": {
+     "level": 2,
+     "progress": 54.125,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:41.271Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [
+     2
+    ],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": [
+    {
+     "id": "proposal:ai-skill:monk-disruptive-grasp",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Buck grabbed the spyglass off Pim, flashed light in the keeper's eyes",
+      "Buck broke the grip with Athletics"
+     ],
+     "entry": {
+      "name": "Monk: Disruptive Grasp",
+      "gameItem": {
+       "kind": "action"
+      },
+      "mechanics": {
+       "effect": "Attempt to Disarm or Grapple a target. On a success, the target is off-guard against your next Strike. On a critical success, the target is also blinded for 1 round.",
+       "frequency": {
+        "max": 1,
+        "per": "minute"
+       },
+       "actions": 2,
+       "roll": {
+        "kind": "Athletics check",
+        "formula": "1d20+6"
+       }
+      },
+      "metadata": {
+       "tags": [
+        "athletics",
+        "deception",
+        "martial"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Buck successfully used a combination of grabbing an item to blind an opponent and breaking a physical grip, showing a tactical blend of Athletics and Deception in close-quarters control."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Grapple/Disarm action with a conditional bonus (Pathfinder Second Edition)"
+     },
+     "source": "ai-gateway",
+     "requestedAt": "2026-09-28T20:27:55.336Z"
+    },
+    {
+     "id": "proposal:ai-skill:monk-grappler-s-resilience",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Buck arm-wrestled the hag's hand... lost by 1 (23 v 24)",
+      "buck arm wrestling AGAIN fail (3 sessions straight)",
+      "buck underwater: water ballet trip nat1, kick miss, wall run fail"
+     ],
+     "entry": {
+      "name": "Monk: Grappler's Resilience",
+      "gameItem": {
+       "kind": "passive"
+      },
+      "mechanics": {
+       "effect": "When you fail an Athletics check to Grapple or Trip, you gain a +1 circumstance bonus to your next Athletics check to Grapple or Trip within 1 minute. If you fail again, you gain a +2 circumstance bonus to your next such check.",
+       "frequency": {
+        "max": 1,
+        "per": "unlimited"
+       },
+       "duration": "1 minute"
+      },
+      "metadata": {
+       "tags": [
+        "athletics",
+        "martial"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Repeated failures in arm-wrestling and grappling (3 sessions straight) demonstrate a pattern of persistent effort against physical resistance, suggesting a learned resilience to failure in these specific contexts."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Pathfinder 2e Martial feat (e.g., Improved Grapple or similar defensive/resilient feat)"
+     },
+     "source": "ai-gateway"
+    },
+    {
+     "id": "proposal:ai-skill:monk-aquatic-flow",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "buck underwater: water ballet trip nat1, kick miss, wall run fail",
+      "fort save succ held breath",
+      "diving contest vs fisherman fail"
+     ],
+     "entry": {
+      "name": "Monk: Aquatic Flow",
+      "gameItem": {
+       "kind": "passive"
+      },
+      "mechanics": {
+       "effect": "You are proficient in the Athletics skill for underwater actions. You gain a +1 circumstance bonus to Athletics checks to Swim or Move while underwater.",
+       "frequency": {
+        "max": 1,
+        "per": "unlimited"
+       },
+       "duration": "while underwater"
+      },
+      "metadata": {
+       "tags": [
+        "athletics",
+        "water"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Multiple underwater attempts (trip, kick, wall run, breath holding, diving) show repeated engagement with aquatic environments, indicating a developing proficiency in underwater movement and combat."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Pathfinder 2e Swim proficiency or similar aquatic skill feat"
+     },
+     "source": "ai-gateway"
+    },
+    {
+     "id": "proposal:ai-skill:monk-burst-of-force",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "buck failed to yank chest but NAT20 ripped the lid off",
+      "buck arm wrestling AGAIN fail (3 sessions straight)"
+     ],
+     "entry": {
+      "name": "Monk: Burst of Force",
+      "gameItem": {
+       "kind": "action"
+      },
+      "mechanics": {
+       "effect": "Make an Athletics check to force an object or creature. On a critical success, you deal 1d6 bludgeoning damage to the target and push it 5 feet.",
+       "frequency": {
+        "max": 1,
+        "per": "encounter"
+       },
+       "duration": "instant",
+       "actions": 2,
+       "roll": {
+        "kind": "Athletics check",
+        "formula": "1d20+7"
+       }
+      },
+      "metadata": {
+       "tags": [
+        "athletics",
+        "martial"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "A critical success in ripping a chest lid off after a failure demonstrates the ability to channel focused force into a decisive burst, a pattern that can be formalized as a skill."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Pathfinder 2e Martial action (e.g., Shove or similar force-based action)"
+     },
+     "source": "ai-gateway"
+    }
+   ]
+  },
+  {
+   "name": "Kestrel",
+   "className": "Ranger",
+   "persona": "min-maxer",
+   "restType": "long",
+   "ms": 3620,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790627864890-7",
+      "summary": "Kestrel shot the altar.",
+      "tags": [
+       "ranged"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:44.890Z",
+      "themes": [
+       "archery"
+      ],
+      "quote": "kestrel shot the altar 8 dmg",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627864891-8",
+      "summary": "Kestrel fired a salt-wind shot.",
+      "tags": [
+       "ranged"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:44.891Z",
+      "themes": [
+       "archery"
+      ],
+      "quote": "kestrel salt-wind shot hit 7, 2nd miss",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627864891-9",
+      "summary": "Kestrel shot at the chest.",
+      "tags": [
+       "ranged"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:44.891Z",
+      "themes": [
+       "archery"
+      ],
+      "quote": "kestrel shot at chest miss",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627864891-10",
+      "summary": "Kestrel failed an archery attempt.",
+      "tags": [
+       "ranged"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T20:37:44.891Z",
+      "themes": [
+       "archery"
+      ],
+      "quote": "kestrel archery fail",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627864891-11",
+      "summary": "Kestrel researched Gozreh temple lore.",
+      "tags": [
+       "lore"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:44.891Z",
+      "themes": [
+       "research"
+      ],
+      "quote": "gozreh temple lore succ",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790627864891-12",
+      "summary": "Kestrel won the arm wrestling tournament.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T20:37:44.891Z",
+      "themes": [
+       "arm-wrestling"
+      ],
+      "quote": "WON the arm wrestling tournament",
+      "language": "en",
+      "actorName": "Kestrel",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [
+     {
+      "id": "proposal:emergent-archery",
+      "kind": "skill",
+      "status": "rejected",
+      "source": "emergent",
+      "needsAuthoring": true,
+      "theme": "archery",
+      "evidence": [
+       "event:1790627162988-1",
+       "event:1790627162988-2",
+       "event:1790627162989-6"
+      ],
+      "entry": {
+       "name": "Archery Knack",
+       "tier": 1,
+       "system_equivalent": "Placeholder emergent Skill (GM review) -- use \"Author with AI\" to write real mechanics",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you attempt a check whose purpose is clearly archery, you gain a +1 bonus to that check (a circumstance bonus). The GM decides which checks qualify.",
+        "duration": "while practicing archery",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        }
+       },
+       "metadata": {
+        "tags": [],
+        "themes": [
+         "archery"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Emergent theme \"archery\" practiced across 3 recorded event(s), weighted evidence 4.20. Not in the fixed tag taxonomy -- this is a placeholder awaiting AI/GM authoring."
+        }
+       }
+      },
+      "rejectedAt": "2026-09-28T20:26:25.506Z",
+      "rejectedReason": "placeholder, duplicates Salt-Wind Precision"
+     },
+     {
+      "id": "proposal:ai-skill:ranger-s-aim-salt-wind-precision",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Kestrel shot a giant crab with two arrows, the second being a critical hit.",
+       "Kestrel attacked crab A with Hunt Prey and double Strike.",
+       "Kestrel practised archery at the fish market."
+      ],
+      "entry": {
+       "name": "Ranger's Aim: Salt-Wind Precision",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "You gain a +1 circumstance bonus to ranged Strikes made with a bow or crossbow when targeting a creature that is not off-guard.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "while wielding a ranged weapon"
+       },
+       "metadata": {
+        "tags": [
+         "ranged",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeated successful ranged engagements, including critical hits and dedicated practice, demonstrate a growing mastery of precise archery."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Precision Shot feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T20:26:25.590Z",
+      "rejectedReason": "permanent +1 to every ranged Strike is too strong at tier 1 in PF2e"
+     },
+     {
+      "id": "proposal:ai-skill:ranger-salt-wind-shot",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Kestrel shot a giant crab with two arrows, the second being a critical hit.",
+       "Kestrel attacked crab A with Hunt Prey and double Strike.",
+       "Kestrel practised archery at the fish market."
+      ],
+      "entry": {
+       "name": "Ranger: Salt-Wind Shot",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a ranged Strike with a bow. If the target is an aquatic or amphibious creature, you gain a +1 circumstance bonus to the attack roll. On a critical success, the target is also slowed 1 for 1 round.",
+        "frequency": {
+         "max": 1,
+         "per": "round"
+        },
+        "actions": 1,
+        "roll": {
+         "kind": "Ranged attack",
+         "formula": "1d20+6"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "ranged",
+         "precision",
+         "survival"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated exceptional precision and adaptability when hunting marine creatures, specifically critting a giant crab twice in one encounter."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Ranger class feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:28:23.914Z",
+      "approvedAt": "2026-09-28T20:28:39.299Z"
+     },
+     {
+      "id": "proposal:ai-skill:ranger-glasswright-s-caution",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Kestrel tried to help the glassworks remake the lens and crit-failed (broke a mould)"
+      ],
+      "entry": {
+       "name": "Ranger: Glasswright's Caution",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you attempt a Craft check to work with fragile materials (glass, crystal, etc.) and roll a critical failure, you do not break the item or tool; instead, the check is treated as a simple failure.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "passive"
+       },
+       "metadata": {
+        "tags": [
+         "craft"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Learned through a costly critical failure in glassblowing, instilling a defensive instinct against shattering delicate work."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Craft skill feat (Pathfinder Second Edition)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T20:28:23.914Z"
+     }
+    ],
+    "themes": [
+     {
+      "slug": "archery",
+      "label": "Archery",
+      "count": 4,
+      "isNew": false
+     },
+     {
+      "slug": "research",
+      "label": "Research",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "arm-wrestling",
+      "label": "Arm Wrestling",
+      "count": 1,
+      "isNew": false
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Buck",
+      "summary": "Buck read the rest of the logbook and learned the script."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro used Champion Devotion."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro hit the chest with a hammer."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim peeked into the chest using untrained arcana."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim threw the chest onto the altar towards the hag."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione talked through the chest."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione used Glafka Light to scout."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck jumped for the altar."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck arm-wrestled the hag's hand."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro smashed a pew."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim improvised a blinding attack with salt."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck attempted underwater maneuvers including a trip, kick, and wall run."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck held his breath."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione begged the hag to let Maris go and cast a cantrip."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro picked the chest lock."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck ripped the chest lid off."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione cast fire on the hag and shoved a sailor."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim tried to tow Ione to shore."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro practiced shield drills."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro helped at the fish market."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro researched lore on the Salt Mother."
+     },
+     {
+      "actorName": "Doro",
+      "summary": "Doro won the tavern arm wrestling championship."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim dried his gear."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim tried to steal shiny fish scales."
+     },
+     {
+      "actorName": "Pim",
+      "summary": "Pim lost an arm wrestling match."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione communicated with a scholar."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione tried to read lighthouse inscriptions."
+     },
+     {
+      "actorName": "Ione",
+      "summary": "Ione tried to learn arm wrestling."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck lost another arm wrestling match."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck taught Maris a cartwheel."
+     },
+     {
+      "actorName": "Buck",
+      "summary": "Buck lost a diving contest against a fisherman."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 32128,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      },
+      {
+       "stage": "propose",
+       "chunk": null,
+       "attempts": 1,
+       "ms": 3617,
+       "repairs": [],
+       "errors": []
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": true,
+      "reason": "evidence>=3: tag:ranged, theme:archery"
+     },
+     "totalMs": 3617,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 6,
+      "total": 37
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 1,
+     "progress": 48.75,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:26:02.989Z",
+     "lastRestType": "long"
+    },
+    "pending": 1
+   },
+   "after": {
+    "progression": {
+     "level": 2,
+     "progress": 22.25,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:44.892Z",
+     "lastRestType": "long"
+    },
+    "pending": 1
+   },
+   "restResult": {
+    "progression": {
+     "level": 2,
+     "progress": 22.25,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-28T20:37:44.892Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [
+     2
+    ],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": [
+    {
+     "id": "proposal:ai-skill:ranger-glasswright-s-caution",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Kestrel tried to help the glassworks remake the lens and crit-failed (broke a mould)"
+     ],
+     "entry": {
+      "name": "Ranger: Glasswright's Caution",
+      "gameItem": {
+       "kind": "passive"
+      },
+      "mechanics": {
+       "effect": "When you attempt a Craft check to work with fragile materials (glass, crystal, etc.) and roll a critical failure, you do not break the item or tool; instead, the check is treated as a simple failure.",
+       "frequency": {
+        "max": 1,
+        "per": "unlimited"
+       },
+       "duration": "passive"
+      },
+      "metadata": {
+       "tags": [
+        "craft"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Learned through a costly critical failure in glassblowing, instilling a defensive instinct against shattering delicate work."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Craft skill feat (Pathfinder Second Edition)"
+     },
+     "source": "ai-gateway",
+     "requestedAt": "2026-09-28T20:28:23.914Z"
+    }
+   ]
+  }
+ ]
+}

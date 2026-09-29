@@ -201,7 +201,7 @@ export function resolveEvolvedTier(sourceTier, { hasCatalyst = false } = {}) {
  *   - Red source: every rung above draws from the vice-keyed bank instead, so a corrupt Skill
  *     never evolves into something that sounds heroic.
  */
-export function buildEvolvedSkillName({ sourceSkill, evolvedTier, hasCatalyst = false, polarity = "standard", vice = null }) {
+export function buildEvolvedSkillName({ sourceSkill, evolvedTier, hasCatalyst = false, polarity = "standard", vice = null, seed, takenNames = [] }) {
   const bank = polarity === "red" ? redBankFor(vice) : bankFor(sourceSkill?.metadata?.tags ?? []);
   const sourceName = sourceSkill?.name ?? "Skill";
   if (!hasCatalyst) {
@@ -209,10 +209,84 @@ export function buildEvolvedSkillName({ sourceSkill, evolvedTier, hasCatalyst = 
     // sharpened rather than transformed gets the plain form, since nothing dramatic happened to it.
     return `Greater ${sourceName}`;
   }
+  // The words are picked by a stable hash of the SOURCE (its registry id), not by bank position:
+  // always taking bank[0] made every martial tier-3 evolution "Minotaur Punch" (board 574707d8).
+  // Same source -> same name on every preview; different sources -> usually different names; and a
+  // name the actor already holds (`takenNames`) is skipped while the bank still has another.
+  const nameSeed = seed ?? sourceSkill?.metadata?.id ?? sourceName;
   if (evolvedTier >= MAX_SKILL_TIER) {
-    return `${bank.mythic[0]} ${bank.nouns[0]}`;
+    const combos = bank.mythic.flatMap((mythic) => bank.nouns.map((noun) => `${mythic} ${noun}`));
+    return pickStableName(combos, `${nameSeed}|mythic`, takenNames);
   }
-  return `${bank.epithets[0]} ${sourceName}`;
+  return pickStableName(bank.epithets.map((epithet) => `${epithet} ${sourceName}`), `${nameSeed}|epithet`, takenNames);
+}
+
+// --- Deterministic picks and registry ids (also used by class-merging.js and combination-skills.js) --
+
+/**
+ * FNV-1a, 32-bit. Deterministic across runs and platforms (no Math.random/Date.now), which is what
+ * lets a preview and the later approval of the same evolution agree on its name and id.
+ */
+export function stableHash(value) {
+  let hash = 0x811c9dc5;
+  const text = String(value ?? "");
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash >>> 0;
+}
+
+/**
+ * One candidate from `candidates`, chosen by `seed`'s hash. When that one is in `takenNames`
+ * (case-insensitive) the next candidates in seed-rotated order are tried, so a second Skill never
+ * wears the first one's name while the bank still has an unused one; if every candidate is taken
+ * the hashed pick is returned anyway (the registry id, not the name, is what must be unique).
+ */
+export function pickStableName(candidates, seed, takenNames = []) {
+  const list = Array.isArray(candidates) ? candidates.filter(Boolean) : [];
+  if (!list.length) return "";
+  const taken = new Set([...(takenNames ?? [])].map((name) => String(name).trim().toLowerCase()));
+  const start = stableHash(seed) % list.length;
+  for (let offset = 0; offset < list.length; offset += 1) {
+    const candidate = list[(start + offset) % list.length];
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+  return list[start];
+}
+
+/** Registry-safe slug, the same shape lineage.js's slugify produces for ids. */
+export function idSlug(value) {
+  return String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "unnamed";
+}
+
+/**
+ * The id-collision guard for derived entries. lineage.js#normalizeEntry falls back to
+ * `<kind>:<slug(name)>` when an entry has no metadata.id, and registerEntry then overwrites whatever
+ * already sits under that key -- so two evolutions that happened to share a name silently replaced
+ * the first Skill (board 574707d8). Every builder therefore sets its own metadata.id, and when the
+ * caller passes the ids already in use (`existingIds`: an array, a Set, or the registry bucket object
+ * itself) a "-2", "-3"... suffix keeps the new entry from landing on top of an old one.
+ */
+export function uniqueRegistryId(baseId, existingIds) {
+  const taken = existingIds instanceof Set
+    ? existingIds
+    : new Set(Array.isArray(existingIds) ? existingIds : existingIds && typeof existingIds === "object" ? Object.keys(existingIds) : []);
+  if (!taken.has(baseId)) return baseId;
+  let counter = 2;
+  while (taken.has(`${baseId}-${counter}`)) counter += 1;
+  return `${baseId}-${counter}`;
+}
+
+/**
+ * The evolved Skill's registry id: the source's id plus what happened to it (a real evolution or a
+ * plain refinement) and the tier it landed on -- "skill:power-strike--evolved-t3". Readable in the
+ * registry, stable for the same source and outcome, and never equal to the source's own id (the
+ * source stays approved; an upgrade adds a Skill, it does not replace one).
+ */
+export function evolvedSkillId({ sourceId, evolvedTier, hasCatalyst, existingIds }) {
+  const bare = String(sourceId).replace(/^skill:/, "");
+  return uniqueRegistryId(`skill:${idSlug(bare)}--${hasCatalyst ? "evolved" : "refined"}-t${evolvedTier}`, existingIds);
 }
 
 /** A short, human-readable line for the evolved entry's lineage.rationale, if the caller doesn't supply one. */
@@ -226,10 +300,10 @@ export function describeEvolutionRationale({ sourceSkill, evolvedTier, pressure,
     rationale = `A refinement of [${name}] rather than a true evolution: ${missing}. It sharpens, but holds at tier ${evolvedTier}.`;
   } else if (evolvedTier >= MAX_SKILL_TIER) {
     const moment = pressure.definingMoments[0];
-    rationale = `[${name}] has stopped being what it was. ${pressure.evidenceWeight} weighted evidence of relentless use, then a defining moment -- ${moment.summary || moment.outcome} -- pushed it past its own ceiling into something that no longer shares its old name.`;
+    rationale = `[${name}] has stopped being what it was. ${pressure.evidenceWeight} weighted evidence of relentless use, then a defining moment -- ${momentText(moment)} -- pushed it past its own ceiling into something that no longer shares its old name.`;
   } else {
     const moment = pressure.definingMoments[0];
-    rationale = `[${name}] evolved to tier ${evolvedTier}: ${pressure.evidenceWeight} weighted evidence of sustained use, brought to a head by ${moment.summary || moment.outcome}.`;
+    rationale = `[${name}] evolved to tier ${evolvedTier}: ${pressure.evidenceWeight} weighted evidence of sustained use, brought to a head by ${momentText(moment)}.`;
   }
   if (polarity === "red") {
     rationale += " Its malignance evolved right along with it -- what corrupted the original was never left behind.";
@@ -267,7 +341,14 @@ export function evolveSkillEntry({
   rationale,
   systemEquivalent,
   polarity,
-  malignance
+  malignance,
+  // `name` (above) already overrides the derived name -- the hook for an AI-authored one. `id`
+  // overrides the derived registry id. `existingIds` / `existingNames` are what the actor already
+  // holds (e.g. `registry.skills` and its names) so the result never lands on an existing registry
+  // key and, while the bank allows, never repeats a name the actor already has.
+  id,
+  existingIds,
+  existingNames = []
 }) {
   const sourceId = requireSourceId(sourceSkill);
   const pressure = computeEvolutionPressure(sourceSkill, events, { tagWeights, since });
@@ -281,8 +362,12 @@ export function evolveSkillEntry({
     evolvedTier,
     hasCatalyst: pressure.hasCatalyst,
     polarity: resolvedPolarity,
-    vice: resolvedMalignance?.vice ?? null
+    vice: resolvedMalignance?.vice ?? null,
+    takenNames: existingNames
   });
+  const resolvedId = typeof id === "string" && id.trim()
+    ? uniqueRegistryId(id.trim(), existingIds)
+    : evolvedSkillId({ sourceId, evolvedTier, hasCatalyst: pressure.hasCatalyst, existingIds });
 
   return {
     name: resolvedName,
@@ -299,6 +384,9 @@ export function evolveSkillEntry({
       definingMomentIds: pressure.definingMoments.map((moment) => moment.id).filter(Boolean)
     },
     metadata: {
+      // Always set: without it normalizeEntry derived the id from the name, and a second evolution
+      // with the same name overwrote the first in the registry (board 574707d8).
+      id: resolvedId,
       tags: uniqueStrings([...tags, ...(sourceSkill.metadata?.tags ?? [])]),
       ...(resolvedPolarity === "red" ? { polarity: "red", malignance: resolvedMalignance } : {}),
       lineage: {
@@ -312,6 +400,52 @@ export function evolveSkillEntry({
   };
 }
 
+/**
+ * The deterministic fallback's answer to "what does the evolved Skill DO" (board ebcc3f03: the
+ * evolved entry used to carry the source's mechanics over unchanged, so an "evolution" was a rename
+ * with the same numbers). The AI upgrade (adapter.authorAdvanced) writes real new mechanics; this is
+ * what stands in when it cannot, and it grows the source's own mechanics rather than inventing new
+ * ones, so the GM still recognizes the Skill:
+ *   - a refinement (no catalyst) sharpens: a flat bonus on its roll and one line saying so;
+ *   - a true evolution (catalyst) also gains one more use per period (not for "unlimited"), and its
+ *     roll bonus is bigger per tier climbed;
+ *   - at the ceiling (tier 3 with a catalyst) the effect gains a critical rider on top.
+ * System wording: PF2e bonuses are typed ("circumstance"), dnd5e ones plain; the frequency and the
+ * roll formula are the same fields on both systems (the adapters read them identically).
+ * Pure: returns a new object; `mechanics` is never mutated.
+ */
+export function growEvolvedMechanics(mechanics, { fromTier = 1, toTier = fromTier, hasCatalyst = false, systemId = "pf2e" } = {}) {
+  const grown = structuredClone(mechanics ?? {});
+  const is5e = systemId === "dnd5e";
+  const climbed = Math.max(0, toTier - fromTier);
+  const bonus = hasCatalyst ? 1 + climbed : 1;
+  const bonusText = is5e ? `+${bonus} bonus` : `+${bonus} circumstance bonus`;
+  const lines = [];
+  if (grown.roll && typeof grown.roll.formula === "string") {
+    const match = /^(\d+d\d+)\s*(?:([+-])\s*(\d+))?$/i.exec(grown.roll.formula.trim());
+    if (match) {
+      const current = match[2] ? Number(`${match[2]}${match[3]}`) : 0;
+      const next = current + bonus;
+      grown.roll = { ...grown.roll, formula: `${match[1]}${next >= 0 ? "+" : "-"}${Math.abs(next)}` };
+    }
+    lines.push(`Evolved: its roll gains a ${bonusText}.`);
+  } else {
+    lines.push(`Evolved: checks made with it gain a ${bonusText}.`);
+  }
+  if (hasCatalyst && grown.frequency && Number.isInteger(grown.frequency.max) && grown.frequency.per !== "unlimited") {
+    grown.frequency = { ...grown.frequency, max: grown.frequency.max + 1 };
+    lines.push(`It can be used ${grown.frequency.max} times per ${grown.frequency.per}.`);
+  }
+  if (hasCatalyst && toTier >= MAX_SKILL_TIER) {
+    lines.push(is5e
+      ? "When you roll a 20 with it, the effect is doubled (twice the dice, twice the duration)."
+      : "On a critical success with it, the effect is doubled (twice the dice, twice the duration).");
+  }
+  const base = typeof grown.effect === "string" && grown.effect.trim() ? grown.effect.trim() : "Pending GM effect description.";
+  grown.effect = `${base} ${lines.join(" ")}`;
+  return grown;
+}
+
 function bankFor(tags) {
   const tagSet = new Set(tags);
   const category = EVOLVED_NAME_PRIORITY.find((tag) => tagSet.has(tag));
@@ -320,6 +454,12 @@ function bankFor(tags) {
 
 function redBankFor(vice) {
   return (vice && RED_EVOLVED_NAME_BANKS[vice]) ?? DEFAULT_RED_EVOLVED_NAME_BANK;
+}
+
+// A moment's summary is a full sentence ("... split the troll's skull."); inside the rationale's own
+// sentence its closing punctuation doubled up ("skull..", seen in the 2026-09-29 real-model check).
+function momentText(moment) {
+  return String(moment?.summary || moment?.outcome || "").trim().replace(/[.!?]+$/, "");
 }
 
 function round2(value) {

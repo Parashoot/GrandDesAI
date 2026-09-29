@@ -25,6 +25,7 @@ import {
   COMBINATION_RESONANCE_WEAK_THRESHOLD
 } from "./constants.js";
 import { uniqueStrings } from "./lineage.js";
+import { pickStableName, stableHash, uniqueRegistryId } from "./skill-evolution.js";
 
 // A combination that reaches full resonance with three or more casters has become a named thing
 // in its own right rather than "several people's Skills at once" -- see buildCombinationName.
@@ -146,7 +147,7 @@ export function resolveCombinationPower(contributions, resonanceScore) {
  *     the same reason it is in a Class merge -- a corrupting influence doesn't cleanly separate out
  *     of something several people did together).
  */
-export function buildCombinationName({ contributions, resonanceScore, allTags = [], polarity = "standard" }) {
+export function buildCombinationName({ contributions, resonanceScore, allTags = [], polarity = "standard", seed }) {
   assertContributions(contributions);
   const band = resolveCombinationBand(resonanceScore);
   const ordered = orderContributions(contributions);
@@ -155,7 +156,10 @@ export function buildCombinationName({ contributions, resonanceScore, allTags = 
   }
   if (band === "amplified" && contributions.length >= COMBINATION_TITLE_PARTICIPANTS) {
     const bank = polarity === "red" ? RED_COMBINATION_TITLE_BANK : bankFor(allTags);
-    return `The ${bank.epithets[0]} ${bank.nouns[0]}`;
+    // Picked by a stable hash of who contributed what, not bank[0]: every fire working used to be
+    // "The Converging Conflagration" (board 574707d8). The same party and Skills get the same title.
+    const combos = bank.epithets.flatMap((epithet) => bank.nouns.map((noun) => `The ${epithet} ${noun}`));
+    return pickStableName(combos, `${seed ?? participantSeed(contributions)}|title`);
   }
   return `Combined ${ordered[0].skill.name}`;
 }
@@ -188,7 +192,7 @@ export function describeCombinationRationale({ contributions, resonanceScore, po
  * temporary Item on every participant from it and records it in each one's combination history, but
  * it never enters anyone's Class/Skill registry.
  */
-export function buildCombinationSkill({ contributions, id, effect, duration = "1 round", rationale, polarity, malignance }) {
+export function buildCombinationSkill({ contributions, id, effect, duration = "1 round", rationale, polarity, malignance, name: nameOverride, existingIds }) {
   assertContributions(contributions);
   assertDistinctActors(contributions);
   if (typeof effect !== "string" || !effect.trim()) {
@@ -199,10 +203,18 @@ export function buildCombinationSkill({ contributions, id, effect, duration = "1
   const power = resolveCombinationPower(contributions, resonanceScore);
   const resolvedPolarity = polarity ?? (contributions.some((c) => c.skill?.metadata?.polarity === "red") ? "red" : "standard");
   const resolvedMalignance = resolvedPolarity === "red" ? (malignance ?? resolveCombinedMalignance(contributions)) : null;
-  const name = buildCombinationName({ contributions, resonanceScore, allTags, polarity: resolvedPolarity });
+  // `nameOverride` is the hook for an AI-authored name; the derived one is the fallback.
+  const name = typeof nameOverride === "string" && nameOverride.trim()
+    ? nameOverride.trim()
+    : buildCombinationName({ contributions, resonanceScore, allTags, polarity: resolvedPolarity });
 
   return {
-    id: id ?? `combination:${slugify(name)}`,
+    // The id was `combination:<slug(name)>`, so two different workings that drew the same title
+    // shared an id -- and endCombinationSkill ends every Item/history entry with that id. The id
+    // now also carries a hash of the participants (actor + Skill), and `existingIds` (e.g. the
+    // ids in the participants' combination histories) adds a suffix when the same party casts the
+    // same working again while the first is still recorded.
+    id: id ?? uniqueRegistryId(`combination:${slugify(name)}-${stableHash(participantSeed(contributions)).toString(36)}`, existingIds),
     name,
     band,
     power,
@@ -269,6 +281,14 @@ function bankFor(tags) {
   const tagSet = new Set(tags);
   const category = COMBINATION_TITLE_PRIORITY.find((tag) => tagSet.has(tag));
   return (category && COMBINATION_TITLE_BANKS[category]) ?? DEFAULT_COMBINATION_TITLE_BANK;
+}
+
+/** Who contributed which Skill, sorted, so the same party seeds the same pick in any order. */
+function participantSeed(contributions) {
+  return contributions
+    .map((contribution) => `${contribution.actorId ?? contribution.actorName ?? ""}:${contribution.skill?.metadata?.id ?? contribution.skill?.name ?? ""}`)
+    .sort()
+    .join("+");
 }
 
 function orderContributions(contributions) {

@@ -8,15 +8,18 @@
 //     registerAiProviderSettings(), so importing this file in Node never evaluates
 //     `extends FormApplication`.
 //
-// Scope split: provider / endpoint / model / API key and the per-machine tuning knobs are CLIENT
-// scoped (the key never leaves this browser profile and never touches a world setting). The table
+// Scope split: provider / endpoint / model are USER scoped on Foundry v13+ (they follow the GM to any
+// browser -- as CLIENT settings every fresh browser silently came up "disabled", board 51f276b4); the
+// API key and the per-machine tuning knobs stay CLIENT scoped (the key never leaves this browser
+// profile and never touches a world or user document). The table
 // "flavor" -- house rules, naming style, tone, custom synonyms, extraction examples, creativity,
-// red entries, emergent themes, proposal mode/count -- is WORLD scoped so every GM browser at the
-// table writes Skills the same way.
+// red entries, emergent themes, proposal mode/count, pending cap, summary language -- is WORLD scoped
+// so every GM browser at the table writes Skills the same way.
 import { createChatCompletionsAdapter, createGatewayAdapter } from "./ai-gateway.js";
 import { CREATIVITY_LEVELS, GATEWAY_DEFAULTS, normalizeGatewayConfig, PIPELINES, PROPOSAL_MODES } from "./ai/gateway-config.js";
 import { MODULE_ID } from "./constants.js";
 import { GROWTH_TAXONOMY } from "./growth-taxonomy.js";
+import { BUILD, describeBuild } from "./build-info.js";
 
 // The one place the recommended local model is named. The orchestrator confirms/adjusts it after the
 // live scale test (tools/nlp-scale); everything else reads this constant.
@@ -38,14 +41,29 @@ export const CREATIVITY_HELP = Object.freeze({
 
 // Individual client settings kept from v1 so an existing install keeps its provider/endpoint/model/key.
 export const CLIENT_BASIC_SETTINGS = Object.freeze({ provider: "aiProvider", endpoint: "aiEndpoint", model: "aiModel", apiKey: "aiApiKey" });
+export const AI_EXPECTED_SETTING = "aiExpected";
 export const CLIENT_TUNING_SETTING = "aiGatewayClient";
 export const WORLD_FLAVOR_SETTING = "aiGatewayWorld";
-export const CLIENT_TUNING_KEYS = Object.freeze(["temperature", "numCtx", "numPredict", "timeoutMs", "maxRepairAttempts", "pipeline", "chunkChars", "outputLanguage"]);
+// Board 5b2ff22d: buildGatewayConfig keeps ONLY the keys listed here, so a gateway-config.js knob
+// missing from both lists could never be changed from the form (the pending cap was always 5).
+// Retries, backoff and the extraction cache depend on this machine's model/server, so they are
+// per-browser; the pending cap and the summary language shape what the whole table sees, so they are
+// world settings. outputLanguage used to be client scoped: migrateOutputLanguage() moves it.
+export const CLIENT_TUNING_KEYS = Object.freeze([
+  "temperature", "numCtx", "numPredict", "timeoutMs", "maxRetries", "maxRepairAttempts",
+  "transientRetries", "transientBackoffMs", "pipeline", "chunkChars",
+  "extractionCacheEntries", "extractionCacheTtlMs"
+]);
 export const WORLD_FLAVOR_KEYS = Object.freeze([
   "houseRules", "namingStyle", "toneHints", "customSynonyms", "extractionExamples",
-  "creativity", "allowRed", "emergentThemes", "mergeFollowUps", "proposalMode", "maxProposals"
+  "creativity", "allowRed", "emergentThemes", "mergeFollowUps", "proposalMode", "maxProposals",
+  "outputLanguage", "pendingProposalCapExtra", "pendingProposalCapMin"
 ]);
-const NUMBER_KEYS = new Set(["temperature", "numCtx", "numPredict", "timeoutMs", "maxRepairAttempts", "chunkChars", "maxProposals"]);
+const NUMBER_KEYS = new Set([
+  "temperature", "numCtx", "numPredict", "timeoutMs", "maxRetries", "maxRepairAttempts", "transientRetries",
+  "transientBackoffMs", "chunkChars", "extractionCacheEntries", "extractionCacheTtlMs", "maxProposals",
+  "pendingProposalCapExtra", "pendingProposalCapMin"
+]);
 const BOOLEAN_KEYS = new Set(["allowRed", "emergentThemes", "mergeFollowUps"]);
 const CANONICAL_TAGS = GROWTH_TAXONOMY.map(([tag]) => tag);
 
@@ -93,8 +111,12 @@ export function buildGatewayConfig({ basics = {}, client = {}, world = {} } = {}
   const endpoint = migrateEndpoint(provider, basics.endpoint) || preset.endpoint;
   const model = (typeof basics.model === "string" && basics.model.trim()) || preset.model;
   const pick = (source, keys) => Object.fromEntries(keys.filter((key) => source?.[key] !== undefined).map((key) => [key, source[key]]));
+  // Until the ready-time migration has run (or on a player's browser, which cannot write the world
+  // setting), an old client-scoped outputLanguage still applies when the world has none.
+  const legacyLanguage = world?.outputLanguage === undefined && client?.outputLanguage !== undefined ? { outputLanguage: client.outputLanguage } : {};
   const merged = {
     ...pick(client, CLIENT_TUNING_KEYS),
+    ...legacyLanguage,
     ...pick(world, WORLD_FLAVOR_KEYS),
     provider: provider === "disabled" ? GATEWAY_DEFAULTS.provider : provider,
     endpoint: endpoint || GATEWAY_DEFAULTS.endpoint,
@@ -212,6 +234,9 @@ export function formDataToSettings(formData = {}) {
   const coerce = (key, value) => {
     if (BOOLEAN_KEYS.has(key)) return value === true || value === "true" || value === "on" || value === 1;
     if (NUMBER_KEYS.has(key)) {
+      // An emptied number box means "use the default", not 0 (Number("") is 0, and 0 turns the
+      // extraction cache and every retry off).
+      if (value === undefined || value === null || (typeof value === "string" && !value.trim())) return undefined;
       const n = Number(value);
       return Number.isFinite(n) ? n : undefined;
     }
@@ -238,6 +263,27 @@ export function formDataToSettings(formData = {}) {
   return { basics, client, world, errors };
 }
 
+/**
+ * Board 5b2ff22d: outputLanguage moved from the per-browser tuning blob to the world flavor blob.
+ * Pure: given the two stored blobs, returns what to write. The world value wins when it exists (a
+ * GM already chose the table's language); otherwise a non-default client value is copied over. The
+ * client copy is dropped either way so it can never shadow the table setting again.
+ * @returns {{ client: object, world: object, changedClient: boolean, changedWorld: boolean }}
+ */
+export function planOutputLanguageMigration(client = {}, world = {}) {
+  const nextClient = { ...(client ?? {}) };
+  const nextWorld = { ...(world ?? {}) };
+  if (!Object.hasOwn(nextClient, "outputLanguage")) return { client: nextClient, world: nextWorld, changedClient: false, changedWorld: false };
+  const legacy = nextClient.outputLanguage;
+  delete nextClient.outputLanguage;
+  let changedWorld = false;
+  if (nextWorld.outputLanguage === undefined && typeof legacy === "string" && legacy.trim() && legacy.trim() !== GATEWAY_DEFAULTS.outputLanguage) {
+    nextWorld.outputLanguage = legacy.trim();
+    changedWorld = true;
+  }
+  return { client: nextClient, world: nextWorld, changedClient: true, changedWorld };
+}
+
 function parseJsonSetting(raw) {
   if (raw && typeof raw === "object") return raw;
   try {
@@ -252,12 +298,48 @@ function parseJsonSetting(raw) {
 // Foundry wiring
 // ------------------------------------------------------------------------------------------------
 
-export function registerAiProviderSettings() {
-  for (const [key, setting] of Object.entries(CLIENT_BASIC_SETTINGS)) {
-    game.settings.register(MODULE_ID, setting, { scope: "client", config: false, type: String, default: key === "provider" ? "disabled" : "" });
+/** "user" where Foundry supports it (v13+), else the old per-browser scope. Pure so tests can pin it. */
+export function providerSettingScope(generation = globalThis.game?.release?.generation) {
+  return Number(generation) >= 13 ? "user" : "client";
+}
+
+// The adapter used to be frozen at ready/Save (board 5286a3ba). Every gateway setting now rebuilds
+// and re-attaches it, debounced because one Save writes several settings in a row.
+let rebuildTimer = null;
+export function scheduleAdapterRebuild(delayMs = 200) {
+  if (typeof game === "undefined" || !game?.user?.isGM) return;
+  clearTimeout(rebuildTimer);
+  rebuildTimer = setTimeout(() => rebuildGatewayAdapter(), delayMs);
+}
+
+/** Rebuilds the adapter from the stored settings and attaches it; returns { adapter, error }. */
+export function rebuildGatewayAdapter({ warn = true } = {}) {
+  const api = game.modules.get(MODULE_ID)?.api;
+  if (!api) return { adapter: null, error: null };
+  try {
+    const adapter = createConfiguredAiAdapter();
+    api.setProposalAdapter(adapter);
+    return { adapter, error: null };
+  } catch (error) {
+    api.setProposalAdapter(null);
+    console.warn(`${MODULE_ID} | AI provider is not configured`, error);
+    if (warn) ui.notifications.warn(`Grand Design AI Gateway is not ready (${error.message}) -- notes will be read by the local analyzer until it is fixed.`, { permanent: true });
+    return { adapter: null, error };
   }
-  game.settings.register(MODULE_ID, CLIENT_TUNING_SETTING, { scope: "client", config: false, type: String, default: "{}" });
-  game.settings.register(MODULE_ID, WORLD_FLAVOR_SETTING, { scope: "world", config: false, type: String, default: "{}" });
+}
+
+export function registerAiProviderSettings() {
+  const basicScope = providerSettingScope();
+  for (const [key, setting] of Object.entries(CLIENT_BASIC_SETTINGS)) {
+    // The API key never becomes a user setting: user settings are stored server-side in the user document.
+    const scope = key === "apiKey" ? "client" : basicScope;
+    game.settings.register(MODULE_ID, setting, { scope, config: false, type: String, default: key === "provider" ? "disabled" : "", onChange: () => onGatewaySettingChanged(key === "provider") });
+  }
+  game.settings.register(MODULE_ID, CLIENT_TUNING_SETTING, { scope: "client", config: false, type: String, default: "{}", onChange: () => onGatewaySettingChanged() });
+  game.settings.register(MODULE_ID, WORLD_FLAVOR_SETTING, { scope: "world", config: false, type: String, default: "{}", onChange: () => onGatewaySettingChanged() });
+  // Set the first time any GM saves a real provider; what makes "no adapter at ready" a warning
+  // instead of silence (the keyword analyzer had been reading a GM's notes unnoticed).
+  game.settings.register(MODULE_ID, AI_EXPECTED_SETTING, { scope: "world", config: false, type: Boolean, default: false });
   game.settings.registerMenu(MODULE_ID, "aiProviderSetup", {
     name: "AI Gateway",
     label: "Configure AI Gateway",
@@ -303,6 +385,134 @@ export function createConfiguredAiAdapter(config = getGatewayConfig()) {
   }
   if (typeof createGatewayAdapter === "function") return createGatewayAdapter(config);
   return createChatCompletionsAdapter({ endpoint: config.endpoint, model: config.model, transport: config.provider === "ollama" ? "ollama-native" : "openai" });
+}
+
+function onGatewaySettingChanged(providerChanged = false) {
+  if (typeof game === "undefined" || !game?.user?.isGM) return;
+  if (providerChanged) noteAiExpected();
+  scheduleAdapterRebuild();
+}
+
+/** Remember (world-wide) that this table uses an AI, so a later browser without one is warned. */
+export async function noteAiExpected() {
+  try {
+    if (!game.user?.isGM) return;
+    const provider = game.settings.get(MODULE_ID, CLIENT_BASIC_SETTINGS.provider);
+    if (provider && provider !== "disabled" && !game.settings.get(MODULE_ID, AI_EXPECTED_SETTING)) {
+      await game.settings.set(MODULE_ID, AI_EXPECTED_SETTING, true);
+    }
+  } catch (error) {
+    console.warn(`${MODULE_ID} | could not record that AI is expected`, error);
+  }
+}
+
+/**
+ * Before v13 provider/endpoint/model lived in this browser's localStorage under the same key. While
+ * the user-scoped value is still the default, copy the old one over once. Returns the migrated keys.
+ */
+export async function migrateClientProviderSettings() {
+  const migrated = [];
+  if (providerSettingScope() !== "user") return migrated;
+  let storage;
+  try { storage = globalThis.localStorage; } catch { return migrated; }
+  if (!storage) return migrated;
+  for (const [key, setting] of Object.entries(CLIENT_BASIC_SETTINGS)) {
+    if (key === "apiKey") continue;
+    try {
+      const raw = storage.getItem(`${MODULE_ID}.${setting}`);
+      if (raw === null || raw === undefined) continue;
+      let old;
+      try { old = JSON.parse(raw); } catch { old = raw; }
+      const current = game.settings.get(MODULE_ID, setting);
+      const isDefault = !current || (key === "provider" && current === "disabled");
+      if (typeof old === "string" && old && old !== "disabled" && isDefault) {
+        await game.settings.set(MODULE_ID, setting, old);
+        migrated.push(key);
+      }
+    } catch (error) {
+      console.warn(`${MODULE_ID} | could not migrate the ${setting} setting`, error);
+    }
+  }
+  return migrated;
+}
+
+/** What (if anything) is wrong at startup? Pure; `expected` is the world's "AI expected" flag. */
+export function gatewayStartupProblem({ expected, provider, adapterAttached }) {
+  if (adapterAttached) return null;
+  if (provider && provider !== "disabled") return "configured-but-not-attached";
+  return expected ? "expected-but-disabled" : null;
+}
+
+export function gatewayStartupMessage(problem, reason = "") {
+  const where = 'Open <a data-gd-open-gateway="1">AI Gateway</a> (Game Settings > Configure Settings > Grand Design AI > Configure AI Gateway), choose your provider and press Save.';
+  if (problem === "expected-but-disabled") {
+    return `Grand Design AI: this world normally reads session notes with an AI, but this browser has no AI provider set, so the keyword analyzer would read them instead. ${where}`;
+  }
+  return `Grand Design AI: an AI provider is set but could not be attached${reason ? ` (${reason})` : ""}, so notes are read by the keyword analyzer. ${where}`;
+}
+
+/** Opens the AI Gateway settings form (used by notification and Growth-dialog links). */
+export function openAiGateway() {
+  try {
+    const menu = game.settings.menus.get(`${MODULE_ID}.aiProviderSetup`);
+    if (menu?.type) return new menu.type().render(true);
+  } catch (error) {
+    console.warn(`${MODULE_ID} | could not open the AI Gateway settings`, error);
+  }
+  ui.notifications.info("Open Game Settings > Configure Settings > Grand Design AI > Configure AI Gateway.");
+  return null;
+}
+
+let gatewayLinkInstalled = false;
+/** One delegated listener so any `[data-gd-open-gateway]` link (notification text, Growth dialog) works. */
+export function installGatewayLinkHandler() {
+  if (gatewayLinkInstalled || typeof document === "undefined") return;
+  gatewayLinkInstalled = true;
+  document.addEventListener("click", (event) => {
+    if (event.target?.closest?.("[data-gd-open-gateway]")) {
+      event.preventDefault();
+      openAiGateway();
+    }
+  });
+}
+
+/**
+ * Moves a client-scoped outputLanguage into the world blob (GM only: players cannot write world
+ * settings, and buildGatewayConfig keeps honouring their old value meanwhile). Returns the plan.
+ */
+export async function migrateOutputLanguage() {
+  try {
+    if (!game.user?.isGM) return null;
+    const plan = planOutputLanguageMigration(
+      parseJsonSetting(game.settings.get(MODULE_ID, CLIENT_TUNING_SETTING)),
+      parseJsonSetting(game.settings.get(MODULE_ID, WORLD_FLAVOR_SETTING))
+    );
+    // World first: if that write fails the client copy is still there to retry from next launch.
+    if (plan.changedWorld) await game.settings.set(MODULE_ID, WORLD_FLAVOR_SETTING, JSON.stringify(plan.world));
+    if (plan.changedClient) await game.settings.set(MODULE_ID, CLIENT_TUNING_SETTING, JSON.stringify(plan.client));
+    return plan;
+  } catch (error) {
+    console.warn(`${MODULE_ID} | could not migrate the summary language setting`, error);
+    return null;
+  }
+}
+
+/** Ready-time migration, adapter build and warning for a GM. Returns { adapter, problem }. */
+export async function checkGatewayAtReady() {
+  installGatewayLinkHandler();
+  await migrateClientProviderSettings();
+  await migrateOutputLanguage();
+  await noteAiExpected();
+  const { adapter, error } = rebuildGatewayAdapter({ warn: false });
+  const api = game.modules.get(MODULE_ID).api;
+  const problem = gatewayStartupProblem({
+    expected: game.settings.get(MODULE_ID, AI_EXPECTED_SETTING),
+    provider: game.settings.get(MODULE_ID, CLIENT_BASIC_SETTINGS.provider),
+    adapterAttached: api.hasProposalAdapter()
+  });
+  if (problem) ui.notifications.warn(gatewayStartupMessage(problem, error?.message), { permanent: true });
+  console.log(`${MODULE_ID} | build ${describeBuild(BUILD)}; AI ${api.hasProposalAdapter() ? "attached" : "not attached"}`);
+  return { adapter, problem };
 }
 
 async function persistSettings({ basics, client, world }) {
@@ -428,6 +638,8 @@ function buildGatewaySettingsClass() {
         return;
       }
       await persistSettings(parsed);
+      // Deliberately disabling clears the flag, so a table that turns AI off is not nagged at every launch.
+      if (game.user?.isGM) await game.settings.set(MODULE_ID, AI_EXPECTED_SETTING, parsed.basics.provider !== "disabled");
       this._pendingDefaults = null;
       const api = game.modules.get(MODULE_ID).api;
       try {
@@ -457,8 +669,9 @@ export function renderGatewayForm(config, stored = {}) {
   const synonymsText = formatCustomSynonyms(world.customSynonyms);
   const examplesText = Array.isArray(world.extractionExamples) && world.extractionExamples.length ? JSON.stringify(world.extractionExamples, null, 2) : "";
   return `<form autocomplete="off">
+  <p class="gd-help gd-build">Build: ${escapeHtml(describeBuild(BUILD))}</p>
   <p class="gd-help">Grand Design reads your session notes with an AI -- written however you like, in any language -- and turns them into growth. Local models (Ollama) keep everything on your machine.</p>
-  <fieldset><legend>Connection (this browser only)</legend>
+  <fieldset><legend>Connection (follows your Foundry user; the API key stays in this browser)</legend>
     <div class="form-group"><label>Provider</label><select name="provider">${providerOptions}</select></div>
     <div class="form-group gd-ai-only"${aiOnly}><label>Endpoint</label><input name="endpoint" type="text" value="${escapeHtml(config.endpoint ?? "")}" placeholder="${escapeHtml(PROVIDER_PRESETS[provider]?.endpoint || "https://...")}"></div>
     <p class="gd-help gd-ai-only"${aiOnly}>Ollama: http://127.0.0.1:11434 (an old ".../api/chat" address still works). Remote providers must use HTTPS.</p>
@@ -475,12 +688,22 @@ export function renderGatewayForm(config, stored = {}) {
     <div class="form-group"><label>Repair attempts</label><input type="number" name="maxRepairAttempts" min="0" max="5" step="1" value="${Number(client.maxRepairAttempts)}"></div>
     <div class="form-group"><label>Pipeline</label><select name="pipeline">${PIPELINES.map((value) => option(value, value === "two-stage" ? "Two-stage (read events, then propose) -- most robust" : "Single call -- faster, less robust", client.pipeline)).join("")}</select></div>
     <div class="form-group"><label>Chunk size (characters)</label><input type="number" name="chunkChars" min="400" max="20000" step="100" value="${Number(client.chunkChars)}"></div>
-    <div class="form-group"><label>Summary language</label><input type="text" name="outputLanguage" value="${escapeHtml(client.outputLanguage ?? "en")}" placeholder="en, es, el, de..."></div>
-    <p class="gd-help">Event summaries are written in this language; the original quote is always kept as written.</p>
+    <div class="form-group"><label>Request retries (429 / 5xx)</label><input type="number" name="maxRetries" min="0" max="5" step="1" value="${Number(client.maxRetries)}"></div>
+    <div class="form-group"><label>Retries after a dropped connection or timeout</label><input type="number" name="transientRetries" min="0" max="5" step="1" value="${Number(client.transientRetries)}"></div>
+    <div class="form-group"><label>Wait between those retries (ms)</label><input type="number" name="transientBackoffMs" min="0" max="60000" step="100" value="${Number(client.transientBackoffMs)}"></div>
+    <p class="gd-help">Worst case per chunk is roughly timeout x (1 + retries): lower these on a slow machine so a stuck model falls back sooner.</p>
+    <div class="form-group"><label>Reuse a reading of identical notes (entries)</label><input type="number" name="extractionCacheEntries" min="0" max="200" step="1" value="${Number(client.extractionCacheEntries)}"></div>
+    <div class="form-group"><label>Keep a reading for (ms)</label><input type="number" name="extractionCacheTtlMs" min="0" max="86400000" step="60000" value="${Number(client.extractionCacheTtlMs)}"></div>
+    <p class="gd-help">A party recap pasted into five sheets is read once. 0 turns it off; "Re-analyze" always reads fresh.</p>
   </fieldset></details>
   <fieldset><legend>Table flavor</legend><p class="gd-help">${escapeHtml(worldNote)}</p>
     <div class="form-group"><label>Proposals</label><select name="proposalMode">${PROPOSAL_MODES.map((value) => option(value, { "when-earned": "When earned (enough evidence)", always: "Always suggest something", never: "Never (events only)" }[value] ?? value, world.proposalMode)).join("")}</select></div>
     <div class="form-group"><label>Max proposals per analysis</label><input type="number" name="maxProposals" min="0" max="10" step="1" value="${Number(world.maxProposals)}"></div>
+    <div class="form-group"><label>Pending proposals: extra over grant allowances</label><input type="number" name="pendingProposalCapExtra" min="0" max="20" step="1" value="${Number(world.pendingProposalCapExtra)}"></div>
+    <div class="form-group"><label>Pending proposals: always allow at least</label><input type="number" name="pendingProposalCapMin" min="1" max="20" step="1" value="${Number(world.pendingProposalCapMin)}"></div>
+    <p class="gd-help">A character keeps at most max(minimum, grant allowances + extra) AI proposals waiting; the weakest unapproved ones are trimmed first. Milestone rewards never count.</p>
+    <div class="form-group"><label>Summary language</label><input type="text" name="outputLanguage" value="${escapeHtml(world.outputLanguage ?? "en")}" placeholder="en, es, el, de..."></div>
+    <p class="gd-help">Event summaries are written in this language for the whole table; the original quote is always kept as written.</p>
     <div class="form-group stacked"><label>Creativity</label>${creativity}</div>
     <div class="form-group"><label>Allow red (taboo) entries</label><input type="checkbox" name="allowRed" ${world.allowRed ? "checked" : ""}></div>
     <div class="form-group"><label>Emergent themes</label><input type="checkbox" name="emergentThemes" ${world.emergentThemes ? "checked" : ""}></div>

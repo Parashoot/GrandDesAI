@@ -1,8 +1,8 @@
 {
  "name": "ember-road",
  "system": "dnd5e",
- "created": "2026-09-27T17:40:04.800Z",
- "sessionsPlayed": 1,
+ "created": "2026-09-27T22:18:20.225Z",
+ "sessionsPlayed": 3,
  "gateway": {},
  "party": [
   {
@@ -13,14 +13,14 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532270806-1",
+      "id": "event:1790547524669-1",
       "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.",
       "tags": [
        "defense",
        "leadership"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:04:30.806Z",
+      "occurredAt": "2026-09-27T22:18:44.669Z",
       "dangerGap": "severe",
       "themes": [
        "holding-a-line",
@@ -32,127 +32,666 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532270807-2",
-      "summary": "Brakka won two fights in the pit and lost the third to the champion.",
+      "id": "event:1790547524670-2",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion.",
       "tags": [
        "martial"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:04:30.807Z",
+      "occurredAt": "2026-09-27T22:18:44.670Z",
       "themes": [
-       "arena-fighting"
+       "brawling",
+       "competition"
       ],
       "quote": "Won two in the pit, lost the third to the champ",
       "language": "en",
       "actorName": "Brakka",
       "source": "adapter"
+     },
+     {
+      "id": "event:1790550799263-3",
+      "summary": "Brakka tied his own wrists and offered himself as a hostage.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.263Z",
+      "themes": [
+       "hostage-offer"
+      ],
+      "quote": "brakka tied his own wrists w/ rope and offered to go",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-4",
+      "summary": "Brakka tried to get in front of Tovin but slipped.",
+      "tags": [
+       "athletics"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "themes": [
+       "movement"
+      ],
+      "quote": "brakka tried to get in front of tovin, slipped on the cobbles",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-5",
+      "summary": "Brakka held the stone lip to control the thralls' approach and killed one.",
+      "tags": [
+       "martial",
+       "defense"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "dangerGap": "moderate",
+      "themes": [
+       "holding-the-line"
+      ],
+      "quote": "brakka held the stone lip so they came one at a time, hacked one down",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-6",
+      "summary": "Brakka lassoed the Toll King.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "dangerGap": "moderate",
+      "themes": [
+       "lassoing"
+      ],
+      "quote": "brakka lassoed him",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-7",
+      "summary": "Brakka repaired the fort's gate.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "themes": [
+       "repairing"
+      ],
+      "quote": "brakka fixed the gate",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-8",
+      "summary": "Brakka stood watch outside Maren's room.",
+      "tags": [
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "themes": [
+       "guarding"
+      ],
+      "quote": "stood watch outside maren's room",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799264-9",
+      "summary": "Brakka searched for Steve.",
+      "tags": [
+       "survival"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:19.264Z",
+      "themes": [
+       "searching"
+      ],
+      "quote": "couldn't find steve",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294513-10",
+      "summary": "Brakka observed the auction setup and identified a guard as a mage.",
+      "tags": [
+       "lore"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:14.513Z",
+      "themes": [
+       "observation",
+       "scouting"
+      ],
+      "quote": "brakka stood in the aisle the whole time and noticed the lantern cords were soaked in oil and one of the guards was actually a mage",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294514-11",
+      "summary": "Brakka held the aisle with Bottleneck and attacked the mage twice.",
+      "tags": [
+       "martial",
+       "arcana"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:14.514Z",
+      "themes": [
+       "combat",
+       "bottleneck"
+      ],
+      "quote": "brakka held the aisle with Bottleneck and hit the mage twice",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294514-12",
+      "summary": "The party escaped through a hatch onto a barge while the building burned.",
+      "tags": [
+       "mobility"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:14.514Z",
+      "themes": [
+       "escape"
+      ],
+      "quote": "we jumped through a hatch onto a barge while the whole place burned, steve swam after us",
+      "language": "en",
+      "actorName": "the party",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294515-13",
+      "summary": "Brakka fixed his gear and attempted shield drills with Steve.",
+      "tags": [
+       "craft",
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:14.515Z",
+      "themes": [
+       "gear-maintenance",
+       "training"
+      ],
+      "quote": "brakka fixed his gear and tried to do shield drills with steve",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:shieldwall-bottleneck",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Brakka held the stone lip to control the thralls' approach and killed one.",
+       "Brakka lassoed the Toll King.",
+       "Brakka tried to get in front of Tovin but slipped."
+      ],
+      "entry": {
+       "name": "Shieldwall: Bottleneck",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you are in a narrow passage or holding a chokepoint, you gain advantage on attack rolls against creatures within 5 feet of you. Additionally, you can use your reaction to impose disadvantage on the next attack roll made against an ally within 5 feet of you.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "passive"
+       },
+       "metadata": {
+        "tags": [
+         "martial",
+         "defense"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeatedly used terrain to control enemy movement and protect allies, including a failed attempt to intercept an attack."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Passive combat advantage feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "approvedAt": "2026-09-28T18:45:42.213Z"
+     },
+     {
+      "id": "proposal:ai-skill:warden-s-duty-gatekeeper",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Brakka repaired the fort's gate.",
+       "Brakka stood watch outside Maren's room."
+      ],
+      "entry": {
+       "name": "Warden's Duty: Gatekeeper",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Use your action to repair a simple mechanical or structural object (like a gate or door) that is not destroyed, or to set up a watch position. On a success, the object functions normally or you gain a +2 bonus to Perception checks while on watch.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "duration": "10 minutes",
+        "actions": 2,
+        "roll": {
+         "kind": "Athletics check",
+         "formula": "1d20+5"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "craft",
+         "support"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated practical maintenance and protective vigilance in a fort setting."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Crafting and Perception support action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T19:00:29.601Z",
+      "rejectedReason": "not a Skill: repairing a gate as an action"
+     },
+     {
+      "id": "proposal:ai-skill:shieldwall-mage-s-eye",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Brakka observed the auction setup and identified a guard as a mage.",
+       "tagEvidence: lore:1, arcana:1"
+      ],
+      "entry": {
+       "name": "Shieldwall: Mage's Eye",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you observe a creature for at least 1 minute, you gain proficiency in Insight checks to determine if that creature is a spellcaster, and you learn one school of magic they are likely to use.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "passive"
+       },
+       "metadata": {
+        "tags": [
+         "arcana",
+         "lore"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Brakka demonstrated sharp observational skills by identifying a disguised mage during a social encounter, showing an instinct for detecting magical presence."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Passive Insight/Arcana proficiency bonus (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "approvedAt": "2026-09-28T19:40:18.548Z"
+     },
+     {
+      "id": "proposal:ai-skill:shieldwall-tinkerer-s-grip",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Brakka fixed his gear and attempted shield drills with Steve.",
+       "tagEvidence: craft:2, martial:5"
+      ],
+      "entry": {
+       "name": "Shieldwall: Tinkerer's Grip",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "You gain proficiency with Smith's Tools and can perform simple repairs on your shield or armor as a bonus action, restoring 1d4 hit points of durability (if using a durability system) or allowing you to ignore one minor penalty to your AC due to damage.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "10 minutes"
+       },
+       "metadata": {
+        "tags": [
+         "craft",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Brakka actively maintained his equipment and trained with it, indicating a practical skill in keeping his defensive gear in optimal condition."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Smith's Tools proficiency and improvised repair action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T19:40:18.892Z",
+      "rejectedReason": "assumes a durability system 5e does not have"
+     }
+    ],
     "levelProgression": {
-     "level": 0,
-     "progress": 87.5,
+     "level": 2,
+     "progress": 111,
      "grantAllowances": 0,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:04:30.807Z",
+     "lastRestAt": "2026-09-28T19:38:14.516Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:04:30.807Z",
+     "notes": "ok session 3 recap, sorry its late lol. so we went to the Lantern House in Varrow, floating auction thing w/ paper lanterns full of secrets, and the lot was the names of everyone who crossed the ember road this year incl the toll king's 31 victims. brakka stood in the aisle the whole time and noticed the lantern cords were soaked in oil and one of the guards was actually a mage, good catch. wick licked a lantern (why) and got caught by madam wisp, maren snuck her bees out among the lanterns, and tovin won the auction by bluffing 200g we absolutely do not have 💀 luz did her Public Edict thing on one of the guards and he dropped his sword and backed off. then wisp found out we were broke and it all went on fire - brakka held the aisle with Bottleneck and hit the mage twice, wick threw a dagger into one blade and sent Steve through the door with Oxwhip and steve flattened another one (STEVE MVP), maren's goat wouldn't go near the fire but she Thorn Lashed the third guy. tovin and luz both went for the burning lantern and tovin got it, then the mage fire bolted him for 18 and he nearly dropped. the guy wick stabbed surrendered and tovin literally pressed the burning lantern into his chest until he agreed to show us the way out... luz was like \"¡Tovin, basta, ya se rindió!\" and then maren healed the same guy with her Field Triage which was kind of hilarious. luz tried to scare off the mage but wisp and the mage got away, we jumped through a hatch onto a barge while the whole place burned, steve swam after us. we have the lantern w/ the 31 names. downtime 3 days in varrow: brakka fixed his gear and tried to do shield drills with steve (steve lay down). wick bet half our gold that steve could fetch drinks at the dice den, nat 1, steve ate the table, we lost the bet. he also tried to sell \"bee experience\" flowers, nobody bought, but he did find out from the chapel people that wisp is hiding in the bathhouse cellars. maren had the worst luck ever - nat 1 buying seeds (weeds), nat 1 treating a fishwife (gave her a rash), and the chapel garden thing didn't go great either. tovin won like 40g at dice, then sat by the canal with the crown on his head trying to make a deal with the whispers, nothing answered. luz blessed the canal quarter, la gente lo agradeció mucho, but nobody listened when she told them about wisp. next session: bathhouse cellars / wisp bounty. also can someone venmo me for the wings, and do we think The Hollowing should have triggered? (it didnt, he didnt kill him)",
+     "at": "2026-09-28T19:38:14.516Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532270806-1",
-      "event:1790532270807-2"
+      "event:1790624294513-10",
+      "event:1790624294514-11",
+      "event:1790624294514-12",
+      "event:1790624294515-13"
      ],
-     "proposalIds": [],
+     "proposalIds": [
+      "proposal:ai-skill:shieldwall-mage-s-eye",
+      "proposal:ai-skill:shieldwall-tinkerer-s-grip"
+     ],
      "diagnostics": {
       "source": "adapter",
-      "events": 2,
-      "attributedToOthers": 17,
+      "events": 4,
+      "attributedToOthers": 21,
       "skippedEvents": 0,
       "skippedProposals": 0,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
-      "attempts": 2,
+      "chunks": 2,
+      "attempts": 3,
       "repairs": 0,
-      "totalMs": 20979
+      "totalMs": 70226
      },
      "attributedToOthers": [
       {
        "actorName": "Wick",
-       "summary": "Wick rode an ox into a fight with a troll."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick lost his dagger to the river."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick lost the party's 40g rigging dice."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Steve the ox lost a race by sitting down."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick was banned from a pie tent."
+       "summary": "Wick licked a lantern."
       },
       {
        "actorName": "Maren",
-       "summary": "Maren rooted three out of four goblins in place with entangle."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren healed Brakka."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren thorn-whipped the last goblin into the burning railing."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren patched up the surrendered goblins."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren sold out of honey."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren got second place in the bake-off with a lavender honey loaf."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren adopted a stable cat."
+       "summary": "Maren sneaked her bees out among the lanterns."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin torched a troll."
+       "summary": "Tovin won the auction by bluffing a bid of 200 gold."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz used Public Edict on a guard."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick threw a dagger at a blade and used Oxwhip to send Steve through a door."
+      },
+      {
+       "actorName": "Steve",
+       "summary": "Steve flattened another guard."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren used Thorn Lash on the third guard."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin lost his bet in the pit."
+       "summary": "Tovin retrieved the burning lantern."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin threatened a surrendered guard with a burning lantern until he agreed to show the way out."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren healed the guard with Field Triage."
       },
       {
        "actorName": "Luz",
-       "summary": "Tovin killed a goblin that was surrendering."
+       "summary": "Luz tried to scare off the mage."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick bet half the party's gold that Steve could fetch drinks."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick tried to sell 'bee experience' flowers."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick learned from chapel people that Wisp is hiding in the bathhouse cellars."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren bought seeds."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren treated a fishwife."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren worked on the chapel garden."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin won 40 gold at dice."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to make a deal with the whispers by the canal."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz healed Brakka to full health after the troll fight."
+       "summary": "Luz blessed the canal quarter."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz led the dawn blessing at the temple."
+       "summary": "Luz told the people about Wisp."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:shieldwall-bottleneck": {
+       "name": "Shieldwall: Bottleneck",
+       "itemId": "ptccizey1pyo",
+       "approvedAt": "2026-09-28T18:45:42.212Z",
+       "metadata": {
+        "id": "skill:shieldwall-bottleneck",
+        "tags": [
+         "martial",
+         "defense"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeatedly used terrain to control enemy movement and protect allies, including a failed attempt to intercept an attack."
+        }
+       },
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you are in a narrow passage or holding a chokepoint, you gain advantage on attack rolls against creatures within 5 feet of you. Additionally, you can use your reaction to impose disadvantage on the next attack roll made against an ally within 5 feet of you.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "passive"
+       },
+       "tier": 1,
+       "system_equivalent": "Passive combat advantage feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "skill:shieldwall-mage-s-eye": {
+       "name": "Shieldwall: Mage's Eye",
+       "itemId": "pt0tdtqhtza6",
+       "approvedAt": "2026-09-28T19:40:18.547Z",
+       "metadata": {
+        "id": "skill:shieldwall-mage-s-eye",
+        "tags": [
+         "arcana",
+         "lore"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Brakka demonstrated sharp observational skills by identifying a disguised mage during a social encounter, showing an instinct for detecting magical presence."
+        }
+       },
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you observe a creature for at least 1 minute, you gain proficiency in Insight checks to determine if that creature is a spellcaster, and you learn one school of magic they are likely to use.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "passive"
+       },
+       "tier": 1,
+       "system_equivalent": "Passive Insight/Arcana proficiency bonus (Dungeons & Dragons Fifth Edition (2024 rules))"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Shieldwall: Bottleneck] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Passive combat advantage feat (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> When you are in a narrow passage or holding a chokepoint, you gain advantage on attack rolls against creatures within 5 feet of you. Additionally, you can use your reaction to impose disadvantage on the next attack roll made against an ally within 5 feet of you.</p><p><strong>Frequency:</strong> 1/unlimited</p><p><strong>Duration:</strong> passive</p><p><strong>Tags:</strong> martial, defense</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Repeatedly used terrain to control enemy movement and protect allies, including a failed attempt to intercept an attack.</p>"
+      },
+      "activities": {
+       "actpspqv7u4": {
+        "_id": "actpspqv7u4",
+        "type": "utility",
+        "activation": {
+         "type": "none",
+         "value": null,
+         "condition": ""
+        },
+        "duration": {
+         "units": "spec"
+        },
+        "uses": {
+         "max": "",
+         "recovery": []
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:shieldwall-bottleneck",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:shieldwall-bottleneck",
+        "tags": [
+         "martial",
+         "defense"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeatedly used terrain to control enemy movement and protect allies, including a failed attempt to intercept an attack."
+        }
+       }
+      }
+     },
+     "_id": "ptccizey1pyo"
+    },
+    {
+     "name": "[Shieldwall: Mage's Eye] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Passive Insight/Arcana proficiency bonus (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> When you observe a creature for at least 1 minute, you gain proficiency in Insight checks to determine if that creature is a spellcaster, and you learn one school of magic they are likely to use.</p><p><strong>Frequency:</strong> 1/unlimited</p><p><strong>Duration:</strong> passive</p><p><strong>Tags:</strong> arcana, lore</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Brakka demonstrated sharp observational skills by identifying a disguised mage during a social encounter, showing an instinct for detecting magical presence.</p>"
+      },
+      "activities": {
+       "actubr7dqro": {
+        "_id": "actubr7dqro",
+        "type": "utility",
+        "activation": {
+         "type": "none",
+         "value": null,
+         "condition": ""
+        },
+        "duration": {
+         "units": "spec"
+        },
+        "uses": {
+         "max": "",
+         "recovery": []
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:shieldwall-mage-s-eye",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:shieldwall-mage-s-eye",
+        "tags": [
+         "arcana",
+         "lore"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Brakka demonstrated sharp observational skills by identifying a disguised mage during a social encounter, showing an instinct for detecting magical presence."
+        }
+       }
+      }
+     },
+     "_id": "pt0tdtqhtza6"
+    }
+   ]
   },
   {
    "name": "Wick",
@@ -162,29 +701,29 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532291714-1",
+      "id": "event:1790547524678-1",
       "summary": "Wick rode an ox into a fight with a troll.",
       "tags": [
        "nature"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:04:51.714Z",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
       "dangerGap": "severe",
       "themes": [
-       "mounting",
+       "horsemanship",
        "combat"
       ],
-      "quote": "bro rode an ox into a troll fight",
+      "quote": "rode an ox into a troll fight",
       "language": "en",
       "actorName": "Wick",
       "source": "adapter"
      },
      {
-      "id": "event:1790532291714-2",
+      "id": "event:1790547524678-2",
       "summary": "Wick lost his dagger to the river.",
       "tags": [],
       "outcome": "failure",
-      "occurredAt": "2026-09-27T18:04:51.714Z",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
       "themes": [
        "losing-gear"
       ],
@@ -194,13 +733,15 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532291714-3",
-      "summary": "Steve the ox lost a race by sitting down.",
-      "tags": [],
+      "id": "event:1790547524678-3",
+      "summary": "Wick's ox, Steve, lost a race by sitting down.",
+      "tags": [
+       "nature"
+      ],
       "outcome": "failure",
-      "occurredAt": "2026-09-27T18:04:51.714Z",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
       "themes": [
-       "racing"
+       "animal-racing"
       ],
       "quote": "Steve the ox lost a race by sitting down",
       "language": "en",
@@ -208,119 +749,712 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532291714-4",
+      "id": "event:1790547524678-4",
       "summary": "Wick was banned from a pie tent.",
       "tags": [],
       "outcome": "failure",
-      "occurredAt": "2026-09-27T18:04:51.714Z",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
       "themes": [
-       "social-conflict"
+       "social-mishap"
       ],
       "quote": "I got banned from a pie tent",
       "language": "en",
       "actorName": "Wick",
       "source": "adapter"
+     },
+     {
+      "id": "event:1790547524678-5",
+      "summary": "Wick tried to cheat at dice by rigging them.",
+      "tags": [
+       "deception",
+       "thievery"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T22:18:44.678Z",
+      "themes": [
+       "gambling",
+       "cheating"
+      ],
+      "quote": "lost the party's 40g rigging dice",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799275-6",
+      "summary": "Wick stole the writ from the collector's glove.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.275Z",
+      "themes": [
+       "pickpocketing"
+      ],
+      "quote": "wick stole the writ right off her glove",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799275-7",
+      "summary": "Wick accused the bell lady of working with Vesk.",
+      "tags": [
+       "deception"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:19.275Z",
+      "themes": [
+       "accusation"
+      ],
+      "quote": "he also accused the bell lady of working w/ vesk",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799275-8",
+      "summary": "Wick killed the pinned thrall.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.275Z",
+      "themes": [
+       "melee"
+      ],
+      "quote": "wick finished it off",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799275-9",
+      "summary": "Wick cut Oren loose and hid him behind the wagon.",
+      "tags": [
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.275Z",
+      "themes": [
+       "rescue"
+      ],
+      "quote": "wick cut Oren loose and hid him behind the wagon",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-10",
+      "summary": "Wick cut Steve loose to charge a thrall.",
+      "tags": [
+       "support"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "rescue"
+      ],
+      "quote": "cut steve loose to charge a thrall, steve just ran away",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-11",
+      "summary": "Wick yelled at Vesk until she switched sides.",
+      "tags": [
+       "intimidation"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "coercion"
+      ],
+      "quote": "wick yelled at vesk until she switched sides",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-12",
+      "summary": "Wick threw a dagger through the Toll King's hand.",
+      "tags": [
+       "ranged"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "dangerGap": "moderate",
+      "themes": [
+       "throwing"
+      ],
+      "quote": "wick threw a dagger through his hand",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-13",
+      "summary": "Wick discovered a hidden ledger page.",
+      "tags": [
+       "lore"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "investigation"
+      ],
+      "quote": "wick found a hidden ledger page",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-14",
+      "summary": "Wick stole 30 gold pieces.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "pickpocketing"
+      ],
+      "quote": "also pocketed 30g",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550799276-15",
+      "summary": "Wick licked the shrine.",
+      "tags": [],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:19.276Z",
+      "themes": [
+       "eccentricity"
+      ],
+      "quote": "licked the shrine",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294524-16",
+      "summary": "Wick licked a lantern.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T19:38:14.524Z",
+      "themes": [
+       "tasting"
+      ],
+      "quote": "wick licked a lantern (why) and got caught by madam wisp",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294525-17",
+      "summary": "Wick threw a dagger at a blade and used Oxwhip to send Steve through a door.",
+      "tags": [
+       "ranged",
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:14.525Z",
+      "themes": [
+       "throwing",
+       "oxwhip"
+      ],
+      "quote": "wick threw a dagger into one blade and sent Steve through the door with Oxwhip",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294525-18",
+      "summary": "The party escaped through a hatch onto a barge while the building burned.",
+      "tags": [
+       "mobility"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:14.525Z",
+      "themes": [
+       "escape"
+      ],
+      "quote": "we jumped through a hatch onto a barge while the whole place burned, steve swam after us",
+      "language": "en",
+      "actorName": "the party",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294525-19",
+      "summary": "Wick bet half the party's gold that Steve could fetch drinks.",
+      "tags": [
+       "deception"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T19:38:14.525Z",
+      "themes": [
+       "gambling",
+       "betting"
+      ],
+      "quote": "wick bet half our gold that steve could fetch drinks at the dice den, nat 1, steve ate the table, we lost the bet",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294525-20",
+      "summary": "Wick tried to sell 'bee experience' flowers.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T19:38:14.525Z",
+      "themes": [
+       "trading"
+      ],
+      "quote": "he also tried to sell \"bee experience\" flowers, nobody bought",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624294526-21",
+      "summary": "Wick learned from chapel people that Wisp is hiding in the bathhouse cellars.",
+      "tags": [
+       "society"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:14.526Z",
+      "themes": [
+       "gossip",
+       "investigation"
+      ],
+      "quote": "he did find out from the chapel people that wisp is hiding in the bathhouse cellars",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:shadowfingers-sleight-of-hand",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Wick stole the writ from the collector's glove",
+       "Wick stole 30 gold pieces",
+       "Wick tried to cheat at dice by rigging them"
+      ],
+      "entry": {
+       "name": "Shadowfingers: Sleight of Hand",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in Sleight of Hand and Thieves' Tools. When you succeed on a Sleight of Hand check to pick a pocket or hide an object, you can use your bonus action to immediately attempt to pick another pocket or hide another object with advantage.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "thievery",
+         "deception"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick demonstrated repeated success in pickpocketing (writ, gold) and attempted sleight-of-hand (rigging dice), showing a clear aptitude for manual dexterity and deception."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Sleight of Hand proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:44:51.953Z",
+      "rejectedAt": "2026-09-28T19:00:29.843Z",
+      "rejectedReason": "grants proficiency a rogue already has"
+     },
+     {
+      "id": "proposal:ai-skill:oxwhip-animal-handling",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Wick rode an ox into a fight with a troll",
+       "Wick cut Steve loose to charge a thrall"
+      ],
+      "entry": {
+       "name": "Oxwhip: Animal Handling",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in Animal Handling. When you use an action to command a mount or beast to charge or perform a dangerous maneuver, you gain advantage on the Animal Handling check. If the beast succeeds, it deals an extra 1d6 bludgeoning damage to the target.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "nature",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used an ox in combat and attempted to use it as a tactical asset, demonstrating a unique bond and command over large beasts in dangerous situations."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Animal Handling proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:44:51.956Z",
+      "approvedAt": "2026-09-28T18:45:42.378Z"
+     },
+     {
+      "id": "proposal:ai-skill:daggerdance-thrown-weapon-expertise",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Wick threw a dagger through the Toll King's hand",
+       "Wick lost his dagger to the river"
+      ],
+      "entry": {
+       "name": "Daggerdance: Thrown Weapon Expertise",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in throwing daggers. When you hit a creature with a thrown dagger, you can use your bonus action to retrieve it if it is within 5 feet of you. If you miss, you can use your reaction to make a Dexterity (Sleight of Hand) check to catch the dagger before it hits the ground, regaining it for immediate reuse.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "ranged",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used a thrown dagger in a high-stakes moment and previously lost one, suggesting a need for and aptitude in managing thrown weapons efficiently."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Thrown weapon proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:44:51.956Z",
+      "approvedAt": "2026-09-28T18:45:42.465Z"
+     }
+    ],
     "levelProgression": {
-     "level": 0,
-     "progress": 81.25,
+     "level": 2,
+     "progress": 167.25,
      "grantAllowances": 0,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:04:51.714Z",
+     "lastRestAt": "2026-09-28T19:38:14.526Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:04:51.714Z",
+     "notes": "ok session 3 recap, sorry its late lol. so we went to the Lantern House in Varrow, floating auction thing w/ paper lanterns full of secrets, and the lot was the names of everyone who crossed the ember road this year incl the toll king's 31 victims. brakka stood in the aisle the whole time and noticed the lantern cords were soaked in oil and one of the guards was actually a mage, good catch. wick licked a lantern (why) and got caught by madam wisp, maren snuck her bees out among the lanterns, and tovin won the auction by bluffing 200g we absolutely do not have 💀 luz did her Public Edict thing on one of the guards and he dropped his sword and backed off. then wisp found out we were broke and it all went on fire - brakka held the aisle with Bottleneck and hit the mage twice, wick threw a dagger into one blade and sent Steve through the door with Oxwhip and steve flattened another one (STEVE MVP), maren's goat wouldn't go near the fire but she Thorn Lashed the third guy. tovin and luz both went for the burning lantern and tovin got it, then the mage fire bolted him for 18 and he nearly dropped. the guy wick stabbed surrendered and tovin literally pressed the burning lantern into his chest until he agreed to show us the way out... luz was like \"¡Tovin, basta, ya se rindió!\" and then maren healed the same guy with her Field Triage which was kind of hilarious. luz tried to scare off the mage but wisp and the mage got away, we jumped through a hatch onto a barge while the whole place burned, steve swam after us. we have the lantern w/ the 31 names. downtime 3 days in varrow: brakka fixed his gear and tried to do shield drills with steve (steve lay down). wick bet half our gold that steve could fetch drinks at the dice den, nat 1, steve ate the table, we lost the bet. he also tried to sell \"bee experience\" flowers, nobody bought, but he did find out from the chapel people that wisp is hiding in the bathhouse cellars. maren had the worst luck ever - nat 1 buying seeds (weeds), nat 1 treating a fishwife (gave her a rash), and the chapel garden thing didn't go great either. tovin won like 40g at dice, then sat by the canal with the crown on his head trying to make a deal with the whispers, nothing answered. luz blessed the canal quarter, la gente lo agradeció mucho, but nobody listened when she told them about wisp. next session: bathhouse cellars / wisp bounty. also can someone venmo me for the wings, and do we think The Hollowing should have triggered? (it didnt, he didnt kill him)",
+     "at": "2026-09-28T19:38:14.526Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532291714-1",
-      "event:1790532291714-2",
-      "event:1790532291714-3",
-      "event:1790532291714-4"
+      "event:1790624294524-16",
+      "event:1790624294525-17",
+      "event:1790624294525-18",
+      "event:1790624294525-19",
+      "event:1790624294525-20",
+      "event:1790624294526-21"
      ],
      "proposalIds": [],
      "diagnostics": {
       "source": "adapter",
-      "events": 4,
-      "attributedToOthers": 15,
+      "events": 6,
+      "attributedToOthers": 19,
       "skippedEvents": 0,
       "skippedProposals": 0,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
+      "chunks": 2,
       "attempts": 2,
       "repairs": 0,
-      "totalMs": 20900
+      "totalMs": 1
      },
      "attributedToOthers": [
       {
        "actorName": "Brakka",
-       "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+       "summary": "Brakka observed the auction setup and identified a guard as a mage."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren sneaked her bees out among the lanterns."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin won the auction by bluffing a bid of 200 gold."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz used Public Edict on a guard."
       },
       {
        "actorName": "Brakka",
-       "summary": "Brakka won two fights in the pit and lost the third to the champion."
+       "summary": "Brakka held the aisle with Bottleneck and attacked the mage twice."
+      },
+      {
+       "actorName": "Steve",
+       "summary": "Steve flattened another guard."
       },
       {
        "actorName": "Maren",
-       "summary": "Maren rooted three out of four goblins in place with entangle."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren healed Brakka."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren thorn-whipped the last goblin into the burning railing."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren treated the surrendered goblins."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren sold out of honey."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren placed second in a bake-off with a lavender honey loaf."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren adopted a stable cat."
+       "summary": "Maren used Thorn Lash on the third guard."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin torched a troll."
+       "summary": "Tovin retrieved the burning lantern."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin lost a bet in the pit."
+       "summary": "Tovin threatened a surrendered guard with a burning lantern until he agreed to show the way out."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren healed the guard with Field Triage."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz tried to scare off the mage."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka fixed his gear and attempted shield drills with Steve."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren bought seeds."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren treated a fishwife."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren worked on the chapel garden."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin quietly dealt with a loose end on the bridge."
+       "summary": "Tovin won 40 gold at dice."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to make a deal with the whispers by the canal."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz healed Brakka to full health after the troll fight."
+       "summary": "Luz blessed the canal quarter."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz confronted Tovin for killing a surrendering goblin."
-      },
-      {
-       "actorName": "Luz",
-       "summary": "Luz led the dawn blessing at the temple."
+       "summary": "Luz told the people about Wisp."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:oxwhip-animal-handling": {
+       "name": "Oxwhip: Animal Handling",
+       "itemId": "ptvc0ok10nt7",
+       "approvedAt": "2026-09-28T18:45:42.378Z",
+       "metadata": {
+        "id": "skill:oxwhip-animal-handling",
+        "tags": [
+         "nature",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used an ox in combat and attempted to use it as a tactical asset, demonstrating a unique bond and command over large beasts in dangerous situations."
+        }
+       },
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in Animal Handling. When you use an action to command a mount or beast to charge or perform a dangerous maneuver, you gain advantage on the Animal Handling check. If the beast succeeds, it deals an extra 1d6 bludgeoning damage to the target.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "tier": 1,
+       "system_equivalent": "Animal Handling proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "skill:daggerdance-thrown-weapon-expertise": {
+       "name": "Daggerdance: Thrown Weapon Expertise",
+       "itemId": "pty6qbnu1yho",
+       "approvedAt": "2026-09-28T18:45:42.464Z",
+       "metadata": {
+        "id": "skill:daggerdance-thrown-weapon-expertise",
+        "tags": [
+         "ranged",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used a thrown dagger in a high-stakes moment and previously lost one, suggesting a need for and aptitude in managing thrown weapons efficiently."
+        }
+       },
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Gain proficiency in throwing daggers. When you hit a creature with a thrown dagger, you can use your bonus action to retrieve it if it is within 5 feet of you. If you miss, you can use your reaction to make a Dexterity (Sleight of Hand) check to catch the dagger before it hits the ground, regaining it for immediate reuse.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "tier": 1,
+       "system_equivalent": "Thrown weapon proficiency feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Oxwhip: Animal Handling] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Animal Handling proficiency feat (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> Gain proficiency in Animal Handling. When you use an action to command a mount or beast to charge or perform a dangerous maneuver, you gain advantage on the Animal Handling check. If the beast succeeds, it deals an extra 1d6 bludgeoning damage to the target.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Duration:</strong> instant</p><p><strong>Tags:</strong> nature, martial</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Wick successfully used an ox in combat and attempted to use it as a tactical asset, demonstrating a unique bond and command over large beasts in dangerous situations.</p>"
+      },
+      "activities": {
+       "actw8f93y9e": {
+        "_id": "actw8f93y9e",
+        "type": "utility",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:oxwhip-animal-handling",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:oxwhip-animal-handling",
+        "tags": [
+         "nature",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used an ox in combat and attempted to use it as a tactical asset, demonstrating a unique bond and command over large beasts in dangerous situations."
+        }
+       }
+      }
+     },
+     "_id": "ptvc0ok10nt7"
+    },
+    {
+     "name": "[Daggerdance: Thrown Weapon Expertise] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Thrown weapon proficiency feat (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> Gain proficiency in throwing daggers. When you hit a creature with a thrown dagger, you can use your bonus action to retrieve it if it is within 5 feet of you. If you miss, you can use your reaction to make a Dexterity (Sleight of Hand) check to catch the dagger before it hits the ground, regaining it for immediate reuse.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Duration:</strong> instant</p><p><strong>Tags:</strong> ranged, precision</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Wick successfully used a thrown dagger in a high-stakes moment and previously lost one, suggesting a need for and aptitude in managing thrown weapons efficiently.</p>"
+      },
+      "activities": {
+       "act5wqv7fca": {
+        "_id": "act5wqv7fca",
+        "type": "utility",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:daggerdance-thrown-weapon-expertise",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:daggerdance-thrown-weapon-expertise",
+        "tags": [
+         "ranged",
+         "precision"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick successfully used a thrown dagger in a high-stakes moment and previously lost one, suggesting a need for and aptitude in managing thrown weapons efficiently."
+        }
+       }
+      }
+     },
+     "_id": "pty6qbnu1yho"
+    }
+   ]
   },
   {
    "name": "Maren",
@@ -330,14 +1464,14 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532312126-1",
-      "summary": "Maren rooted three out of four goblins in place with entangle.",
+      "id": "event:1790547524680-1",
+      "summary": "Maren used entangle to root three of four goblins in place.",
       "tags": [
        "primal",
        "spellcasting"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.126Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "crowd-control"
       ],
@@ -347,14 +1481,14 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-2",
+      "id": "event:1790547524680-2",
       "summary": "Maren healed Brakka.",
       "tags": [
        "medicine",
        "support"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "healing"
       ],
@@ -364,15 +1498,14 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-3",
+      "id": "event:1790547524680-3",
       "summary": "Maren thorn-whipped the last goblin into the burning railing.",
       "tags": [
        "primal",
-       "fire",
        "spellcasting"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "combat"
       ],
@@ -382,14 +1515,13 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-4",
-      "summary": "Maren patched up the surrendered goblins.",
+      "id": "event:1790547524680-4",
+      "summary": "Maren treated the surrendered goblins.",
       "tags": [
-       "medicine",
-       "support"
+       "medicine"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "first-aid"
       ],
@@ -399,11 +1531,11 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-5",
+      "id": "event:1790547524680-5",
       "summary": "Maren sold out of honey.",
       "tags": [],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "trading"
       ],
@@ -413,13 +1545,13 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-6",
-      "summary": "Maren placed second in the bake-off with a lavender honey loaf.",
+      "id": "event:1790547524680-6",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf.",
       "tags": [
        "craft"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
        "baking",
        "competition"
@@ -430,108 +1562,923 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532312127-7",
+      "id": "event:1790547524680-7",
       "summary": "Maren adopted a stable cat.",
       "tags": [
        "nature"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:12.127Z",
+      "occurredAt": "2026-09-27T22:18:44.680Z",
       "themes": [
-       "pet-adoption"
+       "pet-ownership"
       ],
       "quote": "adopted a stable cat",
       "language": "en",
       "actorName": "Maren",
       "source": "adapter"
+     },
+     {
+      "id": "event:1790550807565-8",
+      "summary": "Maren persuaded Vesk to stand down.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-27T23:13:27.565Z",
+      "themes": [
+       "persuasion"
+      ],
+      "quote": "maren NAT 20 persuasion, talked vesk down",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-9",
+      "summary": "Maren cast Entangle on the thralls.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "quote": "maren entangle only got 1 of 4 ... then Thorn Lash on the one going for the wagon, pinned it",
+      "language": "en",
+      "actorName": "Maren",
+      "consequence": "Maren used Thorn Lash to pin the thrall attacking the wagon.",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-10",
+      "summary": "Maren thorn-whipped the Toll King out of the pool.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "dangerGap": "moderate",
+      "quote": "maren thorn-whipped him out of the pool",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-11",
+      "summary": "Maren found Steve in an orchard.",
+      "tags": [
+       "survival"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "themes": [
+       "searching"
+      ],
+      "quote": "maren found steve in an orchard",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-12",
+      "summary": "Maren's turnips rotted in the pool silt.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "themes": [
+       "farming"
+      ],
+      "quote": "her turnips in the pool silt rotted",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550807566-13",
+      "summary": "Maren persuaded Vesk to pay for the shrine's repairs.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:27.566Z",
+      "themes": [
+       "negotiating"
+      ],
+      "quote": "she got vesk to pay for fixing the shrine",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624339761-14",
+      "summary": "Maren sneaked her bees out among the lanterns.",
+      "tags": [
+       "nature",
+       "stealth"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:59.761Z",
+      "themes": [
+       "beekeeping",
+       "sneaking"
+      ],
+      "quote": "maren snuck her bees out among the lanterns",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624339761-15",
+      "summary": "Maren used Thorn Lash on the third guard.",
+      "tags": [
+       "primal"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:59.761Z",
+      "themes": [
+       "thorn-lash"
+      ],
+      "quote": "maren's goat wouldn't go near the fire but she Thorn Lashed the third guy",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624339761-16",
+      "summary": "Maren healed the guard with Field Triage.",
+      "tags": [
+       "medicine"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:59.761Z",
+      "themes": [
+       "first-aid"
+      ],
+      "quote": "maren healed the same guy with her Field Triage",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624339761-17",
+      "summary": "The party escaped through a hatch onto a barge while the building burned.",
+      "tags": [
+       "mobility"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:38:59.761Z",
+      "themes": [
+       "escape"
+      ],
+      "quote": "we jumped through a hatch onto a barge while the whole place burned, steve swam after us",
+      "language": "en",
+      "actorName": "the party",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624339761-18",
+      "summary": "Maren bought seeds.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "criticalFailure",
+      "occurredAt": "2026-09-28T19:38:59.761Z",
+      "themes": [
+       "gardening"
+      ],
+      "quote": "maren had the worst luck ever - nat 1 buying seeds (weeds)",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624339762-19",
+      "summary": "Maren treated a fishwife.",
+      "tags": [
+       "medicine"
+      ],
+      "outcome": "criticalFailure",
+      "occurredAt": "2026-09-28T19:38:59.762Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "nat 1 treating a fishwife (gave her a rash)",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624339762-20",
+      "summary": "Maren worked on the chapel garden.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T19:38:59.762Z",
+      "themes": [
+       "gardening"
+      ],
+      "quote": "and the chapel garden thing didn't go great either",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:verdant-snare-thorn-lash",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Maren used entangle to root three of four goblins in place.",
+       "Maren thorn-whipped the last goblin into the burning railing."
+      ],
+      "entry": {
+       "name": "Verdant Snare: Thorn Lash",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a spell attack roll against one creature within 30 feet. On a hit, the target takes 2d6 piercing damage and is Restrained until the end of your next turn. If the target is already Restrained, it instead takes an additional 1d6 piercing damage and is pushed 10 feet away from you.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Spell attack",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "primal",
+         "spellcasting",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a distinct combat style combining crowd control (entangle) with aggressive repositioning (thorn-whipping into hazards), suggesting a specialized use of plant magic for battlefield control."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Druid spell action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-27T22:21:23.987Z",
+      "approvedAt": "2026-09-27T22:22:27.331Z"
+     },
+     {
+      "id": "proposal:ai-skill:grovekeeper-field-triage",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Maren healed Brakka.",
+       "Maren treated the surrendered goblins."
+      ],
+      "entry": {
+       "name": "Grovekeeper: Field Triage",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt a Medicine check to treat one adjacent creature. On a success, the target regains 1d8 Hit Points. If the target is an animal or a humanoid who has surrendered or is not hostile, you gain advantage on the check.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Medicine check",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "medicine",
+         "support",
+         "nature"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren consistently provided medical aid to allies and even surrendered enemies, showing a dedicated and compassionate approach to healing that goes beyond simple spellcasting."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Medicine skill action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-27T22:21:23.988Z",
+      "approvedAt": "2026-09-28T18:45:42.295Z"
+     },
+     {
+      "id": "proposal:ai-skill:honeycomb-artisan-s-trade",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Maren sold out of honey.",
+       "Maren placed second in a bake-off with a lavender honey loaf."
+      ],
+      "entry": {
+       "name": "Honeycomb: Artisan's Trade",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "You gain proficiency with Cook's Utensils and Brewer's Supplies. When you sell or trade goods you have crafted or gathered (such as honey or baked goods), you can add your proficiency bonus to the DC for any Persuasion or Deception check made to negotiate a better price, and you earn 10% more gold from such sales.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "craft",
+         "diplomacy"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren's success in selling honey and competing in a bake-off indicates a strong aptitude for artisanal production and commerce, which can be formalized as a craft and social skill."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Dungeons & Dragons Fifth Edition (2024 rules) feat (GM review)"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-27T22:21:23.988Z",
+      "rejectedAt": "2026-09-28T19:00:29.681Z",
+      "rejectedReason": "garbled: adds proficiency to the DC of her own check"
+     },
+     {
+      "id": "proposal:ai-skill:verdant-snare-warden-s-bargain",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Maren persuaded Vesk to stand down (criticalSuccess)",
+       "Maren persuaded Vesk to pay for the shrine's repairs (success)"
+      ],
+      "entry": {
+       "name": "Verdant Snare: Warden's Bargain",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "When you succeed on a Persuasion check to convince a creature to stand down or pay a debt, you can use your reaction to grant that creature advantage on its next saving throw against a fear effect or a condition that would restrict its movement, representing the lingering weight of your authority.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "1 round"
+       },
+       "metadata": {
+        "tags": [
+         "diplomacy",
+         "leadership"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a consistent ability to de-escalate conflicts and negotiate favorable terms with powerful entities like Vesk, showing a mastery of social control that complements her druidic authority."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Feat granting a reactive social benefit (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T19:00:29.764Z",
+      "rejectedReason": "buffs the creature she persuaded, not Maren"
+     },
+     {
+      "id": "proposal:ai-skill:grovekeeper-pollinator-s-whisper",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Maren sneaked her bees out among the lanterns (success)",
+       "Maren bought seeds (criticalFailure)",
+       "Maren worked on the chapel garden (failure)",
+       "Maren treated a fishwife (criticalFailure)"
+      ],
+      "entry": {
+       "name": "Grovekeeper: Pollinator's Whisper",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "While in a natural or semi-natural environment, Maren can use her bonus action to command her bees to perform a simple task (such as distracting a creature, marking a path, or pollinating a plant). This grants advantage on the next Nature or Stealth check related to that task for one ally or herself.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "duration": "1 hour",
+        "actions": 0,
+        "roll": {
+         "kind": "Nature check",
+         "formula": "1d20+4"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "nature",
+         "stealth"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeated evidence of beekeeping and gardening efforts, including a successful stealthy bee deployment and multiple failed gardening attempts, suggests a deepening bond with pollinators and plant life."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Passive Nature/Stealth bonus from Druidic bond (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "approvedAt": "2026-09-28T19:40:18.627Z"
+     },
+     {
+      "id": "proposal:ai-skill:grovekeeper-herbal-remedy",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren healed the guard with Field Triage (success)",
+       "Maren treated a fishwife (criticalFailure)"
+      ],
+      "entry": {
+       "name": "Grovekeeper: Herbal Remedy",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Maren uses her bonus action to apply a herbal poultice to an adjacent ally. The ally regains 1d4 Hit Points and gains resistance to poison damage for 1 minute. If Maren fails a DC 10 Medicine check, the remedy has no effect and the ally is poisoned for 1 minute.",
+        "frequency": {
+         "max": 2,
+         "per": "encounter"
+        },
+        "duration": "1 minute",
+        "actions": 1,
+        "roll": {
+         "kind": "Medicine check",
+         "formula": "1d20+4"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "medicine",
+         "support"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren has successfully used Field Triage but also critically failed a healing attempt, indicating a need for a more controlled, reliable healing method that accounts for the risks of herbal medicine."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Healing action with a risk of failure (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:grovekeeper-thorny-ambush",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Maren used Thorn Lash on the third guard (success)",
+       "Maren sneaked her bees out among the lanterns (success)"
+      ],
+      "entry": {
+       "name": "Grovekeeper: Thorny Ambush",
+       "gameItem": {
+        "kind": "reaction"
+       },
+       "mechanics": {
+        "effect": "When a creature within 5 feet of Maren takes an action that would allow it to move away, Maren can use her reaction to lash out with thorny vines. The creature must succeed on a DC 12 Dexterity saving throw or take 1d6 piercing damage and be restrained until the end of its next turn.",
+        "frequency": {
+         "max": 1,
+         "per": "round"
+        },
+        "duration": "1 round",
+        "actions": 0,
+        "trigger": "A creature within 5 feet of Maren takes an action to move away.",
+        "roll": {
+         "kind": "Dexterity saving throw",
+         "formula": "1d20+4"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "primal",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren has successfully used Thorn Lash in combat and demonstrated the ability to use her bees for stealthy distractions, suggesting a synergy between her primal magic and tactical positioning."
+        }
+       },
+       "tier": 2,
+       "system_equivalent": "Reactive primal magic (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T19:40:18.971Z",
+      "rejectedReason": "reaction every round at tier 1 is too strong"
+     }
+    ],
     "levelProgression": {
-     "level": 1,
-     "progress": 75,
-     "grantAllowances": 1,
+     "level": 3,
+     "progress": 21.25,
+     "grantAllowances": 0,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:05:12.127Z",
+     "lastRestAt": "2026-09-28T19:38:59.763Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:05:12.127Z",
+     "notes": "ok session 3 recap, sorry its late lol. so we went to the Lantern House in Varrow, floating auction thing w/ paper lanterns full of secrets, and the lot was the names of everyone who crossed the ember road this year incl the toll king's 31 victims. brakka stood in the aisle the whole time and noticed the lantern cords were soaked in oil and one of the guards was actually a mage, good catch. wick licked a lantern (why) and got caught by madam wisp, maren snuck her bees out among the lanterns, and tovin won the auction by bluffing 200g we absolutely do not have 💀 luz did her Public Edict thing on one of the guards and he dropped his sword and backed off. then wisp found out we were broke and it all went on fire - brakka held the aisle with Bottleneck and hit the mage twice, wick threw a dagger into one blade and sent Steve through the door with Oxwhip and steve flattened another one (STEVE MVP), maren's goat wouldn't go near the fire but she Thorn Lashed the third guy. tovin and luz both went for the burning lantern and tovin got it, then the mage fire bolted him for 18 and he nearly dropped. the guy wick stabbed surrendered and tovin literally pressed the burning lantern into his chest until he agreed to show us the way out... luz was like \"¡Tovin, basta, ya se rindió!\" and then maren healed the same guy with her Field Triage which was kind of hilarious. luz tried to scare off the mage but wisp and the mage got away, we jumped through a hatch onto a barge while the whole place burned, steve swam after us. we have the lantern w/ the 31 names. downtime 3 days in varrow: brakka fixed his gear and tried to do shield drills with steve (steve lay down). wick bet half our gold that steve could fetch drinks at the dice den, nat 1, steve ate the table, we lost the bet. he also tried to sell \"bee experience\" flowers, nobody bought, but he did find out from the chapel people that wisp is hiding in the bathhouse cellars. maren had the worst luck ever - nat 1 buying seeds (weeds), nat 1 treating a fishwife (gave her a rash), and the chapel garden thing didn't go great either. tovin won like 40g at dice, then sat by the canal with the crown on his head trying to make a deal with the whispers, nothing answered. luz blessed the canal quarter, la gente lo agradeció mucho, but nobody listened when she told them about wisp. next session: bathhouse cellars / wisp bounty. also can someone venmo me for the wings, and do we think The Hollowing should have triggered? (it didnt, he didnt kill him)",
+     "at": "2026-09-28T19:38:59.763Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532312126-1",
-      "event:1790532312127-2",
-      "event:1790532312127-3",
-      "event:1790532312127-4",
-      "event:1790532312127-5",
-      "event:1790532312127-6",
-      "event:1790532312127-7"
+      "event:1790624339761-14",
+      "event:1790624339761-15",
+      "event:1790624339761-16",
+      "event:1790624339761-17",
+      "event:1790624339761-18",
+      "event:1790624339762-19",
+      "event:1790624339762-20"
      ],
-     "proposalIds": [],
+     "proposalIds": [
+      "proposal:ai-skill:grovekeeper-pollinator-s-whisper",
+      "proposal:ai-skill:grovekeeper-herbal-remedy",
+      "proposal:ai-skill:grovekeeper-thorny-ambush"
+     ],
      "diagnostics": {
       "source": "adapter",
       "events": 7,
-      "attributedToOthers": 11,
+      "attributedToOthers": 18,
       "skippedEvents": 0,
-      "skippedProposals": 0,
+      "skippedProposals": 2,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
-      "attempts": 2,
+      "chunks": 2,
+      "attempts": 4,
       "repairs": 0,
-      "totalMs": 20411
+      "totalMs": 45233
      },
      "attributedToOthers": [
       {
        "actorName": "Brakka",
-       "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+       "summary": "Brakka observed the auction setup and identified a guard as a mage."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick licked a lantern."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin won the auction by bluffing a bid of 200 gold."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz used Public Edict on a guard."
       },
       {
        "actorName": "Brakka",
-       "summary": "Brakka won two fights in the pit but lost the third to the champion."
+       "summary": "Brakka held the aisle with Bottleneck and attacked the mage twice."
       },
       {
        "actorName": "Wick",
-       "summary": "Wick rode an ox into a fight with a troll."
+       "summary": "Wick threw a dagger at a blade and used Oxwhip to send Steve through a door."
       },
       {
-       "actorName": "Wick",
-       "summary": "Wick lost his dagger to the river."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Steve the ox lost a race by sitting down."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick was banned from a pie tent."
+       "actorName": "Steve",
+       "summary": "Steve flattened another guard."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin torched a troll."
+       "summary": "Tovin retrieved the burning lantern."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin lost a bet in the pit."
+       "summary": "Tovin threatened a surrendered guard with a burning lantern until he agreed to show the way out."
       },
       {
        "actorName": "Luz",
-       "summary": "Tovin killed a goblin that was surrendering."
+       "summary": "Luz tried to scare off the mage."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka fixed his gear and attempted shield drills with Steve."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick bet half the party's gold that Steve could fetch drinks."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick tried to sell 'bee experience' flowers."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick learned from chapel people that Wisp is hiding in the bathhouse cellars."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin won 40 gold at dice."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to make a deal with the whispers by the canal."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz healed Brakka to full health after the troll fight."
+       "summary": "Luz blessed the canal quarter."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz led the dawn blessing at the temple."
+       "summary": "Luz told the people about Wisp."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:verdant-snare-thorn-lash": {
+       "name": "Verdant Snare: Thorn Lash",
+       "itemId": "ptlxaev6nvhd",
+       "approvedAt": "2026-09-27T22:22:27.330Z",
+       "metadata": {
+        "id": "skill:verdant-snare-thorn-lash",
+        "tags": [
+         "primal",
+         "spellcasting",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a distinct combat style combining crowd control (entangle) with aggressive repositioning (thorn-whipping into hazards), suggesting a specialized use of plant magic for battlefield control."
+        }
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a spell attack roll against one creature within 30 feet. On a hit, the target takes 2d6 piercing damage and is Restrained until the end of your next turn. If the target is already Restrained, it instead takes an additional 1d6 piercing damage and is pushed 10 feet away from you.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Spell attack",
+         "formula": "1d20+3"
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Druid spell action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "skill:grovekeeper-field-triage": {
+       "name": "Grovekeeper: Field Triage",
+       "itemId": "ptauvv8gnkxv",
+       "approvedAt": "2026-09-28T18:45:42.295Z",
+       "metadata": {
+        "id": "skill:grovekeeper-field-triage",
+        "tags": [
+         "medicine",
+         "support",
+         "nature"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren consistently provided medical aid to allies and even surrendered enemies, showing a dedicated and compassionate approach to healing that goes beyond simple spellcasting."
+        }
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt a Medicine check to treat one adjacent creature. On a success, the target regains 1d8 Hit Points. If the target is an animal or a humanoid who has surrendered or is not hostile, you gain advantage on the check.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Medicine check",
+         "formula": "1d20+3"
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Medicine skill action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "skill:grovekeeper-pollinator-s-whisper": {
+       "name": "Grovekeeper: Pollinator's Whisper",
+       "itemId": "ptny3vnorf81",
+       "approvedAt": "2026-09-28T19:40:18.626Z",
+       "metadata": {
+        "id": "skill:grovekeeper-pollinator-s-whisper",
+        "tags": [
+         "nature",
+         "stealth"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeated evidence of beekeeping and gardening efforts, including a successful stealthy bee deployment and multiple failed gardening attempts, suggests a deepening bond with pollinators and plant life."
+        }
+       },
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "While in a natural or semi-natural environment, Maren can use her bonus action to command her bees to perform a simple task (such as distracting a creature, marking a path, or pollinating a plant). This grants advantage on the next Nature or Stealth check related to that task for one ally or herself.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "duration": "1 hour",
+        "actions": 0,
+        "roll": {
+         "kind": "Nature check",
+         "formula": "1d20+4"
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Passive Nature/Stealth bonus from Druidic bond (Dungeons & Dragons Fifth Edition (2024 rules))"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Verdant Snare: Thorn Lash] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Druid spell action (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> Make a spell attack roll against one creature within 30 feet. On a hit, the target takes 2d6 piercing damage and is Restrained until the end of your next turn. If the target is already Restrained, it instead takes an additional 1d6 piercing damage and is pushed 10 feet away from you.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Resolution:</strong> Spell attack — [[/r 1d20+3]]</p><p><strong>Tags:</strong> primal, spellcasting, martial</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Maren demonstrated a distinct combat style combining crowd control (entangle) with aggressive repositioning (thorn-whipping into hazards), suggesting a specialized use of plant magic for battlefield control.</p>"
+      },
+      "activities": {
+       "actm6lrwks9": {
+        "_id": "actm6lrwks9",
+        "type": "attack",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:verdant-snare-thorn-lash",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:verdant-snare-thorn-lash",
+        "tags": [
+         "primal",
+         "spellcasting",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a distinct combat style combining crowd control (entangle) with aggressive repositioning (thorn-whipping into hazards), suggesting a specialized use of plant magic for battlefield control."
+        }
+       }
+      }
+     },
+     "_id": "ptlxaev6nvhd"
+    },
+    {
+     "name": "[Grovekeeper: Field Triage] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Medicine skill action (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> Attempt a Medicine check to treat one adjacent creature. On a success, the target regains 1d8 Hit Points. If the target is an animal or a humanoid who has surrendered or is not hostile, you gain advantage on the check.</p><p><strong>Frequency:</strong> 1/hour</p><p><strong>Resolution:</strong> Medicine check — [[/r 1d20+3]]</p><p><strong>Tags:</strong> medicine, support, nature</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Maren consistently provided medical aid to allies and even surrendered enemies, showing a dedicated and compassionate approach to healing that goes beyond simple spellcasting.</p>"
+      },
+      "activities": {
+       "act8p24ztgh": {
+        "_id": "act8p24ztgh",
+        "type": "utility",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "",
+         "recovery": []
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:grovekeeper-field-triage",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:grovekeeper-field-triage",
+        "tags": [
+         "medicine",
+         "support",
+         "nature"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren consistently provided medical aid to allies and even surrendered enemies, showing a dedicated and compassionate approach to healing that goes beyond simple spellcasting."
+        }
+       }
+      }
+     },
+     "_id": "ptauvv8gnkxv"
+    },
+    {
+     "name": "[Grovekeeper: Pollinator's Whisper] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Passive Nature/Stealth bonus from Druidic bond (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> While in a natural or semi-natural environment, Maren can use her bonus action to command her bees to perform a simple task (such as distracting a creature, marking a path, or pollinating a plant). This grants advantage on the next Nature or Stealth check related to that task for one ally or herself.</p><p><strong>Frequency:</strong> 1/hour</p><p><strong>Duration:</strong> 1 hour</p><p><strong>Resolution:</strong> Nature check — [[/r 1d20+4]]</p><p><strong>Tags:</strong> nature, stealth</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Repeated evidence of beekeeping and gardening efforts, including a successful stealthy bee deployment and multiple failed gardening attempts, suggests a deepening bond with pollinators and plant life.</p>"
+      },
+      "activities": {
+       "actva8fcqwu": {
+        "_id": "actva8fcqwu",
+        "type": "utility",
+        "activation": {
+         "type": "none",
+         "value": null,
+         "condition": ""
+        },
+        "duration": {
+         "value": "1",
+         "units": "hour"
+        },
+        "uses": {
+         "max": "",
+         "recovery": []
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:grovekeeper-pollinator-s-whisper",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:grovekeeper-pollinator-s-whisper",
+        "tags": [
+         "nature",
+         "stealth"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeated evidence of beekeeping and gardening efforts, including a successful stealthy bee deployment and multiple failed gardening attempts, suggests a deepening bond with pollinators and plant life."
+        }
+       }
+      }
+     },
+     "_id": "ptny3vnorf81"
+    }
+   ]
   },
   {
    "name": "Tovin",
@@ -541,16 +2488,16 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532332409-1",
+      "id": "event:1790547524682-1",
       "summary": "Tovin torched a troll.",
       "tags": [
-       "fire"
+       "fire",
+       "spellcasting"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:32.409Z",
+      "occurredAt": "2026-09-27T22:18:44.682Z",
       "dangerGap": "severe",
       "themes": [
-       "burning",
        "combat"
       ],
       "quote": "torched a troll",
@@ -559,11 +2506,11 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532332409-2",
+      "id": "event:1790547524682-2",
       "summary": "Tovin lost a bet in the pit.",
       "tags": [],
       "outcome": "failure",
-      "occurredAt": "2026-09-27T18:05:32.409Z",
+      "occurredAt": "2026-09-27T22:18:44.682Z",
       "themes": [
        "gambling"
       ],
@@ -573,121 +2520,780 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532332409-3",
-      "summary": "Tovin quietly eliminated a loose end on the bridge.",
+      "id": "event:1790547524682-3",
+      "summary": "Tovin killed a goblin that was surrendering on the bridge.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:18:44.682Z",
+      "themes": [
+       "killing-the-surrendered"
+      ],
+      "quote": "I may have quietly tidied up a loose end on the bridge",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810398-4",
+      "summary": "Tovin gave the rag-market woman a year of his dreams.",
+      "tags": [
+       "occult"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:30.398Z",
+      "themes": [
+       "dream-sacrifice"
+      ],
+      "quote": "tovin took the rag-market woman's deal for real this time - gave her a year of his dreams",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810398-5",
+      "summary": "Tovin cast Eldritch Blast.",
+      "tags": [
+       "occult",
+       "spellcasting"
+      ],
+      "outcome": "criticalSuccess",
+      "occurredAt": "2026-09-27T23:13:30.398Z",
+      "quote": "tovin nat20 eldritch blast for 3 dmg",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810398-6",
+      "summary": "Tovin took the crown and made his patron consume the Silent One.",
+      "tags": [
+       "occult",
+       "summoning"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:30.398Z",
+      "dangerGap": "severe",
+      "quote": "tovin took the crown and made his patron EAT the silent one",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810398-7",
+      "summary": "Tovin tried to steal old coins.",
+      "tags": [
+       "thievery"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:30.398Z",
+      "themes": [
+       "pickpocketing"
+      ],
+      "quote": "tovin got caught stealing old coins by vesk",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550810399-8",
+      "summary": "Tovin tried to communicate with the Toll King.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:30.399Z",
+      "themes": [
+       "negotiating"
+      ],
+      "quote": "toll king won't talk to him",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624367232-9",
+      "summary": "Tovin won the auction by bluffing a bid of 200 gold.",
       "tags": [
        "deception"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:32.409Z",
+      "occurredAt": "2026-09-28T19:39:27.232Z",
       "themes": [
-       "cover-up",
-       "secret-action"
+       "bluffing",
+       "auction"
       ],
-      "quote": "quietly tidied up a loose end on the bridge",
+      "quote": "tovin won the auction by bluffing 200g we absolutely do not have",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624367232-10",
+      "summary": "Tovin retrieved the burning lantern.",
+      "tags": [
+       "mobility",
+       "spellcasting",
+       "fire"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:39:27.232Z",
+      "themes": [
+       "retrieval"
+      ],
+      "quote": "tovin and luz both went for the burning lantern and tovin got it ... the mage fire bolted him for 18 and he nearly dropped",
+      "language": "en",
+      "actorName": "Tovin",
+      "consequence": "Tovin was hit by a fire bolt.",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624367232-11",
+      "summary": "Tovin threatened a surrendered guard with a burning lantern until he agreed to show the way out.",
+      "tags": [
+       "intimidation"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:39:27.232Z",
+      "themes": [
+       "interrogation",
+       "threatening"
+      ],
+      "quote": "tovin literally pressed the burning lantern into his chest until he agreed to show us the way out",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624367232-12",
+      "summary": "The party escaped through a hatch onto a barge while the building burned.",
+      "tags": [
+       "mobility"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:39:27.232Z",
+      "themes": [
+       "escape"
+      ],
+      "quote": "we jumped through a hatch onto a barge while the whole place burned, steve swam after us",
+      "language": "en",
+      "actorName": "the party",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624367232-13",
+      "summary": "Tovin won 40 gold at dice.",
+      "tags": [],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:39:27.232Z",
+      "themes": [
+       "gambling"
+      ],
+      "quote": "tovin won like 40g at dice",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624367232-14",
+      "summary": "Tovin tried to make a deal with the whispers by the canal.",
+      "tags": [
+       "occult"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T19:39:27.232Z",
+      "themes": [
+       "pactmaking"
+      ],
+      "quote": "then sat by the canal with the crown on his head trying to make a deal with the whispers, nothing answered",
       "language": "en",
       "actorName": "Tovin",
       "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:hexblade-the-hollowing",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Tovin killed a goblin that was surrendering on the bridge.",
+       "Tovin gave the rag-market woman a year of his dreams."
+      ],
+      "entry": {
+       "name": "Hexblade: The Hollowing",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you kill a creature that has surrendered or is incapacitated, you gain advantage on your next saving throw against a mental effect. However, you suffer a -2 penalty to all Persuasion and Deception checks until you complete a long rest, representing a growing detachment from mercy and social nuance.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "Until long rest"
+       },
+       "metadata": {
+        "tags": [
+         "occult",
+         "intimidation"
+        ],
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "Penalty to social skills and increased risk of being perceived as a threat by neutral factions."
+        },
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "The character explicitly killed a surrendering goblin, indicating a willingness to inflict harm beyond necessity, which aligns with the 'cruelty' vice."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Passive feature (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:06.096Z",
+      "approvedAt": "2026-09-28T18:45:42.545Z"
+     },
+     {
+      "id": "proposal:ai-skill:pact-infernal-ignition",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Tovin torched a troll.",
+       "Tovin cast Eldritch Blast."
+      ],
+      "entry": {
+       "name": "Pact: Infernal Ignition",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a spell attack against one creature within 60 feet. On a hit, deal 2d8 fire damage. If the target is a Large or larger creature, they must succeed on a DC 13 Constitution saving throw or be Frightened until the end of their next turn.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "Instant",
+        "roll": {
+         "kind": "Spell attack",
+         "formula": "1d20+4"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "fire",
+         "spellcasting",
+         "occult"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated ability to cast Eldritch Blast and use fire to kill a troll, suggesting a potent elemental magical affinity."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:06.096Z"
+     },
+     {
+      "id": "proposal:ai-skill:patron-dream-weaver-s-bargain",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Tovin gave the rag-market woman a year of his dreams."
+      ],
+      "entry": {
+       "name": "Patron: Dream Weaver's Bargain",
+       "gameItem": {
+        "kind": "free"
+       },
+       "mechanics": {
+        "effect": "You can sacrifice 1d4 hours of your own sleep (reducing your maximum Hit Points by 1d4 until you rest) to grant one ally within 30 feet advantage on their next saving throw or ability check. This represents the transfer of mental fortitude or insight drawn from your own subconscious.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "Until the ally's next turn",
+        "roll": {
+         "kind": "Arcana check",
+         "formula": "1d20+4"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "occult",
+         "support"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "The character explicitly traded a year of dreams to a market woman, indicating a unique magical ability to manipulate or sacrifice dream states for benefit."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Free Action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:06.096Z"
+     },
+     {
+      "id": "proposal:ai-skill:hexblade-the-hollowing-s-edge",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Tovin threatened a surrendered guard with a burning lantern until he agreed to show the way out.",
+       "Tovin won the auction by bluffing a bid of 200 gold."
+      ],
+      "entry": {
+       "name": "Hexblade: The Hollowing's Edge",
+       "gameItem": {
+        "kind": "reaction"
+       },
+       "mechanics": {
+        "effect": "When a hostile creature within 5 feet of you is not yet in combat or has surrendered, you may use your reaction to make an Intimidation check. On a success, the creature is Frightened until the end of your next turn. If the creature is already Frightened, they must succeed on a Wisdom saving throw or be forced to provide one piece of information or comply with one minor request.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "trigger": "A hostile creature within 5 feet of you is not yet in combat or has surrendered.",
+        "roll": {
+         "kind": "Intimidation check",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "intimidation",
+         "deception"
+        ],
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "You gain no benefit from this ability if you have not recently harmed or threatened a helpless or surrendered creature; the power feeds on the violation of trust and safety."
+        },
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Tovin demonstrated a willingness to use excessive force and intimidation against a surrendered guard, indicating a pattern of coercive behavior that goes beyond standard combat tactics."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Dungeons & Dragons Fifth Edition (2024 rules) reaction (GM review)"
+      },
+      "source": "ai-gateway",
+      "approvedAt": "2026-09-28T19:40:18.707Z"
+     },
+     {
+      "id": "proposal:ai-skill:hexblade-gambler-s-whisper",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Tovin won 40 gold at dice.",
+       "Tovin won the auction by bluffing a bid of 200 gold."
+      ],
+      "entry": {
+       "name": "Hexblade: Gambler's Whisper",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "You may use your action to attempt a Deception check to bluff a non-combatant NPC into believing you have more resources or influence than you actually do. On a success, the NPC is convinced of your bluff for 1 hour. On a critical failure, the NPC becomes hostile and may call for help.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "actions": 1,
+        "roll": {
+         "kind": "Deception check",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "deception",
+         "society"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Tovin successfully used bluffs in both an auction and a gambling context, showing a repeated ability to manipulate social situations for personal gain."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Dungeons & Dragons Fifth Edition (2024 rules) action (GM review)"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:hexblade-pact-of-the-burning-light",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Tovin tried to make a deal with the whispers by the canal.",
+       "Tovin retrieved the burning lantern."
+      ],
+      "entry": {
+       "name": "Hexblade: Pact of the Burning Light",
+       "gameItem": {
+        "kind": "free"
+       },
+       "mechanics": {
+        "effect": "You may use your free action to channel your warlock's dark energy into a nearby light source (such as a lantern or torch), causing it to emit a burst of fire damage. Make a spell attack roll against one creature within 10 feet. On a hit, deal 1d6 fire damage. This ability can only be used once per short rest.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Spell attack",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "fire",
+         "spellcasting"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Tovin's interaction with the burning lantern and their attempt to make a pact with the whispers suggest a latent ability to channel dark energy into light sources, resulting in a burst of fire."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Dungeons & Dragons Fifth Edition (2024 rules) free (GM review)"
+      },
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T19:40:19.049Z",
+      "rejectedReason": "5e has no free action"
+     }
+    ],
     "levelProgression": {
-     "level": 0,
-     "progress": 93.75,
+     "level": 2,
+     "progress": 126,
      "grantAllowances": 0,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:05:32.410Z",
+     "lastRestAt": "2026-09-28T19:39:27.234Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:05:32.410Z",
+     "notes": "ok session 3 recap, sorry its late lol. so we went to the Lantern House in Varrow, floating auction thing w/ paper lanterns full of secrets, and the lot was the names of everyone who crossed the ember road this year incl the toll king's 31 victims. brakka stood in the aisle the whole time and noticed the lantern cords were soaked in oil and one of the guards was actually a mage, good catch. wick licked a lantern (why) and got caught by madam wisp, maren snuck her bees out among the lanterns, and tovin won the auction by bluffing 200g we absolutely do not have 💀 luz did her Public Edict thing on one of the guards and he dropped his sword and backed off. then wisp found out we were broke and it all went on fire - brakka held the aisle with Bottleneck and hit the mage twice, wick threw a dagger into one blade and sent Steve through the door with Oxwhip and steve flattened another one (STEVE MVP), maren's goat wouldn't go near the fire but she Thorn Lashed the third guy. tovin and luz both went for the burning lantern and tovin got it, then the mage fire bolted him for 18 and he nearly dropped. the guy wick stabbed surrendered and tovin literally pressed the burning lantern into his chest until he agreed to show us the way out... luz was like \"¡Tovin, basta, ya se rindió!\" and then maren healed the same guy with her Field Triage which was kind of hilarious. luz tried to scare off the mage but wisp and the mage got away, we jumped through a hatch onto a barge while the whole place burned, steve swam after us. we have the lantern w/ the 31 names. downtime 3 days in varrow: brakka fixed his gear and tried to do shield drills with steve (steve lay down). wick bet half our gold that steve could fetch drinks at the dice den, nat 1, steve ate the table, we lost the bet. he also tried to sell \"bee experience\" flowers, nobody bought, but he did find out from the chapel people that wisp is hiding in the bathhouse cellars. maren had the worst luck ever - nat 1 buying seeds (weeds), nat 1 treating a fishwife (gave her a rash), and the chapel garden thing didn't go great either. tovin won like 40g at dice, then sat by the canal with the crown on his head trying to make a deal with the whispers, nothing answered. luz blessed the canal quarter, la gente lo agradeció mucho, but nobody listened when she told them about wisp. next session: bathhouse cellars / wisp bounty. also can someone venmo me for the wings, and do we think The Hollowing should have triggered? (it didnt, he didnt kill him)",
+     "at": "2026-09-28T19:39:27.234Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532332409-1",
-      "event:1790532332409-2",
-      "event:1790532332409-3"
+      "event:1790624367232-9",
+      "event:1790624367232-10",
+      "event:1790624367232-11",
+      "event:1790624367232-12",
+      "event:1790624367232-13",
+      "event:1790624367232-14"
      ],
-     "proposalIds": [],
+     "proposalIds": [
+      "proposal:ai-skill:hexblade-the-hollowing-s-edge",
+      "proposal:ai-skill:hexblade-gambler-s-whisper",
+      "proposal:ai-skill:hexblade-pact-of-the-burning-light"
+     ],
      "diagnostics": {
       "source": "adapter",
-      "events": 3,
-      "attributedToOthers": 15,
+      "events": 6,
+      "attributedToOthers": 19,
       "skippedEvents": 0,
       "skippedProposals": 0,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
-      "attempts": 2,
+      "chunks": 2,
+      "attempts": 3,
       "repairs": 0,
-      "totalMs": 20281
+      "totalMs": 27466
      },
      "attributedToOthers": [
       {
        "actorName": "Brakka",
-       "summary": "Brakka held the bridge against a troll and goblins until the watch arrived."
+       "summary": "Brakka observed the auction setup and identified a guard as a mage."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick licked a lantern."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren sneaked her bees out among the lanterns."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz used Public Edict on a guard."
       },
       {
        "actorName": "Brakka",
-       "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+       "summary": "Brakka held the aisle with Bottleneck and attacked the mage twice."
       },
       {
        "actorName": "Wick",
-       "summary": "Wick rode an ox into a fight with a troll."
+       "summary": "Wick threw a dagger at a blade and used Oxwhip to send Steve through a door."
       },
       {
-       "actorName": "Wick",
-       "summary": "Wick lost his dagger to the river."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Steve the ox lost a race by sitting down."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick was banned from a pie tent."
+       "actorName": "Steve",
+       "summary": "Steve flattened another guard."
       },
       {
        "actorName": "Maren",
-       "summary": "Maren used entangle to root three of four goblins in place."
+       "summary": "Maren used Thorn Lash on the third guard."
       },
       {
        "actorName": "Maren",
-       "summary": "Maren healed Brakka."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren thorn-whipped the last goblin into a burning railing."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren treated the surrendered goblins."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren sold out of honey."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren placed second in a bake-off with a lavender honey loaf."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren adopted a stable cat."
+       "summary": "Maren healed the guard with Field Triage."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz healed Brakka to full health after the troll fight."
+       "summary": "Luz tried to scare off the mage."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka fixed his gear and attempted shield drills with Steve."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick bet half the party's gold that Steve could fetch drinks."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick tried to sell 'bee experience' flowers."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick learned from chapel people that Wisp is hiding in the bathhouse cellars."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren bought seeds."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren treated a fishwife."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren worked on the chapel garden."
       },
       {
        "actorName": "Luz",
-       "summary": "Luz led the dawn blessing at the temple."
+       "summary": "Luz blessed the canal quarter."
+      },
+      {
+       "actorName": "Luz",
+       "summary": "Luz told the people about Wisp."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:hexblade-the-hollowing": {
+       "name": "Hexblade: The Hollowing",
+       "itemId": "ptgn3lzaf5y2",
+       "approvedAt": "2026-09-28T18:45:42.545Z",
+       "metadata": {
+        "id": "skill:hexblade-the-hollowing",
+        "tags": [
+         "occult",
+         "intimidation"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "The character explicitly killed a surrendering goblin, indicating a willingness to inflict harm beyond necessity, which aligns with the 'cruelty' vice."
+        },
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "Penalty to social skills and increased risk of being perceived as a threat by neutral factions."
+        }
+       },
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "When you kill a creature that has surrendered or is incapacitated, you gain advantage on your next saving throw against a mental effect. However, you suffer a -2 penalty to all Persuasion and Deception checks until you complete a long rest, representing a growing detachment from mercy and social nuance.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "Until long rest"
+       },
+       "tier": 1,
+       "system_equivalent": "Passive feature (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "skill:hexblade-the-hollowing-s-edge": {
+       "name": "Hexblade: The Hollowing's Edge",
+       "itemId": "pt7jzxmr9a0e",
+       "approvedAt": "2026-09-28T19:40:18.706Z",
+       "metadata": {
+        "id": "skill:hexblade-the-hollowing-s-edge",
+        "tags": [
+         "intimidation",
+         "deception"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Tovin demonstrated a willingness to use excessive force and intimidation against a surrendered guard, indicating a pattern of coercive behavior that goes beyond standard combat tactics."
+        },
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "You gain no benefit from this ability if you have not recently harmed or threatened a helpless or surrendered creature; the power feeds on the violation of trust and safety."
+        }
+       },
+       "gameItem": {
+        "kind": "reaction"
+       },
+       "mechanics": {
+        "effect": "When a hostile creature within 5 feet of you is not yet in combat or has surrendered, you may use your reaction to make an Intimidation check. On a success, the creature is Frightened until the end of your next turn. If the creature is already Frightened, they must succeed on a Wisdom saving throw or be forced to provide one piece of information or comply with one minor request.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "trigger": "A hostile creature within 5 feet of you is not yet in combat or has surrendered.",
+        "roll": {
+         "kind": "Intimidation check",
+         "formula": "1d20+3"
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Dungeons & Dragons Fifth Edition (2024 rules) reaction (GM review)"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 50,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Hexblade: The Hollowing] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Passive feature (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> When you kill a creature that has surrendered or is incapacitated, you gain advantage on your next saving throw against a mental effect. However, you suffer a -2 penalty to all Persuasion and Deception checks until you complete a long rest, representing a growing detachment from mercy and social nuance.</p><p><strong>Frequency:</strong> 1/unlimited</p><p><strong>Duration:</strong> Until long rest</p><p><strong>Tags:</strong> occult, intimidation</p><p><strong>Lineage:</strong> origin; sources: none</p><p>The character explicitly killed a surrendering goblin, indicating a willingness to inflict harm beyond necessity, which aligns with the &#039;cruelty&#039; vice.</p>"
+      },
+      "activities": {
+       "actxgtm4laq": {
+        "_id": "actxgtm4laq",
+        "type": "utility",
+        "activation": {
+         "type": "none",
+         "value": null,
+         "condition": ""
+        },
+        "duration": {
+         "units": "spec"
+        },
+        "uses": {
+         "max": "",
+         "recovery": []
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:hexblade-the-hollowing",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:hexblade-the-hollowing",
+        "tags": [
+         "occult",
+         "intimidation"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "The character explicitly killed a surrendering goblin, indicating a willingness to inflict harm beyond necessity, which aligns with the 'cruelty' vice."
+        },
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "Penalty to social skills and increased risk of being perceived as a threat by neutral factions."
+        }
+       }
+      }
+     },
+     "_id": "ptgn3lzaf5y2"
+    },
+    {
+     "name": "[Hexblade: The Hollowing's Edge] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Dungeons &amp; Dragons Fifth Edition (2024 rules) reaction (GM review)</p><p><strong>Effect:</strong> When a hostile creature within 5 feet of you is not yet in combat or has surrendered, you may use your reaction to make an Intimidation check. On a success, the creature is Frightened until the end of your next turn. If the creature is already Frightened, they must succeed on a Wisdom saving throw or be forced to provide one piece of information or comply with one minor request.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Trigger:</strong> A hostile creature within 5 feet of you is not yet in combat or has surrendered.</p><p><strong>Resolution:</strong> Intimidation check — [[/r 1d20+3]]</p><p><strong>Tags:</strong> intimidation, deception</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Tovin demonstrated a willingness to use excessive force and intimidation against a surrendered guard, indicating a pattern of coercive behavior that goes beyond standard combat tactics.</p>"
+      },
+      "activities": {
+       "act4uuhxaxf": {
+        "_id": "act4uuhxaxf",
+        "type": "utility",
+        "activation": {
+         "type": "reaction",
+         "value": 1,
+         "condition": "A hostile creature within 5 feet of you is not yet in combat or has surrendered."
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:hexblade-the-hollowing-s-edge",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:hexblade-the-hollowing-s-edge",
+        "tags": [
+         "intimidation",
+         "deception"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Tovin demonstrated a willingness to use excessive force and intimidation against a surrendered guard, indicating a pattern of coercive behavior that goes beyond standard combat tactics."
+        },
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "You gain no benefit from this ability if you have not recently harmed or threatened a helpless or surrendered creature; the power feeds on the violation of trust and safety."
+        }
+       }
+      }
+     },
+     "_id": "pt7jzxmr9a0e"
+    }
+   ]
   },
   {
    "name": "Luz",
@@ -697,16 +3303,15 @@
    "flags": {
     "growthEvents": [
      {
-      "id": "event:1790532354230-1",
+      "id": "event:1790547524684-1",
       "summary": "Luz healed Brakka to full health after the troll fight.",
       "tags": [
        "medicine",
        "divine",
-       "support",
-       "spellcasting"
+       "support"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:54.230Z",
+      "occurredAt": "2026-09-27T22:18:44.684Z",
       "themes": [
        "healing"
       ],
@@ -716,143 +3321,758 @@
       "source": "adapter"
      },
      {
-      "id": "event:1790532354230-2",
-      "summary": "Luz witnessed Tovin killing a surrendering goblin.",
-      "tags": [
-       "lore"
-      ],
-      "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:54.230Z",
-      "themes": [
-       "witnessing",
-       "moral-conflict"
-      ],
-      "quote": "she catch Tovin killing a goblin that was surrender",
-      "language": "en",
-      "actorName": "Luz",
-      "source": "adapter"
-     },
-     {
-      "id": "event:1790532354230-3",
+      "id": "event:1790547524684-2",
       "summary": "Luz led the dawn blessing at the temple.",
       "tags": [
-       "religion",
-       "divine",
-       "leadership"
+       "religion"
       ],
       "outcome": "success",
-      "occurredAt": "2026-09-27T18:05:54.230Z",
+      "occurredAt": "2026-09-27T22:18:44.684Z",
       "themes": [
-       "ritual"
+       "ritual",
+       "prayer"
       ],
       "quote": "Luz lead the dawn blessing at the temple",
       "language": "en",
       "actorName": "Luz",
       "source": "adapter"
+     },
+     {
+      "id": "event:1790550812224-3",
+      "summary": "Luz tried to use a blessing token.",
+      "tags": [
+       "divine"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:32.224Z",
+      "themes": [
+       "blessing"
+      ],
+      "quote": "luz tried the blessing token thing, got laughed at",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812224-4",
+      "summary": "Luz held up her symbol in front of the crowd to prevent Vesk from drawing her weapon.",
+      "tags": [
+       "divine",
+       "intimidation"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:32.224Z",
+      "themes": [
+       "public-display"
+      ],
+      "quote": "later held up her symbol in front of the crowd and made it too public for vesk to draw",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812224-5",
+      "summary": "Luz healed Maren.",
+      "tags": [
+       "divine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:32.224Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "luz healing word'd her",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812225-6",
+      "summary": "Luz cast Sanctuary on Oren.",
+      "tags": [
+       "divine",
+       "support",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:32.225Z",
+      "quote": "luz sanctuary on Oren",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812225-7",
+      "summary": "Luz cast Sacred Flame and Guiding Bolt.",
+      "tags": [
+       "divine",
+       "spellcasting"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:32.225Z",
+      "quote": "sacred flame, guiding bolt missed",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812225-8",
+      "summary": "Luz read the 31 names at the shrine.",
+      "tags": [
+       "occultism"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T23:13:32.225Z",
+      "themes": [
+       "ritual"
+      ],
+      "quote": "luz read all 31 names at the shrine, didn't work (yet)",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790550812225-9",
+      "summary": "Luz is keeping watch on Tovin.",
+      "tags": [
+       "stealth"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T23:13:32.225Z",
+      "themes": [
+       "surveillance"
+      ],
+      "quote": "she's watching tovin",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624393346-10",
+      "summary": "Luz used Public Edict on a guard.",
+      "tags": [
+       "divine"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:39:53.346Z",
+      "themes": [
+       "public-edict"
+      ],
+      "quote": "luz did her Public Edict thing on one of the guards and he dropped his sword and backed off",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624393346-11",
+      "summary": "Luz tried to scare off the mage.",
+      "tags": [
+       "intimidation"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T19:39:53.346Z",
+      "quote": "luz tried to scare off the mage but wisp and the mage got away",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624393346-12",
+      "summary": "The party escaped through a hatch onto a barge while the building burned.",
+      "tags": [
+       "mobility"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:39:53.346Z",
+      "themes": [
+       "escape"
+      ],
+      "quote": "we jumped through a hatch onto a barge while the whole place burned, steve swam after us",
+      "language": "en",
+      "actorName": "the party",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624393346-13",
+      "summary": "Luz blessed the canal quarter.",
+      "tags": [
+       "divine"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-28T19:39:53.346Z",
+      "themes": [
+       "blessing"
+      ],
+      "quote": "luz blessed the canal quarter, la gente lo agradeció mucho",
+      "language": "es",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790624393347-14",
+      "summary": "Luz told the people about Wisp.",
+      "tags": [
+       "diplomacy"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-28T19:39:53.347Z",
+      "themes": [
+       "persuasion"
+      ],
+      "quote": "but nobody listened when she told them about wisp",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
      }
     ],
-    "growthProposals": [],
+    "growthProposals": [
+     {
+      "id": "proposal:ai-skill:sanctuary-mending-light",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Luz healed Brakka to full health after the troll fight.",
+       "Luz healed Maren.",
+       "Luz cast Sanctuary on Oren."
+      ],
+      "entry": {
+       "name": "Sanctuary: Mending Light",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "When you cast a healing spell on an ally, you may use your reaction to grant that ally 5 temporary hit points. This represents the lingering divine grace that stabilizes the target immediately after the spell takes effect.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "divine",
+         "support",
+         "medicine"
+        ],
+        "themes": [
+         "healing"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz has repeatedly demonstrated the ability to restore allies to full health and protect them from further harm, showing a consistent pattern of divine support and medical stabilization."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:19.721Z",
+      "approvedAt": "2026-09-28T19:40:18.789Z"
+     },
+     {
+      "id": "proposal:ai-skill:sanctuary-public-edict",
+      "kind": "skill",
+      "status": "approved",
+      "evidence": [
+       "Luz led the dawn blessing at the temple.",
+       "Luz held up her symbol in front of the crowd to prevent Vesk from drawing her weapon."
+      ],
+      "entry": {
+       "name": "Sanctuary: Public Edict",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "As an action, you hold up your holy symbol and make a Persuasion or Intimidation check against one hostile creature within 30 feet. On a success, that creature must make a Wisdom saving throw against your spell save DC. On a failure, it is Frightened of you until the end of its next turn. On a success, it is not Frightened but is Disadvantaged on its next attack roll against you or your allies.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Persuasion or Intimidation check",
+         "formula": "1d20+2"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "divine",
+         "intimidation",
+         "diplomacy"
+        ],
+        "themes": [
+         "public-display"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz successfully used her holy symbol in a public setting to deter a hostile action, demonstrating an ability to leverage divine authority and social pressure to de-escalate conflicts."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:19.721Z",
+      "approvedAt": "2026-09-28T18:45:42.627Z"
+     },
+     {
+      "id": "proposal:ai-skill:sanctuary-vigilant-eye",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Luz is keeping watch on Tovin.",
+       "Luz read the 31 names at the shrine."
+      ],
+      "entry": {
+       "name": "Sanctuary: Vigilant Eye",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "You gain a +2 bonus to passive Perception and Investigation checks when observing a specific target or location for more than 1 minute. This reflects your ability to maintain focus and gather subtle details over time.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "while active"
+       },
+       "metadata": {
+        "tags": [
+         "stealth",
+         "survival",
+         "occultism"
+        ],
+        "themes": [
+         "surveillance"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz has shown a consistent ability to keep watch and gather information, whether by monitoring a person or reading names at a shrine, indicating a talent for sustained observation and subtle investigation."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric passive feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "requestedAt": "2026-09-28T18:45:19.721Z"
+     },
+     {
+      "id": "proposal:ai-skill:sanctuary-ward-of-the-quarter",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Luz used Public Edict on a guard and he dropped his sword and backed off",
+       "Luz blessed the canal quarter, la gente lo agradeció mucho"
+      ],
+      "entry": {
+       "name": "Sanctuary: Ward of the Quarter",
+       "gameItem": {
+        "kind": "spell",
+        "rank": 1,
+        "tradition": "divine",
+        "school": "abj"
+       },
+       "mechanics": {
+        "effect": "Create a 15-foot-radius sphere of divine light around yourself or a point in space. For 1 minute, any hostile creature that starts its turn within the sphere must succeed on a Wisdom saving throw or be Frightened until the start of its next turn. Additionally, allies within the sphere gain a +1 bonus to saving throws against being Frightened.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Wisdom saving throw",
+         "formula": "1d20+5"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "divine",
+         "support",
+         "defense"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz has repeatedly used her divine authority to protect communities and deter threats through presence and blessing, suggesting a specialized defensive warding ability."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Sanctuary spell (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:sanctuary-voice-of-conviction",
+      "kind": "skill",
+      "status": "rejected",
+      "evidence": [
+       "Luz tried to scare off the mage but wisp and the mage got away",
+       "Luz told the people about Wisp but nobody listened"
+      ],
+      "entry": {
+       "name": "Sanctuary: Voice of Conviction",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a Persuasion or Intimidation check against one creature within 30 feet. On a success, the target must succeed on a Wisdom saving throw or be Frightened until the end of your next turn. On a critical failure, the target gains advantage on its next saving throw against a fear effect.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "actions": 1,
+        "roll": {
+         "kind": "Persuasion or Intimidation check",
+         "formula": "1d20+4"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "diplomacy",
+         "intimidation",
+         "divine"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz has attempted to use her voice and authority to deter enemies and persuade the public, showing a pattern of using social influence as a divine tool, even when it fails."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Command spell (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway",
+      "rejectedAt": "2026-09-28T19:40:19.127Z",
+      "rejectedReason": "duplicates her own Public Edict"
+     }
+    ],
     "levelProgression": {
-     "level": 0,
-     "progress": 75,
+     "level": 2,
+     "progress": 17.25,
      "grantAllowances": 0,
      "capstoneAllowances": 0,
-     "lastRestAt": "2026-09-27T18:05:54.231Z",
+     "lastRestAt": "2026-09-28T19:39:53.347Z",
      "lastRestType": "long"
     },
     "lastAnalysis": {
-     "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
-     "at": "2026-09-27T18:05:54.230Z",
+     "notes": "ok session 3 recap, sorry its late lol. so we went to the Lantern House in Varrow, floating auction thing w/ paper lanterns full of secrets, and the lot was the names of everyone who crossed the ember road this year incl the toll king's 31 victims. brakka stood in the aisle the whole time and noticed the lantern cords were soaked in oil and one of the guards was actually a mage, good catch. wick licked a lantern (why) and got caught by madam wisp, maren snuck her bees out among the lanterns, and tovin won the auction by bluffing 200g we absolutely do not have 💀 luz did her Public Edict thing on one of the guards and he dropped his sword and backed off. then wisp found out we were broke and it all went on fire - brakka held the aisle with Bottleneck and hit the mage twice, wick threw a dagger into one blade and sent Steve through the door with Oxwhip and steve flattened another one (STEVE MVP), maren's goat wouldn't go near the fire but she Thorn Lashed the third guy. tovin and luz both went for the burning lantern and tovin got it, then the mage fire bolted him for 18 and he nearly dropped. the guy wick stabbed surrendered and tovin literally pressed the burning lantern into his chest until he agreed to show us the way out... luz was like \"¡Tovin, basta, ya se rindió!\" and then maren healed the same guy with her Field Triage which was kind of hilarious. luz tried to scare off the mage but wisp and the mage got away, we jumped through a hatch onto a barge while the whole place burned, steve swam after us. we have the lantern w/ the 31 names. downtime 3 days in varrow: brakka fixed his gear and tried to do shield drills with steve (steve lay down). wick bet half our gold that steve could fetch drinks at the dice den, nat 1, steve ate the table, we lost the bet. he also tried to sell \"bee experience\" flowers, nobody bought, but he did find out from the chapel people that wisp is hiding in the bathhouse cellars. maren had the worst luck ever - nat 1 buying seeds (weeds), nat 1 treating a fishwife (gave her a rash), and the chapel garden thing didn't go great either. tovin won like 40g at dice, then sat by the canal with the crown on his head trying to make a deal with the whispers, nothing answered. luz blessed the canal quarter, la gente lo agradeció mucho, but nobody listened when she told them about wisp. next session: bathhouse cellars / wisp bounty. also can someone venmo me for the wings, and do we think The Hollowing should have triggered? (it didnt, he didnt kill him)",
+     "at": "2026-09-28T19:39:53.347Z",
      "source": "adapter",
      "eventIds": [
-      "event:1790532354230-1",
-      "event:1790532354230-2",
-      "event:1790532354230-3"
+      "event:1790624393346-10",
+      "event:1790624393346-11",
+      "event:1790624393346-12",
+      "event:1790624393346-13",
+      "event:1790624393347-14"
      ],
-     "proposalIds": [],
+     "proposalIds": [
+      "proposal:ai-skill:sanctuary-ward-of-the-quarter",
+      "proposal:ai-skill:sanctuary-voice-of-conviction"
+     ],
      "diagnostics": {
       "source": "adapter",
-      "events": 3,
-      "attributedToOthers": 16,
+      "events": 5,
+      "attributedToOthers": 20,
       "skippedEvents": 0,
       "skippedProposals": 0,
       "model": "qwen3.8:27b",
       "provider": "ollama",
       "pipeline": "two-stage",
-      "chunks": 1,
-      "attempts": 2,
+      "chunks": 2,
+      "attempts": 3,
       "repairs": 0,
-      "totalMs": 21819
+      "totalMs": 26110
      },
      "attributedToOthers": [
       {
        "actorName": "Brakka",
-       "summary": "Brakka held the bridge against a troll and controlled the goblins until the watch arrived."
+       "summary": "Brakka observed the auction setup and identified a guard as a mage."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick licked a lantern."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren sneaked her bees out among the lanterns."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin won the auction by bluffing a bid of 200 gold."
       },
       {
        "actorName": "Brakka",
-       "summary": "Brakka won two fights in the pit and lost the third to the champion."
+       "summary": "Brakka held the aisle with Bottleneck and attacked the mage twice."
       },
       {
        "actorName": "Wick",
-       "summary": "Wick rode an ox into a fight with a troll."
+       "summary": "Wick threw a dagger at a blade and used Oxwhip to send Steve through a door."
       },
       {
-       "actorName": "Wick",
-       "summary": "Wick lost his dagger to the river."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Steve the ox lost a race by sitting down."
-      },
-      {
-       "actorName": "Wick",
-       "summary": "Wick was banned from a pie tent."
+       "actorName": "Steve",
+       "summary": "Steve flattened another guard."
       },
       {
        "actorName": "Maren",
-       "summary": "Maren rooted three out of four goblins in place with entangle."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren healed Brakka."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren thorn-whipped the last goblin into a burning railing."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren treated the surrendered goblins."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren sold out of her honey at the festival."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren placed second in a bake-off with a lavender honey loaf."
-      },
-      {
-       "actorName": "Maren",
-       "summary": "Maren adopted a stable cat."
+       "summary": "Maren used Thorn Lash on the third guard."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin torched a troll."
+       "summary": "Tovin retrieved the burning lantern."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin lost a bet in the pit."
+       "summary": "Tovin threatened a surrendered guard with a burning lantern until he agreed to show the way out."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren healed the guard with Field Triage."
+      },
+      {
+       "actorName": "Brakka",
+       "summary": "Brakka fixed his gear and attempted shield drills with Steve."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick bet half the party's gold that Steve could fetch drinks."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick tried to sell 'bee experience' flowers."
+      },
+      {
+       "actorName": "Wick",
+       "summary": "Wick learned from chapel people that Wisp is hiding in the bathhouse cellars."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren bought seeds."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren treated a fishwife."
+      },
+      {
+       "actorName": "Maren",
+       "summary": "Maren worked on the chapel garden."
       },
       {
        "actorName": "Tovin",
-       "summary": "Tovin quietly dealt with a loose end on the bridge."
+       "summary": "Tovin won 40 gold at dice."
+      },
+      {
+       "actorName": "Tovin",
+       "summary": "Tovin tried to make a deal with the whispers by the canal."
       }
      ]
+    },
+    "registry": {
+     "version": 1,
+     "classes": {},
+     "skills": {
+      "skill:sanctuary-public-edict": {
+       "name": "Sanctuary: Public Edict",
+       "itemId": "pt8rcpj3u5mb",
+       "approvedAt": "2026-09-28T18:45:42.627Z",
+       "metadata": {
+        "id": "skill:sanctuary-public-edict",
+        "tags": [
+         "divine",
+         "intimidation",
+         "diplomacy"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz successfully used her holy symbol in a public setting to deter a hostile action, demonstrating an ability to leverage divine authority and social pressure to de-escalate conflicts."
+        },
+        "themes": [
+         "public-display"
+        ]
+       },
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "As an action, you hold up your holy symbol and make a Persuasion or Intimidation check against one hostile creature within 30 feet. On a success, that creature must make a Wisdom saving throw against your spell save DC. On a failure, it is Frightened of you until the end of its next turn. On a success, it is not Frightened but is Disadvantaged on its next attack roll against you or your allies.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Persuasion or Intimidation check",
+         "formula": "1d20+2"
+        },
+        "actions": 1
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "skill:sanctuary-mending-light": {
+       "name": "Sanctuary: Mending Light",
+       "itemId": "pt2njbtdtb1h",
+       "approvedAt": "2026-09-28T19:40:18.789Z",
+       "metadata": {
+        "id": "skill:sanctuary-mending-light",
+        "tags": [
+         "divine",
+         "support",
+         "medicine"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz has repeatedly demonstrated the ability to restore allies to full health and protect them from further harm, showing a consistent pattern of divine support and medical stabilization."
+        },
+        "themes": [
+         "healing"
+        ]
+       },
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "When you cast a healing spell on an ally, you may use your reaction to grant that ally 5 temporary hit points. This represents the lingering divine grace that stabilizes the target immediately after the spell takes effect.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "duration": "instant"
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      }
+     },
+     "titles": {}
+    },
+    "horrorRank": {
+     "points": 0,
+     "totalLevelsDocked": 0
     }
    },
-   "items": []
+   "items": [
+    {
+     "name": "[Sanctuary: Public Edict] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Cleric action (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> As an action, you hold up your holy symbol and make a Persuasion or Intimidation check against one hostile creature within 30 feet. On a success, that creature must make a Wisdom saving throw against your spell save DC. On a failure, it is Frightened of you until the end of its next turn. On a success, it is not Frightened but is Disadvantaged on its next attack roll against you or your allies.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Resolution:</strong> Persuasion or Intimidation check — [[/r 1d20+2]]</p><p><strong>Tags:</strong> divine, intimidation, diplomacy</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Luz successfully used her holy symbol in a public setting to deter a hostile action, demonstrating an ability to leverage divine authority and social pressure to de-escalate conflicts.</p>"
+      },
+      "activities": {
+       "act1nj1fnma": {
+        "_id": "act1nj1fnma",
+        "type": "utility",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:sanctuary-public-edict",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:sanctuary-public-edict",
+        "tags": [
+         "divine",
+         "intimidation",
+         "diplomacy"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz successfully used her holy symbol in a public setting to deter a hostile action, demonstrating an ability to leverage divine authority and social pressure to de-escalate conflicts."
+        },
+        "themes": [
+         "public-display"
+        ]
+       }
+      }
+     },
+     "_id": "pt8rcpj3u5mb"
+    },
+    {
+     "name": "[Sanctuary: Mending Light] Skill",
+     "type": "feat",
+     "system": {
+      "type": {
+       "value": "feat",
+       "subtype": "general"
+      },
+      "description": {
+       "value": "<p><strong>Dungeons &amp; Dragons Fifth Edition (2024 rules) equivalent:</strong> Cleric feat (Dungeons &amp; Dragons Fifth Edition (2024 rules))</p><p><strong>Effect:</strong> When you cast a healing spell on an ally, you may use your reaction to grant that ally 5 temporary hit points. This represents the lingering divine grace that stabilizes the target immediately after the spell takes effect.</p><p><strong>Frequency:</strong> 1/encounter</p><p><strong>Duration:</strong> instant</p><p><strong>Tags:</strong> divine, support, medicine</p><p><strong>Lineage:</strong> origin; sources: none</p><p>Luz has repeatedly demonstrated the ability to restore allies to full health and protect them from further harm, showing a consistent pattern of divine support and medical stabilization.</p>"
+      },
+      "activities": {
+       "actgb4n4fi5": {
+        "_id": "actgb4n4fi5",
+        "type": "utility",
+        "activation": {
+         "type": "action",
+         "value": 1,
+         "condition": ""
+        },
+        "duration": {
+         "units": "inst"
+        },
+        "uses": {
+         "max": "1",
+         "recovery": [
+          {
+           "period": "sr",
+           "type": "recoverAll"
+          }
+         ]
+        }
+       }
+      }
+     },
+     "flags": {
+      "grand-design-ai": {
+       "registryId": "skill:sanctuary-mending-light",
+       "kind": "skill",
+       "metadata": {
+        "id": "skill:sanctuary-mending-light",
+        "tags": [
+         "divine",
+         "support",
+         "medicine"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Luz has repeatedly demonstrated the ability to restore allies to full health and protect them from further harm, showing a consistent pattern of divine support and medical stabilization."
+        },
+        "themes": [
+         "healing"
+        ]
+       }
+      }
+     },
+     "_id": "pt2njbtdtb1h"
+    }
+   ]
   }
  ],
  "emergentThemes": {
@@ -860,128 +4080,374 @@
    "holding-a-line": {
     "count": 1,
     "label": "Holding A Line",
-    "firstSeen": "2026-09-27T18:04:30.807Z",
-    "lastSeen": "2026-09-27T18:04:30.807Z"
+    "firstSeen": "2026-09-27T22:18:44.670Z",
+    "lastSeen": "2026-09-27T22:18:44.670Z"
    },
    "crowd-control": {
     "count": 2,
     "label": "Crowd Control",
-    "firstSeen": "2026-09-27T18:04:30.807Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "firstSeen": "2026-09-27T22:18:44.670Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
    },
-   "arena-fighting": {
+   "brawling": {
     "count": 1,
-    "label": "Arena Fighting",
-    "firstSeen": "2026-09-27T18:04:30.807Z",
-    "lastSeen": "2026-09-27T18:04:30.807Z"
+    "label": "Brawling",
+    "firstSeen": "2026-09-27T22:18:44.670Z",
+    "lastSeen": "2026-09-27T22:18:44.670Z"
    },
-   "mounting": {
+   "competition": {
+    "count": 2,
+    "label": "Competition",
+    "firstSeen": "2026-09-27T22:18:44.670Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
+   },
+   "horsemanship": {
     "count": 1,
-    "label": "Mounting",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:04:51.714Z"
+    "label": "Horsemanship",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
    },
    "combat": {
-    "count": 3,
+    "count": 4,
     "label": "Combat",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-28T19:38:14.515Z"
    },
    "losing-gear": {
     "count": 1,
     "label": "Losing Gear",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:04:51.714Z"
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
    },
-   "racing": {
+   "animal-racing": {
     "count": 1,
-    "label": "Racing",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:04:51.714Z"
+    "label": "Animal Racing",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
    },
-   "social-conflict": {
+   "social-mishap": {
     "count": 1,
-    "label": "Social Conflict",
-    "firstSeen": "2026-09-27T18:04:51.714Z",
-    "lastSeen": "2026-09-27T18:04:51.714Z"
+    "label": "Social Mishap",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
+   },
+   "gambling": {
+    "count": 4,
+    "label": "Gambling",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-28T19:39:27.233Z"
+   },
+   "cheating": {
+    "count": 1,
+    "label": "Cheating",
+    "firstSeen": "2026-09-27T22:18:44.678Z",
+    "lastSeen": "2026-09-27T22:18:44.678Z"
    },
    "healing": {
-    "count": 2,
+    "count": 4,
     "label": "Healing",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:54.230Z"
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-28T19:38:59.762Z"
    },
    "first-aid": {
-    "count": 1,
+    "count": 2,
     "label": "First Aid",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-28T19:38:59.762Z"
    },
    "trading": {
-    "count": 1,
+    "count": 2,
     "label": "Trading",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-28T19:38:14.526Z"
    },
    "baking": {
     "count": 1,
     "label": "Baking",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
    },
-   "competition": {
+   "pet-ownership": {
     "count": 1,
-    "label": "Competition",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
+    "label": "Pet Ownership",
+    "firstSeen": "2026-09-27T22:18:44.680Z",
+    "lastSeen": "2026-09-27T22:18:44.680Z"
    },
-   "pet-adoption": {
+   "killing-the-surrendered": {
     "count": 1,
-    "label": "Pet Adoption",
-    "firstSeen": "2026-09-27T18:05:12.127Z",
-    "lastSeen": "2026-09-27T18:05:12.127Z"
-   },
-   "burning": {
-    "count": 1,
-    "label": "Burning",
-    "firstSeen": "2026-09-27T18:05:32.409Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
-   },
-   "gambling": {
-    "count": 1,
-    "label": "Gambling",
-    "firstSeen": "2026-09-27T18:05:32.409Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
-   },
-   "cover-up": {
-    "count": 1,
-    "label": "Cover Up",
-    "firstSeen": "2026-09-27T18:05:32.409Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
-   },
-   "secret-action": {
-    "count": 1,
-    "label": "Secret Action",
-    "firstSeen": "2026-09-27T18:05:32.409Z",
-    "lastSeen": "2026-09-27T18:05:32.409Z"
-   },
-   "witnessing": {
-    "count": 1,
-    "label": "Witnessing",
-    "firstSeen": "2026-09-27T18:05:54.230Z",
-    "lastSeen": "2026-09-27T18:05:54.230Z"
-   },
-   "moral-conflict": {
-    "count": 1,
-    "label": "Moral Conflict",
-    "firstSeen": "2026-09-27T18:05:54.230Z",
-    "lastSeen": "2026-09-27T18:05:54.230Z"
+    "label": "Killing The Surrendered",
+    "firstSeen": "2026-09-27T22:18:44.682Z",
+    "lastSeen": "2026-09-27T22:18:44.682Z"
    },
    "ritual": {
-    "count": 1,
+    "count": 2,
     "label": "Ritual",
-    "firstSeen": "2026-09-27T18:05:54.230Z",
-    "lastSeen": "2026-09-27T18:05:54.230Z"
+    "firstSeen": "2026-09-27T22:18:44.684Z",
+    "lastSeen": "2026-09-27T23:13:32.225Z"
+   },
+   "prayer": {
+    "count": 1,
+    "label": "Prayer",
+    "firstSeen": "2026-09-27T22:18:44.684Z",
+    "lastSeen": "2026-09-27T22:18:44.684Z"
+   },
+   "hostage-offer": {
+    "count": 1,
+    "label": "Hostage Offer",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "movement": {
+    "count": 1,
+    "label": "Movement",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "holding-the-line": {
+    "count": 1,
+    "label": "Holding The Line",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "lassoing": {
+    "count": 1,
+    "label": "Lassoing",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "repairing": {
+    "count": 1,
+    "label": "Repairing",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "guarding": {
+    "count": 1,
+    "label": "Guarding",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:19.264Z"
+   },
+   "searching": {
+    "count": 2,
+    "label": "Searching",
+    "firstSeen": "2026-09-27T23:13:19.264Z",
+    "lastSeen": "2026-09-27T23:13:27.566Z"
+   },
+   "pickpocketing": {
+    "count": 3,
+    "label": "Pickpocketing",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:30.399Z"
+   },
+   "accusation": {
+    "count": 1,
+    "label": "Accusation",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "melee": {
+    "count": 1,
+    "label": "Melee",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "rescue": {
+    "count": 2,
+    "label": "Rescue",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "coercion": {
+    "count": 1,
+    "label": "Coercion",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "throwing": {
+    "count": 2,
+    "label": "Throwing",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-28T19:38:14.526Z"
+   },
+   "investigation": {
+    "count": 2,
+    "label": "Investigation",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-28T19:38:14.526Z"
+   },
+   "eccentricity": {
+    "count": 1,
+    "label": "Eccentricity",
+    "firstSeen": "2026-09-27T23:13:19.276Z",
+    "lastSeen": "2026-09-27T23:13:19.276Z"
+   },
+   "persuasion": {
+    "count": 2,
+    "label": "Persuasion",
+    "firstSeen": "2026-09-27T23:13:27.566Z",
+    "lastSeen": "2026-09-28T19:39:53.347Z"
+   },
+   "farming": {
+    "count": 1,
+    "label": "Farming",
+    "firstSeen": "2026-09-27T23:13:27.566Z",
+    "lastSeen": "2026-09-27T23:13:27.566Z"
+   },
+   "negotiating": {
+    "count": 2,
+    "label": "Negotiating",
+    "firstSeen": "2026-09-27T23:13:27.566Z",
+    "lastSeen": "2026-09-27T23:13:30.399Z"
+   },
+   "dream-sacrifice": {
+    "count": 1,
+    "label": "Dream Sacrifice",
+    "firstSeen": "2026-09-27T23:13:30.399Z",
+    "lastSeen": "2026-09-27T23:13:30.399Z"
+   },
+   "blessing": {
+    "count": 2,
+    "label": "Blessing",
+    "firstSeen": "2026-09-27T23:13:32.225Z",
+    "lastSeen": "2026-09-28T19:39:53.347Z"
+   },
+   "public-display": {
+    "count": 1,
+    "label": "Public Display",
+    "firstSeen": "2026-09-27T23:13:32.225Z",
+    "lastSeen": "2026-09-27T23:13:32.225Z"
+   },
+   "surveillance": {
+    "count": 1,
+    "label": "Surveillance",
+    "firstSeen": "2026-09-27T23:13:32.225Z",
+    "lastSeen": "2026-09-27T23:13:32.225Z"
+   },
+   "observation": {
+    "count": 1,
+    "label": "Observation",
+    "firstSeen": "2026-09-28T19:38:14.515Z",
+    "lastSeen": "2026-09-28T19:38:14.515Z"
+   },
+   "scouting": {
+    "count": 1,
+    "label": "Scouting",
+    "firstSeen": "2026-09-28T19:38:14.515Z",
+    "lastSeen": "2026-09-28T19:38:14.515Z"
+   },
+   "bottleneck": {
+    "count": 1,
+    "label": "Bottleneck",
+    "firstSeen": "2026-09-28T19:38:14.515Z",
+    "lastSeen": "2026-09-28T19:38:14.515Z"
+   },
+   "escape": {
+    "count": 5,
+    "label": "Escape",
+    "firstSeen": "2026-09-28T19:38:14.515Z",
+    "lastSeen": "2026-09-28T19:39:53.347Z"
+   },
+   "gear-maintenance": {
+    "count": 1,
+    "label": "Gear Maintenance",
+    "firstSeen": "2026-09-28T19:38:14.515Z",
+    "lastSeen": "2026-09-28T19:38:14.515Z"
+   },
+   "training": {
+    "count": 1,
+    "label": "Training",
+    "firstSeen": "2026-09-28T19:38:14.515Z",
+    "lastSeen": "2026-09-28T19:38:14.515Z"
+   },
+   "tasting": {
+    "count": 1,
+    "label": "Tasting",
+    "firstSeen": "2026-09-28T19:38:14.526Z",
+    "lastSeen": "2026-09-28T19:38:14.526Z"
+   },
+   "oxwhip": {
+    "count": 1,
+    "label": "Oxwhip",
+    "firstSeen": "2026-09-28T19:38:14.526Z",
+    "lastSeen": "2026-09-28T19:38:14.526Z"
+   },
+   "betting": {
+    "count": 1,
+    "label": "Betting",
+    "firstSeen": "2026-09-28T19:38:14.526Z",
+    "lastSeen": "2026-09-28T19:38:14.526Z"
+   },
+   "gossip": {
+    "count": 1,
+    "label": "Gossip",
+    "firstSeen": "2026-09-28T19:38:14.526Z",
+    "lastSeen": "2026-09-28T19:38:14.526Z"
+   },
+   "beekeeping": {
+    "count": 1,
+    "label": "Beekeeping",
+    "firstSeen": "2026-09-28T19:38:59.762Z",
+    "lastSeen": "2026-09-28T19:38:59.762Z"
+   },
+   "sneaking": {
+    "count": 1,
+    "label": "Sneaking",
+    "firstSeen": "2026-09-28T19:38:59.762Z",
+    "lastSeen": "2026-09-28T19:38:59.762Z"
+   },
+   "thorn-lash": {
+    "count": 1,
+    "label": "Thorn Lash",
+    "firstSeen": "2026-09-28T19:38:59.762Z",
+    "lastSeen": "2026-09-28T19:38:59.762Z"
+   },
+   "gardening": {
+    "count": 2,
+    "label": "Gardening",
+    "firstSeen": "2026-09-28T19:38:59.762Z",
+    "lastSeen": "2026-09-28T19:38:59.762Z"
+   },
+   "bluffing": {
+    "count": 1,
+    "label": "Bluffing",
+    "firstSeen": "2026-09-28T19:39:27.233Z",
+    "lastSeen": "2026-09-28T19:39:27.233Z"
+   },
+   "auction": {
+    "count": 1,
+    "label": "Auction",
+    "firstSeen": "2026-09-28T19:39:27.233Z",
+    "lastSeen": "2026-09-28T19:39:27.233Z"
+   },
+   "retrieval": {
+    "count": 1,
+    "label": "Retrieval",
+    "firstSeen": "2026-09-28T19:39:27.233Z",
+    "lastSeen": "2026-09-28T19:39:27.233Z"
+   },
+   "interrogation": {
+    "count": 1,
+    "label": "Interrogation",
+    "firstSeen": "2026-09-28T19:39:27.233Z",
+    "lastSeen": "2026-09-28T19:39:27.233Z"
+   },
+   "threatening": {
+    "count": 1,
+    "label": "Threatening",
+    "firstSeen": "2026-09-28T19:39:27.233Z",
+    "lastSeen": "2026-09-28T19:39:27.233Z"
+   },
+   "pactmaking": {
+    "count": 1,
+    "label": "Pactmaking",
+    "firstSeen": "2026-09-28T19:39:27.233Z",
+    "lastSeen": "2026-09-28T19:39:27.233Z"
+   },
+   "public-edict": {
+    "count": 1,
+    "label": "Public Edict",
+    "firstSeen": "2026-09-28T19:39:53.347Z",
+    "lastSeen": "2026-09-28T19:39:53.347Z"
    }
   }
  }

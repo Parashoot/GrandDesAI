@@ -12,6 +12,7 @@
 // Pure ESM, zero Foundry globals.
 
 import { GROWTH_TAXONOMY, outcomeFromSentence, dangerGapFromSentence } from "../growth-taxonomy.js";
+import { VICE_TAGS } from "../vice-taxonomy.js";
 
 export const CANONICAL_TAGS = GROWTH_TAXONOMY.map(([tag]) => tag);
 const CANONICAL_SET = new Set(CANONICAL_TAGS);
@@ -634,6 +635,85 @@ export function coerceDangerGap(raw) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Dark deeds (batch 3, board 21e944ed): Horror Rank accrues from what the notes record the PC DID,
+// so every event carries darkDeed (a vice-taxonomy key or "none") and darkSeverity.
+// ---------------------------------------------------------------------------------------------
+
+// Words a model reaches for instead of the taxonomy key. Shared with pipeline.js (a red proposal's
+// malignance.vice) so an event and a proposal read "torture" the same way.
+export const VICE_SYNONYMS = {
+  murder: "bloodlust", killing: "bloodlust", bloodthirst: "bloodlust", slaughter: "bloodlust", massacre: "bloodlust",
+  sadism: "cruelty", torment: "cruelty", torture: "cruelty", execution: "cruelty", brutality: "cruelty", mutilation: "cruelty",
+  // PM/dev-harness gold (batch 3): eating a person is desecration (a monstrous one), not cruelty.
+  cannibalism: "desecration", cannibal: "desecration", "eating-a-person": "desecration",
+  domination: "subjugation", tyranny: "subjugation", coercion: "subjugation", enslavement: "servitude", slavery: "servitude", bondage: "servitude", thrall: "servitude",
+  drug: "addiction", drugs: "addiction", dependence: "addiction", compulsion: "addiction", greed: "corruption", pact: "corruption", taint: "corruption", bribery: "corruption",
+  sacrilege: "desecration", blasphemy: "desecration", defilement: "desecration", oathbreaking: "desecration",
+  treachery: "betrayal", treason: "betrayal", backstab: "betrayal", backstabbing: "betrayal",
+  destruction: "ruin", devastation: "ruin", arson: "ruin", sabotage: "ruin"
+};
+
+export const DARK_SEVERITIES = ["none", "minor", "serious", "monstrous"];
+const SEVERITY_WORDS = [
+  [/^(none|no|null|n\/?a|nothing|false|0)$/, "none"],
+  [/(monstrous|monster|atroc|heinous|unspeakable|abomin|extreme|horrif|3)/, "monstrous"],
+  [/(serious|severe|grave|major|high|significant|2)/, "serious"],
+  [/(minor|petty|low|small|slight|mild|light|moderate|medium|1)/, "minor"]
+];
+
+/** A vice key from the taxonomy, via synonyms, else "none" (an unknown word never invents a vice). */
+export function coerceVice(raw) {
+  const p = String(raw ?? "").toLowerCase().trim().replace(/[\s_]+/g, "-");
+  if (!p || /^(none|no|null|n\/?a|nothing|false|standard|-+)$/.test(p)) return "none";
+  if (VICE_TAGS.has(p)) return p;
+  if (VICE_SYNONYMS[p]) return VICE_SYNONYMS[p];
+  const joined = p.replace(/-/g, ""); // "blood lust"
+  if (VICE_TAGS.has(joined)) return joined;
+  for (const word of p.split("-").filter(Boolean)) {
+    if (VICE_TAGS.has(word)) return word;
+    if (VICE_SYNONYMS[word]) return VICE_SYNONYMS[word];
+    const stem = stemWord(word);
+    const hit = [...VICE_TAGS].find((vice) => stemWord(vice) === stem)
+      ?? Object.entries(VICE_SYNONYMS).find(([synonym]) => stemWord(synonym) === stem)?.[1];
+    if (hit) return hit;
+  }
+  return "none";
+}
+
+/**
+ * -> { darkDeed, darkSeverity, coercions }, both always set and consistent: no vice means severity
+ * "none"; a named vice with no usable severity is "minor" (the model called it taboo but not how
+ * bad -- the smallest Horror Rank step, never a guess upward).
+ */
+export function coerceDarkDeed(rawDeed, rawSeverity) {
+  const coercions = [];
+  const nested = rawDeed !== null && typeof rawDeed === "object" && !Array.isArray(rawDeed);
+  const darkDeed = coerceVice(nested ? rawDeed.vice ?? rawDeed.id ?? rawDeed.value : rawDeed);
+  if (rawDeed !== undefined && rawDeed !== null && !nested && darkDeed !== String(rawDeed).toLowerCase().trim()) {
+    coercions.push(`darkDeed:${JSON.stringify(rawDeed)}->${darkDeed}`);
+  }
+  const s = String((nested ? rawDeed.severity : undefined) ?? rawSeverity ?? "").toLowerCase().trim();
+  let darkSeverity = s ? SEVERITY_WORDS.find(([pattern]) => pattern.test(s))?.[1] : undefined;
+  if (darkDeed === "none") {
+    if (darkSeverity && darkSeverity !== "none") coercions.push(`darkSeverity:${darkSeverity}->none(no-vice)`);
+    darkSeverity = "none";
+  } else if (/cannibal|eating-a-person|massacre/.test(String(nested ? rawDeed.vice ?? "" : rawDeed ?? "").toLowerCase().replace(/\s+/g, "-")) && darkSeverity !== "monstrous") {
+    // The word itself states the severity (dev-harness gold: eating a person = desecration/monstrous).
+    coercions.push(`darkSeverity:${JSON.stringify(rawSeverity ?? null)}->monstrous`);
+    darkSeverity = "monstrous";
+  } else if (!darkSeverity || darkSeverity === "none") {
+    coercions.push(`darkSeverity:${JSON.stringify(rawSeverity ?? null)}->minor`);
+    darkSeverity = "minor";
+  }
+  return { darkDeed, darkSeverity, coercions };
+}
+
+/** Order for "the worse of two" (pipeline.js#mergeFollowUpEvents keeps the worse deed). */
+export function darkSeverityRank(severity) {
+  return Math.max(0, DARK_SEVERITIES.indexOf(severity));
+}
+
+// ---------------------------------------------------------------------------------------------
 // coerceEvent
 // ---------------------------------------------------------------------------------------------
 
@@ -690,6 +770,19 @@ function toStringList(value) {
   if (typeof value === "object") return Object.keys(value).filter((key) => value[key]);
   // "stealth, thievery" / "martial/defense" / "stealth and athletics"
   return String(value).split(/\s*(?:[,;|/&+]|\band\b|\by\b|\bet\b|\bund\b|\be\b)\s*/i).map((part) => part.trim()).filter(Boolean);
+}
+
+// actorName is how per-character credit is decided downstream (api.js), so the non-names a model
+// writes when it has no name -- "I", "unknown", "n/a", "the GM" -- must read as "not stated" (""),
+// and every spelling of a group action must read as the one agreed value "the party". A pronoun
+// credited as a name would silently give the event to nobody.
+const NO_ACTOR = /^(i|me|myself|my|you|he|she|they|him|her|them|someone|somebody|nobody|no ?one|none|null|undefined|unknown|unnamed|n\/?a|-+|\?+|narrator|the narrator|gm|dm|the gm|the dm|game ?master|dungeon ?master|player|a player|character|the character|pc)$/i;
+const PARTY_ACTOR = /^(we|us|our|ourselves|party|the party|our party|whole party|the whole party|the group|group|our group|everyone|everybody|all|all of us|the team|team|the heroes|the adventurers|the pcs|pcs|la party|el grupo|nosotros|o grupo|nós|le groupe|nous|die gruppe|wir|il gruppo|noi|tayo|kami)$/i;
+export function coerceActorName(value) {
+  const name = textOf(value, 80).replace(/^["'“”‘’]+|["'“”‘’.!]+$/g, "").trim();
+  if (!name || NO_ACTOR.test(name)) return "";
+  if (PARTY_ACTOR.test(name)) return "the party";
+  return name;
 }
 
 function textOf(value, max) {
@@ -813,7 +906,9 @@ export function coerceEvent(rawEvent, opts = {}) {
   }
 
   const actorPick = pick(raw, "actorName");
-  const actorName = textOf(actorPick?.value, 80);
+  const actorName = coerceActorName(actorPick?.value);
+  const dark = coerceDarkDeed(raw.darkDeed ?? raw.dark_deed ?? raw.vice, raw.darkSeverity ?? raw.dark_severity ?? raw.severity);
+  coercions.push(...dark.coercions);
   const language = coerceLanguage(pick(raw, "language")?.value);
 
   const event = {
@@ -822,6 +917,9 @@ export function coerceEvent(rawEvent, opts = {}) {
     themes: themes.slice(0, maxThemes),
     outcome,
     ...(outcomeInferred ? { outcomeInferred: true } : {}),
+    // Always present (batch-3 contract section 1): "none"/"none" states "nothing taboo here".
+    darkDeed: dark.darkDeed,
+    darkSeverity: dark.darkSeverity,
     ...(dangerGap ? { dangerGap } : {}),
     ...(quote ? { quote } : {}),
     ...(consequence && !NOISE_WORDS.has(consequence.toLowerCase()) ? { consequence } : {}),
@@ -842,5 +940,7 @@ export function eventDedupeKey(event) {
     // Numbers are kept even though they're short: "tended hive 1" and "tended hive 2" (or "round 1"
     // / "round 2") are different things that happened, not a duplicate to merge.
     .filter((word) => (word.length > 2 || /^\d+$/.test(word)) && !FILLER_PARTS.has(word));
-  return `${words.slice(0, 8).join("-")}|${event.outcome}`;
+  // The actor is part of identity: two PCs who each "Picked a lock." did two things (C5 review:
+  // the second PC's deed was silently dropped). Unnamed events still dedupe among themselves.
+  return `${words.slice(0, 8).join("-")}|${event.outcome}|${String(event.actorName ?? "").trim().toLowerCase()}`;
 }

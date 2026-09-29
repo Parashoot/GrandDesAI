@@ -63,6 +63,8 @@ export const DEFAULT_FAULT_WEIGHTS = Object.freeze({
 
 const HALLUCINATED_TAGS = ["melee", "defensive", "healing", "lockpicking", "sneaking", "magic", "combat", "swordsmanship", "Persuasion", "Athletics!", "fire magic", "Brewing", "bee-keeping", "banana", "vibes", "teamwork"];
 const BAD_OUTCOMES = ["Success!", "crit", "nat 20", "FAILED", "critical fail", "partial", "win", "Crit Success", "botched", "succeeded", "1", "20", "mixed", "éxito"];
+const BAD_DARK_DEEDS = ["Cruelty", "murder", "evil", "N/A", "", "war crime", "BETRAYAL!", "sadism", "no"];
+const BAD_DARK_SEVERITIES = ["Serious", "very bad", "low", "extreme", "N/A", "", "3", "MONSTROUS"];
 const BAD_DANGER = ["HIGH", "extreme", "yes", "true", "none", "Moderate ", "SEVERE!!"];
 
 // mulberry32: tiny, fast, good enough, and identical in Node and every browser.
@@ -148,6 +150,10 @@ export function goldEvents(item) {
   const count = Math.max(gold.minEvents ?? 1, must.length ? 1 : 0, themes.length ? 1 : 0);
   const n = Math.max(1, Math.min(count, gold.maxEvents ?? count));
   const parts = sentences(item.notes);
+  // Dark deeds (contract section 1): the gold vice/severity goes on the first event, like dangerGap;
+  // every other event says "none", which is what a well-behaved model answers for ordinary deeds.
+  const goldVice = firstAlt(gold.darkDeed);
+  const dark = goldVice && goldVice !== "none" ? { darkDeed: goldVice, darkSeverity: firstAlt(gold.darkSeverity) || "serious" } : null;
   const events = [];
   for (let i = 0; i < n; i += 1) {
     const tags = must.filter((_, k) => k % n === i);
@@ -159,6 +165,7 @@ export function goldEvents(item) {
       themes: i === 0 ? themes : [],
       outcome: firstAlt(gold.outcome) ?? "success",
       ...(gold.dangerGap && gold.dangerGap !== "none" && i === 0 ? { dangerGap: firstAlt(gold.dangerGap) } : {}),
+      ...(dark && i === 0 ? dark : { darkDeed: "none", darkSeverity: "none" }),
       quote: quote.slice(0, 400),
       language: String(item.lang ?? "en").split("-")[0]
     });
@@ -167,13 +174,26 @@ export function goldEvents(item) {
   return events;
 }
 
+// Unmatched notes (playtest text, tests): a few unmistakable phrasings get a vice so the dark-deed
+// path is exercised; everything else is "none", the right answer for nearly every real sentence.
+const HEURISTIC_DARK = [
+  [/\b(tortur\w*|flay\w*)\b/i, "cruelty", "serious"],
+  [/\b(surrender\w*|begging|helpless)\b.*\b(kill\w*|execut\w*|finish\w* off)\b|\b(kill\w*|execut\w*|finish\w* off)\b.*\b(surrender\w*|begging|helpless)\b/i, "cruelty", "serious"],
+  [/\b(desecrat\w*|defil\w*|grave-?robb\w*)\b/i, "desecration", "serious"],
+  [/\b(betray\w*|sold (us|them|him|her) out)\b/i, "betrayal", "serious"]
+];
+function heuristicDark(sentence) {
+  const hit = HEURISTIC_DARK.find(([pattern]) => pattern.test(sentence));
+  return hit ? { darkDeed: hit[1], darkSeverity: hit[2] } : { darkDeed: "none", darkSeverity: "none" };
+}
+
 /** Cheap fallback when the notes are not a corpus item: taxonomy regexes per sentence. */
 export function heuristicEvents(text) {
   const out = [];
   for (const sentence of sentences(text).slice(0, 12)) {
     const tags = GROWTH_TAXONOMY.filter(([, pattern]) => pattern.test(sentence)).map(([tag]) => tag).slice(0, 3);
     if (!tags.length) continue;
-    out.push({ summary: sentence.slice(0, 160), tags, themes: [], outcome: /fail|miss|couldn/i.test(sentence) ? "failure" : "success", quote: sentence.slice(0, 400), language: "en" });
+    out.push({ summary: sentence.slice(0, 160), tags, themes: [], outcome: /fail|miss|couldn/i.test(sentence) ? "failure" : "success", ...heuristicDark(sentence), quote: sentence.slice(0, 400), language: "en" });
   }
   return out;
 }
@@ -295,6 +315,12 @@ function corruptPayload(kind, payload, rng) {
       }
       for (const proposal of proposals) {
         if (proposal.entry?.mechanics?.frequency) proposal.entry.mechanics.frequency.per = rng.pick(["Day", "per day", "daily", "turn"]);
+      }
+      // After the existing draws so older faults keep their seeded shape. Real models capitalise,
+      // decorate and invent vices; coercion must map these to the taxonomy or "none".
+      for (const event of events) {
+        if ("darkDeed" in event && rng.chance(0.4)) event.darkDeed = rng.pick(BAD_DARK_DEEDS);
+        if ("darkSeverity" in event && rng.chance(0.4)) event.darkSeverity = rng.pick(BAD_DARK_SEVERITIES);
       }
       return clone;
     case "stringNumbers":

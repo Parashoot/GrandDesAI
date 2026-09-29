@@ -1,0 +1,2198 @@
+{
+ "campaign": "ember-road-verify",
+ "system": "dnd5e",
+ "session": 1,
+ "model": "qwen3.8:27b",
+ "proposalMode": "always",
+ "at": "2026-09-27T22:12:04.098Z",
+ "notes": "session 1 recap (pasted from the group chat)\n\nBrakka: Held the bridge, troll ran off, kept the goblins in line till the watch took them. Won two in the pit, lost the third to the champ — worth it.\n\nWick: bro rode an ox into a troll fight, lost my dagger to the river, got told the troll works for a \"Toll King\" 💀 also lost the party's 40g rigging dice (in my defense i was GOOD at it), Steve the ox lost a race by sitting down, and I got banned from a pie tent. 10/10 session, no notes\n\nMaren: maren recap: rooted 3/4 goblins in place with entangle, healed brakka back up, thorn-whipped the last goblin into the burning railing (troll noped into the river lol), then patched up the surrendered goblins anyway bc soft heart. cinderford was cozy - sold out of honey, got 2nd place in the bake-off with a lavender honey loaf, and adopted a stable cat 🐈 steve the ox is now emotionally attached to me\n\nTovin: Tovin's night: torched a troll, lost my pit bet, and apparently 'read very well' by a woman who wants a year of my dreams for some king's secret. Also I may have quietly tidied up a loose end on the bridge — don't ask Luz about it.\n\nLuz: Tonight Luz heal Brakka full HP after the troll fight (Cure Wounds clutch 😅), and she catch Tovin killing a goblin that was surrender, not happy about that at all. Then Ember Festival was so pretty, Luz lead the dawn blessing at the temple and whole square kneel, I nearly cry lol ✨\n\nGM: the troll was WAY out of their league (hill troll vs lvl 3s) and they still drove it off. next session: the Toll King. rules q for next time - can Wick ride Steve as a mount without Mounted Combatant? also someone owes me pizza money",
+ "results": [
+  {
+   "name": "Brakka",
+   "className": "Fighter",
+   "persona": "the-tank",
+   "restType": "long",
+   "ms": 59658,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790547022812-1",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived.",
+      "tags": [
+       "defense",
+       "leadership"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:10:22.812Z",
+      "dangerGap": "severe",
+      "themes": [
+       "holding-a-line",
+       "commanding"
+      ],
+      "quote": "Held the bridge, troll ran off, kept the goblins in line till the watch took them.",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547022813-2",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:10:22.813Z",
+      "themes": [
+       "dueling",
+       "combat"
+      ],
+      "quote": "Won two in the pit, lost the third to the champ",
+      "language": "en",
+      "actorName": "Brakka",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [
+     {
+      "id": "proposal:ai-skill:bulwark-line-of-iron",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Held the bridge, troll ran off, kept the goblins in line till the watch took them."
+      ],
+      "entry": {
+       "name": "Bulwark: Line of Iron",
+       "gameItem": {
+        "kind": "passive"
+       },
+       "mechanics": {
+        "effect": "While you are engaged in combat with a creature, adjacent allies gain a +1 bonus to their AC and saving throws against that creature's attacks.",
+        "frequency": {
+         "max": 1,
+         "per": "unlimited"
+        },
+        "duration": "while engaged"
+       },
+       "metadata": {
+        "tags": [
+         "defense",
+         "leadership"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated ability to hold a defensive line and command subordinates under severe pressure."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Fighter defensive feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:bulwark-pit-brawler-s-resolve",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Won two in the pit, lost the third to the champ"
+      ],
+      "entry": {
+       "name": "Bulwark: Pit Brawler's Resolve",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Once per long rest, when you are reduced to 0 hit points, you may use your reaction to immediately regain 1 hit point and gain advantage on your next attack roll against the creature that dealt the damage.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "instant"
+       },
+       "metadata": {
+        "tags": [
+         "martial",
+         "defense"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Repeatedly engaged in high-stakes duels, showing resilience and a refusal to yield even when losing."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Fighter combat feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     }
+    ],
+    "themes": [
+     {
+      "slug": "holding-a-line",
+      "label": "Holding A Line",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "commanding",
+      "label": "Commanding",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "dueling",
+      "label": "Dueling",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "combat",
+      "label": "Combat",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Wick",
+      "summary": "Wick rode an ox into a fight with a troll."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick lost his dagger to the river."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick's ox, Steve, lost a race by sitting down."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick was banned from a pie tent."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick tried to cheat at dice by rigging them."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used entangle to root three of four goblins in place."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren healed Brakka."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren thorn-whipped the last goblin into the burning railing."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren treated the surrendered goblins."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren sold out of honey at the festival."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren adopted a stable cat."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin torched a troll."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin lost a bet in the pit."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin killed a goblin that was surrendering on the bridge."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz healed Brakka to full health after the troll fight."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz led the dawn blessing at the temple."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 36753,
+       "repairs": [],
+       "errors": []
+      },
+      {
+       "stage": "propose",
+       "chunk": null,
+       "attempts": 1,
+       "ms": 22876,
+       "repairs": [],
+       "errors": []
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": true,
+      "reason": "proposalMode=always"
+     },
+     "totalMs": 59652,
+     "extractionCache": "miss",
+     "proposalEvents": {
+      "own": 2,
+      "total": 19
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 0,
+     "progress": 87.5,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:10:22.814Z",
+     "lastRestType": "long"
+    },
+    "pending": 2
+   },
+   "restResult": {
+    "progression": {
+     "level": 0,
+     "progress": 87.5,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:10:22.814Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": [
+    {
+     "id": "proposal:ai-skill:bulwark-line-of-iron",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Held the bridge, troll ran off, kept the goblins in line till the watch took them."
+     ],
+     "entry": {
+      "name": "Bulwark: Line of Iron",
+      "gameItem": {
+       "kind": "passive"
+      },
+      "mechanics": {
+       "effect": "While you are engaged in combat with a creature, adjacent allies gain a +1 bonus to their AC and saving throws against that creature's attacks.",
+       "frequency": {
+        "max": 1,
+        "per": "unlimited"
+       },
+       "duration": "while engaged"
+      },
+      "metadata": {
+       "tags": [
+        "defense",
+        "leadership"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Demonstrated ability to hold a defensive line and command subordinates under severe pressure."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Fighter defensive feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    },
+    {
+     "id": "proposal:ai-skill:bulwark-pit-brawler-s-resolve",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Won two in the pit, lost the third to the champ"
+     ],
+     "entry": {
+      "name": "Bulwark: Pit Brawler's Resolve",
+      "gameItem": {
+       "kind": "feat"
+      },
+      "mechanics": {
+       "effect": "Once per long rest, when you are reduced to 0 hit points, you may use your reaction to immediately regain 1 hit point and gain advantage on your next attack roll against the creature that dealt the damage.",
+       "frequency": {
+        "max": 1,
+        "per": "day"
+       },
+       "duration": "instant"
+      },
+      "metadata": {
+       "tags": [
+        "martial",
+        "defense"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Repeatedly engaged in high-stakes duels, showing resilience and a refusal to yield even when losing."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Fighter combat feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    }
+   ]
+  },
+  {
+   "name": "Wick",
+   "className": "Rogue",
+   "persona": "chaos-gremlin",
+   "restType": "long",
+   "ms": 24944,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790547047764-1",
+      "summary": "Wick rode an ox into a fight with a troll.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:10:47.764Z",
+      "dangerGap": "severe",
+      "themes": [
+       "mounting-an-ox",
+       "combat"
+      ],
+      "quote": "bro rode an ox into a troll fight",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547047764-2",
+      "summary": "Wick lost his dagger to the river.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T22:10:47.764Z",
+      "themes": [
+       "losing-gear"
+      ],
+      "quote": "lost my dagger to the river",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547047764-3",
+      "summary": "Wick's ox, Steve, lost a race by sitting down.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T22:10:47.764Z",
+      "themes": [
+       "racing",
+       "animal-mishap"
+      ],
+      "quote": "Steve the ox lost a race by sitting down",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547047764-4",
+      "summary": "Wick was banned from a pie tent.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T22:10:47.764Z",
+      "themes": [
+       "social-mishap"
+      ],
+      "quote": "I got banned from a pie tent",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547047764-5",
+      "summary": "Wick tried to cheat at dice by rigging them.",
+      "tags": [
+       "deception",
+       "thievery"
+      ],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T22:10:47.764Z",
+      "themes": [
+       "gambling",
+       "cheating"
+      ],
+      "quote": "lost the party's 40g rigging dice",
+      "language": "en",
+      "actorName": "Wick",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [
+     {
+      "id": "proposal:ai-skill:shadowhoof-oxen-s-charge",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Wick rode an ox into a fight with a troll (success)",
+       "Wick's ox, Steve, lost a race by sitting down (failure)"
+      ],
+      "entry": {
+       "name": "Shadowhoof: Oxen's Charge",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Command your mounted animal to charge. Make a melee attack against one creature within 5 feet of the mount. On a success, deal 1d8 bludgeoning damage and the target is knocked Prone. On a critical success, the target is also pushed 10 feet away.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Animal Handling check",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "nature",
+         "martial"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick demonstrated a unique combat style involving an ox mount, successfully engaging a troll despite the animal's tendency to sit down."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Animal Handling combat action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:shadowhand-rigged-odds",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Wick tried to cheat at dice by rigging them (failure)"
+      ],
+      "entry": {
+       "name": "Shadowhand: Rigged Odds",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt to manipulate a gambling outcome. Make a Sleight of Hand check against the target's Passive (Intelligence) or Perception. On a success, you may reroll one die in a gambling roll. On a failure, you lose 1d4 gold pieces to the table or suffer a disadvantage on your next gambling check.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 1,
+        "roll": {
+         "kind": "Sleight of Hand check",
+         "formula": "1d20+3"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "thievery",
+         "deception"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Wick attempted to rig dice to cheat at gambling, showing a specific skill in manipulating game outcomes despite the initial failure."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Sleight of Hand gambling action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     }
+    ],
+    "themes": [
+     {
+      "slug": "mounting-an-ox",
+      "label": "Mounting An Ox",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "combat",
+      "label": "Combat",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "losing-gear",
+      "label": "Losing Gear",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "racing",
+      "label": "Racing",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "animal-mishap",
+      "label": "Animal Mishap",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "social-mishap",
+      "label": "Social Mishap",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "gambling",
+      "label": "Gambling",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "cheating",
+      "label": "Cheating",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+     },
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used entangle to root three of four goblins in place."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren healed Brakka."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren thorn-whipped the last goblin into the burning railing."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren treated the surrendered goblins."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren sold out of honey at the festival."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren adopted a stable cat."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin torched a troll."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin lost a bet in the pit."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin killed a goblin that was surrendering on the bridge."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz healed Brakka to full health after the troll fight."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz led the dawn blessing at the temple."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 36753,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      },
+      {
+       "stage": "propose",
+       "chunk": null,
+       "attempts": 1,
+       "ms": 24941,
+       "repairs": [],
+       "errors": []
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": true,
+      "reason": "proposalMode=always"
+     },
+     "totalMs": 24942,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 5,
+      "total": 19
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 0,
+     "progress": 87.5,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:10:47.765Z",
+     "lastRestType": "long"
+    },
+    "pending": 2
+   },
+   "restResult": {
+    "progression": {
+     "level": 0,
+     "progress": 87.5,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:10:47.765Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": [
+    {
+     "id": "proposal:ai-skill:shadowhoof-oxen-s-charge",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Wick rode an ox into a fight with a troll (success)",
+      "Wick's ox, Steve, lost a race by sitting down (failure)"
+     ],
+     "entry": {
+      "name": "Shadowhoof: Oxen's Charge",
+      "gameItem": {
+       "kind": "action"
+      },
+      "mechanics": {
+       "effect": "Command your mounted animal to charge. Make a melee attack against one creature within 5 feet of the mount. On a success, deal 1d8 bludgeoning damage and the target is knocked Prone. On a critical success, the target is also pushed 10 feet away.",
+       "frequency": {
+        "max": 1,
+        "per": "encounter"
+       },
+       "actions": 2,
+       "roll": {
+        "kind": "Animal Handling check",
+        "formula": "1d20+3"
+       }
+      },
+      "metadata": {
+       "tags": [
+        "nature",
+        "martial"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Wick demonstrated a unique combat style involving an ox mount, successfully engaging a troll despite the animal's tendency to sit down."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Animal Handling combat action (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    },
+    {
+     "id": "proposal:ai-skill:shadowhand-rigged-odds",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Wick tried to cheat at dice by rigging them (failure)"
+     ],
+     "entry": {
+      "name": "Shadowhand: Rigged Odds",
+      "gameItem": {
+       "kind": "action"
+      },
+      "mechanics": {
+       "effect": "Attempt to manipulate a gambling outcome. Make a Sleight of Hand check against the target's Passive (Intelligence) or Perception. On a success, you may reroll one die in a gambling roll. On a failure, you lose 1d4 gold pieces to the table or suffer a disadvantage on your next gambling check.",
+       "frequency": {
+        "max": 1,
+        "per": "encounter"
+       },
+       "actions": 1,
+       "roll": {
+        "kind": "Sleight of Hand check",
+        "formula": "1d20+3"
+       }
+      },
+      "metadata": {
+       "tags": [
+        "thievery",
+        "deception"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Wick attempted to rig dice to cheat at gambling, showing a specific skill in manipulating game outcomes despite the initial failure."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Sleight of Hand gambling action (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    }
+   ]
+  },
+  {
+   "name": "Maren",
+   "className": "Druid",
+   "persona": "cottagecore",
+   "restType": "long",
+   "ms": 29081,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790547076845-1",
+      "summary": "Maren used entangle to root three of four goblins in place.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:11:16.845Z",
+      "themes": [
+       "control-magic"
+      ],
+      "quote": "rooted 3/4 goblins in place with entangle",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547076845-2",
+      "summary": "Maren healed Brakka.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:11:16.845Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "healed brakka back up",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547076845-3",
+      "summary": "Maren thorn-whipped the last goblin into the burning railing.",
+      "tags": [
+       "primal",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:11:16.845Z",
+      "themes": [
+       "killing"
+      ],
+      "quote": "thorn-whipped the last goblin into the burning railing",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547076846-4",
+      "summary": "Maren treated the surrendered goblins.",
+      "tags": [
+       "medicine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:11:16.846Z",
+      "themes": [
+       "first-aid"
+      ],
+      "quote": "patched up the surrendered goblins anyway",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547076846-5",
+      "summary": "Maren sold out of honey at the festival.",
+      "tags": [],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:11:16.846Z",
+      "themes": [
+       "trading",
+       "beekeeping"
+      ],
+      "quote": "sold out of honey",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547076846-6",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf.",
+      "tags": [
+       "craft"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:11:16.846Z",
+      "themes": [
+       "baking",
+       "competition"
+      ],
+      "quote": "got 2nd place in the bake-off with a lavender honey loaf",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547076846-7",
+      "summary": "Maren adopted a stable cat.",
+      "tags": [
+       "nature"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:11:16.846Z",
+      "themes": [
+       "pet-adoption"
+      ],
+      "quote": "adopted a stable cat",
+      "language": "en",
+      "actorName": "Maren",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [
+     {
+      "id": "proposal:ai-skill:verdant-lash-thorned-restraint",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren used entangle to root three of four goblins in place.",
+       "Maren thorn-whipped the last goblin into the burning railing."
+      ],
+      "entry": {
+       "name": "Verdant Lash: Thorned Restraint",
+       "gameItem": {
+        "kind": "spell",
+        "rank": 1,
+        "tradition": "primal",
+        "school": "con"
+       },
+       "mechanics": {
+        "effect": "Make a spell attack against one creature within 30 feet. On a success, the target is Restrained by thick, thorny vines until the end of your next turn. If the target moves, it takes 1d4 piercing damage.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Spell attack",
+         "formula": "1d20+5"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "primal",
+         "spellcasting",
+         "nature"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a clear affinity for controlling enemies with plant-based magic, successfully rooting multiple goblins and using thorns to incapacitate a final foe."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Entangle (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:druidic-mercy-field-triage",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren healed Brakka.",
+       "Maren treated the surrendered goblins."
+      ],
+      "entry": {
+       "name": "Druidic Mercy: Field Triage",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Attempt a Medicine check to treat a wounded ally or non-hostile creature. On a success, the target regains 1d8 Hit Points. On a critical success, it also regains 1d4 Hit Points and is no longer Incapacitated.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "actions": 2,
+        "roll": {
+         "kind": "Medicine check",
+         "formula": "1d20+5"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "medicine",
+         "support"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren consistently provided medical aid, healing an ally in combat and treating surrendered enemies, showing a reliable and compassionate approach to first aid."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Healing action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:apiary-artisan-sweet-commerce",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Maren sold out of honey at the festival.",
+       "Maren placed second in a bake-off with a lavender honey loaf."
+      ],
+      "entry": {
+       "name": "Apiary Artisan: Sweet Commerce",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "You gain proficiency with Brewer's Supplies and Cook's Utensils. Once per day, you can use a bonus action to attempt a DC 10 Survival check to identify the quality of a natural ingredient. On a success, you gain a +1 bonus to the next Persuasion or Deception check made to sell or trade goods made from that ingredient.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "1 hour"
+       },
+       "metadata": {
+        "tags": [
+         "craft",
+         "nature"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Maren demonstrated a strong connection to beekeeping and baking, successfully selling honey and competing in a bake-off, indicating a specialized skill in natural product crafting and commerce."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Craft proficiency and Persuasion bonus (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     }
+    ],
+    "themes": [
+     {
+      "slug": "control-magic",
+      "label": "Control Magic",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "healing",
+      "label": "Healing",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "killing",
+      "label": "Killing",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "first-aid",
+      "label": "First Aid",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "trading",
+      "label": "Trading",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "beekeeping",
+      "label": "Beekeeping",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "baking",
+      "label": "Baking",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "competition",
+      "label": "Competition",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "pet-adoption",
+      "label": "Pet Adoption",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+     },
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick rode an ox into a fight with a troll."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick lost his dagger to the river."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick's ox, Steve, lost a race by sitting down."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick was banned from a pie tent."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick tried to cheat at dice by rigging them."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin torched a troll."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin lost a bet in the pit."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin killed a goblin that was surrendering on the bridge."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz healed Brakka to full health after the troll fight."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz led the dawn blessing at the temple."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 36753,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      },
+      {
+       "stage": "propose",
+       "chunk": null,
+       "attempts": 1,
+       "ms": 29078,
+       "repairs": [],
+       "errors": []
+      }
+     ],
+     "coercions": [],
+     "warnings": [],
+     "proposalStage": {
+      "ran": true,
+      "reason": "proposalMode=always"
+     },
+     "totalMs": 29079,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 7,
+      "total": 19
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 1,
+     "progress": 75,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:11:16.847Z",
+     "lastRestType": "long"
+    },
+    "pending": 3
+   },
+   "restResult": {
+    "progression": {
+     "level": 1,
+     "progress": 75,
+     "grantAllowances": 1,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:11:16.847Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [
+     1
+    ],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": [
+    {
+     "id": "proposal:ai-skill:verdant-lash-thorned-restraint",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Maren used entangle to root three of four goblins in place.",
+      "Maren thorn-whipped the last goblin into the burning railing."
+     ],
+     "entry": {
+      "name": "Verdant Lash: Thorned Restraint",
+      "gameItem": {
+       "kind": "spell",
+       "rank": 1,
+       "tradition": "primal",
+       "school": "con"
+      },
+      "mechanics": {
+       "effect": "Make a spell attack against one creature within 30 feet. On a success, the target is Restrained by thick, thorny vines until the end of your next turn. If the target moves, it takes 1d4 piercing damage.",
+       "frequency": {
+        "max": 1,
+        "per": "encounter"
+       },
+       "actions": 2,
+       "roll": {
+        "kind": "Spell attack",
+        "formula": "1d20+5"
+       }
+      },
+      "metadata": {
+       "tags": [
+        "primal",
+        "spellcasting",
+        "nature"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Maren demonstrated a clear affinity for controlling enemies with plant-based magic, successfully rooting multiple goblins and using thorns to incapacitate a final foe."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Entangle (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    },
+    {
+     "id": "proposal:ai-skill:druidic-mercy-field-triage",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Maren healed Brakka.",
+      "Maren treated the surrendered goblins."
+     ],
+     "entry": {
+      "name": "Druidic Mercy: Field Triage",
+      "gameItem": {
+       "kind": "action"
+      },
+      "mechanics": {
+       "effect": "Attempt a Medicine check to treat a wounded ally or non-hostile creature. On a success, the target regains 1d8 Hit Points. On a critical success, it also regains 1d4 Hit Points and is no longer Incapacitated.",
+       "frequency": {
+        "max": 1,
+        "per": "hour"
+       },
+       "actions": 2,
+       "roll": {
+        "kind": "Medicine check",
+        "formula": "1d20+5"
+       }
+      },
+      "metadata": {
+       "tags": [
+        "medicine",
+        "support"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Maren consistently provided medical aid, healing an ally in combat and treating surrendered enemies, showing a reliable and compassionate approach to first aid."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Healing action (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    },
+    {
+     "id": "proposal:ai-skill:apiary-artisan-sweet-commerce",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Maren sold out of honey at the festival.",
+      "Maren placed second in a bake-off with a lavender honey loaf."
+     ],
+     "entry": {
+      "name": "Apiary Artisan: Sweet Commerce",
+      "gameItem": {
+       "kind": "feat"
+      },
+      "mechanics": {
+       "effect": "You gain proficiency with Brewer's Supplies and Cook's Utensils. Once per day, you can use a bonus action to attempt a DC 10 Survival check to identify the quality of a natural ingredient. On a success, you gain a +1 bonus to the next Persuasion or Deception check made to sell or trade goods made from that ingredient.",
+       "frequency": {
+        "max": 1,
+        "per": "day"
+       },
+       "duration": "1 hour"
+      },
+      "metadata": {
+       "tags": [
+        "craft",
+        "nature"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Maren demonstrated a strong connection to beekeeping and baking, successfully selling honey and competing in a bake-off, indicating a specialized skill in natural product crafting and commerce."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Craft proficiency and Persuasion bonus (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    }
+   ]
+  },
+  {
+   "name": "Tovin",
+   "className": "Warlock",
+   "persona": "dark-path",
+   "restType": "long",
+   "ms": 24742,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790547101589-1",
+      "summary": "Tovin torched a troll.",
+      "tags": [
+       "fire",
+       "spellcasting"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:11:41.589Z",
+      "dangerGap": "severe",
+      "themes": [
+       "fire-magic",
+       "combat"
+      ],
+      "quote": "torched a troll",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547101589-2",
+      "summary": "Tovin lost a bet in the pit.",
+      "tags": [],
+      "outcome": "failure",
+      "occurredAt": "2026-09-27T22:11:41.589Z",
+      "themes": [
+       "gambling"
+      ],
+      "quote": "lost my pit bet",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547101589-3",
+      "summary": "Tovin killed a goblin that was surrendering on the bridge.",
+      "tags": [
+       "martial"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:11:41.589Z",
+      "themes": [
+       "killing-the-surrendered"
+      ],
+      "quote": "I may have quietly tidied up a loose end on the bridge",
+      "language": "en",
+      "actorName": "Tovin",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [
+     {
+      "id": "proposal:ai-skill:hexblade-the-quiet-end",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Tovin torched a troll.",
+       "Tovin killed a goblin that was surrendering on the bridge."
+      ],
+      "entry": {
+       "name": "Hexblade: The Quiet End",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a melee attack against a creature that has surrendered or is otherwise helpless. On a success, deal 1d8 necrotic damage and the target is Frightened until the start of your next turn. This action can only be used against targets who have explicitly yielded or are unable to defend themselves.",
+        "frequency": {
+         "max": 1,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Melee attack",
+         "formula": "1d20+4"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "martial",
+         "occult"
+        ],
+        "polarity": "red",
+        "malignance": {
+         "vice": "cruelty",
+         "drawback": "Tovin suffers a -2 penalty to Persuasion checks when attempting to negotiate with or show mercy to any creature, as the act of killing the surrendered has become a compulsive habit rather than a tactical choice."
+        },
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "The event of killing a surrendering goblin indicates a pattern of inflicting harm beyond what is required for survival or victory, fitting the definition of cruelty."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Warlock Eldritch Invocation (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:hexblade-pyre-s-kiss",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Tovin torched a troll."
+      ],
+      "entry": {
+       "name": "Hexblade: Pyre's Kiss",
+       "gameItem": {
+        "kind": "spell",
+        "rank": 1,
+        "tradition": "occult",
+        "school": "evo"
+       },
+       "mechanics": {
+        "effect": "Make a spell attack against one creature within 30 feet. On a success, deal 2d6 fire damage. If the target is a Large or larger creature, the fire ignites their clothing or fur, causing them to take 1d6 fire damage at the start of each of their turns until they extinguish the flames.",
+        "frequency": {
+         "max": 2,
+         "per": "encounter"
+        },
+        "roll": {
+         "kind": "Spell attack",
+         "formula": "1d20+4"
+        }
+       },
+       "metadata": {
+        "tags": [
+         "fire",
+         "spellcasting"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Successfully using fire magic to defeat a troll demonstrates a reliable affinity for elemental destruction."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Rank 1 Elemental Spell (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     }
+    ],
+    "themes": [
+     {
+      "slug": "fire-magic",
+      "label": "Fire Magic",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "combat",
+      "label": "Combat",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "gambling",
+      "label": "Gambling",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "killing-the-surrendered",
+      "label": "Killing The Surrendered",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+     },
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick rode an ox into a fight with a troll."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick lost his dagger to the river."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick's ox, Steve, lost a race by sitting down."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick was banned from a pie tent."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick tried to cheat at dice by rigging them."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used entangle to root three of four goblins in place."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren healed Brakka."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren thorn-whipped the last goblin into the burning railing."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren treated the surrendered goblins."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren sold out of honey at the festival."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren adopted a stable cat."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz healed Brakka to full health after the troll fight."
+     },
+     {
+      "actorName": "Luz",
+      "summary": "Luz led the dawn blessing at the temple."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 36753,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      },
+      {
+       "stage": "propose",
+       "chunk": null,
+       "attempts": 1,
+       "ms": 24740,
+       "repairs": [],
+       "errors": []
+      }
+     ],
+     "coercions": [
+      "proposal[0]:actions:null->1"
+     ],
+     "warnings": [],
+     "proposalStage": {
+      "ran": true,
+      "reason": "proposalMode=always"
+     },
+     "totalMs": 24741,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 3,
+      "total": 19
+     },
+     "redCheck": [
+      {
+       "event": "Tovin killed a goblin that was surrendering on the bridge.",
+       "vice": "cruelty"
+      }
+     ],
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 0,
+     "progress": 93.75,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:11:41.590Z",
+     "lastRestType": "long"
+    },
+    "pending": 2
+   },
+   "restResult": {
+    "progression": {
+     "level": 0,
+     "progress": 93.75,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:11:41.590Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": [
+    {
+     "id": "proposal:ai-skill:hexblade-the-quiet-end",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Tovin torched a troll.",
+      "Tovin killed a goblin that was surrendering on the bridge."
+     ],
+     "entry": {
+      "name": "Hexblade: The Quiet End",
+      "gameItem": {
+       "kind": "action"
+      },
+      "mechanics": {
+       "effect": "Make a melee attack against a creature that has surrendered or is otherwise helpless. On a success, deal 1d8 necrotic damage and the target is Frightened until the start of your next turn. This action can only be used against targets who have explicitly yielded or are unable to defend themselves.",
+       "frequency": {
+        "max": 1,
+        "per": "encounter"
+       },
+       "roll": {
+        "kind": "Melee attack",
+        "formula": "1d20+4"
+       },
+       "actions": 1
+      },
+      "metadata": {
+       "tags": [
+        "martial",
+        "occult"
+       ],
+       "polarity": "red",
+       "malignance": {
+        "vice": "cruelty",
+        "drawback": "Tovin suffers a -2 penalty to Persuasion checks when attempting to negotiate with or show mercy to any creature, as the act of killing the surrendered has become a compulsive habit rather than a tactical choice."
+       },
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "The event of killing a surrendering goblin indicates a pattern of inflicting harm beyond what is required for survival or victory, fitting the definition of cruelty."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Warlock Eldritch Invocation (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    },
+    {
+     "id": "proposal:ai-skill:hexblade-pyre-s-kiss",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Tovin torched a troll."
+     ],
+     "entry": {
+      "name": "Hexblade: Pyre's Kiss",
+      "gameItem": {
+       "kind": "spell",
+       "rank": 1,
+       "tradition": "occult",
+       "school": "evo"
+      },
+      "mechanics": {
+       "effect": "Make a spell attack against one creature within 30 feet. On a success, deal 2d6 fire damage. If the target is a Large or larger creature, the fire ignites their clothing or fur, causing them to take 1d6 fire damage at the start of each of their turns until they extinguish the flames.",
+       "frequency": {
+        "max": 2,
+        "per": "encounter"
+       },
+       "roll": {
+        "kind": "Spell attack",
+        "formula": "1d20+4"
+       }
+      },
+      "metadata": {
+       "tags": [
+        "fire",
+        "spellcasting"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Successfully using fire magic to defeat a troll demonstrates a reliable affinity for elemental destruction."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Rank 1 Elemental Spell (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    }
+   ]
+  },
+  {
+   "name": "Luz",
+   "className": "Cleric",
+   "persona": "non-native",
+   "restType": "long",
+   "ms": 22506,
+   "error": null,
+   "analysis": {
+    "source": "adapter",
+    "adapterConfigured": true,
+    "events": [
+     {
+      "id": "event:1790547124095-1",
+      "summary": "Luz healed Brakka to full health after the troll fight.",
+      "tags": [
+       "medicine",
+       "divine",
+       "support"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:12:04.095Z",
+      "themes": [
+       "healing"
+      ],
+      "quote": "Luz heal Brakka full HP after the troll fight",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     },
+     {
+      "id": "event:1790547124096-2",
+      "summary": "Luz led the dawn blessing at the temple.",
+      "tags": [
+       "religion"
+      ],
+      "outcome": "success",
+      "occurredAt": "2026-09-27T22:12:04.096Z",
+      "themes": [
+       "ritual",
+       "prayer"
+      ],
+      "quote": "Luz lead the dawn blessing at the temple",
+      "language": "en",
+      "actorName": "Luz",
+      "source": "adapter"
+     }
+    ],
+    "proposals": [
+     {
+      "id": "proposal:ai-skill:sanctuary-mending-light",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Luz healed Brakka to full health after the troll fight."
+      ],
+      "entry": {
+       "name": "Sanctuary: Mending Light",
+       "gameItem": {
+        "kind": "action"
+       },
+       "mechanics": {
+        "effect": "Make a Medicine check to treat wounds on one adjacent creature. On a success, it regains 1d8 Hit Points. On a critical success, it regains 2d8 Hit Points and is no longer suffering from the Exhausted condition.",
+        "frequency": {
+         "max": 1,
+         "per": "hour"
+        },
+        "roll": {
+         "kind": "Medicine check",
+         "formula": "1d20+4"
+        },
+        "actions": 1
+       },
+       "metadata": {
+        "tags": [
+         "medicine",
+         "support",
+         "divine"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated effective field triage and healing under pressure after combat."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric healing action (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     },
+     {
+      "id": "proposal:ai-skill:sanctuary-dawn-s-grace",
+      "kind": "skill",
+      "status": "pending",
+      "evidence": [
+       "Luz led the dawn blessing at the temple."
+      ],
+      "entry": {
+       "name": "Sanctuary: Dawn's Grace",
+       "gameItem": {
+        "kind": "feat"
+       },
+       "mechanics": {
+        "effect": "Once per long rest, you can perform a ritual to grant one ally within 30 feet advantage on their next saving throw against a condition or effect.",
+        "frequency": {
+         "max": 1,
+         "per": "day"
+        },
+        "duration": "1 hour"
+       },
+       "metadata": {
+        "tags": [
+         "religion",
+         "divine",
+         "support"
+        ],
+        "lineage": {
+         "operation": "origin",
+         "sources": [],
+         "rationale": "Demonstrated leadership in religious rites and the ability to channel divine favor for allies."
+        }
+       },
+       "tier": 1,
+       "system_equivalent": "Cleric ritual feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+      },
+      "source": "ai-gateway"
+     }
+    ],
+    "themes": [
+     {
+      "slug": "healing",
+      "label": "Healing",
+      "count": 1,
+      "isNew": false
+     },
+     {
+      "slug": "ritual",
+      "label": "Ritual",
+      "count": 1,
+      "isNew": true
+     },
+     {
+      "slug": "prayer",
+      "label": "Prayer",
+      "count": 1,
+      "isNew": true
+     }
+    ],
+    "attributedToOthers": [
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka held the bridge against a troll and kept the goblins in line until the watch arrived."
+     },
+     {
+      "actorName": "Brakka",
+      "summary": "Brakka fought in the pit, winning two bouts and losing the third to the champion."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick rode an ox into a fight with a troll."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick lost his dagger to the river."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick's ox, Steve, lost a race by sitting down."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick was banned from a pie tent."
+     },
+     {
+      "actorName": "Wick",
+      "summary": "Wick tried to cheat at dice by rigging them."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren used entangle to root three of four goblins in place."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren healed Brakka."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren thorn-whipped the last goblin into the burning railing."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren treated the surrendered goblins."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren sold out of honey at the festival."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren placed second in a bake-off with a lavender honey loaf."
+     },
+     {
+      "actorName": "Maren",
+      "summary": "Maren adopted a stable cat."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin torched a troll."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin lost a bet in the pit."
+     },
+     {
+      "actorName": "Tovin",
+      "summary": "Tovin killed a goblin that was surrendering on the bridge."
+     }
+    ],
+    "gatewayDiagnostics": {
+     "model": "qwen3.8:27b",
+     "provider": "ollama",
+     "pipeline": "two-stage",
+     "chunks": 1,
+     "stages": [
+      {
+       "stage": "extract",
+       "chunk": 0,
+       "attempts": 1,
+       "ms": 36753,
+       "repairs": [],
+       "errors": [],
+       "cached": true
+      },
+      {
+       "stage": "propose",
+       "chunk": null,
+       "attempts": 1,
+       "ms": 22504,
+       "repairs": [],
+       "errors": []
+      }
+     ],
+     "coercions": [
+      "proposal[0]:actions:null->1"
+     ],
+     "warnings": [],
+     "proposalStage": {
+      "ran": true,
+      "reason": "proposalMode=always"
+     },
+     "totalMs": 22504,
+     "extractionCache": "hit",
+     "proposalEvents": {
+      "own": 2,
+      "total": 19
+     },
+     "transportCompat": {
+      "responseFormat": "json_schema",
+      "dropParams": [],
+      "useMaxCompletionTokens": false
+     }
+    }
+   },
+   "before": {
+    "progression": {
+     "level": 0,
+     "progress": 0,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": null,
+     "lastRestType": null
+    },
+    "pending": 0
+   },
+   "after": {
+    "progression": {
+     "level": 0,
+     "progress": 50,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:12:04.096Z",
+     "lastRestType": "long"
+    },
+    "pending": 2
+   },
+   "restResult": {
+    "progression": {
+     "level": 0,
+     "progress": 50,
+     "grantAllowances": 0,
+     "capstoneAllowances": 0,
+     "lastRestAt": "2026-09-27T22:12:04.096Z",
+     "lastRestType": "long"
+    },
+    "gainedLevels": [],
+    "classEvolutionUnlocked": [],
+    "capstoneLevelsUnlocked": [],
+    "capstoneProposals": []
+   },
+   "approved": [],
+   "pending": [
+    {
+     "id": "proposal:ai-skill:sanctuary-mending-light",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Luz healed Brakka to full health after the troll fight."
+     ],
+     "entry": {
+      "name": "Sanctuary: Mending Light",
+      "gameItem": {
+       "kind": "action"
+      },
+      "mechanics": {
+       "effect": "Make a Medicine check to treat wounds on one adjacent creature. On a success, it regains 1d8 Hit Points. On a critical success, it regains 2d8 Hit Points and is no longer suffering from the Exhausted condition.",
+       "frequency": {
+        "max": 1,
+        "per": "hour"
+       },
+       "roll": {
+        "kind": "Medicine check",
+        "formula": "1d20+4"
+       },
+       "actions": 1
+      },
+      "metadata": {
+       "tags": [
+        "medicine",
+        "support",
+        "divine"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Demonstrated effective field triage and healing under pressure after combat."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Cleric healing action (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    },
+    {
+     "id": "proposal:ai-skill:sanctuary-dawn-s-grace",
+     "kind": "skill",
+     "status": "pending",
+     "evidence": [
+      "Luz led the dawn blessing at the temple."
+     ],
+     "entry": {
+      "name": "Sanctuary: Dawn's Grace",
+      "gameItem": {
+       "kind": "feat"
+      },
+      "mechanics": {
+       "effect": "Once per long rest, you can perform a ritual to grant one ally within 30 feet advantage on their next saving throw against a condition or effect.",
+       "frequency": {
+        "max": 1,
+        "per": "day"
+       },
+       "duration": "1 hour"
+      },
+      "metadata": {
+       "tags": [
+        "religion",
+        "divine",
+        "support"
+       ],
+       "lineage": {
+        "operation": "origin",
+        "sources": [],
+        "rationale": "Demonstrated leadership in religious rites and the ability to channel divine favor for allies."
+       }
+      },
+      "tier": 1,
+      "system_equivalent": "Cleric ritual feat (Dungeons & Dragons Fifth Edition (2024 rules))"
+     },
+     "source": "ai-gateway"
+    }
+   ]
+  }
+ ]
+}

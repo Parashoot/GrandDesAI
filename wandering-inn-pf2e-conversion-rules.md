@@ -126,6 +126,19 @@ Horror Ranks are a parallel, involuntary track the source material uses for char
 - Reducing Horror Rank by a stage restores one suppressed feat, GM's choice of order — mirrors the book's own uncertainty about whether restoration is guaranteed.
 - Use this sparingly — it's for antagonists, corrupted NPCs, or a PC arc specifically built around the temptation/cost of power, not a common status effect.
 
+**What the module implements (2026-09-29, both PF2e and dnd5e).** Owner decision: Horror Rank accrues from the red **deeds** the session notes record, not from approving red power. Rejecting a red Skill refuses the power, not the stain; approving one adds nothing either, because the deed that earned it was already counted.
+1. **Deeds.** When the AI reads the notes, every event carries `darkDeed` (a vice from the vice taxonomy: bloodlust, cruelty, subjugation, servitude, addiction, corruption, desecration, betrayal, ruin, or "none") and `darkSeverity` ("none" / "minor" / "serious" / "monstrous"). Only the doer's own deeds count; things done *to* a PC never do. Examples: killing a goblin that surrendered = cruelty, serious; torturing for fun = cruelty, monstrous; eating a person = monstrous; cheating at dice = none (petty, not taboo). The local fallback analyzer never fills these, so its events are "none".
+2. **Points.** Each deed with both a vice and a severity is worth minor 5, serious 15, monstrous 40 points (`constants.js#HORROR_RANK_POINTS_BY_SEVERITY`). The meter is *derived*: it is re-summed from the recorded events every time they change (a new event, a re-analysis, an event removed). Re-reading the same notes finds the same deeds, so it never double-counts; removing an event lowers the points.
+3. **Stage 0–3 (display).** Stage = floor(points / 100), capped at 3 — the 4-stage clock above, shown to the GM with the points, the next threshold and every deed that made it (quoting its summary). The stage itself has no automated effect yet.
+4. **Docking (the mechanic).** Every 100 points is one crossing, and each *new* crossing docks 2 levels from the character's strongest standard (non-red) Grand Design Class — the registry's in-world Class level, e.g. [Warrior] Lv 12 → 10, never below 1, never a red or superseded Class. A crossing docks once, ever: losing points later never refunds the levels, and regaining them never docks again. The docked Class's Item is updated where it shows a level (PF2e: the feat's level). The GM hears it through the `grand-design-ai.horrorRankChanged(actor, state, dockedFrom)` hook (also `horrorRankLevelsDocked`).
+5. **Old worlds.** A world that accrued Horror Rank from red approvals before 2026-09-29 keeps those points as a legacy baseline (its past crossings stay docked); the deeds add on top.
+
+Open questions (owner):
+- The suppression model above (one class feat or dedication per stage, Stage 3 narrative lock-out, restore on reduction) is not automated: the module docks Grand Design Class levels instead and leaves the sheet's feats alone. Should a stage also suppress a feat, or is the level dock enough?
+- There is no way to *reduce* Horror Rank other than removing the events (atonement, a Blue/cleansing arc), and no GM "restore docked levels" action. Should atonement deeds subtract points, and should a restore exist?
+- Severity points (5/15/40) and the 100-point threshold are first guesses; tune after a campaign with real dark deeds.
+- Deeds done before this change were never tagged: re-analysing old notes (with the new AI build) is the only way to give them points.
+
 ### 6.1 Counter-Leveling
 The source material has a named mechanic for the opposite case: facing overwhelming odds and surviving triggers unusually fast leveling. Conversion: when a PC survives an encounter that was built at +2 or more over their normal level-appropriate difficulty (i.e., a fight they had no business winning), award a **full level** on the spot instead of normal XP — this is the one place we allow level-ups outside of a milestone/session-end moment, specifically to preserve that "grew stronger because the odds were impossible" beat.
 
@@ -134,7 +147,7 @@ The source material has a named mechanic for the opposite case: facing overwhelm
 ## 7. Rulings Log
 Resolved questions, with the reasoning and source example that settled each one:
 
-- **Horror Ranks:** resolved via Section 6 — a 4-stage suppression clock rather than literal level loss.
+- **Horror Ranks:** resolved via Section 6 — a 4-stage clock rather than literal character-level loss. As implemented (2026-09-29), points come from recorded dark deeds and each 100-point crossing docks Grand Design Class levels; see Section 6's open questions.
 - **3+ simultaneous classes:** resolved via Section 2.7 — one full class, one archetype at most, everything else stays narrative-only. Validated against Klbkch, who canonically holds three classes at once ([Guardsman]/[Commander], [Diplomat], [Assassin]) at different levels.
 - **Level band at the high end:** resolved via Section 2.6's Class Power Tier modifier, validated against Zel Shivertail (Level 39 [General], an Elevated-tier class) landing at PF2e ~15–16 rather than overflowing the scale.
 

@@ -1,0 +1,172 @@
+{
+ "Brakka": [
+  {
+   "role": "user",
+   "content": "DM: Session 3 - the Lantern House in Varrow. Night, river fog. The Toll King's ledger said his tolls were sold here. The Lantern House is a floating auction hall of paper lanterns; each lantern holds a bought secret or toll. Tonight's lot: \"the names of every traveller who crossed the Ember Road this year\" - the Toll King's 31 dead among them. Masked bidders murmur; the auctioneer, a smiling gnome called Madam Wisp, has four hired blades at the doors. Steve the ox is tied on the dock outside. Tovin's crown hums louder near the lanterns. Bidding opens at 50 gold. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "\"Keep them inside. Don't let any leave.\"\n\n\"Wick, Tovin, Maren. Luz behind us all.\"\n\n\"Keep the exits covered, but the lanterns stay. They don't touch them.\"\n\n[Shieldwall: Bottleneck activation]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Wick's wink fails (Deception 7) - Madam Wisp sees him licking a lot: \"Touching the lots costs the lot's price, dear.\" Luz's Public Edict lands: the nearest guard goes pale and drops his sword, backing to the wall. Maren's bees slip out unseen among the lanterns (Stealth 16). Tovin's honest bid falls flat, but his bluffed 200 gold (money he doesn't have) wins the lot (Deception 17) - \"Sold!\" Brakka notices (Perception 13) the lanterns hang on oil-soaked cords and the fourth \"blade\" is a mage.\nThen Wisp's steward whispers in her ear; her smile goes cold: \"Your purse is empty, Toll King's heir.\" She snaps her fingers. The lanterns flare; the lot lantern holding the 31 names starts to burn; three blades and the mage close in; the dock gangplank begins to lift - Steve bellows outside. FIGHT, round 1. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "\"I said, 'Keep them inside.'\"\n\n\"Back to the wall, Luz.\"\n\n\"Take the lantern, Wick.\"\n\n\"Mage, you're dead. Get your hands off it.\"\n\n[Shieldwall: Bottleneck activation]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka holds the only aisle and cuts the mage (7). Wick's dagger takes a blade in the throat-guard (15) - he drops to one knee. Steve smashes the door off its hinges and tramples a second blade (Oxwhip, 14) - Wick's ox is a legend. Parsnip refuses to go near the fire, but Maren's Thorn Lash wraps the third blade (6, Restrained). Tovin and Luz both lunge for the burning lantern - Tovin gets it first (13 vs 12) and tucks it, smoking, under his cloak; his threat to the blades falls flat. The mage's Fire Bolt hits Tovin full in the chest (18 fire) - he is badly burned and nearly down. A blade scratches Maren (3).\nNow: the kneeling blade Wick hit throws down his sword: \"I yield! I yield!\" - he is right at Tovin's feet. The mage is backing toward a side door with Madam Wisp. The lanterns overhead are catching one by one. Round 2. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "\"Mage. You're dead.\"\n\n\"Wick. Keep the lane clear.\"\n\n\"Luz. Tovin. Be ready.\"\n\n[Shieldwall: Bottleneck activation]\n\n[Move to attack the mage, Longsword vs. Mage's Dagger]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka's blade bites the mage again (5). Wick's leap onto the mage's back misses - he sprawls on the planks - but his taunt rattles the mage anyway. Luz's threat does not move him; Madam Wisp and the mage slip out a side door into the fog. Tovin presses the burning lantern to the yielded blade's chest (3 fire) and the man, sobbing, agrees to show the way out; Maren kneels and heals that same blade's wounds (Field Triage, 8) while he shows you a hidden hatch. You all drop through it onto a fishing barge as the Lantern House goes up in flames behind you. Steve swims after the barge. You have the lot: a scorched lantern holding the names of the 31.\nDOWNTIME - three days in Varrow while Tovin's burns heal. The city is a canal town of fishmongers, a Dawn Mother chapel, dice dens, a flower market, a bathhouse, and a notice board with a new bounty: \"Madam Wisp, for arson and fraud\". What does your character spend the three days doing? Give 2-3 things."
+  },
+  {
+   "role": "assistant",
+   "content": "- Sharpen sword and inspect shield for damage.\n- Spend time on the docks with Steve, checking the waters for threats.\n- Practice shieldwall techniques with the ox.\n[Animal Handling]"
+  }
+ ],
+ "Wick": [
+  {
+   "role": "user",
+   "content": "DM: Session 3 - the Lantern House in Varrow. Night, river fog. The Toll King's ledger said his tolls were sold here. The Lantern House is a floating auction hall of paper lanterns; each lantern holds a bought secret or toll. Tonight's lot: \"the names of every traveller who crossed the Ember Road this year\" - the Toll King's 31 dead among them. Masked bidders murmur; the auctioneer, a smiling gnome called Madam Wisp, has four hired blades at the doors. Steve the ox is tied on the dock outside. Tovin's crown hums louder near the lanterns. Bidding opens at 50 gold. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "I sneak up to a lantern, licking it as if tasting the secret inside. \"Mmm, spicy... like a certain gnome I know.\" I wink at Madam Wisp, then whisper to Steve, \"Ready to rumble, big guy?\" I ready my dagger, thinking about where I might need to place a bet or two. [Deception]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Wick's wink fails (Deception 7) - Madam Wisp sees him licking a lot: \"Touching the lots costs the lot's price, dear.\" Luz's Public Edict lands: the nearest guard goes pale and drops his sword, backing to the wall. Maren's bees slip out unseen among the lanterns (Stealth 16). Tovin's honest bid falls flat, but his bluffed 200 gold (money he doesn't have) wins the lot (Deception 17) - \"Sold!\" Brakka notices (Perception 13) the lanterns hang on oil-soaked cords and the fourth \"blade\" is a mage.\nThen Wisp's steward whispers in her ear; her smile goes cold: \"Your purse is empty, Toll King's heir.\" She snaps her fingers. The lanterns flare; the lot lantern holding the 31 names starts to burn; three blades and the mage close in; the dock gangplank begins to lift - Steve bellows outside. FIGHT, round 1. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "I shout, \"Steve, charge the door! You're not the only one with a surprise!\" as I throw a dagger at the nearest blade, hoping to distract them. Then I'll dart into the lanterns, hoping to retrieve the burning lot before it's too late. [Athletics] [Oxwhip]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka holds the only aisle and cuts the mage (7). Wick's dagger takes a blade in the throat-guard (15) - he drops to one knee. Steve smashes the door off its hinges and tramples a second blade (Oxwhip, 14) - Wick's ox is a legend. Parsnip refuses to go near the fire, but Maren's Thorn Lash wraps the third blade (6, Restrained). Tovin and Luz both lunge for the burning lantern - Tovin gets it first (13 vs 12) and tucks it, smoking, under his cloak; his threat to the blades falls flat. The mage's Fire Bolt hits Tovin full in the chest (18 fire) - he is badly burned and nearly down. A blade scratches Maren (3).\nNow: the kneeling blade Wick hit throws down his sword: \"I yield! I yield!\" - he is right at Tovin's feet. The mage is backing toward a side door with Madam Wisp. The lanterns overhead are catching one by one. Round 2. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "I quickly grab the dagger from the ground, tuck it into my sleeve, and then leap onto the mage's back, whispering in his ear, \"Where's the fun in running away, huh?\" I'll try to steer him towards the burning lanterns, hoping to use him as a human shield. [Acrobatics] [Deception]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka's blade bites the mage again (5). Wick's leap onto the mage's back misses - he sprawls on the planks - but his taunt rattles the mage anyway. Luz's threat does not move him; Madam Wisp and the mage slip out a side door into the fog. Tovin presses the burning lantern to the yielded blade's chest (3 fire) and the man, sobbing, agrees to show the way out; Maren kneels and heals that same blade's wounds (Field Triage, 8) while he shows you a hidden hatch. You all drop through it onto a fishing barge as the Lantern House goes up in flames behind you. Steve swims after the barge. You have the lot: a scorched lantern holding the names of the 31.\nDOWNTIME - three days in Varrow while Tovin's burns heal. The city is a canal town of fishmongers, a Dawn Mother chapel, dice dens, a flower market, a bathhouse, and a notice board with a new bounty: \"Madam Wisp, for arson and fraud\". What does your character spend the three days doing? Give 2-3 things."
+  },
+  {
+   "role": "assistant",
+   "content": "I spend the first day trying to teach Steve to fetch me drinks at the local dice den, betting half of the party's gold on who can get the most drinks delivered by an ox in an hour. \"Come on, Steve, show them how it's done!\" I cheer, licking the rim of every drink he brings me.\n\nOn the second day, I hit on the brilliant idea of starting a flower-selling business with Maren's bees, trying to convince her that we can charge double if the customers think the bees are part of the \"experience.\" I spend hours trying to get the bees to dance or something, saying, \"Come on, little guys, shake it for the ladies!\"\n\nFinally, I can't resist the bounty on Madam Wisp's head. I spend the last day staking out the Dawn Mother chapel, trying to sweet-talk the worshippers into giving me information. \"You know, I just think she's misunderstood, but maybe you've seen"
+  }
+ ],
+ "Maren": [
+  {
+   "role": "user",
+   "content": "DM: Session 3 - the Lantern House in Varrow. Night, river fog. The Toll King's ledger said his tolls were sold here. The Lantern House is a floating auction hall of paper lanterns; each lantern holds a bought secret or toll. Tonight's lot: \"the names of every traveller who crossed the Ember Road this year\" - the Toll King's 31 dead among them. Masked bidders murmur; the auctioneer, a smiling gnome called Madam Wisp, has four hired blades at the doors. Steve the ox is tied on the dock outside. Tovin's crown hums louder near the lanterns. Bidding opens at 50 gold. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "\"I'll not have innocent lives bartered like this,\" Maren whispers, stroking Parsnip's horns for comfort. \"Let's bid, but if things turn foul, we'll need a distraction.\" She opens her skep, humming softly to her bees. [Stealth to release bees quietly]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Wick's wink fails (Deception 7) - Madam Wisp sees him licking a lot: \"Touching the lots costs the lot's price, dear.\" Luz's Public Edict lands: the nearest guard goes pale and drops his sword, backing to the wall. Maren's bees slip out unseen among the lanterns (Stealth 16). Tovin's honest bid falls flat, but his bluffed 200 gold (money he doesn't have) wins the lot (Deception 17) - \"Sold!\" Brakka notices (Perception 13) the lanterns hang on oil-soaked cords and the fourth \"blade\" is a mage.\nThen Wisp's steward whispers in her ear; her smile goes cold: \"Your purse is empty, Toll King's heir.\" She snaps her fingers. The lanterns flare; the lot lantern holding the 31 names starts to burn; three blades and the mage close in; the dock gangplank begins to lift - Steve bellows outside. FIGHT, round 1. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "Maren gasps, \"No! We can't let that lantern burn!\" She scoops up Parsnip and rushes towards the burning lantern, whispering urgently to her goat. \"Parsnip, knock it down—carefully!\" Behind the goat, she swipes at the lantern with her Thorn Lash. [Athletics to guide Parsnip, then Thorn Lash attack]."
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka holds the only aisle and cuts the mage (7). Wick's dagger takes a blade in the throat-guard (15) - he drops to one knee. Steve smashes the door off its hinges and tramples a second blade (Oxwhip, 14) - Wick's ox is a legend. Parsnip refuses to go near the fire, but Maren's Thorn Lash wraps the third blade (6, Restrained). Tovin and Luz both lunge for the burning lantern - Tovin gets it first (13 vs 12) and tucks it, smoking, under his cloak; his threat to the blades falls flat. The mage's Fire Bolt hits Tovin full in the chest (18 fire) - he is badly burned and nearly down. A blade scratches Maren (3).\nNow: the kneeling blade Wick hit throws down his sword: \"I yield! I yield!\" - he is right at Tovin's feet. The mage is backing toward a side door with Madam Wisp. The lanterns overhead are catching one by one. Round 2. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "Maren yelps as the blade grazes her, but keeps her focus on the wounded blade before her. She turns to Luz, \"We need to help Tovin and put out that lantern!\" she urges, then kneels beside the surrendered foe, pressing a hand to the blade's wound. \"You're safe now,\" she murmurs, hoping to calm them. [Field Triage to help Tovin]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka's blade bites the mage again (5). Wick's leap onto the mage's back misses - he sprawls on the planks - but his taunt rattles the mage anyway. Luz's threat does not move him; Madam Wisp and the mage slip out a side door into the fog. Tovin presses the burning lantern to the yielded blade's chest (3 fire) and the man, sobbing, agrees to show the way out; Maren kneels and heals that same blade's wounds (Field Triage, 8) while he shows you a hidden hatch. You all drop through it onto a fishing barge as the Lantern House goes up in flames behind you. Steve swims after the barge. You have the lot: a scorched lantern holding the names of the 31.\nDOWNTIME - three days in Varrow while Tovin's burns heal. The city is a canal town of fishmongers, a Dawn Mother chapel, dice dens, a flower market, a bathhouse, and a notice board with a new bounty: \"Madam Wisp, for arson and fraud\". What does your character spend the three days doing? Give 2-3 things."
+  },
+  {
+   "role": "assistant",
+   "content": "Maren spends her days in Varrow:\n\n* She visits the flower market, gathering seeds and plants to start a small garden in their temporary lodgings. [Survival to identify useful plants].\n* She befriends the locals and tends to their minor injuries and ailments with her Field Triage skill, earning their trust and learning about the city. [Medicine to help locals].\n* She takes Parsnip and her skep of bees to the Dawn Mother chapel's gardens, tending to the flowers and sharing her knowledge of beekeeping with the cleric. [Religion to learn about the Dawn Mother's faith]."
+  }
+ ],
+ "Tovin": [
+  {
+   "role": "user",
+   "content": "DM: Session 3 - the Lantern House in Varrow. Night, river fog. The Toll King's ledger said his tolls were sold here. The Lantern House is a floating auction hall of paper lanterns; each lantern holds a bought secret or toll. Tonight's lot: \"the names of every traveller who crossed the Ember Road this year\" - the Toll King's 31 dead among them. Masked bidders murmur; the auctioneer, a smiling gnome called Madam Wisp, has four hired blades at the doors. Steve the ox is tied on the dock outside. Tovin's crown hums louder near the lanterns. Bidding opens at 50 gold. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "\"I must have them. The names... they belong to me now.\" I reach for my purse, fingers brushing the cold coins of the crown. The humming grows louder, a chorus of whispers in my skull. \"50 gold? A trifle for such treasures. 100 gold, Madam Wisp.\" [Persuasion]\n\nThe crown's whispers urge me on, a hunger in my mind. \"And if that's not enough, perhaps I can offer something... more personal. A favor, from the Toll King's own heir. 150 gold.\" [Persuasion]\n\nI glance at Luz, her distrust a palpable thing. \"This is necessary, Luz. For the party. For the truth.\" I turn back to Madam Wisp, my voice dropping to a conspiratorial whisper. \"I'll even throw in a tale, a secret of my own. 200 gold.\" [Deception]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Wick's wink fails (Deception 7) - Madam Wisp sees him licking a lot: \"Touching the lots costs the lot's price, dear.\" Luz's Public Edict lands: the nearest guard goes pale and drops his sword, backing to the wall. Maren's bees slip out unseen among the lanterns (Stealth 16). Tovin's honest bid falls flat, but his bluffed 200 gold (money he doesn't have) wins the lot (Deception 17) - \"Sold!\" Brakka notices (Perception 13) the lanterns hang on oil-soaked cords and the fourth \"blade\" is a mage.\nThen Wisp's steward whispers in her ear; her smile goes cold: \"Your purse is empty, Toll King's heir.\" She snaps her fingers. The lanterns flare; the lot lantern holding the 31 names starts to burn; three blades and the mage close in; the dock gangplank begins to lift - Steve bellows outside. FIGHT, round 1. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "I snatch the burning lantern, ignoring the searing heat. \"This is mine!\" I shout, tucking it under my cloak. The crown's humming turns frantic, a cacophony of voices in my head. \"Brakka, the gangplank! Wick, the mage! Maren, the lanterns! Luz, protect Steve!\" I turn to Madam Wisp, my voice a growl. \"You've made a grave mistake. This lot is mine, and I'll burn this place down before I let you take it.\" I reach for my weapon, the whispers in my crown fueling my rage. [Intimidation]\n\nI glance at the nearest thug, a cruel smile on my lips. \"You... you can surrender. Walk away. But this lot is mine.\" I tighten my grip on the burning lantern, the flames licking at my cloak. \"Choose wisely.\" [Intimidation]"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka holds the only aisle and cuts the mage (7). Wick's dagger takes a blade in the throat-guard (15) - he drops to one knee. Steve smashes the door off its hinges and tramples a second blade (Oxwhip, 14) - Wick's ox is a legend. Parsnip refuses to go near the fire, but Maren's Thorn Lash wraps the third blade (6, Restrained). Tovin and Luz both lunge for the burning lantern - Tovin gets it first (13 vs 12) and tucks it, smoking, under his cloak; his threat to the blades falls flat. The mage's Fire Bolt hits Tovin full in the chest (18 fire) - he is badly burned and nearly down. A blade scratches Maren (3).\nNow: the kneeling blade Wick hit throws down his sword: \"I yield! I yield!\" - he is right at Tovin's feet. The mage is backing toward a side door with Madam Wisp. The lanterns overhead are catching one by one. Round 2. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "I stumble back from the mage's attack, clutching the burning lantern. The pain is intense, but the whispers in my crown drown it out. I look down at the kneeling blade, a dark hunger stirring within me. \"You yield?\" I sneer, pressing the burning lantern against his chest. \"Good. Now, tell me, how much do you value your life?\" [Intimidation]\n\nI glance at the mage and Madam Wisp, their escape imminent. \"Maren, the lanterns! Wick, the mage! Luz, help Brakka with the gangplank!\" I shout, my voice hoarse. I turn my attention back to the kneeling blade, a cruel smile on my lips. \"And you... you're going to help us escape. Or I'll let you burn.\" I press the burning lantern harder against him, the whispers in my crown urging me to finish him. [Intimidation]\n\nI reach"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka's blade bites the mage again (5). Wick's leap onto the mage's back misses - he sprawls on the planks - but his taunt rattles the mage anyway. Luz's threat does not move him; Madam Wisp and the mage slip out a side door into the fog. Tovin presses the burning lantern to the yielded blade's chest (3 fire) and the man, sobbing, agrees to show the way out; Maren kneels and heals that same blade's wounds (Field Triage, 8) while he shows you a hidden hatch. You all drop through it onto a fishing barge as the Lantern House goes up in flames behind you. Steve swims after the barge. You have the lot: a scorched lantern holding the names of the 31.\nDOWNTIME - three days in Varrow while Tovin's burns heal. The city is a canal town of fishmongers, a Dawn Mother chapel, dice dens, a flower market, a bathhouse, and a notice board with a new bounty: \"Madam Wisp, for arson and fraud\". What does your character spend the three days doing? Give 2-3 things."
+  },
+  {
+   "role": "assistant",
+   "content": "I spend the days in a haze of pain and whispers, the burning lantern's contents seared into my mind. I haunt the dice dens, losing myself in the clatter of bones and the hollow stares of the desperate. I need information, and I'll pay in coins or secrets, whatever it takes.\n\nI visit the bathhouse, not for the soothing waters, but for the whispers that linger in the steam. I listen, I learn, I plant seeds of discord. The Toll King's crown hums softly, a constant reminder of the power I wield.\n\nI find a secluded spot by the canals, away from the prying eyes of the party. I kneel, the crown pressed to my temples, and I listen to the whispers. I bargain with them, promising darkness in exchange for power. I need to understand the names, the secrets I now hold. I need to know what my patron wants with them. [Religion] [Persuasion]"
+  }
+ ],
+ "Luz": [
+  {
+   "role": "user",
+   "content": "DM: Session 3 - the Lantern House in Varrow. Night, river fog. The Toll King's ledger said his tolls were sold here. The Lantern House is a floating auction hall of paper lanterns; each lantern holds a bought secret or toll. Tonight's lot: \"the names of every traveller who crossed the Ember Road this year\" - the Toll King's 31 dead among them. Masked bidders murmur; the auctioneer, a smiling gnome called Madam Wisp, has four hired blades at the doors. Steve the ox is tied on the dock outside. Tovin's crown hums louder near the lanterns. Bidding opens at 50 gold. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "*\"¡Miren todos! Luz de Dawn Mother, luz de verdad, aquí para... recuperar lo que es de los muertos.\"* (Everyone look! Luz of Dawn Mother, light of truth, here to... reclaim what belongs to the dead.) I raise my holy symbol, pointing it at the nearest guard.\n\n[Persuasion] vs. the nearest guard's [Wisdom] (Public Edict)"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Wick's wink fails (Deception 7) - Madam Wisp sees him licking a lot: \"Touching the lots costs the lot's price, dear.\" Luz's Public Edict lands: the nearest guard goes pale and drops his sword, backing to the wall. Maren's bees slip out unseen among the lanterns (Stealth 16). Tovin's honest bid falls flat, but his bluffed 200 gold (money he doesn't have) wins the lot (Deception 17) - \"Sold!\" Brakka notices (Perception 13) the lanterns hang on oil-soaked cords and the fourth \"blade\" is a mage.\nThen Wisp's steward whispers in her ear; her smile goes cold: \"Your purse is empty, Toll King's heir.\" She snaps her fingers. The lanterns flare; the lot lantern holding the 31 names starts to burn; three blades and the mage close in; the dock gangplank begins to lift - Steve bellows outside. FIGHT, round 1. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "*\"¡No! ¡No dejaré que quemen la verdad!\"* (No! I won't let them burn the truth!) I lunge for the burning lantern, trying to snatch it from the air.\n\n[Athletics] to catch the lantern"
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka holds the only aisle and cuts the mage (7). Wick's dagger takes a blade in the throat-guard (15) - he drops to one knee. Steve smashes the door off its hinges and tramples a second blade (Oxwhip, 14) - Wick's ox is a legend. Parsnip refuses to go near the fire, but Maren's Thorn Lash wraps the third blade (6, Restrained). Tovin and Luz both lunge for the burning lantern - Tovin gets it first (13 vs 12) and tucks it, smoking, under his cloak; his threat to the blades falls flat. The mage's Fire Bolt hits Tovin full in the chest (18 fire) - he is badly burned and nearly down. A blade scratches Maren (3).\nNow: the kneeling blade Wick hit throws down his sword: \"I yield! I yield!\" - he is right at Tovin's feet. The mage is backing toward a side door with Madam Wisp. The lanterns overhead are catching one by one. Round 2. What do you do?"
+  },
+  {
+   "role": "assistant",
+   "content": "*\"¡Miserables! ¡No más mentiras!\"* (Wretched! No more lies!) I point my holy symbol at the yielding blade, then turn it on the mage. \"¡El poder de Dawn Mother es fuerte! ¡Vete o arderás como estas lámparas!\" (The power of Dawn Mother is strong! Leave or burn like these lanterns!)\n\n[Persuasion] on the yielding blade, then [Intimidation] on the mage."
+  },
+  {
+   "role": "user",
+   "content": "DM (results): Brakka's blade bites the mage again (5). Wick's leap onto the mage's back misses - he sprawls on the planks - but his taunt rattles the mage anyway. Luz's threat does not move him; Madam Wisp and the mage slip out a side door into the fog. Tovin presses the burning lantern to the yielded blade's chest (3 fire) and the man, sobbing, agrees to show the way out; Maren kneels and heals that same blade's wounds (Field Triage, 8) while he shows you a hidden hatch. You all drop through it onto a fishing barge as the Lantern House goes up in flames behind you. Steve swims after the barge. You have the lot: a scorched lantern holding the names of the 31.\nDOWNTIME - three days in Varrow while Tovin's burns heal. The city is a canal town of fishmongers, a Dawn Mother chapel, dice dens, a flower market, a bathhouse, and a notice board with a new bounty: \"Madam Wisp, for arson and fraud\". What does your character spend the three days doing? Give 2-3 things."
+  },
+  {
+   "role": "assistant",
+   "content": "1. *\"Necesito purificar este lugar después del pecado.\"* (I need to cleanse this place after the sin.) I'll spend time blessing the canal town, focusing on the areas most affected by the Lantern House's corruption.\n\n2. *\"Debería visitar la capilla de Dawn Mother. Quizás haya otros como yo aquí.\"* (I should visit the Dawn Mother chapel. Maybe there are others like me here.) I'll go to the chapel to meet fellow clerics and share my experiences.\n\n3. *\"Es importante hablar con la gente. Madam Wisp debe ser detenida.\"* (It's important to talk to people. Madam Wisp must be stopped.) I'll talk to the townsfolk, gathering information about Madam Wisp and spreading the word about her crimes to encourage others to turn her in."
+  }
+ ]
+}

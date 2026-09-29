@@ -62,14 +62,25 @@ export const SUPPORTED_GAME_SYSTEMS = new Set(["pf2e", "dnd5e"]);
 // entries built from genuine vice or violation are.
 export const ENTRY_POLARITIES = new Set(["standard", "red"]);
 // Horror Rank (canon: "terrible deeds grant non-real classes that progressively consume regular
-// class levels"). A per-actor corruption meter (HORROR_RANK_FLAG) that accrues points every time a
-// red-polarity Class/Skill/Title is actually approved -- once accumulated points cross
-// HORROR_RANK_THRESHOLD, HORROR_RANK_LEVEL_PENALTY levels are docked from the actor's own
-// strongest standard-polarity Class. See horror-rank.js.
+// class levels"). Owner decision 2026-09-29: it accrues from the red DEEDS the session notes record
+// (each growth event's darkDeed/darkSeverity), not from approving red entries -- refusing a red Skill
+// refuses the power, not the stain. The meter is DERIVED from the recorded events every time they
+// change (record / re-analyze / removal); every HORROR_RANK_THRESHOLD points of it is one crossing,
+// and each NEW crossing docks HORROR_RANK_LEVEL_PENALTY levels from the actor's strongest
+// standard-polarity Class (a crossing is docked once, ever; losing points never refunds a dock).
+// Stage (0-3) is floor(points / threshold) capped at HORROR_RANK_MAX_STAGE, the design's 4-stage
+// language (conversion rules section 6). See horror-rank.js.
 export const HORROR_RANK_FLAG = "horrorRank";
+// Legacy only: worlds made before 2026-09-29 accrued this much per red approval. Approvals add
+// nothing now; the points such worlds already have are kept as a baseline (horror-rank.js#migrateHorrorRankState).
 export const HORROR_RANK_POINTS_PER_RED_APPROVAL = 25;
 export const HORROR_RANK_THRESHOLD = 100;
 export const HORROR_RANK_LEVEL_PENALTY = 2;
+export const HORROR_RANK_MAX_STAGE = 3;
+// Points one recorded dark deed is worth, by its darkSeverity. Tuned so a single killing of a
+// surrendered foe (serious) is a stain, not a stage; a monstrous act (eating a person) is 40% of one.
+export const DARK_SEVERITIES = ["none", "minor", "serious", "monstrous"];
+export const HORROR_RANK_POINTS_BY_SEVERITY = { none: 0, minor: 5, serious: 15, monstrous: 40 };
 // Revival penalty (canon: resurrection costs levels off the character's own highest Class). A
 // one-shot GM action (api.applyRevivalPenalty), NOT an accumulating meter like Horror Rank --
 // see revival-penalty.js. Deliberately does NOT exclude red Classes from being the docking target

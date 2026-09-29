@@ -45,6 +45,11 @@ export function normalizeEntry(kind, entry, registry, operation = "origin") {
     if (!bucket[sourceId]) {
       throw new Error(`Lineage source ${sourceId} is not an approved ${kind}.`);
     }
+    // An upgrade/merge replaces its sources (markSuperseded); building on a replaced entry again
+    // would fork one Skill into two evolved lines.
+    if (requestedOperation !== "origin" && !isActiveEntry(bucket[sourceId])) {
+      throw new Error(`Lineage source [${bucket[sourceId].name ?? sourceId}] was already superseded by ${bucket[sourceId].supersededBy ?? "a later entry"}.`);
+    }
   }
 
   const inheritedTags = sourceIds.flatMap((sourceId) => bucket[sourceId].metadata.tags);
@@ -140,7 +145,7 @@ export function createFeatureSource(kind, entry, systemId) {
   const sources = entry.metadata.lineage.sources.length
     ? entry.metadata.lineage.sources.join(", ")
     : "none";
-  const { source: systemSource, postCreate } = adapter.buildItemSource(kind, entry);
+  const { source: systemSource, postCreate, descriptionHtml } = adapter.buildItemSource(kind, entry);
   const source = {
     name: title,
     type: systemSource.type,
@@ -148,7 +153,9 @@ export function createFeatureSource(kind, entry, systemId) {
       ...systemSource.system,
       description: {
         ...(systemSource.system?.description ?? {}),
-        value: `<p><strong>${escapeHtml(adapter.label)} equivalent:</strong> ${escapeHtml(equivalent)}</p>${createMechanicsHtml(entry)}<p><strong>Tags:</strong> ${escapeHtml(tags)}</p><p><strong>Lineage:</strong> ${escapeHtml(entry.metadata.lineage.operation)}; sources: ${escapeHtml(sources)}</p><p>${escapeHtml(entry.metadata.lineage.rationale)}</p>`
+        // descriptionHtml: the adapter's rollable rules lines (@Damage/@Check, [[/damage]]/[[/save]])
+        // for entries with structured mechanics; empty otherwise, so old entries read as before.
+        value: `<p><strong>${escapeHtml(adapter.label)} equivalent:</strong> ${escapeHtml(equivalent)}</p>${createMechanicsHtml(entry)}${descriptionHtml ?? ""}<p><strong>Tags:</strong> ${escapeHtml(tags)}</p><p><strong>Lineage:</strong> ${escapeHtml(entry.metadata.lineage.operation)}; sources: ${escapeHtml(sources)}</p><p>${escapeHtml(entry.metadata.lineage.rationale)}</p>`
       }
     },
     flags: {
@@ -159,6 +166,8 @@ export function createFeatureSource(kind, entry, systemId) {
       }
     }
   };
+  // dnd5e structured modifiers/advantage ride along as embedded Active Effects.
+  if (Array.isArray(systemSource.effects) && systemSource.effects.length) source.effects = systemSource.effects;
   return { source, postCreate };
 }
 
@@ -267,6 +276,32 @@ function describeTitleGrantsHtml(grants) {
   if (grants.condition) lines.push(`<li>Condition: ${escapeHtml(grants.condition.name)}</li>`);
   if (!lines.length) return "";
   return `<p><strong>Grants:</strong></p><ul>${lines.join("")}</ul>`;
+}
+
+/**
+ * False for a registry entry that an approved evolution or merge replaced (markSuperseded). A
+ * superseded entry stays in the registry -- its id is what the new entry's lineage points at, and
+ * the history is the point of a lineage -- but it no longer counts as something the character is:
+ * it cannot be evolved or merged again, Horror Rank and revival do not dock it, and it is not an
+ * "active Class" for a merge at a Class milestone.
+ */
+export function isActiveEntry(entry) {
+  return Boolean(entry) && entry.status !== "superseded";
+}
+
+/**
+ * Marks `sourceIds` in `kind`'s bucket as superseded by `byId` (conversion rules 2.3/2.4: a merged
+ * or evolved entry replaces its sources; it does not sit beside them). Returns a fresh registry;
+ * unknown ids are ignored. `at` is passed in so the function stays deterministic for tests.
+ */
+export function markSuperseded(registry, kind, sourceIds, byId, at) {
+  const next = cloneRegistry(registry);
+  const bucket = bucketFor(kind, next);
+  for (const id of sourceIds ?? []) {
+    if (!bucket[id]) continue;
+    bucket[id] = { ...bucket[id], status: "superseded", supersededBy: byId, supersededAt: at };
+  }
+  return next;
 }
 
 export function cloneRegistry(registry) {
