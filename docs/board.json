@@ -277,7 +277,9 @@
    "id": "2a70b369",
    "title": "Jev client + triage/attribution/verify/rank steps in the gateway (docs/jev-layer-contract.md)",
    "status": "doing",
-   "notes": [],
+   "notes": [
+    "dev-gateway done in worktree: jev.js client + 4 helpers, pipeline triage/attribution/verify/rank, runProposalStageFor, adapter.analyzeParty/proposeFor. 701 tests green (52 new). Jev-off identical on 3864/3864 corpus variants; sim --limit 40 = 100.0%, fault 0.3 = 93.1% (same as HEAD). Deviations: transport errors not retried, helpers batch 12, attribution override guarded by witness check (else actor-disputed flag), apiKey redacted to '' + hasApiKey. Under review."
+   ],
    "tags": [
     "gateway",
     "jev"
@@ -286,7 +288,7 @@
    "owner": "dev-gateway",
    "source": "jev-layer",
    "created": 1790704404.938,
-   "updated": 1790704483.708
+   "updated": 1790705339.611
   },
   {
    "id": "485cae73",
