@@ -64,6 +64,9 @@ owner has authorised Claude to log in, launch worlds and drive the module there 
   A headless session must set them itself (`game.settings.set("grand-design-ai", "aiProvider", "ollama")`,
   endpoint `http://127.0.0.1:11434`, model `qwen3.8:27b`) and reload; that does not change the owner's browser.
 - The gateway adapter is built at `ready`, so settings changes need a world reload.
+- Read-only live check: `node foundry-module/tools/playtest/live-audit.mjs [--actor Name] [--with-ai]` joins as
+  Gamemaster and prints the module version, settings, whether the gateway is attached, the Growth dialog's real
+  buttons, every Grand Design actor's events/pending proposals, and console errors (changes nothing).
 
 ## Playtest (you are the Dungeon Master)
 

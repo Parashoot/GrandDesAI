@@ -736,6 +736,710 @@
    "source": "owner 2026-09-28",
    "created": 1790646209.469,
    "updated": 1790647018.637
+  },
+  {
+   "id": "3d80edf3",
+   "title": "'Author with AI' never tells the model what to author (placeholders like 'Archery Knack' stay generic)",
+   "status": "todo",
+   "notes": [
+    "api.js:995 calls adapter.authorProposal, which ai-gateway.js never defines, so it falls back to the full adapter with a 'GM REQUEST' notes wrapper (stage 1 reads it as OOC; stage 2 never sees the instruction), under when-earned gating, no preset events, and takes accepted[0] whatever it is. Capstone/Class fallbacks are forced to a tier-1/2 Skill. Fix: adapter.authorProposal = stage 2 only (presetEvents = cited evidence, mustPropose) with a 'target' (theme/label, kind, tier, placeholder to replace), like the milestone param. Also: approveProposal ignores needsAuthoring - warn or auto-author before approving a placeholder."
+   ],
+   "tags": [
+    "proposals",
+    "themes",
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.497,
+   "updated": 1790660878.534
+  },
+  {
+   "id": "d8c96c43",
+   "title": "Templates and '<Theme> Knack' placeholders are minted even when the AI read the notes, duplicating AI proposals",
+   "status": "todo",
+   "notes": [
+    "api.js:1151-1152 recordGrowthEvent always runs generateSkillProposals + generateEmergentProposals, also for adapter events. registryHasTheme only checks APPROVED skills, so an AI proposal and 'Archery Knack' are both pending; 'archery' is both a tag and an ALSO_THEME. Neither source counts toward the pending cap. Live (EndexDND 5E): Briik has 12 pending = 5 Knack placeholders + 2 templates + 5 AI. Fix: skip templates/placeholders for adapter events (or auto-author them), suppress a theme already on a pending AI proposal, include all sources in the cap."
+   ],
+   "tags": [
+    "proposals",
+    "themes",
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.571,
+   "updated": 1790660878.609
+  },
+  {
+   "id": "0a1c8463",
+   "title": "An AI-rewritten template proposal is overwritten by the next recorded event",
+   "status": "todo",
+   "notes": [
+    "api.js:1165-1170 only protects authored EMERGENT proposals; a re-authored template keeps source 'template' and a stable id (proposal:measured-strike), so the next recordGrowthEvent puts the template text back. Fix: preserve anything with authoredBy 'ai-gateway' (refresh evidence only) and restamp source ai-gateway, origin template."
+   ],
+   "tags": [
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.646,
+   "updated": 1790660878.685
+  },
+  {
+   "id": "f48a1e52",
+   "title": "A Class-evolution proposal can no longer be approved once the character levels past the milestone",
+   "status": "todo",
+   "notes": [
+    "progression.js:782 canApproveGeneratedProposal requires CLASS_EVOLUTION_LEVELS.has(current level). The guaranteed level-20 Class is dead if the GM rests to 21 first; a multi-level rest also falls back to a template that cannot be approved. Fix: gate on proposal.milestoneLevel; pass classEvolutionAvailable for milestone calls instead of reading the live level."
+   ],
+   "tags": [
+    "progression",
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.722,
+   "updated": 1790660878.759
+  },
+  {
+   "id": "51f276b4",
+   "title": "AI provider is off by default in every browser and the GM is not warned (silent keyword fallback)",
+   "status": "todo",
+   "notes": [
+    "aiProvider/aiEndpoint/aiModel are CLIENT scope, default 'disabled' (ai-provider-config.js:257); main.js only warns when adapter creation throws, not when it returns null; a local Analyze is an info toast plus a small 'Local' chip. Live: Dvathal's 14 events are all source 'local' (2026-09-29). Fix: user scope for provider/endpoint/model (API key stays client), a world 'AI expected' flag with a sticky warning + Open AI Gateway button at ready, local-mode Analyze as a warning, hide/disable Suggest/Author with no provider."
+   ],
+   "tags": [
+    "gateway",
+    "ui",
+    "qol"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.796,
+   "updated": 1790660878.834
+  },
+  {
+   "id": "5286a3ba",
+   "title": "Gateway adapter freezes settings at ready/Save; changes elsewhere need a reload",
+   "status": "todo",
+   "notes": [
+    "ai-gateway.js:62 normalizes the config once; no setting has onChange. proposalMode, creativity, allowRed, houseRules, namingStyle, maxProposals, provider/model changed by another GM, the console or a script are ignored until reload; main.js:33 claims otherwise. Fix: onChange handlers rebuilding the adapter (GM, debounced), or build the pipeline config per call and cache only the transport."
+   ],
+   "tags": [
+    "gateway",
+    "proposals"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.872,
+   "updated": 1790660878.908
+  },
+  {
+   "id": "dee25a95",
+   "title": "Populate never uses the AI (setPopulateAdapter never called) though its dialog says it does; PF2e gets 5e stat blocks",
+   "status": "todo",
+   "notes": [
+    "api.js:1411 setPopulateAdapter has no caller; populate-ui.js says 'Uses your configured AI provider when one is set'. populate.js:410-416 awaits an adapter with no try/catch; MONSTER_TEMPLATES are 5e CR blocks and PF2e sets level = round(cr). Fix: gateway-backed populate adapter with schema, try/catch local fallback, per-system stat builders, optional AI Grand Design Class for NPCs."
+   ],
+   "tags": [
+    "gateway",
+    "pf2e",
+    "dnd5e",
+    "ui"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660878.947,
+   "updated": 1790660878.984
+  },
+  {
+   "id": "30f2b191",
+   "title": "Stale live install is undetectable: version stuck at 0.28.0, no build stamp",
+   "status": "todo",
+   "notes": [
+    "module.json version unchanged since gateway v2; deploy-foundry-module.ps1 'verifies' matching versions, which proves nothing. The live install was 4 days behind main on 2026-09-28 and the owner could not tell; after a deploy the world must be reloaded (Briik GD50 rested on old code). Fix: deploy writes a build stamp (git SHA + time), bumps patch, logs it at ready, shows it in the Gateway form and 'Under the hood'; module.json verified 13 -> 14."
+   ],
+   "tags": [
+    "harness",
+    "docs",
+    "qol"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.042,
+   "updated": 1790660879.081
+  },
+  {
+   "id": "db092299",
+   "title": "Rest dialog hides milestone template fallback and labels AI Class evolutions 'template'",
+   "status": "todo",
+   "notes": [
+    "growth-ui.js:182-184 shows only gainedLevels; resolveLevelRest's warnings ('used the built-in template (reason)'), capstoneProposals and classProposals are dropped - breaks the 'fallback with a stated reason' rule. renderProposal has no case for source 'class-evolution', so an AI Class gets the 'template' chip. Fix: sticky warnings per entry, info naming the new milestone proposals, chip from source + usedFallback."
+   ],
+   "tags": [
+    "ui",
+    "progression"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.118,
+   "updated": 1790660879.156
+  },
+  {
+   "id": "5a0cea2e",
+   "title": "Approved Skills/Classes become description-only item stubs (no damage, saves, modifiers, frequency)",
+   "status": "todo",
+   "notes": [
+    "pf2e-adapter.js:13-42: no system.frequency, traits or rule elements (a '+1 circumstance' is never applied), spells without damage/defense/range. dnd5e-adapter.js:137-181: activities without damage parts, save ability/DC or attack bonus. Only text + [[/r]]. Fix: optional structured fields in the proposal schema (damage, save, modifier, range/area) filled by the AI, mapped to PF2e rule elements/spell data and dnd5e activity damage/save; templates too."
+   ],
+   "tags": [
+    "pf2e",
+    "dnd5e",
+    "gateway"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.193,
+   "updated": 1790660879.23
+  },
+  {
+   "id": "ebcc3f03",
+   "title": "Skill evolution is unreachable, never triggered and structurally blocked for the AI",
+   "status": "todo",
+   "notes": [
+    "checkSkillEvolutionReadiness/buildSkillEvolutionPreview (api.js:187/219) have no callers; the AI schema hardcodes lineage.operation 'origin' (ai-gateway.js:246) and the duplicate gates block a Skill that resembles an owned one; evolved mechanics are carried over unchanged. Fix: run readiness after analysis and at rest; for ready Skills ask stage 2 for an 'upgrade' target (source id, effect, defining moments), exempt lineage sources from dup gates, evolveSkillEntry as fallback; Growth-dialog button."
+   ],
+   "tags": [
+    "progression",
+    "proposals",
+    "gateway",
+    "ui"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.286,
+   "updated": 1790660879.326
+  },
+  {
+   "id": "574707d8",
+   "title": "Evolved/merged names collide (name banks only use index 0) and the second evolution overwrites the first registry entry",
+   "status": "todo",
+   "notes": [
+    "skill-evolution.js:213 `${bank.mythic[0]} ${bank.nouns[0]}` makes every martial tier-3 evolution 'Minotaur Punch'; same in class-merging.js:324/329/334 and combination-skills.js:153. evolveSkillEntry sets no metadata.id, so normalizeEntry derives the same registry id and registerEntry silently replaces the earlier Skill. Fix: AI-named results; fallback picks from the whole bank by a stable hash of the source id; id collision guard."
+   ],
+   "tags": [
+    "naming",
+    "progression"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.366,
+   "updated": 1790660879.406
+  },
+  {
+   "id": "7b616fea",
+   "title": "Class merging / comma and prestige classes are never offered",
+   "status": "todo",
+   "notes": [
+    "Milestones produce a new origin Class only; the template is `${themeLabel} Ascendant`, power_tier standard. The schema asks for approved registry ids in lineage.sources but the prompt sends only names/effects, so an AI 'combine' fails normalizeEntry. Sources are never retired after a merge/upgrade. Fix: at a milestone with 2+ Classes send ids + focus scores, AI authors a combine (mergeClassEntry fallback, 'intentional' from evidence), mark sources superseded (conversion rules 2.3/2.4)."
+   ],
+   "tags": [
+    "progression",
+    "proposals",
+    "gateway",
+    "pf2e",
+    "dnd5e"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.443,
+   "updated": 1790660879.483
+  },
+  {
+   "id": "21e944ed",
+   "title": "Horror Rank is invisible, dodgeable by rejecting red proposals, and differs from the design's stage clock",
+   "status": "todo",
+   "notes": [
+    "Points accrue only on red APPROVAL and rejectProposal accepts red proposals; docking changes only the registry flag, never items; no listener for grand-design-ai.horrorRankLevelsDocked; conversion rules section 6 describes a 4-stage clock with feat suppression and lock-out that the code lacks; the AI never sees Horror Rank. Fix: meter + docking notices in the dialog, decide the model, make red proposals non-refusable or let rejection accrue, AI-written stage consequences."
+   ],
+   "tags": [
+    "red",
+    "ui",
+    "progression",
+    "docs"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.521,
+   "updated": 1790660879.561
+  },
+  {
+   "id": "d4ae9326",
+   "title": "Titles have no AI path and no trigger (proposal kind must be skill or class)",
+   "status": "todo",
+   "notes": [
+    "grantTitle (api.js:367) needs a hand-written entry; _validateModelProposals rejects anything but skill/class (api.js:1473). Fix: kind 'title' in stage 2 for notable deeds (named kills, rescues, infamy), through the normal Approve/Reject flow; red titles accrue Horror Rank; GM grant from the dialog as fallback."
+   ],
+   "tags": [
+    "proposals",
+    "gateway",
+    "ui",
+    "red"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.601,
+   "updated": 1790660879.64
+  },
+  {
+   "id": "752369f6",
+   "title": "No GM UI for owned entries or advanced actions (evolve, merge, combine, title, cleanse, consolidate, revive)",
+   "status": "todo",
+   "notes": [
+    "The Growth dialog never lists owned Classes/Skills/Titles; 13 api methods (combineSkills, upgradeSkill, upgradeClass, combineClasses, buildClassMergePreview, checkSkillEvolutionReadiness, castCombinationSkill, grantTitle, cleanseEntry, setConsolidation, checkClassErosion, applyRevivalPenalty...) are console-only; the raw JSON importer is the only other door. Fix: a 'Grand Design' registry panel with per-entry actions, each opening an (AI-authored where possible) preview before approval."
+   ],
+   "tags": [
+    "ui",
+    "qol",
+    "progression"
+   ],
+   "severity": "high",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.679,
+   "updated": 1790660879.716
+  },
+  {
+   "id": "b375d56c",
+   "title": "Milestone capstone/Class cannot be re-asked of the AI after a template fallback or rejection",
+   "status": "todo",
+   "notes": [
+    "Fixed ids (proposal:capstone-<level>), milestones only computed when a rest crosses a level, Suggest never yields isCapstone; a rejected or template capstone leaves capstoneAllowances stuck. Fix: api.retryMilestoneReward(actor, proposalId) re-running _resolveMilestoneReward + a 'Retry with AI' button on template milestone proposals."
+   ],
+   "tags": [
+    "progression",
+    "proposals",
+    "ui"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.753,
+   "updated": 1790660879.79
+  },
+  {
+   "id": "0ed137cb",
+   "title": "Fallback capstone/Class numbers are unusable (DC = 10 + Grand Design level; 'Martial check')",
+   "status": "todo",
+   "notes": [
+    "progression.js:498 dc: 10 + level uses the GD level (DC 60 at 50, 110 at 100); roll.kind 'Martial check' is not a real check; the template Class is 'Pending chassis review'. Fix: DCs from the character level (PF2e level DC table, 5e 8+prof+mod), map top tag to a real skill or save, a concrete default benefit per tag."
+   ],
+   "tags": [
+    "progression",
+    "pf2e",
+    "dnd5e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.826,
+   "updated": 1790660879.869
+  },
+  {
+   "id": "17c10e97",
+   "title": "Every generated roll uses the Acrobatics modifier and a raw [[/r]] roll",
+   "status": "todo",
+   "notes": [
+    "api.js rollModifier reads skills.acrobatics/acr for every template and capstone (Medicine, Diplomacy, spell attacks); mechanics.js renders [[/r 1d20+N]]. Fix: resolve roll.kind to the system skill/save and emit @Check[...] (PF2e) or [[/skill ...]]/[[/save ...]] (dnd5e), [[/r]] as fallback."
+   ],
+   "tags": [
+    "pf2e",
+    "dnd5e",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.906,
+   "updated": 1790660879.944
+  },
+  {
+   "id": "9ebbf3c9",
+   "title": "Template and fallback names ignore the naming convention (naming.js is dead code)",
+   "status": "todo",
+   "notes": [
+    "deriveClassMotif/buildClassFlavoredName (naming.js:71-95) are only imported by tests; templates ship fixed names ('Canal Step', 'Measured Strike'), fallbacks are 'Capstone: <Tag>' and '<Tag> Ascendant'. Fix: with the AI on, templates go away; off, name via buildClassFlavoredName from the actor's GD Class or systemClass."
+   ],
+   "tags": [
+    "naming"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660879.982,
+   "updated": 1790660880.021
+  },
+  {
+   "id": "a0bcfd05",
+   "title": "Proposals cannot be inspected in full or edited before approval; approve is a dropdown",
+   "status": "todo",
+   "notes": [
+    "renderProposal shows name, chip, effect and evidence count only (no rationale, tags, kind, actions, polarity/red, level); templates are described as 'GM-editable' but no editor exists. Live: Reject is per row but Approve is one <select> of 12 proposals + one button. Fix: per-proposal Details expander, per-row Approve, an Edit form validated by validator.js before saving back as pending."
+   ],
+   "tags": [
+    "ui",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.058,
+   "updated": 1790660880.097
+  },
+  {
+   "id": "5b2ff22d",
+   "title": "Gateway settings unreachable: pending cap, retries, extraction cache; outputLanguage is client-scoped",
+   "status": "todo",
+   "notes": [
+    "WORLD_FLAVOR_KEYS omits pendingProposalCapExtra/Min, and buildGatewayConfig keeps only listed keys, so the cap is always default despite gateway-config.js saying a GM can lower it; CLIENT_TUNING_KEYS omits maxRetries, transientRetries, transientBackoffMs, extractionCache*; outputLanguage is table-wide but client scope. Fix: add them to the key lists and form; outputLanguage to world."
+   ],
+   "tags": [
+    "gateway",
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.136,
+   "updated": 1790660880.174
+  },
+  {
+   "id": "78ead05c",
+   "title": "Long AI calls: dialog closes, no busy state, no per-actor lock, up to ~9 min per chunk before fallback",
+   "status": "todo",
+   "notes": [
+    "Analyze/Re-analyze/Author/Approve/Rest are footer buttons that close the v1 Dialog; no in-flight guard in api.analyzeSessionNotes (double click can double-record); timeoutMs 180 s x transient retries. Fix: run in the dialog body with a busy state (like Suggest), per-actor lock in the api, an overall deadline per analysis."
+   ],
+   "tags": [
+    "ui",
+    "gateway",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.211,
+   "updated": 1790660880.249
+  },
+  {
+   "id": "7f1f20ae",
+   "title": "Party notes must be analysed one character sheet at a time",
+   "status": "todo",
+   "notes": [
+    "Growth is per actor; the extraction cache exists to read shared party notes once, but the GM still opens five sheets and pastes five times. Fix: 'Analyze for party' (pick PCs, one paste) in the dialog, a scene control or /growth chat command."
+   ],
+   "tags": [
+    "ui",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.286,
+   "updated": 1790660880.325
+  },
+  {
+   "id": "4344c58a",
+   "title": "No way to delete or reassign a recorded event, or undo an approval",
+   "status": "todo",
+   "notes": [
+    "_removeRecordedEvents is private; Re-analyze only replaces the LAST notes' events, so an older misattributed event counts forever. Fix: per-event delete/reassign under Recorded Evidence with progress recomputed, and 'revert approval'."
+   ],
+   "tags": [
+    "ui",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.361,
+   "updated": 1790660880.399
+  },
+  {
+   "id": "2d795cac",
+   "title": "Ollama on another LAN machine is blocked (plain http only for loopback)",
+   "status": "todo",
+   "notes": [
+    "validateEndpointUrl (ai-provider-config.js:77) and transport.js:85 reject http to private addresses; calls run in the GM's browser, so 127.0.0.1 is the GM's PC, not the Foundry host, and the form does not say so. Fix: opt-in checkbox for private-network http, help text on where calls originate and OLLAMA_ORIGINS."
+   ],
+   "tags": [
+    "gateway",
+    "docs"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.436,
+   "updated": 1790660880.476
+  },
+  {
+   "id": "aab65e42",
+   "title": "Live integration check bypasses the real setup path and covers one system's scenario",
+   "status": "todo",
+   "notes": [
+    "run-live-ai-campaign.mjs sets settings itself and attaches the adapter; ai-test-scenario forces proposalMode 'always'; untested: defaults and ready wiring, build stamp, Suggest, Reject, Author, milestone rests, dialog rendering. Messages name the old menu 'Configure AI Provider' (now 'Configure AI Gateway'); 'real PF2e Item' text on dnd5e. Fix: assert defaults + build stamp, drive the real Growth dialog in both worlds (see tools/playtest/live-audit.mjs)."
+   ],
+   "tags": [
+    "harness",
+    "pf2e",
+    "dnd5e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.513,
+   "updated": 1790660880.551
+  },
+  {
+   "id": "e6d9185c",
+   "title": "Joint casts in notes are not detected; combination Skills need a GM-typed effect",
+   "status": "todo",
+   "notes": [
+    "castCombinationSkill requires an effect; preview placeholder 'Pending GM effect description.' (api.js:254). 'Maren and Luz wove Thorn Lash with Sacred Flame' becomes separate events; no combinedWith field. Fix: event field linking co-actors and their approved Skills, a 'Cast combination' suggestion with an AI-written effect scaled to power, banks + GM effect as fallback."
+   ],
+   "tags": [
+    "gateway",
+    "proposals",
+    "ui",
+    "naming"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.588,
+   "updated": 1790660880.625
+  },
+  {
+   "id": "c4ec8cf7",
+   "title": "Playtest runner cannot exercise evolve/merge/combine/title/revive/erosion",
+   "status": "todo",
+   "notes": [
+    "playtest.mjs commands: init, analyze, suggest, approve, reject, status (horror rank printed only). No playtest has ever run the advanced mechanics on either system. Fix: commands + per-session report sections for readiness, erosion, Horror Rank."
+   ],
+   "tags": [
+    "harness",
+    "dnd5e",
+    "pf2e"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.663,
+   "updated": 1790660880.702
+  },
+  {
+   "id": "b16101a9",
+   "title": "Death and resurrection in notes are not detected; revival penalty is API-only",
+   "status": "todo",
+   "notes": [
+    "applyRevivalPenalty (api.js:481) has no callers; the event schema has no death/revival signal. Fix: extraction flag, a confirm prompt in the dialog, AI-written narrative cost with the fixed 10-level dock as the mechanic."
+   ],
+   "tags": [
+    "gateway",
+    "ui",
+    "progression"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.739,
+   "updated": 1790660880.777
+  },
+  {
+   "id": "0860fd78",
+   "title": "Class erosion is computed but never shown",
+   "status": "todo",
+   "notes": [
+    "checkClassErosion (api.js:468) has no callers; sessions are approximated by calendar date. Fix: list at-risk Classes after each analysis; optional AI read of narrative absence vs neglect; a real session id."
+   ],
+   "tags": [
+    "ui",
+    "progression"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.815,
+   "updated": 1790660880.852
+  },
+  {
+   "id": "7f220b07",
+   "title": "Emergent-theme registry has duplicate slugs and test-actor themes, each spawning its own Knack",
+   "status": "todo",
+   "notes": [
+    "Live world registry: trophy-taking/taking-trophies, pie-eating/pie-contest, wrestling/arm-wrestling/wrestling-instruction, holding-line vs holding-the-line, carving/whittling; test actors' themes (rig-building, geothermal-magic, tunnel-clearing) share the world list. Fix: fold near-duplicate slugs (stem/synonym/embedding), per-actor theme counts for proposals, a purge for deleted/test actors."
+   ],
+   "tags": [
+    "themes",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.888,
+   "updated": 1790660880.927
+  },
+  {
+   "id": "3574bd96",
+   "title": "Near-duplicate Class proposals pile up (two Suggest clicks -> 'Unbroken Bastion' + 'Unbroken Bulwark')",
+   "status": "todo",
+   "notes": [
+    "Live: Briik GD50 has two almost identical Class proposals pending; findDuplicateOwnedMechanic compares against OWNED entries only, not other pending proposals. Fix: dedupe new proposals against pending ones by mechanic (keep the better-evidenced), and show 'already pending' on Suggest."
+   ],
+   "tags": [
+    "proposals"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660880.965,
+   "updated": 1790660881.004
+  },
+  {
+   "id": "f798f444",
+   "title": "Sessions read by the keyword fallback can never be re-read by the AI",
+   "status": "todo",
+   "notes": [
+    "Only the last notes are stored (LAST_ANALYSIS_FLAG); earlier sessions read by the fallback analyzer (no themes, keyword tags) stay that way. Fix: short per-actor notes history with source; 'Re-read fallback sessions with AI'."
+   ],
+   "tags": [
+    "gateway",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.042,
+   "updated": 1790660881.081
+  },
+  {
+   "id": "dec6d76c",
+   "title": "Counter-leveling differs from design (multiplier vs full level on a +2 encounter); 'dire' rest missing from UI",
+   "status": "todo",
+   "notes": [
+    "progressionForEvent multiplies by 1.5/2.5 where conversion rules 6.1 award a full level; resolveRest supports dire but the dialog offers Short/Long only. Fix: decide the rule, align docs or code, expose Dire."
+   ],
+   "tags": [
+    "docs",
+    "progression",
+    "ui"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.118,
+   "updated": 1790660881.157
+  },
+  {
+   "id": "54a5058f",
+   "title": "AI could suggest Class consolidation and redemption (cleanse) from evidence",
+   "status": "todo",
+   "notes": [
+    "setConsolidation and cleanseEntry have no callers or UI. Fix: tag atonement events in extraction; stage 2 proposes cleanse/consolidation for GM approval."
+   ],
+   "tags": [
+    "red",
+    "proposals",
+    "ui"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.194,
+   "updated": 1790660881.232
+  },
+  {
+   "id": "b9a22e1a",
+   "title": "Atlas step of the core loop (link approved growth to the campaign atlas) is not implemented",
+   "status": "todo",
+   "notes": [
+    "GAME_DESIGN core loop step 5; atlas.js only resolves asset paths, sketch maps used by test-scenario only. Fix: scope it out of the design doc or link approvals to atlas Journal/Scene notes."
+   ],
+   "tags": [
+    "docs"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.271,
+   "updated": 1790660881.309
+  },
+  {
+   "id": "e8c5fd7f",
+   "title": "Item descriptions show raw registry ids in the Lineage line",
+   "status": "todo",
+   "notes": [
+    "lineage.js:141-151 renders 'sources: class:foo, class:bar' to players. Fix: render source names."
+   ],
+   "tags": [
+    "qol",
+    "naming"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.346,
+   "updated": 1790660881.384
+  },
+  {
+   "id": "b5df25bd",
+   "title": "lang/en.json is unused (no i18n calls); v1 Dialog/FormApplication deprecated on v14",
+   "status": "todo",
+   "notes": [
+    "No game.i18n in scripts; en.json lacks Reject/Suggest strings anyway. Fix: localize or delete en.json; plan the ApplicationV2 move."
+   ],
+   "tags": [
+    "docs",
+    "qol"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.423,
+   "updated": 1790660881.461
+  },
+  {
+   "id": "01e232b6",
+   "title": "Tag Reweighting accepts misspelled tags silently",
+   "status": "todo",
+   "notes": [
+    "tag-weighting.js:35-42 accepts any free text; 'mobilty' saves and does nothing. Fix: dropdown of taxonomy tags or validation against GROWTH_TAXONOMY."
+   ],
+   "tags": [
+    "ui",
+    "qol"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "gap audit 2026-09-29",
+   "created": 1790660881.498,
+   "updated": 1790660881.536
   }
  ]
 }
