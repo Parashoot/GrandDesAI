@@ -337,16 +337,16 @@
   {
    "id": "4f3192e0",
    "title": "Things done TO a character still extracted as their event: 'Tovin was offered a deal by a woman...' (success, occultism) despite the prompt rule",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "gateway"
    ],
    "severity": "low",
-   "owner": "",
+   "owner": "dev-gateway",
    "source": "ember-road s1 re-run 2026-09-27",
    "created": 1790543771.568,
-   "updated": 1790620957.182357,
+   "updated": 1790688187.127,
    "parent": "f2d3213f"
   },
   {
@@ -679,16 +679,16 @@
   {
    "id": "96b5beea",
    "title": "Proposal repair turn still requires redCheck in the schema though the repair prompt asks for {proposals} only - wastes numPredict (review test.todo)",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "gateway"
    ],
    "severity": "low",
-   "owner": "",
+   "owner": "dev-gateway",
    "source": "C5 review 2026-09-28",
    "created": 1790627490.291,
-   "updated": 1790627490.291
+   "updated": 1790688187.081
   },
   {
    "id": "eb3924f1",
@@ -983,7 +983,7 @@
   {
    "id": "574707d8",
    "title": "Evolved/merged names collide (name banks only use index 0) and the second evolution overwrites the first registry entry",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "skill-evolution.js:213 `${bank.mythic[0]} ${bank.nouns[0]}` makes every martial tier-3 evolution 'Minotaur Punch'; same in class-merging.js:324/329/334 and combination-skills.js:153. evolveSkillEntry sets no metadata.id, so normalizeEntry derives the same registry id and registerEntry silently replaces the earlier Skill. Fix: AI-named results; fallback picks from the whole bank by a stable hash of the source id; id collision guard."
    ],
@@ -992,10 +992,10 @@
     "progression"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-progression",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.366,
-   "updated": 1790661418.4295838,
+   "updated": 1790688186.927,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1086,7 +1086,7 @@
   {
    "id": "b375d56c",
    "title": "Milestone capstone/Class cannot be re-asked of the AI after a template fallback or rejection",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "Fixed ids (proposal:capstone-<level>), milestones only computed when a rest crosses a level, Suggest never yields isCapstone; a rejected or template capstone leaves capstoneAllowances stuck. Fix: api.retryMilestoneReward(actor, proposalId) re-running _resolveMilestoneReward + a 'Retry with AI' button on template milestone proposals."
    ],
@@ -1096,17 +1096,17 @@
     "ui"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.753,
-   "updated": 1790661415.195415,
+   "updated": 1790688186.678,
    "prio": 2,
    "parent": "a2cbef5e"
   },
   {
    "id": "0ed137cb",
    "title": "Fallback capstone/Class numbers are unusable (DC = 10 + Grand Design level; 'Martial check')",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "progression.js:498 dc: 10 + level uses the GD level (DC 60 at 50, 110 at 100); roll.kind 'Martial check' is not a real check; the template Class is 'Pending chassis review'. Fix: DCs from the character level (PF2e level DC table, 5e 8+prof+mod), map top tag to a real skill or save, a concrete default benefit per tag."
    ],
@@ -1116,17 +1116,17 @@
     "dnd5e"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.826,
-   "updated": 1790661415.328853,
+   "updated": 1790688186.73,
    "prio": 2,
    "parent": "a2cbef5e"
   },
   {
    "id": "17c10e97",
    "title": "Every generated roll uses the Acrobatics modifier and a raw [[/r]] roll",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "api.js rollModifier reads skills.acrobatics/acr for every template and capstone (Medicine, Diplomacy, spell attacks); mechanics.js renders [[/r 1d20+N]]. Fix: resolve roll.kind to the system skill/save and emit @Check[...] (PF2e) or [[/skill ...]]/[[/save ...]] (dnd5e), [[/r]] as fallback."
    ],
@@ -1136,17 +1136,17 @@
     "qol"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.906,
-   "updated": 1790661415.5938256,
+   "updated": 1790688186.778,
    "prio": 2,
    "parent": "a2cbef5e"
   },
   {
    "id": "9ebbf3c9",
    "title": "Template and fallback names ignore the naming convention (naming.js is dead code)",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "deriveClassMotif/buildClassFlavoredName (naming.js:71-95) are only imported by tests; templates ship fixed names ('Canal Step', 'Measured Strike'), fallbacks are 'Capstone: <Tag>' and '<Tag> Ascendant'. Fix: with the AI on, templates go away; off, name via buildClassFlavoredName from the actor's GD Class or systemClass."
    ],
@@ -1154,17 +1154,17 @@
     "naming"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.982,
-   "updated": 1790661415.4652913,
+   "updated": 1790688186.826,
    "prio": 2,
    "parent": "a2cbef5e"
   },
   {
    "id": "a0bcfd05",
    "title": "Proposals cannot be inspected in full or edited before approval; approve is a dropdown",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "renderProposal shows name, chip, effect and evidence count only (no rationale, tags, kind, actions, polarity/red, level); templates are described as 'GM-editable' but no editor exists. Live: Reject is per row but Approve is one <select> of 12 proposals + one button. Fix: per-proposal Details expander, per-row Approve, an Edit form validated by validator.js before saving back as pending."
    ],
@@ -1173,17 +1173,17 @@
     "proposals"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.058,
-   "updated": 1790661419.614396,
+   "updated": 1790688187.221,
    "prio": 2,
    "parent": "6d04ba44"
   },
   {
    "id": "5b2ff22d",
    "title": "Gateway settings unreachable: pending cap, retries, extraction cache; outputLanguage is client-scoped",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "WORLD_FLAVOR_KEYS omits pendingProposalCapExtra/Min, and buildGatewayConfig keeps only listed keys, so the cap is always default despite gateway-config.js saying a GM can lower it; CLIENT_TUNING_KEYS omits maxRetries, transientRetries, transientBackoffMs, extractionCache*; outputLanguage is table-wide but client scope. Fix: add them to the key lists and form; outputLanguage to world."
    ],
@@ -1192,17 +1192,17 @@
     "proposals"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.136,
-   "updated": 1790661416.861209,
+   "updated": 1790688187.267,
    "prio": 2,
    "parent": "567067e6"
   },
   {
    "id": "78ead05c",
    "title": "Long AI calls: dialog closes, no busy state, no per-actor lock, up to ~9 min per chunk before fallback",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "Analyze/Re-analyze/Author/Approve/Rest are footer buttons that close the v1 Dialog; no in-flight guard in api.analyzeSessionNotes (double click can double-record); timeoutMs 180 s x transient retries. Fix: run in the dialog body with a busy state (like Suggest), per-actor lock in the api, an overall deadline per analysis."
    ],
@@ -1212,17 +1212,17 @@
     "qol"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.211,
-   "updated": 1790661417.0144439,
+   "updated": 1790688186.877,
    "prio": 2,
    "parent": "567067e6"
   },
   {
    "id": "7f1f20ae",
    "title": "Party notes must be analysed one character sheet at a time",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "Growth is per actor; the extraction cache exists to read shared party notes once, but the GM still opens five sheets and pastes five times. Fix: 'Analyze for party' (pick PCs, one paste) in the dialog, a scene control or /growth chat command."
    ],
@@ -1231,10 +1231,10 @@
     "qol"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-progression",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.286,
-   "updated": 1790661419.7408412,
+   "updated": 1790688186.978,
    "prio": 2,
    "parent": "6d04ba44"
   },
@@ -1398,7 +1398,7 @@
   {
    "id": "3574bd96",
    "title": "Near-duplicate Class proposals pile up (two Suggest clicks -> 'Unbroken Bastion' + 'Unbroken Bulwark')",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "Live: Briik GD50 has two almost identical Class proposals pending; findDuplicateOwnedMechanic compares against OWNED entries only, not other pending proposals. Fix: dedupe new proposals against pending ones by mechanic (keep the better-evidenced), and show 'already pending' on Suggest.",
     "Broader: stage 2 also returns near-duplicates of each other in one run (probe: 5 archery proposals 'Longbow: Precision Volley'-like). Dedupe new proposals against each other and against pending by mechanic."
@@ -1407,10 +1407,10 @@
     "proposals"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-gateway",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.965,
-   "updated": 1790662086.35,
+   "updated": 1790688187.034,
    "prio": 2,
    "parent": "a2cbef5e"
   },
@@ -1632,17 +1632,17 @@
   {
    "id": "283ad7ca",
    "title": "Growth dialog: 'Approve as written' for placeholders now that approve refuses needsAuthoring without confirm",
-   "status": "todo",
+   "status": "doing",
    "notes": [],
    "tags": [
     "ui",
     "proposals"
    ],
    "severity": "medium",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "dev-proposals 2026-09-29",
    "created": 1790662086.312,
-   "updated": 1790662086.312
+   "updated": 1790688187.174
   }
  ]
 }
