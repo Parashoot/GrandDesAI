@@ -292,7 +292,9 @@
    "id": "485cae73",
    "title": "Party mode: one extraction per party + per-PC attribution (api.analyzePartyNotes)",
    "status": "doing",
-   "notes": [],
+   "notes": [
+    "dev-integration done in worktree: api.analyzePartyNotes (one extraction, proposeFor per PC max 2 concurrent), attributeEventsToActor honours jev.actorName>=0.6 and jev.whole, reanalyzeLastNotes re-runs the party roster. 665 tests green (16 new, fakes only). Deviations: party.extractionCalls not calls; reads jev.actorName or jev.actor; skipped events reported once on party. Awaiting review + merge."
+   ],
    "tags": [
     "integration",
     "jev"
@@ -301,7 +303,7 @@
    "owner": "dev-integration",
    "source": "jev-layer",
    "created": 1790704404.997,
-   "updated": 1790704483.769
+   "updated": 1790704903.505
   },
   {
    "id": "642a0bda",
