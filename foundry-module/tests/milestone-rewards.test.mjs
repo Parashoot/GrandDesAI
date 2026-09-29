@@ -269,3 +269,26 @@ for (const systemId of SYSTEMS) {
     assert.equal(adapter.calls.length, 0);
   }));
 }
+
+// Live check 2026-09-29 (dnd5e): the model wrote the level-20 capstone at tier 1. A capstone is tier 3.
+for (const systemId of SYSTEMS) {
+  test(`[${systemId}] an AI capstone written at a lower tier is stored as tier 3`, () => withFoundry(systemId, async () => {
+    const api = new GrandDesignApi();
+    const adapter = async (args) => {
+      if (args.milestone?.kind === "capstone") {
+        const low = stubCapstoneSkill("Fletchwright: Precision Volley");
+        low.entry.tier = 1;
+        return { proposals: [low] };
+      }
+      return { proposals: args.milestone ? [stubClassEntry("AI Class")] : [] };
+    };
+    api.setProposalAdapter(adapter);
+    const actor = createMockActor(systemId);
+    await seed(actor, { level: 19, progress: levelRequirement(19), events: sampleEvents() });
+    const result = await api.resolveLevelRest(actor, { restType: "long" });
+    assert.equal(result.capstoneProposals.length, 1);
+    assert.equal(result.capstoneProposals[0].entry.tier, 3);
+    assert.equal(result.capstoneProposals[0].authoredBy, "ai-gateway");
+    assert.equal(result.warnings, undefined);
+  }));
+}

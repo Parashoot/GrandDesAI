@@ -1414,8 +1414,12 @@ export class GrandDesignApi {
       milestoneLevel: level,
       ...(isCapstone ? { isCapstone: true } : {}),
       evidence: Array.isArray(authored.evidence) ? authored.evidence : [],
+      authoredBy: "ai-gateway",
       entry: structuredClone(authored.entry)
     };
+    // A capstone is a rare tier-3 Skill by definition; the live check (2026-09-29, dnd5e) got a tier-1
+    // "Fletchwright: Precision Volley" from the model, so the tier is set here, not trusted.
+    if (isCapstone && proposal.entry.tier !== 3) proposal.entry.tier = 3;
     return { proposal, usedFallback: false };
   }
 
