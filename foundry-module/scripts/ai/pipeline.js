@@ -19,7 +19,7 @@ import { coerceStructuredMechanics, fillStructuredFromEffect } from "./structure
 import { EVENT_EXTRACTION_SCHEMA, COMBINED_SCHEMA, proposalSchemaCapped } from "./schemas.js";
 // Pure (no Foundry globals): the same per-character credit rule api.js applies to the events.
 import { attributeEventsToActor } from "../session-notes.js";
-import { buildExtractionMessages, buildProposalMessages, buildSingleMessages, buildRepairMessage, creativityTemperature } from "./prompts.js";
+import { buildExtractionMessages, buildProposalMessages, buildSingleMessages, buildRepairMessage, creativityTemperature, partyNames } from "./prompts.js";
 import { normalizeGatewayConfig } from "./gateway-config.js";
 import { AiProviderUnreachableError, AiProviderHttpError, AiProviderTimeoutError } from "./transport.js";
 import { triageChunks, attributeEvents, verifyEvents, rankProposals, sameName, noteLines } from "./jev.js";
@@ -905,7 +905,9 @@ export function createExtractionCache({ maxEntries = 20, ttlMs = 30 * 60 * 1000,
  * although the extraction prompt is system-neutral today, so a future system-specific hint can never
  * serve one system's reading to the other.
  */
-export function extractionCacheKey({ notes, systemId, cfg, transportInfo = {} }) {
+export function extractionCacheKey({ notes, systemId, cfg, transportInfo = {}, party = null }) {
+  // A stated roster adds a line to the extraction prompt, so a party reading is its own entry.
+  const roster = partyNames(party);
   return JSON.stringify([
     "extract-v1",
     systemId ?? "",
@@ -928,6 +930,7 @@ export function extractionCacheKey({ notes, systemId, cfg, transportInfo = {} })
     // Jev triage decides which chunks stage 1 reads at all, so a triaged reading is never served to
     // a run without Jev (or with another threshold), and vice versa.
     cfg.jev?.enabled && cfg.jev.triage ? [cfg.jev.endpoint, cfg.jev.model, cfg.jev.triageThreshold] : null,
+    roster.length >= 2 ? roster : null,
     preprocessNotes(notes)
   ]);
 }
@@ -1061,7 +1064,7 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
     };
     let extracted;
     if (extractionCache) {
-      const key = extractionCacheKey({ notes, systemId: sysId, cfg, transportInfo: transport?.info });
+      const key = extractionCacheKey({ notes, systemId: sysId, cfg, transportInfo: transport?.info, party: request?.party });
       // "Re-analyze" means read it again: drop the old reading, and store the new one for the rest
       // of the party.
       if (refreshExtraction) extractionCache.delete(key);

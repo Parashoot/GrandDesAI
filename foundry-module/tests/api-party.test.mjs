@@ -126,11 +126,11 @@ function fakeCachingAdapter({ events = jevEvents(), proposals = {}, delayMs = 5 
   const calls = { extract: 0, adapter: [] };
   let inFlight = 0;
   let maxInFlight = 0;
-  const adapter = async ({ actor, notes, systemId, fresh = false }) => {
+  const adapter = async ({ actor, notes, systemId, fresh = false, party = null }) => {
     inFlight += 1;
     maxInFlight = Math.max(maxInFlight, inFlight);
     try {
-      calls.adapter.push({ name: actor.name, systemId, fresh });
+      calls.adapter.push({ name: actor.name, systemId, fresh, party });
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       const planned = proposals[actor.name];
       if (planned instanceof Error) throw planned;
@@ -252,6 +252,8 @@ for (const systemId of SYSTEMS) {
       assert.equal(fake.calls.adapter.length, 3, "one reading (stage 2) per PC");
       assert.ok(fake.calls.adapter.every((call) => call.systemId === systemId && call.fresh === false));
       assert.equal(fake.maxInFlight(), 2, "two readings overlap, never more");
+      // board e54491dd: every reading carries the same roster, so Jev can name a PC who never speaks.
+      assert.ok(fake.calls.adapter.every((call) => JSON.stringify(call.party) === JSON.stringify(actors.map((a) => a.name))), JSON.stringify(fake.calls.adapter.map((c) => c.party)));
 
       assert.equal(result.party.extractionCalls, 1);
       assert.deepEqual(result.party.extractionCache, { hit: 2, miss: 1, off: 0, preset: 0 });

@@ -210,3 +210,20 @@ test("presetEvents (Suggest proposals) skip stage 1 and propose from the recorde
   assert.deepEqual(JSON.parse(transport.calls[0].messages[1].content).newEvents.map((e) => e.summary), ["Maren healed Brakka.", "Maren sold out of honey."]);
   assert.equal(out.gatewayDiagnostics.extractionCache, "preset");
 });
+
+test("a party roster reaches the extraction prompt and shares one reading across the party (board e54491dd)", async () => {
+  const transport = countingTransport((args) => (args.schema?.properties?.events
+    ? { events: [ev("Tovin torched the troll.", "Tovin")] }
+    : { proposals: [] }));
+  const adapter = createGatewayAdapter({ proposalMode: "never" }, { transportFactory: () => transport });
+  const party = ["Brakka", "Tovin", "Luz"];
+  await adapter({ actor: actor("Luz"), notes: RECAP, systemId: "dnd5e", party });
+  await adapter({ actor: actor("Tovin"), notes: RECAP, systemId: "dnd5e", party });
+  assert.equal(transport.calls.length, 1, "one reading for the party");
+  const user = transport.calls[0].messages.find((m) => m.role === "user").content;
+  assert.match(user, /The player characters are "Brakka", "Tovin", "Luz"/);
+  // Without a roster the prompt is the old one (and a different cache entry).
+  await adapter({ actor: actor("Wick"), notes: RECAP, systemId: "dnd5e" });
+  assert.equal(transport.calls.length, 2);
+  assert.doesNotMatch(transport.calls[1].messages.find((m) => m.role === "user").content, /player characters are/);
+});

@@ -228,7 +228,7 @@ function mergeJevDiagnostics(list) {
  * adapter ignores it until the Jev integration lands). Never throws: a total failure is a rep with
  * `error`, as in runItem.
  */
-export async function runPartyItem(item, { transport, config, reps = 1, systemId, jev = null, partyMode = "auto", adapterFactory = createGatewayAdapter } = {}) {
+export async function runPartyItem(item, { transport, config, reps = 1, systemId, jev = null, partyMode = "auto", partyRoster = true, adapterFactory = createGatewayAdapter } = {}) {
   const sys = item.system ?? systemId ?? "pf2e";
   const mode = partyMode === "per-pc" ? "per-pc" : "party";
   const actors = (item.party ?? []).map((name) => makeHarnessActor(sys, { name }));
@@ -248,7 +248,8 @@ export async function runPartyItem(item, { transport, config, reps = 1, systemId
       const jevDiags = [];
       let extractions = 0;
       for (const actor of actors) {
-        const output = await adapter({ actor, notes: item.notes, systemId: sys });
+        // The roster, as api.analyzePartyNotes passes it (board e54491dd); partyRoster:false = the old runs.
+        const output = await adapter({ actor, notes: item.notes, systemId: sys, ...(partyRoster && actors.length >= 2 ? { party: actors.map((a) => a.name) } : {}) });
         const runEvents = Array.isArray(output?.events) ? output.events : [];
         // The extraction is shared, so the first character's events are the party's events; the
         // per-character split is what each sheet would record.
@@ -972,7 +973,7 @@ export async function runScale(options = {}, onProgress = () => {}) {
     config: redactConfig(config),
     reps,
     systemId,
-    ...(options.party ? { party: true, partyMode: options.partyMode ?? "auto" } : {}),
+    ...(options.party ? { party: true, partyMode: options.partyMode ?? "auto", partyRoster: options.partyRoster !== false } : {}),
     ...(options.jevInfo ? { jev: { ...options.jevInfo } } : {}),
     total: items.length,
     done: 0,
@@ -987,7 +988,7 @@ export async function runScale(options = {}, onProgress = () => {}) {
       const item = items[cursor];
       cursor += 1;
       const runOne = (jev) => (item.category === "party"
-        ? runPartyItem(item, { transport, config: options.config ?? {}, reps, systemId, jev, partyMode: options.partyMode, ...(options.adapterFactory ? { adapterFactory: options.adapterFactory } : {}) })
+        ? runPartyItem(item, { transport, config: options.config ?? {}, reps, systemId, jev, partyMode: options.partyMode, partyRoster: options.partyRoster !== false, ...(options.adapterFactory ? { adapterFactory: options.adapterFactory } : {}) })
         : runItem(item, { transport, config, reps, systemId, pipeline, jev }));
       const result = await runOne(options.jev ?? null);
       const scoreOptions = options.darkSchema === undefined ? {} : { darkSchema: options.darkSchema };

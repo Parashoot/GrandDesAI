@@ -114,9 +114,12 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
   // `events`: already-recorded events to propose from directly (api.requestGrowthProposals); stage 1 is skipped.
   // `milestone`: a guaranteed Grand Design milestone reward (api.requestGrowthProposals-style call
   // from api.resolveLevelRest) -- see pipeline.js#runGatewayPipeline's milestone param.
-  const run = async ({ actor, notes, systemId, fresh = false, events = null, milestone = null, target = null, replacing = null }) => {
+  const run = async ({ actor, notes, systemId, fresh = false, events = null, milestone = null, target = null, replacing = null, party = null }) => {
     const sys = systemId ?? cfg.systemId ?? activeSystemId();
     const request = buildAiGatewayRequest(actor, notes, sys);
+    // `party`: the roster of a party analysis (api.analyzePartyNotes). It names every PC in the
+    // extraction prompt and is Jev's attribution roster, so a PC who never speaks can still be named.
+    if (Array.isArray(party) && party.length >= 2) request.party = party;
     // The placeholder being authored is itself pending: it must not count as the thing its own
     // replacement duplicates (the prompt's placeholder rule already says not to reuse it).
     if (replacing && Array.isArray(request.actor?.pendingProposals)) {

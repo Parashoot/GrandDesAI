@@ -67,6 +67,7 @@ export function usage() {
                       (default: on with --sim-jev, off with --jev because it doubles model time)
   --party             run the party corpus (corpus/party/*.json) and score per-character credit
   --party-mode auto|per-pc
+  --no-party-roster   do not pass the party roster to the adapter (the pre-e54491dd path, for A/B)
                       auto = one adapter per item with its extraction cache (one extraction), like api.analyzePartyNotes;
                       per-pc = today's path (one pipeline run per character) for before-numbers
   --quiet             no per-item progress lines`;
@@ -265,7 +266,7 @@ async function main() {
     state,
     ...(jev.client ? { jev: jev.client, compareWithoutJev: jevOptions.compare } : {}),
     ...(jev.info ? { jevInfo: jev.info } : {}),
-    ...(args.party ? { party: true, partyMode: args.partyMode === "per-pc" ? "per-pc" : "auto" } : {})
+    ...(args.party ? { party: true, partyMode: args.partyMode === "per-pc" ? "per-pc" : "auto", partyRoster: !args.noPartyRoster } : {})
   }, ({ done, total, item, scored, elapsedMs }) => {
     if (!args.quiet) {
       const fails = scored.reps.filter((rep) => rep.failed).length;

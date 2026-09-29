@@ -1331,7 +1331,7 @@ export class GrandDesignApi {
     return this._withActorLock(actor, "analyze", () => this._analyzeSessionNotes(actor, notes, options));
   }
 
-  async _analyzeSessionNotes(actor, notes, { replaceEventIds = [], fresh = false } = {}) {
+  async _analyzeSessionNotes(actor, notes, { replaceEventIds = [], fresh = false, party = null } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
     if (typeof notes !== "string" || !notes.trim()) {
@@ -1352,7 +1352,7 @@ export class GrandDesignApi {
         // party; see pipeline.js#createExtractionCache) -- a GM who asks to re-analyze wants a new one.
         const adapter = this._proposalAdapter;
         adapterOutput = await this._callAdapterWithDeadline(
-          () => adapter({ actor, notes, systemId: game.system?.id, ...(fresh ? { fresh: true } : {}) }),
+          () => adapter({ actor, notes, systemId: game.system?.id, ...(fresh ? { fresh: true } : {}), ...(Array.isArray(party) && party.length >= 2 ? { party } : {}) }),
           "analysis"
         );
         adapterEvents = validateAdapterEvents(adapterOutput);
@@ -1508,6 +1508,8 @@ export class GrandDesignApi {
     // Only the first reading may bypass the cache: a `fresh` on every character would re-extract N
     // times, which is exactly the cost party mode exists to remove.
     let freshLeft = fresh ? 1 : 0;
+    // Every character is read with the same roster, so the one shared reading stays shared.
+    const roster = party.map((actor) => actor.name).filter((name) => typeof name === "string" && name.trim());
     const perActor = await mapWithConcurrency(party, 2, async (actor) => {
       const id = { actorId: actor.id ?? null, name: actor.name ?? null };
       const busyWith = this.getBusyTask(actor);
@@ -1515,7 +1517,7 @@ export class GrandDesignApi {
       const useFresh = freshLeft > 0;
       if (useFresh) freshLeft -= 1;
       try {
-        return { ...id, ...(await this.analyzeSessionNotes(actor, notes, { fresh: useFresh })) };
+        return { ...id, ...(await this.analyzeSessionNotes(actor, notes, { fresh: useFresh, party: roster })) };
       } catch (error) {
         console.warn(`${MODULE_ID} | party analysis failed for ${actor.name ?? actor.id}; the others continue`, error);
         return { ...id, error: error?.message ?? String(error) };

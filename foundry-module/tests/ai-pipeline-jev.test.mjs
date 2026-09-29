@@ -449,6 +449,11 @@ test("with the extraction cache, a second run re-annotates a fresh copy: nothing
   const keyNoTriage = extractionCacheKey({ notes: PARTY_NOTES, systemId: "dnd5e", cfg: normalizeGatewayConfig({ chunkChars: 400, jev: { ...JEV_ON.jev, triage: false } }) });
   assert.notEqual(keyOff, keyOn);
   assert.equal(keyOff, keyNoTriage, "without triage the reading is the same for everyone");
+  // A stated roster changes the extraction prompt, so it is its own reading; one name is no roster.
+  const keyParty = extractionCacheKey({ notes: PARTY_NOTES, systemId: "dnd5e", cfg, party: ["Brakka", "Tovin", "Luz"] });
+  assert.notEqual(keyOff, keyParty);
+  assert.equal(keyParty, extractionCacheKey({ notes: PARTY_NOTES, systemId: "dnd5e", cfg, party: [{ name: "Brakka" }, "Tovin", "Luz"] }));
+  assert.equal(keyOff, extractionCacheKey({ notes: PARTY_NOTES, systemId: "dnd5e", cfg, party: ["Brakka"] }));
 });
 
 // ---- verify -------------------------------------------------------------------------------------

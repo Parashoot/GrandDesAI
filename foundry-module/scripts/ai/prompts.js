@@ -266,7 +266,7 @@ const CREATIVITY_WORDING = {
 };
 
 // request.party: names (strings) or { name } objects; blanks and duplicates dropped.
-function partyNames(party) {
+export function partyNames(party) {
   if (!Array.isArray(party)) return [];
   const names = party.map((entry) => (typeof entry === "string" ? entry : entry?.name)).filter((n) => typeof n === "string" && n.trim()).map((n) => n.trim());
   return [...new Set(names)];
