@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 1040 unit tests, ~30 s, no network
+npm test                                    # 1126 unit tests, ~30 s, no network
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -101,10 +101,17 @@ and rejected ones, `actorRole` drops things done TO a PC, unreachable gateway se
 real model on reruns `playtests/v0929-dnd5e` (ember-road s1) and `v0929-pf2e` (salt-lantern s1-s2); traps+novel
 slice 96.8%, traps 100%. NOT yet clicked through in Foundry (dnd5e world occupied all session). 1040 tests.
 
+2026-09-29 (evening): advanced mechanics batch (4 agents): Skill evolution and Class merging are reachable and
+AI-written (`adapter.authorAdvanced`, `api.requestSkillEvolution`/`requestClassMerge`, approval supersedes the
+sources), title proposals ("Trollbane"), a Registry panel (sheet header), erosion callouts, Suggest explains
+skips/cap, playtest.mjs owned/evolve/merge/titles/erosion. Two live regressions from the morning batch fixed
+(empty Suggest with pending proposals; milestone Class gated as a duplicate of same-motif Skills).
+**LIVE 19/19 in BOTH worlds** (build 3e75e8e); worlds switch with `node tools/playtest/switch-world.mjs <worldId>`
+(owner authorised switching; "endex" = PF2e, "endexdnd-5e" = dnd5e). 1126 tests.
+
 Open, in order (see the board, epic 278670bb):
-1. Live verify in BOTH worlds when free: PF2e (25576f78) + the new Growth dialog (Details/Edit/Retry/busy); deploy first.
-2. Advanced mechanics feature (evolution, merge, titles, Horror Rank, combos) + registry UI.
-3. Real game items (structured damage/saves/modifiers), party analyze, Populate AI, undo/reassign events.
-4. Follow-ups from 09-29: Suggest explains "0 new" (43ff2ae9), consequence-of-own-deed skipped (07b9d93f),
-   bland tag motifs (e8ae42d0), theme registry clean-up (89437d16), roll follow-ups (5a65746f).
-5. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008.
+1. Horror Rank model (21e944ed) - needs the owner's decision (refusable red proposals vs rejection accrues).
+2. Superseded Items still mechanically live (systems adapters); real game items with structured damage/saves (5a0cea2e).
+3. Playtest the new mechanics: a 3rd session of salt-lantern/ember-road with evolve/merge/titles via playtest.mjs.
+4. Party analyze (7f1f20ae), undo/reassign events (4344c58a), Populate AI (dee25a95), combos/revival/cleanse.
+5. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008, bland tag motifs (e8ae42d0).

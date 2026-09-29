@@ -54,11 +54,12 @@
   {
    "id": "25576f78",
    "title": "Re-run live PF2e Foundry check when the server is free",
-   "status": "todo",
+   "status": "done",
    "notes": [
     "2026-09-29: dnd5e live verify 15/15 (live-verify.mjs). PF2e world still to run: switch to 'endex' when nobody is on it, then node foundry-module/tools/playtest/live-verify.mjs.",
     "When the world is free, also click through the 2026-09-29 dialog (per-row Approve, Details, Edit, Approve as written, Retry with AI, busy state) in BOTH worlds; dnd5e was occupied all session (users 1).",
-    "2026-09-29 PF2e LIVE (world endex, pf2e 8.4.1, build 08b973e, live-verify.mjs): 14/15 - analyze 5 events via AI, no templates/Knacks, placeholder refused, Author with AI 'Archery Knack -> Fletchwright: Snap Shot', AI Class + tier-3 capstone at 19->20, dialog/build stamp, no console errors. Only FAIL = Suggest returns 0 proposals with 4 pending (same on dnd5e 14/15) -> regression from 3574bd96's pending-list prompt, sent to dev-gateway. New tools/playtest/switch-world.mjs switches worlds headlessly."
+    "2026-09-29 PF2e LIVE (world endex, pf2e 8.4.1, build 08b973e, live-verify.mjs): 14/15 - analyze 5 events via AI, no templates/Knacks, placeholder refused, Author with AI 'Archery Knack -> Fletchwright: Snap Shot', AI Class + tier-3 capstone at 19->20, dialog/build stamp, no console errors. Only FAIL = Suggest returns 0 proposals with 4 pending (same on dnd5e 14/15) -> regression from 3574bd96's pending-list prompt, sent to dev-gateway. New tools/playtest/switch-world.mjs switches worlds headlessly.",
+    "LIVE 2026-09-29 build 3e75e8e, live-verify.mjs 19/19 in BOTH worlds (endex pf2e 8.4.1, endexdnd-5e dnd5e 5.3.3). switch-world.mjs switches worlds headlessly."
    ],
    "tags": [
     "pf2e",
@@ -68,7 +69,7 @@
    "owner": "",
    "source": "cli",
    "created": 1790530790.132,
-   "updated": 1790694150.404,
+   "updated": 1790695000.022,
    "parent": "f2d3213f"
   },
   {
@@ -971,9 +972,10 @@
   {
    "id": "ebcc3f03",
    "title": "Skill evolution is unreachable, never triggered and structurally blocked for the AI",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "checkSkillEvolutionReadiness/buildSkillEvolutionPreview (api.js:187/219) have no callers; the AI schema hardcodes lineage.operation 'origin' (ai-gateway.js:246) and the duplicate gates block a Skill that resembles an owned one; evolved mechanics are carried over unchanged. Fix: run readiness after analysis and at rest; for ready Skills ask stage 2 for an 'upgrade' target (source id, effect, defining moments), exempt lineage sources from dup gates, evolveSkillEntry as fallback; Growth-dialog button."
+    "checkSkillEvolutionReadiness/buildSkillEvolutionPreview (api.js:187/219) have no callers; the AI schema hardcodes lineage.operation 'origin' (ai-gateway.js:246) and the duplicate gates block a Skill that resembles an owned one; evolved mechanics are carried over unchanged. Fix: run readiness after analysis and at rest; for ready Skills ask stage 2 for an 'upgrade' target (source id, effect, defining moments), exempt lineage sources from dup gates, evolveSkillEntry as fallback; Growth-dialog button.",
+    "LIVE 2026-09-29 build 3e75e8e, live-verify.mjs 19/19 in BOTH worlds (endex pf2e 8.4.1, endexdnd-5e dnd5e 5.3.3): approve Skill -> requestSkillEvolution written by the AI ('Longbow: Precision Shot' -> 'Longbow: Piercing Volley'; 5e 'Fletch: Precision Shot' -> 'Fletch: Apple Shot'), approve -> source superseded, shown dimmed in the Registry. Probe: tier-1 'Ridgeshot: Steady Aim' + 3 defining moments -> PF2e 'Ridgeshot: Vanishing Trajectory' t2, 5e 'Ridgeshot: Unwavering Line' t2. Superseded Items still mechanically live -> follow-up."
    ],
    "tags": [
     "progression",
@@ -985,7 +987,7 @@
    "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.286,
-   "updated": 1790693289.427,
+   "updated": 1790694999.653,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1012,9 +1014,10 @@
   {
    "id": "7b616fea",
    "title": "Class merging / comma and prestige classes are never offered",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "Milestones produce a new origin Class only; the template is `${themeLabel} Ascendant`, power_tier standard. The schema asks for approved registry ids in lineage.sources but the prompt sends only names/effects, so an AI 'combine' fails normalizeEntry. Sources are never retired after a merge/upgrade. Fix: at a milestone with 2+ Classes send ids + focus scores, AI authors a combine (mergeClassEntry fallback, 'intentional' from evidence), mark sources superseded (conversion rules 2.3/2.4)."
+    "Milestones produce a new origin Class only; the template is `${themeLabel} Ascendant`, power_tier standard. The schema asks for approved registry ids in lineage.sources but the prompt sends only names/effects, so an AI 'combine' fails normalizeEntry. Sources are never retired after a merge/upgrade. Fix: at a milestone with 2+ Classes send ids + focus scores, AI authors a combine (mergeClassEntry fallback, 'intentional' from evidence), mark sources superseded (conversion rules 2.3/2.4).",
+    "Real-model probe (dev-gateway): Ridge Archer L14 + Hearth Healer L9, focus 0.2 -> standard, L14; PF2e 'Ridge Sentinel' (ranged hit -> free Treat Wounds), 5e 'Ridgekeeper of the Wounded Line' (weak: mostly restates sources). Rules fallback verified live on the API side (dev-integration: 'Warrior of Bridge Guard', rule-2.3 chassis per system). Milestone merge option at 20/30/50 with 2+ Classes; approval supersedes sources. Not clicked live (live-verify has no 2-Class actor yet)."
    ],
    "tags": [
     "progression",
@@ -1027,7 +1030,7 @@
    "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.443,
-   "updated": 1790693289.477,
+   "updated": 1790694999.7,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1055,9 +1058,10 @@
   {
    "id": "d4ae9326",
    "title": "Titles have no AI path and no trigger (proposal kind must be skill or class)",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "grantTitle (api.js:367) needs a hand-written entry; _validateModelProposals rejects anything but skill/class (api.js:1473). Fix: kind 'title' in stage 2 for notable deeds (named kills, rescues, infamy), through the normal Approve/Reject flow; red titles accrue Horror Rank; GM grant from the dialog as fallback."
+    "grantTitle (api.js:367) needs a hand-written entry; _validateModelProposals rejects anything but skill/class (api.js:1473). Fix: kind 'title' in stage 2 for notable deeds (named kills, rescues, infamy), through the normal Approve/Reject flow; red titles accrue Horror Rank; GM grant from the dialog as fallback.",
+    "Probe: named kill -> 'Trollbane' on both systems; ordinary session -> no title. api accepts kind 'title' -> grantTitle; red title +25 Horror Rank (unit test). Titles only when stage 2 runs (Suggest/allowance)."
    ],
    "tags": [
     "proposals",
@@ -1069,16 +1073,17 @@
    "owner": "dev-integration",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.601,
-   "updated": 1790693289.527,
+   "updated": 1790694999.746,
    "prio": 2,
    "parent": "7dcd587f"
   },
   {
    "id": "752369f6",
    "title": "No GM UI for owned entries or advanced actions (evolve, merge, combine, title, cleanse, consolidate, revive)",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "The Growth dialog never lists owned Classes/Skills/Titles; 13 api methods (combineSkills, upgradeSkill, upgradeClass, combineClasses, buildClassMergePreview, checkSkillEvolutionReadiness, castCombinationSkill, grantTitle, cleanseEntry, setConsolidation, checkClassErosion, applyRevivalPenalty...) are console-only; the raw JSON importer is the only other door. Fix: a 'Grand Design' registry panel with per-entry actions, each opening an (AI-authored where possible) preview before approval."
+    "The Growth dialog never lists owned Classes/Skills/Titles; 13 api methods (combineSkills, upgradeSkill, upgradeClass, combineClasses, buildClassMergePreview, checkSkillEvolutionReadiness, castCombinationSkill, grantTitle, cleanseEntry, setConsolidation, checkClassErosion, applyRevivalPenalty...) are console-only; the raw JSON importer is the only other door. Fix: a 'Grand Design' registry panel with per-entry actions, each opening an (AI-authored where possible) preview before approval.",
+    "LIVE 2026-09-29 build 3e75e8e, live-verify.mjs 19/19 in BOTH worlds (endex pf2e 8.4.1, endexdnd-5e dnd5e 5.3.3): Registry panel opens from the sheet header, lists owned Skills with Evolve and the superseded source. Combine Skills/Cleanse/Consolidate/Revive are disabled 'Coming soon'."
    ],
    "tags": [
     "ui",
@@ -1089,7 +1094,7 @@
    "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.679,
-   "updated": 1790693289.581,
+   "updated": 1790694999.837,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1338,9 +1343,10 @@
   {
    "id": "c4ec8cf7",
    "title": "Playtest runner cannot exercise evolve/merge/combine/title/revive/erosion",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "playtest.mjs commands: init, analyze, suggest, approve, reject, status (horror rank printed only). No playtest has ever run the advanced mechanics on either system. Fix: commands + per-session report sections for readiness, erosion, Horror Rank."
+    "playtest.mjs commands: init, analyze, suggest, approve, reject, status (horror rank printed only). No playtest has ever run the advanced mechanics on either system. Fix: commands + per-session report sections for readiness, erosion, Horror Rank.",
+    "playtest.mjs owned/evolve/merge/titles/erosion + Advanced mechanics report section (dev-harness), exercised on a scratch campaign; dm-guide step added."
    ],
    "tags": [
     "harness",
@@ -1351,7 +1357,7 @@
    "owner": "dev-harness",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.663,
-   "updated": 1790693289.734,
+   "updated": 1790694999.976,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -1378,9 +1384,10 @@
   {
    "id": "0860fd78",
    "title": "Class erosion is computed but never shown",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "checkClassErosion (api.js:468) has no callers; sessions are approximated by calendar date. Fix: list at-risk Classes after each analysis; optional AI read of narrative absence vs neglect; a real session id."
+    "checkClassErosion (api.js:468) has no callers; sessions are approximated by calendar date. Fix: list at-risk Classes after each analysis; optional AI read of narrative absence vs neglect; a real session id.",
+    "Erosion callouts in the Registry and after Analyze (checkClassErosion, active Classes only); unit-tested, not exercised live (needs sessions of absence)."
    ],
    "tags": [
     "ui",
@@ -1390,7 +1397,7 @@
    "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.815,
-   "updated": 1790693289.633,
+   "updated": 1790694999.883,
    "prio": 2,
    "parent": "12372a7a"
   },
@@ -1669,8 +1676,10 @@
   {
    "id": "07b9d93f",
    "title": "Consequence-of-own-deed dropped as happened-to-actor: 'I got banned from a pie tent' (Wick) skipped; a ban/eviction implies the PC's own misdeed",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "Fixed: isConsequenceOfOwnDeed turns banned/evicted/arrested/thrown-out target entries into the doer's failure (unless 'framed/falsely'); tr-039 (Wick's pie tent) and tr-040 at 100%; traps+red slice 96.9 -> 97.0%, traps 100%."
+   ],
    "tags": [
     "gateway",
     "playtest"
@@ -1679,14 +1688,15 @@
    "owner": "dev-gateway",
    "source": "v0929 rerun of ember-road s1",
    "created": 1790689954.641,
-   "updated": 1790693289.373
+   "updated": 1790694999.791
   },
   {
    "id": "43ff2ae9",
    "title": "Suggest shows nothing when every new proposal is a duplicate of a pending/rejected one; surface skippedProposals (duplicates-pending -> 'already pending: X', highlight duplicateOfId)",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "Also the pending cap: Buck at 5 pending -> 'Buck: 0 new proposal(s)' with no reason (v0929-pf2e)."
+    "Also the pending cap: Buck at 5 pending -> 'Buck: 0 new proposal(s)' with no reason (v0929-pf2e).",
+    "LIVE 2026-09-29 build 3e75e8e, live-verify.mjs 19/19 in BOTH worlds (endex pf2e 8.4.1, endexdnd-5e dnd5e 5.3.3): Suggest now returns skipped + capReached and the UI states them ('skipped [pending-cap:Decoy Carving Knack]'). The empty-Suggest regression got a prompt fix + propose-retry turn: Suggest passed in both worlds."
    ],
    "tags": [
     "ui",
@@ -1697,7 +1707,7 @@
    "owner": "dev-ui",
    "source": "dev-gateway 2026-09-29",
    "created": 1790689954.685,
-   "updated": 1790693289.683
+   "updated": 1790694999.929
   },
   {
    "id": "d21f303a",
@@ -1792,6 +1802,22 @@
    "source": "dev-integration 2026-09-29",
    "created": 1790694228.027,
    "updated": 1790694228.027
+  },
+  {
+   "id": "1817a21f",
+   "title": "dnd5e class merge restates both sources' effects ('Ridgekeeper of the Wounded Line' +2 temp HP); live-verify has no 2-Class actor to exercise Merge and titles in Foundry",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "proposals",
+    "dnd5e",
+    "harness"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "dev-gateway probe 2026-09-29",
+   "created": 1790695000.07,
+   "updated": 1790695000.07
   }
  ]
 }
