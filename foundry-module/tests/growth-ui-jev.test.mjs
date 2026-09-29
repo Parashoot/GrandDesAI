@@ -88,6 +88,10 @@ test("summary line: counts from diagnostics, else from the events; empty when Je
   assert.equal(counted, "Jev: 0 chunks skipped, 4 events routed, 1 outcome corrected, 90 ms");
   assert.match(jevSummaryLine({ ran: ["triage"], skippedChunks: [{}], errors: ["verify: HTTP 500"] }), /^Jev: 1 chunk skipped, 0 events routed, 0 outcomes corrected \(1 error, analysis carried on without it\)$/);
   assert.equal(jevSummaryLine({ enabled: true, ran: [] }), "");
+  // Jev on but never ran: the GM is told why instead of seeing nothing.
+  assert.match(jevSummaryLine({ enabled: true, ran: [], errors: [{ step: "triage", kind: "cors" }] }), /^Jev did not run: the browser blocked the call \(run node tools\/jev-proxy\.mjs.*carried on without it\.$/);
+  assert.match(jevSummaryLine({ ran: [], errors: [{ step: "triage", kind: "http", status: 401, fatal: true }] }), /key was rejected/);
+  assert.match(jevSummaryLine({ ran: [], errors: [{ step: "triage", kind: "timeout" }] }), /did not answer in time/);
   assert.equal(jevSummaryLine(null), "");
   assert.equal(jevSummaryLine(undefined, [disputed]), "");
 });

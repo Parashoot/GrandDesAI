@@ -243,8 +243,20 @@ test("a timeout fails open too", async () => {
   const { result: baseline } = await runFixture(FIXTURES[0]);
   const { result } = await runFixture(FIXTURES[0], { config: JEV_ON, jev: client });
   assert.deepEqual(withoutJev(result).events, withoutJev(baseline).events);
+  // One timeout ends Jev for the run (2026-09-29): a slow Jev stays slow, so later steps are not asked.
   const kinds = result.diagnostics.jev.errors.map((e) => e.kind);
-  assert.ok(kinds.length >= 2 && kinds.every((k) => k === "timeout"), JSON.stringify(kinds));
+  assert.deepEqual(kinds, ["timeout"]);
+  assert.equal(result.diagnostics.jev.calls, 1);
+});
+
+test("a CORS block stops every further Jev call in the run (the block will not clear mid-run)", async () => {
+  const jev = jevServer(() => FAULTS.cors());
+  const { result: baseline } = await runFixture(FIXTURES[2]);
+  const { result } = await runFixture(FIXTURES[2], { config: JEV_ON, jev: jev.client });
+  assert.equal(jev.calls.length, 1);
+  assert.deepEqual(result.diagnostics.jev.ran, []);
+  assert.equal(result.diagnostics.jev.errors[0].kind, "cors");
+  assert.deepEqual(withoutJev(result).events, withoutJev(baseline).events);
 });
 
 test("a thrown non-Jev error from a custom client also fails open", async () => {

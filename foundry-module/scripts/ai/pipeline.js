@@ -1221,7 +1221,9 @@ function startJevRun(cfg, jev) {
         ...(error?.fatal ? { fatal: true } : {}),
         message: String(error?.message ?? error).slice(0, 300)
       });
-      if (error?.fatal) run.dead = error;
+      // A CORS block or a timeout will not clear up within one run (TypeSafe refuses every browser
+      // origin; a slow Jev stays slow), so stop asking instead of paying it again on every step.
+      if (error?.fatal || error?.kind === "cors" || error?.kind === "timeout") run.dead = error;
       return null;
     }
   };

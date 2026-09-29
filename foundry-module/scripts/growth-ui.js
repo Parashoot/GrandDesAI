@@ -636,7 +636,18 @@ export function jevSummaryLine(jevDiagnostics, events = []) {
   const jev = jevDiagnostics;
   if (!jev || typeof jev !== "object") return "";
   const ran = Array.isArray(jev.ran) ? jev.ran.length > 0 : Boolean(jev.ran);
-  if (!ran) return "";
+  if (!ran) {
+    // Jev was switched on but every call failed (most often the browser's CORS block): say so, or
+    // the GM believes Jev is helping when it never ran.
+    const first = Array.isArray(jev.errors) ? jev.errors[0] : null;
+    if (!first) return "";
+    const why = first.kind === "cors"
+      ? "the browser blocked the call (run node tools/jev-proxy.mjs and point the Jev endpoint at it)"
+      : first.status === 401 || first.status === 403
+        ? "the Jev key was rejected"
+        : first.kind === "timeout" ? "Jev did not answer in time" : String(first.message ?? "an error").slice(0, 120);
+    return `Jev did not run: ${why}. Analysis carried on without it.`;
+  }
   const list = Array.isArray(events) ? events : [];
   const skipped = countOf(jev.skippedChunks) ?? 0;
   const routed = countOf(jev.routed) ?? list.filter((event) => event?.jev && (event.jev.actorName || event.jev.actor || event.jev.whole)).length;
