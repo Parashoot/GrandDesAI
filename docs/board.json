@@ -272,6 +272,82 @@
    "source": "cli",
    "created": 1790531510.992,
    "updated": 1790531510.992
+  },
+  {
+   "id": "2a70b369",
+   "title": "Jev client + triage/attribution/verify/rank steps in the gateway (docs/jev-layer-contract.md)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "gateway",
+    "jev"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "jev-layer",
+   "created": 1790704404.938,
+   "updated": 1790704404.938
+  },
+  {
+   "id": "485cae73",
+   "title": "Party mode: one extraction per party + per-PC attribution (api.analyzePartyNotes)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "integration",
+    "jev"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "jev-layer",
+   "created": 1790704404.997,
+   "updated": 1790704404.997
+  },
+  {
+   "id": "642a0bda",
+   "title": "Jev settings fieldset + Test Jev, Analyze party action, Jev chips in Growth dialog",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "ui",
+    "jev",
+    "qol"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "jev-layer",
+   "created": 1790704405.057,
+   "updated": 1790704405.057
+  },
+  {
+   "id": "e188c4f1",
+   "title": "Sim Jev, --jev/--sim-jev in run.mjs and playtest, party corpus (>=20 items)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "harness",
+    "jev"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "jev-layer",
+   "created": 1790704405.113,
+   "updated": 1790704405.113
+  },
+  {
+   "id": "387888a5",
+   "title": "Real-Jev measurement once the owner adds TYPESAFE_API_KEY (+ CORS check from Foundry browser)",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "jev",
+    "qa"
+   ],
+   "severity": "medium",
+   "owner": "",
+   "source": "jev-layer",
+   "created": 1790704405.179,
+   "updated": 1790704405.179
   }
  ]
 }
