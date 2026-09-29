@@ -133,7 +133,10 @@ test("buildCombinationName: amplified with 3+ casters earns a real title drawn f
     contribution("c", "C", ["fire"], 1)
   ];
   const name = buildCombinationName({ contributions, resonanceScore: 1, allTags: ["fire"] });
-  assert.equal(name, "The Converging Conflagration");
+  // Picked from the fire bank by a stable hash of the participants (board 574707d8), not bank[0].
+  const fire = { epithets: ["Converging", "Rising", "Unquenched"], nouns: ["Conflagration", "Pyre", "Firestorm"] };
+  assert.ok(fire.epithets.some((e) => fire.nouns.some((n) => name === `The ${e} ${n}`)), name);
+  assert.equal(buildCombinationName({ contributions: [...contributions].reverse(), resonanceScore: 1, allTags: ["fire"] }), name, "order-independent");
 });
 
 test("buildCombinationName: a red-polarity amplified combination at 3+ casters draws from the dark title bank instead", () => {
@@ -143,7 +146,8 @@ test("buildCombinationName: a red-polarity amplified combination at 3+ casters d
     contribution("c", "C", ["cruelty"], 1)
   ];
   const name = buildCombinationName({ contributions, resonanceScore: 1, allTags: ["cruelty"], polarity: "red" });
-  assert.equal(name, "The Shared Atrocity");
+  const red = { epithets: ["Shared", "Compounding", "Unclean"], nouns: ["Atrocity", "Complicity", "Ruin"] };
+  assert.ok(red.epithets.some((e) => red.nouns.some((n) => name === `The ${e} ${n}`)), name);
 });
 
 test("describeCombinationRationale: text differs by band and adds a shared-cost line for red combinations", () => {
@@ -169,7 +173,9 @@ test("buildCombinationSkill: full pipeline produces a ready-to-use transient com
   assert.equal(combination.malignance, undefined);
   assert.equal(combination.name, "Combined Ayla's Skill"); // only 2 casters, stays on the "Combined" rung
   assert.equal(combination.participants.length, 2);
-  assert.equal(combination.id, "combination:combined-ayla-s-skill");
+  // The name slug plus a hash of who contributed what, so two different workings that share a name
+  // never share an id (board 574707d8).
+  assert.match(combination.id, /^combination:combined-ayla-s-skill-[0-9a-z]+$/);
   assert.ok(combination.rationale.length > 0);
 });
 

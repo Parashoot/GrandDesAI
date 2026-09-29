@@ -140,40 +140,53 @@ test("buildEvolvedSkillName: no catalyst always reads as a neutral 'Greater <Sou
   );
 });
 
+// Word banks the names below must come from (skill-evolution.js). Names are picked by a stable hash
+// of the source id (board 574707d8), so tests assert bank membership + determinism, not bank[0].
+const MARTIAL = { epithets: ["Cleaving", "Sundering", "Unyielding"], mythic: ["Minotaur", "Titan", "Warlord"], nouns: ["Punch", "Blow", "Onslaught"] };
+const DEFAULT_BANK = { epithets: ["Greater", "Awakened", "True"], mythic: ["Paragon", "Apotheosis", "Zenith"], nouns: ["Form", "Expression", "Ascension"] };
+const CRUELTY = { epithets: ["Merciless", "Gleeful", "Unfeeling"], mythic: ["Tormentor", "Flenser", "Anguish"], nouns: ["Refinement", "Lesson", "Art"] };
+const HEROIC_WORDS = [...MARTIAL.epithets, ...MARTIAL.mythic, ...MARTIAL.nouns];
+
+function assertEpithetName(name, bank, sourceName) {
+  const epithet = name.slice(0, name.length - sourceName.length - 1);
+  assert.ok(name.endsWith(` ${sourceName}`), `"${name}" keeps the source name`);
+  assert.ok(bank.epithets.includes(epithet), `"${epithet}" is one of ${bank.epithets.join(", ")}`);
+}
+function assertMythicName(name, bank) {
+  const [mythic, noun, ...rest] = name.split(" ");
+  assert.equal(rest.length, 0, `"${name}" is two words`);
+  assert.ok(bank.mythic.includes(mythic), `"${mythic}" is one of ${bank.mythic.join(", ")}`);
+  assert.ok(bank.nouns.includes(noun), `"${noun}" is one of ${bank.nouns.join(", ")}`);
+}
+
 test("buildEvolvedSkillName: catalyst below the ceiling prefixes an on-theme epithet, still recognizably the source Skill", () => {
   const source = skill("skill:strike", "Power Strike", 1, ["martial"]);
-  assert.equal(buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 2, hasCatalyst: true }), "Cleaving Power Strike");
+  const name = buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 2, hasCatalyst: true });
+  assertEpithetName(name, MARTIAL, "Power Strike");
+  assert.equal(buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 2, hasCatalyst: true }), name, "deterministic");
 });
 
 test("buildEvolvedSkillName: catalyst AT the ceiling is a wholesale rename -- the canon Power Strike -> Minotaur Punch case", () => {
   const source = skill("skill:strike", "Power Strike", 2, ["martial"]);
-  assert.equal(buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 3, hasCatalyst: true }), "Minotaur Punch");
+  const name = buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 3, hasCatalyst: true });
+  assertMythicName(name, MARTIAL);
+  assert.ok(!name.includes("Power Strike"), "no trace of the old name");
+  assert.equal(buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 3, hasCatalyst: true }), name, "deterministic");
 });
 
 test("buildEvolvedSkillName: an unrecognized/absent tag falls back to the default word bank", () => {
   const source = skill("skill:mystery", "Odd Trick", 1, ["completely-unknown-tag"]);
-  assert.equal(
-    buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 2, hasCatalyst: true }),
-    "Greater Odd Trick",
-    "DEFAULT_EVOLVED_NAME_BANK's epithet is coincidentally also 'Greater', below the ceiling"
-  );
-  assert.equal(
-    buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 3, hasCatalyst: true }),
-    "Paragon Form",
-    "falls back to DEFAULT_EVOLVED_NAME_BANK's mythic/noun at the ceiling"
-  );
+  assertEpithetName(buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 2, hasCatalyst: true }), DEFAULT_BANK, "Odd Trick");
+  assertMythicName(buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 3, hasCatalyst: true }), DEFAULT_BANK);
 });
 
 test("buildEvolvedSkillName: a red Skill draws from the vice-keyed dark bank instead of the heroic tag bank, at both rungs", () => {
   const source = skill("skill:strike", "Cruel Strike", 1, ["martial"]);
-  assert.equal(
-    buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 2, hasCatalyst: true, polarity: "red", vice: "cruelty" }),
-    "Merciless Cruel Strike"
-  );
-  assert.equal(
-    buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 3, hasCatalyst: true, polarity: "red", vice: "cruelty" }),
-    "Tormentor Refinement"
-  );
+  const below = buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 2, hasCatalyst: true, polarity: "red", vice: "cruelty" });
+  assertEpithetName(below, CRUELTY, "Cruel Strike");
+  const ceiling = buildEvolvedSkillName({ sourceSkill: source, evolvedTier: 3, hasCatalyst: true, polarity: "red", vice: "cruelty" });
+  assertMythicName(ceiling, CRUELTY);
+  assert.ok(!ceiling.split(" ").some((word) => HEROIC_WORDS.includes(word)), "never sounds heroic");
 });
 
 test("describeEvolutionRationale: message shape depends on whether there was no defining moment at all vs merely thin evidence", () => {
@@ -222,7 +235,8 @@ test("evolveSkillEntry: full pipeline with a catalyst produces a ready-to-approv
     evt({ tags: ["martial"], outcome: "criticalSuccess", occurredAt: "2026-01-05", id: "e5", summary: "No business surviving that." })
   ];
   const entry = evolveSkillEntry({ sourceSkill: source, events });
-  assert.equal(entry.name, "Minotaur Punch");
+  assertMythicName(entry.name, MARTIAL);
+  assert.equal(entry.metadata.id, "skill:strike--evolved-t3");
   assert.equal(entry.tier, 3);
   assert.equal(entry.evolution.from, "skill:strike");
   assert.equal(entry.evolution.catalyst, true);

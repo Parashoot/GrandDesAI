@@ -59,8 +59,8 @@ function createMockActor(systemId, name) {
     documentName: "Actor",
     type: "character",
     system: systemId === "dnd5e"
-      ? { details: { level: 3 }, skills: { acr: { mod: 3, total: 5 } }, attributes: { prof: 2 } }
-      : { details: { level: { value: 3 } }, skills: { acrobatics: { mod: 7 } } },
+      ? { details: { level: 3 }, skills: { acr: { mod: 3, total: 5 }, med: { mod: 2, total: 4 } }, attributes: { prof: 2 } }
+      : { details: { level: { value: 3 } }, skills: { acrobatics: { mod: 7 }, medicine: { totalModifier: 9 } } },
     items: { find: () => undefined, filter: () => [] },
     getFlag(module, key) {
       return flags[module]?.[key];
@@ -234,10 +234,10 @@ for (const systemId of SYSTEMS) {
       assert.equal(triage.systemId, systemId);
       if (systemId === "dnd5e") {
         assert.doesNotMatch(entryText(triage.entry), PF2E_TERMS);
-        assert.equal(triage.entry.mechanics.roll.formula, "1d20+3"); // dnd5e "acr" modifier, not a flat +0
+        assert.equal(triage.entry.mechanics.roll.formula, "1d20+4"); // dnd5e Medicine total (board 17c10e97: not Acrobatics, not a flat +0)
       } else {
         assert.match(triage.entry.mechanics.effect, /Treat Wounds/);
-        assert.equal(triage.entry.mechanics.roll.formula, "1d20+7");
+        assert.equal(triage.entry.mechanics.roll.formula, "1d20+9"); // PF2e Medicine totalModifier, not Acrobatics
       }
     });
   });

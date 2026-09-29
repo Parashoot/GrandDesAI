@@ -91,6 +91,37 @@
 .grand-design-growth .gd-suggest[aria-busy="true"] { cursor: progress; opacity: 0.75; }
 .grand-design-growth.gd-busy { cursor: progress; }
 
+/* In-body actions and proposal rows (boards a0bcfd05, 283ad7ca, b375d56c, 78ead05c). */
+.grand-design-growth .gd-action { width: auto; display: inline-flex; align-items: center; gap: 0.3rem; line-height: 1.6; padding: 0 0.6rem; flex: 0 0 auto; }
+.grand-design-growth .gd-action.gd-primary { font-weight: bold; }
+.grand-design-growth .gd-action[aria-busy="true"] { cursor: progress; opacity: 0.75; }
+.grand-design-growth .gd-action.gd-reject { opacity: 0.8; }
+.grand-design-growth .gd-action-row { display: flex; gap: 0.4rem; margin: 0.3rem 0; }
+.grand-design-growth .gd-rest-row { gap: 0.4rem; }
+.grand-design-growth .gd-busy-notice {
+  border: 1px solid rgba(46, 90, 160, 0.4);
+  background: rgba(46, 90, 160, 0.08);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+}
+.grand-design-growth ul.gd-proposals { max-height: 32rem; }
+.grand-design-growth .gd-proposal { padding: 0.35rem 0; border-bottom: 1px dashed rgba(0, 0, 0, 0.15); }
+.grand-design-growth .gd-proposal-effect { margin: 0.15rem 0; }
+.grand-design-growth .gd-proposal-actions { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.2rem 0; }
+.grand-design-growth .gd-kind { background: rgba(0, 0, 0, 0.06); }
+.grand-design-growth .gd-class { background: rgba(46, 90, 160, 0.15); color: #1f4e8c; }
+.grand-design-growth .gd-red { background: rgba(161, 42, 42, 0.15); color: #a12a2a; }
+.grand-design-growth details.gd-proposal-details,
+.grand-design-growth details.gd-proposal-edit { font-size: 0.9em; margin-top: 0.15rem; }
+.grand-design-growth details.gd-proposal-details dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.1rem 0.6rem; margin: 0.3rem 0; }
+.grand-design-growth details.gd-proposal-details dt { font-weight: bold; }
+.grand-design-growth details.gd-proposal-details dd { margin: 0; white-space: pre-wrap; }
+.grand-design-growth details.gd-proposal-details h4 { margin: 0.3rem 0 0.1rem; }
+.grand-design-growth ul.gd-proposal-evidence { list-style: disc; padding-left: 1.2rem; max-height: none; }
+.grand-design-growth .gd-edit-form { border-left: 3px solid rgba(46, 90, 160, 0.4); padding: 0.2rem 0 0.3rem 0.6rem; }
+.grand-design-growth .gd-edit-errors { color: #a12a2a; }
+.grand-design-growth .gd-edit-errors ul { list-style: disc; padding-left: 1.2rem; max-height: none; }
+
 /* --- AI Gateway settings --------------------------------------------------------------------- */
 .grand-design-gateway-settings fieldset { margin-bottom: 0.6rem; }
 .grand-design-gateway-settings legend { font-weight: bold; }

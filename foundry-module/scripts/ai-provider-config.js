@@ -13,8 +13,8 @@
 // API key and the per-machine tuning knobs stay CLIENT scoped (the key never leaves this browser
 // profile and never touches a world or user document). The table
 // "flavor" -- house rules, naming style, tone, custom synonyms, extraction examples, creativity,
-// red entries, emergent themes, proposal mode/count -- is WORLD scoped so every GM browser at the
-// table writes Skills the same way.
+// red entries, emergent themes, proposal mode/count, pending cap, summary language -- is WORLD scoped
+// so every GM browser at the table writes Skills the same way.
 import { createChatCompletionsAdapter, createGatewayAdapter } from "./ai-gateway.js";
 import { CREATIVITY_LEVELS, GATEWAY_DEFAULTS, normalizeGatewayConfig, PIPELINES, PROPOSAL_MODES } from "./ai/gateway-config.js";
 import { MODULE_ID } from "./constants.js";
@@ -44,12 +44,26 @@ export const CLIENT_BASIC_SETTINGS = Object.freeze({ provider: "aiProvider", end
 export const AI_EXPECTED_SETTING = "aiExpected";
 export const CLIENT_TUNING_SETTING = "aiGatewayClient";
 export const WORLD_FLAVOR_SETTING = "aiGatewayWorld";
-export const CLIENT_TUNING_KEYS = Object.freeze(["temperature", "numCtx", "numPredict", "timeoutMs", "maxRepairAttempts", "pipeline", "chunkChars", "outputLanguage"]);
+// Board 5b2ff22d: buildGatewayConfig keeps ONLY the keys listed here, so a gateway-config.js knob
+// missing from both lists could never be changed from the form (the pending cap was always 5).
+// Retries, backoff and the extraction cache depend on this machine's model/server, so they are
+// per-browser; the pending cap and the summary language shape what the whole table sees, so they are
+// world settings. outputLanguage used to be client scoped: migrateOutputLanguage() moves it.
+export const CLIENT_TUNING_KEYS = Object.freeze([
+  "temperature", "numCtx", "numPredict", "timeoutMs", "maxRetries", "maxRepairAttempts",
+  "transientRetries", "transientBackoffMs", "pipeline", "chunkChars",
+  "extractionCacheEntries", "extractionCacheTtlMs"
+]);
 export const WORLD_FLAVOR_KEYS = Object.freeze([
   "houseRules", "namingStyle", "toneHints", "customSynonyms", "extractionExamples",
-  "creativity", "allowRed", "emergentThemes", "mergeFollowUps", "proposalMode", "maxProposals"
+  "creativity", "allowRed", "emergentThemes", "mergeFollowUps", "proposalMode", "maxProposals",
+  "outputLanguage", "pendingProposalCapExtra", "pendingProposalCapMin"
 ]);
-const NUMBER_KEYS = new Set(["temperature", "numCtx", "numPredict", "timeoutMs", "maxRepairAttempts", "chunkChars", "maxProposals"]);
+const NUMBER_KEYS = new Set([
+  "temperature", "numCtx", "numPredict", "timeoutMs", "maxRetries", "maxRepairAttempts", "transientRetries",
+  "transientBackoffMs", "chunkChars", "extractionCacheEntries", "extractionCacheTtlMs", "maxProposals",
+  "pendingProposalCapExtra", "pendingProposalCapMin"
+]);
 const BOOLEAN_KEYS = new Set(["allowRed", "emergentThemes", "mergeFollowUps"]);
 const CANONICAL_TAGS = GROWTH_TAXONOMY.map(([tag]) => tag);
 
@@ -97,8 +111,12 @@ export function buildGatewayConfig({ basics = {}, client = {}, world = {} } = {}
   const endpoint = migrateEndpoint(provider, basics.endpoint) || preset.endpoint;
   const model = (typeof basics.model === "string" && basics.model.trim()) || preset.model;
   const pick = (source, keys) => Object.fromEntries(keys.filter((key) => source?.[key] !== undefined).map((key) => [key, source[key]]));
+  // Until the ready-time migration has run (or on a player's browser, which cannot write the world
+  // setting), an old client-scoped outputLanguage still applies when the world has none.
+  const legacyLanguage = world?.outputLanguage === undefined && client?.outputLanguage !== undefined ? { outputLanguage: client.outputLanguage } : {};
   const merged = {
     ...pick(client, CLIENT_TUNING_KEYS),
+    ...legacyLanguage,
     ...pick(world, WORLD_FLAVOR_KEYS),
     provider: provider === "disabled" ? GATEWAY_DEFAULTS.provider : provider,
     endpoint: endpoint || GATEWAY_DEFAULTS.endpoint,
@@ -216,6 +234,9 @@ export function formDataToSettings(formData = {}) {
   const coerce = (key, value) => {
     if (BOOLEAN_KEYS.has(key)) return value === true || value === "true" || value === "on" || value === 1;
     if (NUMBER_KEYS.has(key)) {
+      // An emptied number box means "use the default", not 0 (Number("") is 0, and 0 turns the
+      // extraction cache and every retry off).
+      if (value === undefined || value === null || (typeof value === "string" && !value.trim())) return undefined;
       const n = Number(value);
       return Number.isFinite(n) ? n : undefined;
     }
@@ -240,6 +261,27 @@ export function formDataToSettings(formData = {}) {
   world.extractionExamples = examples.examples;
   for (const error of examples.errors) errors.push(`Extraction examples: ${error}`);
   return { basics, client, world, errors };
+}
+
+/**
+ * Board 5b2ff22d: outputLanguage moved from the per-browser tuning blob to the world flavor blob.
+ * Pure: given the two stored blobs, returns what to write. The world value wins when it exists (a
+ * GM already chose the table's language); otherwise a non-default client value is copied over. The
+ * client copy is dropped either way so it can never shadow the table setting again.
+ * @returns {{ client: object, world: object, changedClient: boolean, changedWorld: boolean }}
+ */
+export function planOutputLanguageMigration(client = {}, world = {}) {
+  const nextClient = { ...(client ?? {}) };
+  const nextWorld = { ...(world ?? {}) };
+  if (!Object.hasOwn(nextClient, "outputLanguage")) return { client: nextClient, world: nextWorld, changedClient: false, changedWorld: false };
+  const legacy = nextClient.outputLanguage;
+  delete nextClient.outputLanguage;
+  let changedWorld = false;
+  if (nextWorld.outputLanguage === undefined && typeof legacy === "string" && legacy.trim() && legacy.trim() !== GATEWAY_DEFAULTS.outputLanguage) {
+    nextWorld.outputLanguage = legacy.trim();
+    changedWorld = true;
+  }
+  return { client: nextClient, world: nextWorld, changedClient: true, changedWorld };
 }
 
 function parseJsonSetting(raw) {
@@ -434,10 +476,32 @@ export function installGatewayLinkHandler() {
   });
 }
 
+/**
+ * Moves a client-scoped outputLanguage into the world blob (GM only: players cannot write world
+ * settings, and buildGatewayConfig keeps honouring their old value meanwhile). Returns the plan.
+ */
+export async function migrateOutputLanguage() {
+  try {
+    if (!game.user?.isGM) return null;
+    const plan = planOutputLanguageMigration(
+      parseJsonSetting(game.settings.get(MODULE_ID, CLIENT_TUNING_SETTING)),
+      parseJsonSetting(game.settings.get(MODULE_ID, WORLD_FLAVOR_SETTING))
+    );
+    // World first: if that write fails the client copy is still there to retry from next launch.
+    if (plan.changedWorld) await game.settings.set(MODULE_ID, WORLD_FLAVOR_SETTING, JSON.stringify(plan.world));
+    if (plan.changedClient) await game.settings.set(MODULE_ID, CLIENT_TUNING_SETTING, JSON.stringify(plan.client));
+    return plan;
+  } catch (error) {
+    console.warn(`${MODULE_ID} | could not migrate the summary language setting`, error);
+    return null;
+  }
+}
+
 /** Ready-time migration, adapter build and warning for a GM. Returns { adapter, problem }. */
 export async function checkGatewayAtReady() {
   installGatewayLinkHandler();
   await migrateClientProviderSettings();
+  await migrateOutputLanguage();
   await noteAiExpected();
   const { adapter, error } = rebuildGatewayAdapter({ warn: false });
   const api = game.modules.get(MODULE_ID).api;
@@ -624,12 +688,22 @@ export function renderGatewayForm(config, stored = {}) {
     <div class="form-group"><label>Repair attempts</label><input type="number" name="maxRepairAttempts" min="0" max="5" step="1" value="${Number(client.maxRepairAttempts)}"></div>
     <div class="form-group"><label>Pipeline</label><select name="pipeline">${PIPELINES.map((value) => option(value, value === "two-stage" ? "Two-stage (read events, then propose) -- most robust" : "Single call -- faster, less robust", client.pipeline)).join("")}</select></div>
     <div class="form-group"><label>Chunk size (characters)</label><input type="number" name="chunkChars" min="400" max="20000" step="100" value="${Number(client.chunkChars)}"></div>
-    <div class="form-group"><label>Summary language</label><input type="text" name="outputLanguage" value="${escapeHtml(client.outputLanguage ?? "en")}" placeholder="en, es, el, de..."></div>
-    <p class="gd-help">Event summaries are written in this language; the original quote is always kept as written.</p>
+    <div class="form-group"><label>Request retries (429 / 5xx)</label><input type="number" name="maxRetries" min="0" max="5" step="1" value="${Number(client.maxRetries)}"></div>
+    <div class="form-group"><label>Retries after a dropped connection or timeout</label><input type="number" name="transientRetries" min="0" max="5" step="1" value="${Number(client.transientRetries)}"></div>
+    <div class="form-group"><label>Wait between those retries (ms)</label><input type="number" name="transientBackoffMs" min="0" max="60000" step="100" value="${Number(client.transientBackoffMs)}"></div>
+    <p class="gd-help">Worst case per chunk is roughly timeout x (1 + retries): lower these on a slow machine so a stuck model falls back sooner.</p>
+    <div class="form-group"><label>Reuse a reading of identical notes (entries)</label><input type="number" name="extractionCacheEntries" min="0" max="200" step="1" value="${Number(client.extractionCacheEntries)}"></div>
+    <div class="form-group"><label>Keep a reading for (ms)</label><input type="number" name="extractionCacheTtlMs" min="0" max="86400000" step="60000" value="${Number(client.extractionCacheTtlMs)}"></div>
+    <p class="gd-help">A party recap pasted into five sheets is read once. 0 turns it off; "Re-analyze" always reads fresh.</p>
   </fieldset></details>
   <fieldset><legend>Table flavor</legend><p class="gd-help">${escapeHtml(worldNote)}</p>
     <div class="form-group"><label>Proposals</label><select name="proposalMode">${PROPOSAL_MODES.map((value) => option(value, { "when-earned": "When earned (enough evidence)", always: "Always suggest something", never: "Never (events only)" }[value] ?? value, world.proposalMode)).join("")}</select></div>
     <div class="form-group"><label>Max proposals per analysis</label><input type="number" name="maxProposals" min="0" max="10" step="1" value="${Number(world.maxProposals)}"></div>
+    <div class="form-group"><label>Pending proposals: extra over grant allowances</label><input type="number" name="pendingProposalCapExtra" min="0" max="20" step="1" value="${Number(world.pendingProposalCapExtra)}"></div>
+    <div class="form-group"><label>Pending proposals: always allow at least</label><input type="number" name="pendingProposalCapMin" min="1" max="20" step="1" value="${Number(world.pendingProposalCapMin)}"></div>
+    <p class="gd-help">A character keeps at most max(minimum, grant allowances + extra) AI proposals waiting; the weakest unapproved ones are trimmed first. Milestone rewards never count.</p>
+    <div class="form-group"><label>Summary language</label><input type="text" name="outputLanguage" value="${escapeHtml(world.outputLanguage ?? "en")}" placeholder="en, es, el, de..."></div>
+    <p class="gd-help">Event summaries are written in this language for the whole table; the original quote is always kept as written.</p>
     <div class="form-group stacked"><label>Creativity</label>${creativity}</div>
     <div class="form-group"><label>Allow red (taboo) entries</label><input type="checkbox" name="allowRed" ${world.allowRed ? "checked" : ""}></div>
     <div class="form-group"><label>Emergent themes</label><input type="checkbox" name="emergentThemes" ${world.emergentThemes ? "checked" : ""}></div>

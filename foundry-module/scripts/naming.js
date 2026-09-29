@@ -94,6 +94,40 @@ export function buildClassFlavoredName(characterClass, conceptName) {
   return `${deriveClassMotif(characterClass)}: ${conceptName.trim()}`;
 }
 
+/**
+ * The Class a generated name is flavored from (board 9ebbf3c9): the actor's own Grand Design Class
+ * (primary first, then the highest level), else its game-system class ("Fighter", "Fighter 3 /
+ * Wizard 2") as a stand-in Class carrying `fallbackTags` so a bare role word ("Ranger") still gets a
+ * tag-based motif. null when the character has neither -- callers keep the plain concept name then.
+ */
+export function namingClassFor(registry, systemClass, fallbackTags = []) {
+  const classes = Object.values(registry?.classes ?? {}).filter((entry) => entry && typeof entry.name === "string" && entry.name.trim());
+  if (classes.length) {
+    const primary = classes.find((entry) => entry.is_primary === true);
+    return primary ?? [...classes].sort((a, b) => (Number(b.level) || 0) - (Number(a.level) || 0))[0];
+  }
+  if (typeof systemClass === "string" && systemClass.trim()) {
+    // "Fighter 3 / Wizard 2" -> "Fighter": the first class, without its level.
+    const first = systemClass.split("/")[0].replace(/\d+/g, "").trim();
+    if (first) return { name: first, metadata: { tags: Array.isArray(fallbackTags) ? fallbackTags : [] } };
+  }
+  return null;
+}
+
+/**
+ * buildClassFlavoredName when there is a Class to flavor from; the plain concept otherwise (a
+ * character with no Class at all should not get a meaningless "Path:" prefix). Never prefixes twice.
+ */
+export function flavorProposalName(characterClass, conceptName) {
+  if (typeof conceptName !== "string" || !conceptName.trim()) {
+    throw new Error("A concept name is required to build a class-flavored proposal name.");
+  }
+  if (!characterClass) return conceptName.trim();
+  const motif = deriveClassMotif(characterClass);
+  if (conceptName.trim().toLowerCase().startsWith(`${motif.toLowerCase()}:`)) return conceptName.trim();
+  return buildClassFlavoredName(characterClass, conceptName);
+}
+
 function extractCoreWord(name) {
   if (typeof name !== "string" || !name.trim()) return { root: null, suffixStripped: false };
   const words = name

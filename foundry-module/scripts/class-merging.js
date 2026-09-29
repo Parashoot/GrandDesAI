@@ -1,5 +1,6 @@
 import { CLASS_EVOLUTION_LEVELS } from "./constants.js";
 import { uniqueStrings } from "./lineage.js";
+import { idSlug, pickStableName, stableHash, uniqueRegistryId } from "./skill-evolution.js";
 
 // How much average pairwise tag overlap two-or-more source Classes need before a merge counts
 // as "tightly specialized" (can reach one tier above its strongest source, and unlocks the
@@ -166,7 +167,7 @@ export function resolveMergedPowerTier(sourceClasses, focusScore, { intentional 
  *   - When `polarity` is "red" (see resolveMergedPolarity), any legendary title drawn here comes
  *     from the dark, vice-keyed bank instead of the heroic tag-keyed one.
  */
-export function buildMergedClassName({ sourceClasses, powerTier, focusScore, level = 1, intentional = false, polarity = "standard", vice = null }) {
+export function buildMergedClassName({ sourceClasses, powerTier, focusScore, level = 1, intentional = false, polarity = "standard", vice = null, seed, takenNames = [] }) {
   const ordered = orderSources(sourceClasses);
   const isRed = polarity === "red";
   const reachedLegendaryLevel = level >= LEGENDARY_TITLE_LEVEL && powerTier === "prestige";
@@ -174,10 +175,11 @@ export function buildMergedClassName({ sourceClasses, powerTier, focusScore, lev
   const isPolymathLegendary = reachedLegendaryLevel && intentional && focusScore < MERGE_FOCUS_WEAK_THRESHOLD;
 
   if (isFocusedLegendary || isPolymathLegendary) {
-    if (isRed) return buildRedLegendaryTitle(vice);
-    if (isPolymathLegendary) return buildPolymathLegendaryTitle();
+    const titleSeed = seed ?? sourceSeed(sourceClasses);
+    if (isRed) return buildRedLegendaryTitle(vice, titleSeed, takenNames);
+    if (isPolymathLegendary) return buildPolymathLegendaryTitle(titleSeed, takenNames);
     const { allTags } = computeMergeFocus(ordered);
-    return buildLegendaryTitle(allTags);
+    return buildLegendaryTitle(allTags, titleSeed, takenNames);
   }
   if (powerTier === "prestige" && focusScore >= MERGE_FOCUS_STRONG_THRESHOLD) {
     return ordered.map((source) => source.name).join(", ");
@@ -254,7 +256,14 @@ export function mergeClassEntry({
   intentional = false,
   polarity,
   malignance,
-  actorLevel = null
+  actorLevel = null,
+  // `name` overrides the derived name (the hook for an AI-authored one); `id` the derived registry
+  // id. `existingIds` / `existingNames`: what the actor already holds (e.g. `registry.classes` and
+  // its names), so the merge never lands on an existing registry key (board 574707d8).
+  name,
+  id,
+  existingIds,
+  existingNames = []
 }) {
   assertSources(sourceClasses);
   if (!Number.isInteger(level) || level < 1) {
@@ -267,24 +276,29 @@ export function mergeClassEntry({
   const resolvedMalignance = resolvedPolarity === "red"
     ? (malignance ?? resolveMergedMalignance(sourceClasses))
     : null;
-  const name = buildMergedClassName({
+  const resolvedName = typeof name === "string" && name.trim() ? name.trim() : buildMergedClassName({
     sourceClasses,
     powerTier,
     focusScore,
     level,
     intentional,
     polarity: resolvedPolarity,
-    vice: resolvedMalignance?.vice ?? null
+    vice: resolvedMalignance?.vice ?? null,
+    takenNames: existingNames
   });
+  const resolvedId = typeof id === "string" && id.trim()
+    ? uniqueRegistryId(id.trim(), existingIds)
+    : mergedClassId({ sourceClasses, powerTier, level, existingIds });
   const primary = orderSources(sourceClasses)[0];
 
   return {
-    name,
+    name: resolvedName,
     level,
     power_tier: powerTier,
     offCycleEvolution: offCycle,
     system_chassis: systemChassis ?? primary.system_chassis ?? "Pending chassis review",
     metadata: {
+      id: resolvedId,
       tags: uniqueStrings([...tags, ...allTags]),
       ...(resolvedPolarity === "red" ? { polarity: "red", malignance: resolvedMalignance } : {}),
       lineage: {
@@ -317,21 +331,49 @@ function resolveMergedMalignance(sourceClasses) {
   };
 }
 
-function buildLegendaryTitle(tags) {
+function buildLegendaryTitle(tags, seed, takenNames) {
   const tagSet = new Set(tags);
   const category = LEGENDARY_TITLE_PRIORITY.find((tag) => tagSet.has(tag));
   const bank = (category && LEGENDARY_TITLE_BANKS[category]) ?? DEFAULT_LEGENDARY_TITLE_BANK;
-  return `The ${bank.epithets[0]} ${bank.roles[0]} of ${bank.domains[0]}`;
+  return pickLegendaryTitle(bank, seed, takenNames);
 }
 
-function buildPolymathLegendaryTitle() {
-  const bank = POLYMATH_LEGENDARY_BANK;
-  return `The ${bank.epithets[0]} ${bank.roles[0]} of ${bank.domains[0]}`;
+function buildPolymathLegendaryTitle(seed, takenNames) {
+  return pickLegendaryTitle(POLYMATH_LEGENDARY_BANK, seed, takenNames);
 }
 
-function buildRedLegendaryTitle(vice) {
+function buildRedLegendaryTitle(vice, seed, takenNames) {
   const bank = (vice && RED_LEGENDARY_TITLE_BANKS[vice]) ?? DEFAULT_RED_LEGENDARY_TITLE_BANK;
-  return `The ${bank.epithets[0]} ${bank.roles[0]} of ${bank.domains[0]}`;
+  return pickLegendaryTitle(bank, seed, takenNames);
+}
+
+// Every epithet x role x domain combination, picked by a stable hash of the sources. Always taking
+// index 0 gave every occult legendary merge the same title (board 574707d8); 27 combinations per
+// bank, chosen deterministically, keep the same sources on the same title and different ones apart.
+function pickLegendaryTitle(bank, seed, takenNames) {
+  const combos = bank.epithets.flatMap((epithet) =>
+    bank.roles.flatMap((role) => bank.domains.map((domain) => `The ${epithet} ${role} of ${domain}`)));
+  return pickStableName(combos, `${seed}|legendary`, takenNames);
+}
+
+/** The sources' ids, sorted, so the same set of Classes seeds the same pick in any order. */
+function sourceSeed(sourceClasses) {
+  return sourceClasses
+    .map((source) => source?.metadata?.id ?? source?.name ?? "")
+    .sort()
+    .join("+");
+}
+
+/**
+ * The merged Class's registry id, from its sources and the result: "class:merge-<hash of the sorted
+ * source ids>-<power tier>-l<level>". lineage.js#normalizeEntry would otherwise derive it from the
+ * name, and two merges that happened to share a (legendary) name would overwrite each other in the
+ * registry (board 574707d8). A hash rather than the joined source slugs keeps a five-way merge's id
+ * short; the readable part is the name, which the registry stores beside it.
+ */
+export function mergedClassId({ sourceClasses, powerTier, level, existingIds }) {
+  const hash = stableHash(sourceSeed(sourceClasses)).toString(36);
+  return uniqueRegistryId(`class:merge-${hash}-${idSlug(powerTier)}-l${level}`, existingIds);
 }
 
 function orderSources(sourceClasses) {

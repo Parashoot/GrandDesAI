@@ -10,6 +10,12 @@ import { BUILD, describeBuild } from "./build-info.js";
 //
 // Every piece of data rendered here is read defensively: this dialog is the GM's only way back to
 // their recorded history, so a malformed event/proposal degrades to a readable row, never a throw.
+//
+// Board 78ead05c / a0bcfd05 (2026-09-29): every action lives in the dialog BODY, not the v1 footer.
+// A footer button closes the dialog before its callback runs, so a 30 s+ analysis showed nothing at
+// all and a double click could start a second one. In the body the clicked button shows a spinner,
+// every other action is disabled until it finishes, and the dialog is reopened afterwards so the new
+// state renders. Proposals are one row each with their own Approve / Author / Retry / Edit / Reject.
 
 const OUTCOME_ICONS = {
   criticalSuccess: { icon: "fa-solid fa-star", label: "Critical success" },
@@ -18,83 +24,172 @@ const OUTCOME_ICONS = {
   criticalFailure: { icon: "fa-solid fa-skull", label: "Critical failure (a lesson learned)" }
 };
 
+// Every in-body action: the data-action value, the label while it runs, and the icon at rest.
+const ACTIONS = Object.freeze({
+  analyze: { action: "gd-analyze", busy: "Reading your notes... (can take a minute with a local model)" },
+  reanalyze: { action: "gd-reanalyze", busy: "Re-reading the last notes..." },
+  rest: { action: "gd-rest", busy: "Resolving the rest..." },
+  approve: { action: "gd-approve-proposal", busy: "Approving..." },
+  approveAsWritten: { action: "gd-approve-as-written", busy: "Approving..." },
+  author: { action: "gd-author-proposal", busy: "The AI is writing it..." },
+  retry: { action: "gd-retry-milestone", busy: "Asking the AI again..." },
+  reject: { action: "gd-reject-proposal", busy: "Rejecting..." },
+  save: { action: "gd-save-proposal", busy: "Saving..." },
+  suggest: { action: "gd-suggest-proposals", busy: "Asking the AI for proposals... (about 10 s)" }
+});
+const LOCKABLE = Object.values(ACTIONS).map(({ action }) => `[data-action="${action}"]`).join(", ");
+
 export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } = {}) {
   const api = game.modules.get(MODULE_ID).api;
   let content;
   let aiAttached = true;
+  // Feature-detected: dev-integration adds these API calls in parallel; an older API must still open
+  // the dialog (without the control) rather than offer an action that cannot run.
+  const canSuggest = typeof api.requestGrowthProposals === "function";
+  const canEdit = typeof api.updateProposal === "function";
+  const canRetry = typeof api.retryMilestoneReward === "function";
+  const apiBusy = () => typeof api.isBusy === "function" && safe(() => api.isBusy(actor), false) === true;
+  const busyAtOpen = apiBusy();
   try {
     aiAttached = safe(() => api.hasProposalAdapter(), true) !== false;
     const growth = api.getGrowth(actor);
     const progression = api.getLevelProgression(actor);
     const pending = (growth.proposals ?? []).filter((proposal) => proposal?.status === "pending");
     const lastAnalysis = safe(() => api.getLastAnalysis(actor), null);
-    const status = statusBadge(safe(() => api.getGatewayConfig(), {}), lastResult ?? lastAnalysis, api.hasProposalAdapter());
-    // Feature-detected: an older module API has no on-demand proposal stage, and the dialog must
-    // still open (without the button) rather than offer an action that cannot run.
-    const canSuggest = typeof api.requestGrowthProposals === "function";
-    content = renderGrowthContent({ growth, progression, pending, lastAnalysis, lastResult, status, draftNotes, canSuggest });
+    const status = statusBadge(safe(() => api.getGatewayConfig(), {}), lastResult ?? lastAnalysis, aiAttached);
+    content = renderGrowthContent({ growth, progression, pending, lastAnalysis, lastResult, status, draftNotes, canSuggest, canEdit, canRetry, aiAttached, busy: busyAtOpen });
   } catch (error) {
     console.error(`${MODULE_ID} | growth dialog render failed`, error);
     content = `<p>Grand Design could not render this actor's growth history: ${escapeHtml(error.message)}</p>`;
   }
 
-  // Dialog v1 closes before a callback runs, so whatever is in the notes box is captured first and
-  // handed back to the reopened dialog on any error: the GM's typing is never lost.
-  const run = (label, work) => async (html) => {
-    const typed = String(html?.find?.('textarea[name="growth-notes"]')?.val?.() ?? "");
-    try {
-      await work(html);
-    } catch (error) {
-      console.error(`${MODULE_ID} | ${label} failed`, error);
-      ui.notifications.error(error.message);
-      openGrowthManager(actor, { lastResult, draftNotes: typed });
-    }
-  };
-
-  // "Reject" lives beside each proposal in the body, not the footer, for the same reason as
-  // "Suggest proposals" below: a footer button closes the v1 Dialog before its callback runs, and
-  // there is one of these per pending proposal rather than one global target picked from the select.
-  const reject = async (root, button, proposalId) => {
-    if (!proposalId || button?.disabled) return;
-    if (button) button.disabled = true;
-    const typed = String(root?.querySelector?.('textarea[name="growth-notes"]')?.value ?? "");
-    try {
-      await api.rejectProposal(actor, proposalId);
-    } catch (error) {
-      console.error(`${MODULE_ID} | proposal rejection failed`, error);
-      ui.notifications.error(error?.message || "Grand Design could not reject that proposal.");
-      if (button) button.disabled = false;
-      return;
-    }
-    ui.notifications.info("Grand Design proposal rejected. It will not be suggested again under this name.");
+  let running = false;
+  let pollTimer = null;
+  const typedNotes = (root) => String(root?.querySelector?.('textarea[name="growth-notes"]')?.value ?? "");
+  const reopen = async (options) => {
+    if (pollTimer) clearInterval(pollTimer);
     await safe(() => dialog.close(), null);
-    openGrowthManager(actor, { lastResult, draftNotes: typed });
+    openGrowthManager(actor, options);
   };
 
-  // "Suggest proposals" lives in the dialog body, not the footer: footer buttons close a v1 Dialog
-  // before their callback runs, and this call takes ~10 s with a local model, so the GM needs to see
-  // it working in place. The dialog is then reopened so the new proposals render.
-  let suggesting = false;
-  const suggest = async (root, button) => {
-    if (suggesting) return;
-    if (typeof api.requestGrowthProposals !== "function") {
-      ui.notifications.warn("This version of Grand Design cannot suggest proposals on demand.");
+  /**
+   * One long action, run in place. `work` returns what to reopen with ({ lastResult, draftNotes })
+   * or `false` to leave the dialog as it is (nothing changed, e.g. empty notes). Whatever happens,
+   * the notes the GM typed survive: on an error the reopened dialog gets them back.
+   */
+  const runAction = async (root, button, key, work) => {
+    if (running || button?.disabled) return;
+    if (apiBusy()) {
+      ui.notifications.warn(BUSY_NOTICE);
       return;
     }
-    const typed = String(root?.querySelector?.('textarea[name="growth-notes"]')?.value ?? "");
-    suggesting = true;
-    setSuggestBusy(root, button, true);
+    const typed = typedNotes(root);
+    running = true;
+    setBusy(root, button, true, ACTIONS[key]?.busy);
+    let next = { lastResult, draftNotes: typed };
     try {
+      const outcome = await work(typed);
+      if (outcome === false) {
+        running = false;
+        setBusy(root, button, false);
+        return;
+      }
+      next = { lastResult, draftNotes: typed, ...(outcome ?? {}) };
+    } catch (error) {
+      const { level, message } = describeActionError(error);
+      // A busy lock is expected traffic, not a failure worth a red console entry.
+      if (level === "error") console.error(`${MODULE_ID} | ${key} failed`, error);
+      ui.notifications[level](message);
+    }
+    running = false;
+    await reopen(next);
+  };
+
+  const find = (id) => safe(() => (api.getGrowth(actor).proposals ?? []).find((proposal) => proposal?.id === id), null);
+  const handlers = {
+    [ACTIONS.analyze.action]: (root, button) => runAction(root, button, "analyze", async (notes) => {
+      if (!notes.trim()) {
+        ui.notifications.warn("Write or paste some session notes first -- any language, bullets, shorthand all work.");
+        return false;
+      }
+      const result = await api.analyzeSessionNotes(actor, notes);
+      reportAnalysis(result);
+      // The notes are now recorded: the box starts empty again.
+      return { lastResult: result, draftNotes: "" };
+    }),
+    [ACTIONS.reanalyze.action]: (root, button) => runAction(root, button, "reanalyze", async () => {
+      const result = await api.reanalyzeLastNotes(actor);
+      reportAnalysis(result);
+      return { lastResult: result };
+    }),
+    [ACTIONS.rest.action]: (root, button) => runAction(root, button, "rest", async () => {
+      const restType = root?.querySelector?.('select[name="growth-rest-type"]')?.value || "long";
+      reportRest(await api.resolveLevelRest(actor, { restType }), restType);
+    }),
+    [ACTIONS.approve.action]: (root, button, id) => runAction(root, button, "approve", async () => {
+      await api.approveProposal(actor, id);
+      ui.notifications.info(`Approved: ${find(id)?.entry?.name ?? "the proposal"} was added to ${actor.name}.`);
+    }),
+    [ACTIONS.approveAsWritten.action]: async (root, button, id) => {
+      const name = find(id)?.entry?.name ?? id;
+      if (!(await confirmApproveAsWritten(name))) return;
+      return runAction(root, button, "approveAsWritten", async () => {
+        await api.approveProposal(actor, id, { confirm: true });
+        ui.notifications.info(`Approved as written: ${name} was added to ${actor.name}.`);
+      });
+    },
+    [ACTIONS.author.action]: (root, button, id) => runAction(root, button, "author", async () => {
+      const { proposal } = await api.requestProposalAuthoring(actor, id);
+      ui.notifications.info(`Authored: ${proposal?.entry?.name ?? id}. Open its Details, then Approve.`);
+    }),
+    [ACTIONS.retry.action]: (root, button, id) => runAction(root, button, "retry", async () => {
+      const { level, message } = describeRetryResult(await api.retryMilestoneReward(actor, id));
+      ui.notifications[level](message);
+    }),
+    [ACTIONS.reject.action]: (root, button, id) => runAction(root, button, "reject", async () => {
+      await api.rejectProposal(actor, id);
+      ui.notifications.info("Grand Design proposal rejected. It will not be suggested again under this name.");
+    }),
+    [ACTIONS.save.action]: (root, button, id) => saveEdit(root, button, id),
+    [ACTIONS.suggest.action]: (root, button) => runAction(root, button, "suggest", async () => {
+      if (!canSuggest) {
+        ui.notifications.warn("This version of Grand Design cannot suggest proposals on demand.");
+        return false;
+      }
       const { level, message } = describeSuggestResult(await api.requestGrowthProposals(actor));
       ui.notifications[level](message);
-    } catch (error) {
-      // Covers "no AI provider configured": the API's own message tells the GM what to set up.
-      console.error(`${MODULE_ID} | proposal suggestion failed`, error);
-      ui.notifications.error(error?.message || "Grand Design could not suggest proposals.");
+    })
+  };
+
+  // The edit form is validated by the API (validator.js) and its errors are shown IN the form, which
+  // stays open with the GM's edits, instead of a toast and a reopen that would throw the edits away.
+  const saveEdit = async (root, button, id) => {
+    if (running || !canEdit) return;
+    const form = button?.closest?.(".gd-edit-form");
+    const errorBox = form?.querySelector?.(".gd-edit-errors");
+    const proposal = find(id);
+    if (!proposal) return;
+    const { patch, errors } = buildProposalPatch(proposal, readEditFields(form));
+    if (errors.length) {
+      if (errorBox) errorBox.innerHTML = renderEditErrors(errors);
+      return;
     }
-    suggesting = false;
-    await safe(() => dialog.close(), null);
-    openGrowthManager(actor, { lastResult, draftNotes: typed });
+    running = true;
+    setBusy(root, button, true, ACTIONS.save.busy);
+    let result;
+    try {
+      result = await api.updateProposal(actor, id, patch);
+    } catch (error) {
+      result = { ok: false, errors: [describeActionError(error).message] };
+    }
+    running = false;
+    if (result?.ok === false) {
+      setBusy(root, button, false);
+      if (errorBox) errorBox.innerHTML = renderEditErrors(result.errors?.length ? result.errors : ["The proposal was not saved."]);
+      return;
+    }
+    ui.notifications.info(`Saved your edits to ${result?.proposal?.entry?.name ?? patch.entry?.name ?? "the proposal"}. It is still pending: Approve when ready.`);
+    await reopen({ lastResult, draftNotes: typedNotes(root) });
   };
 
   const dialog = new Dialog(
@@ -104,126 +199,117 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "" } 
       render: (html) => {
         // Dialog v1 hands over jQuery on V12/V13; accept a bare element too.
         const root = html?.[0] ?? html;
-        // Author with AI is a footer button (created by Dialog v1, not by our HTML), so disable it here.
-        if (!aiAttached) {
-          const scope = root?.closest?.(".app, .application, .window-app") ?? root;
-          scope?.querySelectorAll?.('.dialog-button.author, [data-button="author"]').forEach((button) => {
-            button.disabled = true;
-            button.title = NO_PROVIDER_TITLE;
-          });
-        }
-        root?.querySelectorAll?.('[data-action="gd-suggest-proposals"]').forEach((button) => {
+        // Suggest keeps a direct listener (it predates the delegated one and its tests click it).
+        root?.querySelectorAll?.(`[data-action="${ACTIONS.suggest.action}"]`).forEach((button) => {
           button.addEventListener("click", (event) => {
             event.preventDefault();
-            suggest(root, button);
+            handlers[ACTIONS.suggest.action](root, button);
           });
         });
-        // Delegated (one listener on the root, not one per <li>): there can be several Reject
-        // buttons, one per pending proposal, and the list re-renders every time a proposal changes.
+        // Delegated (one listener on the root): there is a row of buttons per pending proposal.
         root?.addEventListener?.("click", (event) => {
-          const button = event.target?.closest?.('[data-action="gd-reject-proposal"]');
-          if (!button) return;
+          const button = event.target?.closest?.("[data-action]");
+          const action = button?.dataset?.action;
+          if (!action || action === ACTIONS.suggest.action || !handlers[action]) return;
           event.preventDefault();
-          reject(root, button, button.dataset?.proposalId);
+          handlers[action](root, button, button.dataset?.proposalId);
         });
+        // Something else (another dialog, another GM, a macro) is working on this actor: the
+        // buttons render disabled; reopen as soon as it is done so the fresh state shows.
+        if (busyAtOpen) {
+          const started = Date.now();
+          pollTimer = setInterval(() => {
+            if (root?.isConnected === false || Date.now() - started > 15 * 60 * 1000) return clearInterval(pollTimer);
+            if (!apiBusy()) reopen({ lastResult, draftNotes: typedNotes(root) });
+            return undefined;
+          }, 1500);
+        }
       },
+      close: () => { if (pollTimer) clearInterval(pollTimer); },
       buttons: {
-        analyze: {
-          icon: '<i class="fas fa-wand-magic-sparkles"></i>',
-          label: "Analyze",
-          callback: run("note analysis", async (html) => {
-            const notes = html.find('textarea[name="growth-notes"]').val();
-            if (!String(notes ?? "").trim()) {
-              ui.notifications.warn("Write or paste some session notes first -- any language, bullets, shorthand all work.");
-              openGrowthManager(actor, { lastResult });
-              return;
-            }
-            ui.notifications.info("Reading your notes...");
-            const result = await api.analyzeSessionNotes(actor, notes);
-            reportAnalysis(result);
-            openGrowthManager(actor, { lastResult: result });
-          })
-        },
-        reanalyze: {
-          icon: '<i class="fas fa-rotate"></i>',
-          label: "Re-analyze last notes",
-          callback: run("re-analysis", async () => {
-            ui.notifications.info("Re-reading the last notes (the previous reading is replaced, not added to)...");
-            const result = await api.reanalyzeLastNotes(actor);
-            reportAnalysis(result);
-            openGrowthManager(actor, { lastResult: result });
-          })
-        },
-        author: {
-          icon: '<i class="fas fa-feather-pointed"></i>',
-          label: "Author with AI",
-          callback: run("proposal authoring", async (html) => {
-            const proposalId = html.find('select[name="growth-proposal"]').val();
-            if (!proposalId) {
-              ui.notifications.warn("Choose a pending proposal first.");
-              openGrowthManager(actor, { lastResult, draftNotes: html.find('textarea[name="growth-notes"]').val() });
-              return;
-            }
-            ui.notifications.info("Asking the AI to write this one properly...");
-            const { proposal } = await api.requestProposalAuthoring(actor, proposalId);
-            ui.notifications.info(`Authored: ${proposal.entry?.name ?? proposalId}. Review it, then Approve.`);
-            openGrowthManager(actor, { lastResult });
-          })
-        },
-        approve: {
-          icon: '<i class="fas fa-check"></i>',
-          label: "Approve",
-          callback: run("proposal approval", async (html) => {
-            const proposalId = html.find('select[name="growth-proposal"]').val();
-            if (!proposalId) {
-              ui.notifications.warn("Choose a pending proposal first.");
-              openGrowthManager(actor, { lastResult, draftNotes: html.find('textarea[name="growth-notes"]').val() });
-              return;
-            }
-            await api.approveProposal(actor, proposalId);
-            ui.notifications.info("Grand Design proposal approved and added to the Actor.");
-            openGrowthManager(actor, { lastResult });
-          })
-        },
-        rest: {
-          icon: '<i class="fas fa-bed"></i>',
-          label: "Resolve Rest",
-          callback: run("rest resolution", async (html) => {
-            const restType = html.find('select[name="growth-rest-type"]').val();
-            const result = await api.resolveLevelRest(actor, { restType });
-            reportRest(result, restType);
-            openGrowthManager(actor, { lastResult });
-          })
-        },
         close: { icon: '<i class="fas fa-times"></i>', label: "Close" }
       },
-      default: "analyze"
+      default: "close"
     },
-    { width: 720, height: "auto", resizable: true, classes: ["dialog", "grand-design-growth-dialog"] }
+    { width: 760, height: "auto", resizable: true, classes: ["dialog", "grand-design-growth-dialog"] }
   );
   dialog.render(true);
 }
 
 const NO_PROVIDER_TITLE = "Needs an AI provider. Set one in Grand Design AI Gateway settings (Game Settings > Configure Settings).";
+const BUSY_NOTICE = "Grand Design is still working on this character (an analysis, rest or AI call is running). Wait for it to finish, then try again.";
 const SUGGEST_LABEL = "Suggest proposals";
-const SUGGEST_BUSY_LABEL = "Asking the AI for proposals... (about 10 s)";
 
-// Busy state for the in-body Suggest button. Every suggest button and the footer buttons are
-// disabled so the GM cannot approve or re-analyze against a proposal list that is about to change.
-function setSuggestBusy(root, clicked, busy) {
+// Busy state for any in-body action. Every action button (and any footer button) is disabled so the
+// GM cannot approve or re-analyze against a proposal list that is about to change.
+function setBusy(root, clicked, busy, busyLabel = "Working...") {
   const scope = root?.closest?.(".app, .application, .window-app") ?? root;
-  scope?.querySelectorAll?.('[data-action="gd-suggest-proposals"], .dialog-buttons button, .dialog-button').forEach((button) => {
-    button.disabled = busy;
+  scope?.querySelectorAll?.(`${LOCKABLE}, .dialog-buttons button, .dialog-button`).forEach((button) => {
+    if (busy) {
+      button.dataset && (button.dataset.gdWasDisabled = button.disabled ? "1" : "");
+      button.disabled = true;
+    } else {
+      // Buttons rendered disabled on purpose (no AI provider) stay disabled.
+      button.disabled = button.dataset?.gdWasDisabled === "1";
+    }
   });
   root?.querySelector?.(".grand-design-growth")?.classList.toggle("gd-busy", busy);
   if (!clicked) return;
   clicked.setAttribute("aria-busy", busy ? "true" : "false");
-  const label = clicked.querySelector(".gd-suggest-label");
+  const label = clicked.querySelector(".gd-btn-label") ?? clicked.querySelector(".gd-suggest-label");
   const icon = clicked.querySelector("i");
-  if (label) label.textContent = busy ? SUGGEST_BUSY_LABEL : SUGGEST_LABEL;
-  if (icon) icon.className = busy ? "fas fa-spinner fa-spin" : "fas fa-lightbulb";
+  if (label) {
+    if (busy) label.dataset && (label.dataset.gdRestLabel = label.textContent);
+    label.textContent = busy ? busyLabel : label.dataset?.gdRestLabel || label.textContent;
+  }
+  if (icon) {
+    if (busy) icon.dataset && (icon.dataset.gdRestIcon = icon.className);
+    icon.className = busy ? "fas fa-spinner fa-spin" : icon.dataset?.gdRestIcon || icon.className;
+  }
 }
 
+async function confirmApproveAsWritten(name) {
+  const title = "Approve a placeholder as written?";
+  const content = `<p><strong>${escapeHtml(name)}</strong> is a generic placeholder, not a Skill the AI wrote from this character's deeds.</p><p>"Author with AI" writes real mechanics first. Approve it exactly as written anyway (it spends a grant allowance)?</p>`;
+  try {
+    const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
+    if (typeof DialogV2?.confirm === "function") return (await DialogV2.confirm({ window: { title }, content, rejectClose: false })) === true;
+    if (typeof Dialog?.confirm === "function") return (await Dialog.confirm({ title, content, yes: () => true, no: () => false, defaultYes: false })) === true;
+  } catch (error) {
+    console.warn(`${MODULE_ID} | approve-as-written confirmation failed`, error);
+  }
+  return false;
+}
+
+/**
+ * { level, message } for an error thrown by a Growth-dialog action -- pure, exported for tests. The
+ * API's per-actor lock throws an Error whose message starts "busy:"; that is not a failure, so it is
+ * a friendly warning rather than a red error toast.
+ */
+export function describeActionError(error) {
+  const raw = String(error?.message ?? error ?? "").trim();
+  if (/^busy:/i.test(raw)) {
+    const detail = raw.replace(/^busy:\s*/i, "").trim();
+    return { level: "warn", message: detail ? `Grand Design is still working on this character: ${detail} Try again when it finishes.` : BUSY_NOTICE };
+  }
+  return { level: "error", message: raw || "Grand Design could not complete that action." };
+}
+
+/**
+ * { level, message } for a retryMilestoneReward result. The API returns the proposal plus whether
+ * the template had to stand in again; accept a bare proposal too, since the shape is being settled
+ * in parallel (dev-integration).
+ */
+export function describeRetryResult(result) {
+  const proposal = result?.proposal ?? (result?.entry ? result : null);
+  const name = proposal?.entry?.name ?? "the milestone reward";
+  const fellBack = result?.usedFallback === true || proposal?.usedFallback === true;
+  if (fellBack) {
+    const reason = result?.reason ?? proposal?.fallbackReason;
+    return { level: "warn", message: `The AI still could not write ${name}${reason ? ` (${reason})` : ""}; the template stays. Edit it, or retry later.` };
+  }
+  return { level: "info", message: `The AI rewrote ${name}. Open its Details, then Approve.` };
+}
 /**
  * { level: "info"|"warn", message } for a requestGrowthProposals result -- pure, exported for tests.
  * `added` is accepted as a count or as the list of added proposals, so the notification stays right
@@ -321,56 +407,62 @@ export function statusBadge(config, lastRun, adapterAttached) {
   return { kind: "ai", text: `AI: ${model}`, title: `Notes are read by ${model} via ${provider}.` };
 }
 
-export function renderGrowthContent({ growth, progression, pending, lastAnalysis, lastResult, status, draftNotes = "", canSuggest = true }) {
+export function renderGrowthContent({
+  growth, progression, pending, lastAnalysis, lastResult, status, draftNotes = "",
+  canSuggest = true, canEdit = false, canRetry = false, aiAttached = true, busy = false
+}) {
   const events = Array.isArray(growth?.events) ? growth.events : [];
   pending = Array.isArray(pending) ? pending : [];
   const allowances = Math.max(0, Math.floor(Number(progression?.grantAllowances) || 0));
   // The stuck state found in the ember-road playtest: level-ups earned at rest, nothing to spend them on.
   const stuck = allowances > 0 && !pending.length;
   const hint = allowanceHint(progression, pending.length, canSuggest);
-  const options = pending.length
-    ? pending
-        .map((proposal) => {
-          const label = proposal.entry?.system_equivalent ?? `${proposal.kind ?? "entry"} proposal`;
-          const marker = proposal.needsAuthoring ? " ✎ (placeholder -- Author with AI)" : proposal.source === "emergent" ? " ✦" : "";
-          return `<option value="${escapeHtml(proposal.id)}">${escapeHtml(proposal.entry?.name ?? proposal.id)}${escapeHtml(marker)} — ${escapeHtml(label)}</option>`;
-        })
-        .join("")
-    : '<option value="">No pending proposals</option>';
-  const evidence = pending.length
-    ? pending.map((proposal) => renderProposal(proposal)).join("")
+  const eventsById = new Map(events.filter((event) => event?.id).map((event) => [event.id, event]));
+  const rowOptions = { canEdit, canRetry, aiAttached: aiAttached && status?.kind !== "local", busy, eventsById };
+  const rows = pending.length
+    ? pending.map((proposal) => renderProposal(proposal, rowOptions)).join("")
     : stuck && canSuggest
       ? "" // the callout below explains the empty list and offers the way out
       : "<li>No proposal has enough evidence yet.</li>";
-  const suggest = canSuggest ? renderSuggest({ stuck, allowances, status }) : "";
+  const suggest = canSuggest ? renderSuggest({ stuck, allowances, status, busy }) : "";
   const eventList = events.length
     ? events.slice(-40).reverse().map((event) => `<li class="gd-event-row">${renderEventLine(event)}</li>`).join("")
     : "<li>No recorded growth events.</li>";
   const hasLast = Boolean(lastAnalysis?.notes);
+  const button = (key, icon, label, extra = {}) => actionButton({ action: ACTIONS[key].action, icon, label, disabled: busy, title: busy ? BUSY_NOTICE : "", ...extra });
 
-  return `<form class="grand-design-growth">
+  return `<form class="grand-design-growth${busy ? " gd-busy" : ""}">
     <header class="gd-growth-header">
       <h3>Grand Design Level ${Number(progression?.level) || 0}/100</h3>
       <span class="gd-status gd-status-${escapeHtml(status?.kind)}" title="${escapeHtml(status?.title)}"><i class="fas ${status?.kind === "ai" ? "fa-brain" : status?.kind === "fallback" ? "fa-triangle-exclamation" : "fa-book"}"></i> ${escapeHtml(status?.text)}</span>
     </header>
+    ${busy ? `<p class="gd-busy-notice"><i class="fas fa-spinner fa-spin"></i> ${escapeHtml(BUSY_NOTICE)} This dialog refreshes by itself when it is done.</p>` : ""}
     <p><strong>${Math.floor(Number(progression?.progress) || 0)} progression</strong> toward the next level; <strong>${allowances}</strong> level-up grant allowance(s) available.</p>
     ${hint ? `<p class="gd-allowance-hint"><i class="fas fa-gift"></i> ${hint}</p>` : ""}
-    <div class="form-group"><label>Resolve progression at rest</label><select name="growth-rest-type"><option value="short">Short Rest</option><option value="long">Long Rest</option></select></div>
+    <div class="form-group gd-rest-row"><label>Resolve progression at rest</label><select name="growth-rest-type"><option value="short">Short Rest</option><option value="long">Long Rest</option></select>${button("rest", "fas fa-bed", "Resolve Rest")}</div>
     <hr>
     <div class="form-group stacked"><label>Session Notes</label><textarea name="growth-notes" rows="8" placeholder="Write however you like — any language, bullet points, shorthand, typos are fine.&#10;- Kesh parried the captain, nat 20!&#10;- Mira kept the bees calm and harvested honey&#10;- Torv tried to pick the lock, it broke">${escapeHtml(draftNotes ?? "")}</textarea></div>
-    <p class="gd-hint">Successes and honest failed attempts both count. Things the tag list doesn't cover (beekeeping, gambling, map-making...) become <em>themes</em> and can grow into brand-new Skills. Approval is always yours.${hasLast ? ` Last notes analyzed ${escapeHtml(formatWhen(lastAnalysis.at))} — use <strong>Re-analyze</strong> to read them again.` : ""}</p>
+    <div class="gd-action-row">${button("analyze", "fas fa-wand-magic-sparkles", "Analyze", { variant: "gd-primary" })}${hasLast ? button("reanalyze", "fas fa-rotate", "Re-analyze last notes") : ""}</div>
+    <p class="gd-hint">Successes and honest failed attempts both count. Things the tag list doesn't cover (beekeeping, gambling, map-making...) become <em>themes</em> and can grow into brand-new Skills. Approval is always yours.${hasLast ? ` Last notes analyzed ${escapeHtml(formatWhen(lastAnalysis.at))} — use <strong>Re-analyze</strong> to read them again (the previous reading is replaced, not added to).` : ""}</p>
     ${renderInterpretation(events, lastAnalysis, lastResult)}
-    <hr><h3>Pending Proposals</h3>${stuck ? suggest : ""}<select name="growth-proposal">${options}</select>${evidence ? `<ul class="gd-proposals">${evidence}</ul>` : ""}${stuck ? "" : suggest}
+    <hr><h3>Pending Proposals</h3>${stuck ? suggest : ""}${rows ? `<ul class="gd-proposals">${rows}</ul>` : ""}${stuck ? "" : suggest}
     <hr><details class="gd-history"><summary>Recorded Evidence (${events.length})</summary><ul>${eventList}</ul></details>
   </form>`;
 }
 
+/** A body button (type="button": it must never submit the dialog form). */
+function actionButton({ action, icon, label, id = null, variant = "", disabled = false, title = "", aria = "" }) {
+  const idAttr = id !== null && id !== undefined ? ` data-proposal-id="${escapeHtml(id)}"` : "";
+  return `<button type="button" class="gd-action${variant ? ` ${variant}` : ""}" data-action="${action}"${idAttr} aria-busy="false"${disabled ? " disabled" : ""}${title ? ` title="${escapeHtml(title)}"` : ""}${aria ? ` aria-label="${escapeHtml(aria)}"` : ""}><i class="${icon}"></i> <span class="gd-btn-label">${escapeHtml(label)}</span></button>`;
+}
+
 // Prominent call-to-action when allowances wait with nothing to spend them on; otherwise a small
 // secondary button under the list (more ideas are still useful when the pending list is stale).
-function renderSuggest({ stuck, allowances, status }) {
+function renderSuggest({ stuck, allowances, status, busy = false }) {
   // With no AI attached the button would only throw "no provider": disable it and say why instead.
   const noProvider = status?.kind === "local";
-  const button = (variant) => `<button type="button" class="gd-suggest ${variant}" data-action="gd-suggest-proposals" aria-busy="false"${noProvider ? ` disabled title="${escapeHtml(NO_PROVIDER_TITLE)}"` : ""}><i class="fas fa-lightbulb"></i> <span class="gd-suggest-label">${SUGGEST_LABEL}</span></button>`;
+  const disabled = noProvider ? ` disabled title="${escapeHtml(NO_PROVIDER_TITLE)}"` : busy ? ` disabled title="${escapeHtml(BUSY_NOTICE)}"` : "";
+  const button = (variant) => `<button type="button" class="gd-suggest ${variant}" data-action="gd-suggest-proposals" aria-busy="false"${disabled}><i class="fas fa-lightbulb"></i> <span class="gd-suggest-label">${SUGGEST_LABEL}</span></button>`;
   const needsProvider = noProvider
     ? ' It needs an AI provider (set one in <a data-gd-open-gateway="1"><em>Grand Design AI Gateway</em></a> settings).'
     : "";
@@ -379,7 +471,6 @@ function renderSuggest({ stuck, allowances, status }) {
   }
   return `<p class="gd-suggest-secondary">${button("gd-suggest-quiet")} <span class="gd-hint">Ask the AI for more proposals from the recorded evidence.${needsProvider}</span></p>`;
 }
-
 function renderInterpretation(events, lastAnalysis, lastResult) {
   const ids = new Set(Array.isArray(lastAnalysis?.eventIds) ? lastAnalysis.eventIds : []);
   const interpreted = lastResult?.events?.length ? lastResult.events : events.filter((event) => ids.has(event?.id));
@@ -410,10 +501,35 @@ export function renderEventLine(event, newThemes = new Set(), withQuote = false)
     <span class="gd-chips">${tags}${themes || (!tags ? '<span class="gd-chip">untagged</span>' : "")}</span>${quote}`;
 }
 
-// Exported so a test can check the Reject button's presence directly against a proposal's status,
-// not just indirectly through renderGrowthContent's own pending-only filtering.
-export function renderProposal(proposal) {
-  const effect = proposal.entry?.mechanics?.effect ?? "(no effect text on this proposal)";
+
+/**
+ * A milestone reward (capstone Skill or milestone Class evolution) that the built-in template wrote
+ * instead of the AI -- the ones "Retry with AI" re-asks (board b375d56c). An AI-written milestone
+ * keeps source "capstone"/"class-evolution" but carries authoredBy "ai-gateway".
+ */
+export function isTemplateMilestone(proposal) {
+  if (!proposal || typeof proposal !== "object") return false;
+  const milestone = proposal.isCapstone === true || proposal.source === "capstone" || proposal.source === "class-evolution"
+    || (proposal.kind === "class" && proposal.milestoneLevel !== undefined && proposal.milestoneLevel !== null);
+  if (!milestone) return false;
+  if (proposal.usedFallback === true) return true;
+  return proposal.source !== "ai-gateway" && proposal.authoredBy !== "ai-gateway";
+}
+
+// "Author with AI" rewrites anything the AI did not write itself: a placeholder, a tag template, an
+// emergent-theme knack. An AI-authored proposal is edited (or rejected) instead.
+function canBeAuthored(proposal) {
+  if (proposal.needsAuthoring) return true;
+  return proposal.source !== "ai-gateway" && proposal.authoredBy !== "ai-gateway";
+}
+
+// Exported so tests can check each control directly against a proposal's status/shape, not just
+// indirectly through renderGrowthContent's own pending-only filtering.
+export function renderProposal(proposal, { canEdit = false, canRetry = false, aiAttached = true, busy = false, eventsById = new Map() } = {}) {
+  proposal = proposal && typeof proposal === "object" ? proposal : {};
+  const entry = proposal.entry && typeof proposal.entry === "object" ? proposal.entry : {};
+  const name = entry.name ?? proposal.id ?? "(unnamed proposal)";
+  const effect = entry.mechanics?.effect ?? "(no effect text on this proposal)";
   const cited = Array.isArray(proposal.evidence) && proposal.evidence.length ? `${proposal.evidence.length} event(s)` : "none cited";
   // A milestone reward that fell back to the built-in template keeps its source ("capstone" /
   // "class-evolution"); `usedFallback` (when the API sets it) is what says the AI did not write it.
@@ -427,13 +543,232 @@ export function renderProposal(proposal) {
         : proposal.source === "class-evolution"
           ? `<span class="gd-chip gd-class">class evolution</span>${fallback}`
           : '<span class="gd-chip">template</span>';
+  const kind = proposal.kind === "class" ? '<span class="gd-chip gd-kind">Class</span>' : '<span class="gd-chip gd-kind">Skill</span>';
+  const red = entry.metadata?.polarity === "red" ? ` <span class="gd-chip gd-red" title="Red (taboo) entry: it carries a real cost.">red${entry.metadata?.malignance?.vice ? `: ${escapeHtml(entry.metadata.malignance.vice)}` : ""}</span>` : "";
   const authoring = proposal.needsAuthoring ? ' <em class="gd-needs-authoring">placeholder — "Author with AI" writes real mechanics</em>' : "";
-  // Approve happens through the footer button + the <select> above; Reject sits right on the
-  // proposal it acts on since there is one of these per pending item, not one global target.
-  const reject = proposal.status === "pending"
-    ? ` <button type="button" class="gd-reject" data-action="gd-reject-proposal" data-proposal-id="${escapeHtml(proposal.id)}" aria-busy="false" title="Reject this proposal"><i class="fas fa-ban"></i> Reject</button>`
-    : "";
-  return `<li><strong>${escapeHtml(proposal.entry?.name ?? proposal.id)}</strong> ${badge}${authoring}${reject}<br>${escapeHtml(effect)} <em>Evidence: ${escapeHtml(cited)}</em></li>`;
+  const actions = proposal.status === "pending" ? renderProposalActions(proposal, { canRetry, aiAttached, busy }) : "";
+  const details = renderProposalDetails(proposal, eventsById);
+  const edit = canEdit && proposal.status === "pending" ? renderEditForm(proposal, { busy }) : "";
+  return `<li class="gd-proposal" data-proposal-id="${escapeHtml(proposal.id)}">
+    <div class="gd-proposal-head"><strong>${escapeHtml(name)}</strong> ${kind} ${badge}${red}${authoring}</div>
+    <div class="gd-proposal-effect">${escapeHtml(effect)} <em>Evidence: ${escapeHtml(cited)}</em></div>
+    ${actions ? `<div class="gd-proposal-actions">${actions}</div>` : ""}
+    ${details}${edit}
+  </li>`;
+}
+
+function renderProposalActions(proposal, { canRetry, aiAttached, busy }) {
+  const id = proposal.id;
+  const lock = (needsAi) => ({
+    disabled: busy || (needsAi && !aiAttached),
+    title: busy ? BUSY_NOTICE : needsAi && !aiAttached ? NO_PROVIDER_TITLE : ""
+  });
+  const buttons = [];
+  const retryable = isTemplateMilestone(proposal) && canRetry;
+  if (proposal.needsAuthoring) {
+    // Board 283ad7ca: approveProposal refuses a placeholder unless confirm: true, so a placeholder
+    // row offers the two honest choices instead of an Approve that would only throw.
+    buttons.push(actionButton({ action: ACTIONS.author.action, icon: "fas fa-feather-pointed", label: "Author with AI", id, variant: "gd-primary", ...lock(true) }));
+    buttons.push(actionButton({ action: ACTIONS.approveAsWritten.action, icon: "fas fa-check-double", label: "Approve as written", id, ...lock(false), title: busy ? BUSY_NOTICE : "Approve this generic placeholder exactly as it reads (asks you to confirm)." }));
+  } else {
+    buttons.push(actionButton({ action: ACTIONS.approve.action, icon: "fas fa-check", label: "Approve", id, variant: "gd-primary", ...lock(false) }));
+    if (retryable) {
+      buttons.push(actionButton({ action: ACTIONS.retry.action, icon: "fas fa-rotate-right", label: "Retry with AI", id, ...lock(true), title: busy ? BUSY_NOTICE : !aiAttached ? NO_PROVIDER_TITLE : "The built-in template stood in for the AI here. Ask the AI to write this milestone reward again." }));
+    } else if (canBeAuthored(proposal)) {
+      buttons.push(actionButton({ action: ACTIONS.author.action, icon: "fas fa-feather-pointed", label: "Author with AI", id, ...lock(true) }));
+    }
+  }
+  buttons.push(actionButton({ action: ACTIONS.reject.action, icon: "fas fa-ban", label: "Reject", id, variant: "gd-reject", ...lock(false), title: busy ? BUSY_NOTICE : "Reject this proposal" }));
+  return buttons.join(" ");
+}
+
+const SOURCE_LABELS = {
+  "ai-gateway": "Written by the AI",
+  emergent: "Emergent theme",
+  template: "Built-in tag template",
+  capstone: "Milestone capstone",
+  "class-evolution": "Milestone Class evolution"
+};
+
+/** The full proposal, read-only, in a collapsed <details>. Exported for tests. */
+export function renderProposalDetails(proposal, eventsById = new Map()) {
+  const entry = proposal?.entry && typeof proposal.entry === "object" ? proposal.entry : {};
+  const mechanics = entry.mechanics && typeof entry.mechanics === "object" ? entry.mechanics : {};
+  const metadata = entry.metadata && typeof entry.metadata === "object" ? entry.metadata : {};
+  const rows = [];
+  const row = (label, value) => {
+    if (value === undefined || value === null || value === "" || (Array.isArray(value) && !value.length)) return;
+    rows.push(`<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(Array.isArray(value) ? value.join(", ") : String(value))}</dd>`);
+  };
+  row("Kind", proposal?.kind === "class" ? "Class" : "Skill");
+  const source = SOURCE_LABELS[proposal?.source] ?? proposal?.source;
+  row("Source", proposal?.authoredBy === "ai-gateway" && proposal?.source !== "ai-gateway" ? `${source} (written by the AI)` : proposal?.usedFallback ? `${source} (built-in template: the AI could not write it)` : source);
+  row("Fallback reason", proposal?.fallbackReason);
+  row("Milestone level", proposal?.milestoneLevel);
+  if (proposal?.kind === "class") {
+    row("Class level", entry.level);
+    row("Power tier", entry.power_tier);
+    row("System chassis", entry.system_chassis);
+    row("Primary / secondary", entry.is_primary ? "primary" : entry.is_secondary ? "secondary" : undefined);
+  } else {
+    row("Tier", entry.tier);
+    row("System equivalent", entry.system_equivalent);
+  }
+  row("Item kind", entry.gameItem?.kind);
+  row("Actions", mechanics.actions);
+  row("Trigger", mechanics.trigger);
+  row("Requirements", mechanics.requirements);
+  row("Frequency", describeFrequency(mechanics.frequency));
+  row("Duration", mechanics.duration);
+  row("Roll", describeRoll(mechanics.roll));
+  row("Effect", mechanics.effect);
+  row("Tags", Array.isArray(metadata.tags) ? metadata.tags : undefined);
+  row("Themes", Array.isArray(metadata.themes) ? metadata.themes : undefined);
+  if (metadata.polarity === "red") {
+    row("Polarity", "red (taboo)");
+    row("Vice", metadata.malignance?.vice);
+    row("Drawback", metadata.malignance?.drawback);
+  }
+  row("Rationale", metadata.lineage?.rationale || proposal?.rationale);
+  const cited = Array.isArray(proposal?.evidence) ? proposal.evidence : [];
+  const evidence = cited.slice(0, 8).map((id) => {
+    const event = eventsById?.get?.(id);
+    return `<li>${event ? `${event.actorName ? `<span class="gd-who">${escapeHtml(event.actorName)}:</span> ` : ""}${escapeHtml(event.summary ?? id)}` : `<code>${escapeHtml(id)}</code>`}</li>`;
+  }).join("");
+  const more = cited.length > 8 ? `<li><em>...and ${cited.length - 8} more</em></li>` : "";
+  return `<details class="gd-proposal-details"><summary><i class="fas fa-circle-info"></i> Details</summary>
+      <dl>${rows.join("")}</dl>${evidence ? `<h4>Evidence</h4><ul class="gd-proposal-evidence">${evidence}${more}</ul>` : ""}
+    </details>`;
+}
+
+function describeFrequency(frequency) {
+  if (!frequency || typeof frequency !== "object") return typeof frequency === "string" ? frequency : undefined;
+  if (frequency.max === undefined && !frequency.per) return undefined;
+  return `${frequency.max ?? 1} per ${frequency.per ?? "?"}`;
+}
+
+function describeRoll(roll) {
+  if (!roll || typeof roll !== "object") return undefined;
+  const parts = [roll.kind, roll.formula, roll.dc !== undefined && roll.dc !== null && roll.dc !== "" ? `DC ${roll.dc}` : ""].filter(Boolean);
+  return parts.length ? parts.join(" ") : undefined;
+}
+
+// The GM-editable fields. Kept to what a GM tweaks at the table; anything else on the entry is
+// carried over untouched by buildProposalPatch.
+const SKILL_TIERS = ["1", "2", "3"];
+const POWER_TIERS = ["standard", "elevated", "prestige"];
+
+function renderEditForm(proposal, { busy = false } = {}) {
+  const entry = proposal.entry && typeof proposal.entry === "object" ? proposal.entry : {};
+  const mechanics = entry.mechanics ?? {};
+  const isClass = proposal.kind === "class";
+  const field = (label, name, value, { type = "text", attrs = "" } = {}) =>
+    `<div class="form-group"><label>${escapeHtml(label)}</label><input type="${type}" data-field="${name}" value="${escapeHtml(value ?? "")}"${attrs}></div>`;
+  const select = (label, name, options, value) =>
+    `<div class="form-group"><label>${escapeHtml(label)}</label><select data-field="${name}">${options.map((option) => `<option value="${escapeHtml(option)}"${String(value) === option ? " selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select></div>`;
+  const kindFields = isClass
+    ? `${field("Class level", "level", entry.level, { type: "number", attrs: ' min="1" max="20" step="1"' })}${select("Power tier", "power_tier", POWER_TIERS, entry.power_tier ?? "standard")}${field("System chassis", "system_chassis", entry.system_chassis)}`
+    : `${select("Tier", "tier", SKILL_TIERS, entry.tier ?? 1)}${field("System equivalent", "system_equivalent", entry.system_equivalent)}`;
+  return `<details class="gd-proposal-edit"><summary><i class="fas fa-pen"></i> Edit</summary>
+      <div class="gd-edit-form" data-proposal-id="${escapeHtml(proposal.id)}">
+        ${field("Name", "name", entry.name)}
+        ${kindFields}
+        ${field("Actions", "actions", mechanics.actions, { type: "number", attrs: ' min="0" max="3" step="1" placeholder="none"' })}
+        ${field("Trigger", "trigger", mechanics.trigger, { attrs: ' placeholder="only for reactions"' })}
+        ${field("Duration", "duration", mechanics.duration)}
+        <div class="form-group stacked"><label>Effect</label><textarea data-field="effect" rows="3">${escapeHtml(mechanics.effect ?? "")}</textarea></div>
+        ${field("Tags (comma separated)", "tags", Array.isArray(entry.metadata?.tags) ? entry.metadata.tags.join(", ") : "")}
+        <div class="form-group stacked"><label>Rationale</label><textarea data-field="rationale" rows="2">${escapeHtml(entry.metadata?.lineage?.rationale ?? "")}</textarea></div>
+        <div class="gd-edit-errors" role="alert"></div>
+        ${actionButton({ action: ACTIONS.save.action, icon: "fas fa-floppy-disk", label: "Save changes", id: proposal.id, variant: "gd-primary", disabled: busy, title: busy ? BUSY_NOTICE : "Checked by the same validator as AI proposals; stays pending until you Approve." })}
+      </div>
+    </details>`;
+}
+
+/** { field: value } from an edit form's [data-field] inputs. Exported for tests (fake elements). */
+export function readEditFields(form) {
+  const fields = {};
+  const nodes = form?.querySelectorAll?.("[data-field]") ?? [];
+  for (const node of nodes) {
+    const key = node?.dataset?.field ?? node?.getAttribute?.("data-field");
+    if (key) fields[key] = String(node.value ?? "");
+  }
+  return fields;
+}
+
+/**
+ * The patch sent to api.updateProposal(actor, id, patch): `{ entry }`, the WHOLE edited entry (the
+ * original deep-copied, the edited fields applied), so a shallow or a deep merge on the API side
+ * gives the same result and nothing the form does not show (gameItem, roll, lineage sources,
+ * malignance...) is lost. Fields absent from `fields` are left alone; an emptied optional field is
+ * removed. Only the obvious mistakes are caught here -- the API runs validator.js on the result.
+ * Pure, exported for tests.
+ */
+export function buildProposalPatch(proposal, fields = {}) {
+  const errors = [];
+  const entry = structuredClone(proposal?.entry && typeof proposal.entry === "object" ? proposal.entry : {});
+  entry.mechanics = entry.mechanics && typeof entry.mechanics === "object" ? entry.mechanics : {};
+  entry.metadata = entry.metadata && typeof entry.metadata === "object" ? entry.metadata : {};
+  const has = (key) => Object.hasOwn(fields, key);
+  const text = (key) => String(fields[key] ?? "").trim();
+  const optional = (target, key, value) => {
+    if (value === "") delete target[key];
+    else target[key] = value;
+  };
+
+  if (has("name")) {
+    if (!text("name")) errors.push("A name is required.");
+    else entry.name = text("name").slice(0, 120);
+  }
+  if (has("effect")) {
+    if (!text("effect")) errors.push("The effect cannot be empty: say what it does at the table.");
+    else entry.mechanics.effect = text("effect");
+  }
+  if (proposal?.kind === "class") {
+    if (has("level")) {
+      const level = Number(text("level"));
+      if (!Number.isInteger(level) || level < 1) errors.push("Class level must be a whole number of 1 or more.");
+      else entry.level = level;
+    }
+    if (has("power_tier")) {
+      if (!POWER_TIERS.includes(text("power_tier"))) errors.push(`Power tier must be one of: ${POWER_TIERS.join(", ")}.`);
+      else entry.power_tier = text("power_tier");
+    }
+    if (has("system_chassis")) optional(entry, "system_chassis", text("system_chassis"));
+  } else {
+    if (has("tier")) {
+      const tier = Number(text("tier"));
+      if (![1, 2, 3].includes(tier)) errors.push("Tier must be 1, 2 or 3.");
+      else if (proposal?.isCapstone && tier !== 3) errors.push("A capstone is always tier 3.");
+      else entry.tier = tier;
+    }
+    if (has("system_equivalent")) optional(entry, "system_equivalent", text("system_equivalent"));
+  }
+  if (has("actions")) {
+    if (text("actions") === "") delete entry.mechanics.actions;
+    else {
+      const actions = Number(text("actions"));
+      if (!Number.isInteger(actions) || actions < 0 || actions > 3) errors.push("Actions must be 0-3, or empty for none.");
+      else entry.mechanics.actions = actions;
+    }
+  }
+  if (has("trigger")) optional(entry.mechanics, "trigger", text("trigger"));
+  if (has("duration")) optional(entry.mechanics, "duration", text("duration"));
+  if (has("tags")) {
+    entry.metadata.tags = [...new Set(text("tags").split(/[,;\n]/).map((tag) => tag.trim()).filter(Boolean))];
+  }
+  if (has("rationale")) {
+    entry.metadata.lineage = entry.metadata.lineage && typeof entry.metadata.lineage === "object"
+      ? entry.metadata.lineage
+      : { operation: "origin", sources: [], rationale: "" };
+    entry.metadata.lineage.rationale = text("rationale");
+  }
+  return { patch: { entry }, errors };
+}
+
+function renderEditErrors(errors) {
+  const list = (Array.isArray(errors) ? errors : [errors]).map((error) => `<li>${escapeHtml(typeof error === "string" ? error : error?.message ?? JSON.stringify(error))}</li>`).join("");
+  return `<p><i class="fas fa-triangle-exclamation"></i> Not saved:</p><ul>${list}</ul>`;
 }
 
 export function renderUnderTheHood(lastAnalysis, lastResult) {

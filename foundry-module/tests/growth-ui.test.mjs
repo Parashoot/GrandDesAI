@@ -36,9 +36,11 @@ test("stuck state (allowances, nothing pending): callout with a prominent Sugges
   assert.doesNotMatch(html, /No proposal has enough evidence yet\.<\/li>/);
   assert.match(html, /3 grant allowances are waiting/);
   assert.match(html, /class="gd-allowance-hint"[^]*3 grant allowances to spend, but no proposals yet -- use <strong>Suggest proposals<\/strong> below\./);
-  // The callout sits under the Pending Proposals heading, before the (empty) select.
+  // The callout sits under the Pending Proposals heading, before the recorded evidence. (The old
+  // Approve <select> is gone: every proposal row has its own Approve, board a0bcfd05.)
   assert.ok(html.indexOf("gd-suggest-callout") > html.indexOf("<h3>Pending Proposals</h3>"));
-  assert.ok(html.indexOf("gd-suggest-callout") < html.indexOf('name="growth-proposal"'));
+  assert.ok(html.indexOf("gd-suggest-callout") < html.indexOf('class="gd-history"'));
+  assert.doesNotMatch(html, /name="growth-proposal"/);
 });
 
 test("allowances with pending proposals: hint says approving spends one, Suggest is the quiet variant", () => {

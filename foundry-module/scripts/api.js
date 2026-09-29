@@ -34,6 +34,7 @@ import {
   generateCapstoneProposal,
   generateClassEvolutionProposal,
   growthFlags,
+  isCapstoneLevel,
   normalizeGrowthEvent,
   canApproveGeneratedProposal,
   progressionForEvent,
@@ -44,7 +45,9 @@ import {
 } from "./progression.js";
 import { attributeEventsToActor, classifyActorName, explainSessionNotes, proposalCitesOnlyOthers, validateAdapterEvents } from "./session-notes.js";
 import { createAiGatewayAdapter, createGatewayAdapter } from "./ai-gateway.js";
-import { pendingProposalCap } from "./ai/gateway-config.js";
+import { normalizeGatewayConfig, pendingProposalCap } from "./ai/gateway-config.js";
+import { characterDc, characterLevel, checkModifier, resolveRollCheck } from "./mechanics.js";
+import { namingClassFor } from "./naming.js";
 import {
   applyThemeMap,
   generateEmergentProposals,
@@ -80,6 +83,59 @@ export class GrandDesignApi {
         themeState = next;
       }
     };
+    // Board 78ead05c: actor -> the long task running on it ("analyze", "rest", ...). Keyed by the
+    // actor's uuid when it has one (the same Foundry actor reached from two sheets), else by the
+    // object itself (plain test/harness actors).
+    this._busyActors = new Map();
+  }
+
+  /** True while a long Grand Design task (analyze, re-analyze, author, suggest, approve, rest...) runs on this actor. */
+  isBusy(actor) {
+    return this._busyActors.has(busyKey(actor));
+  }
+
+  /** The label of the task running on this actor ("analyze", "rest", ...), or null. */
+  getBusyTask(actor) {
+    return this._busyActors.get(busyKey(actor)) ?? null;
+  }
+
+  // One long task per actor. A second one (a double click on "Analyze" while the first is still
+  // waiting on the AI) is refused with an Error whose message starts "busy:" instead of running
+  // twice: two analyses of the same notes double-recorded events and progress, and any write made
+  // while an analysis was in flight was overwritten when the analysis saved its own snapshot.
+  async _withActorLock(actor, label, fn) {
+    const key = busyKey(actor);
+    const running = this._busyActors.get(key);
+    if (running) {
+      throw new Error(`busy: ${actor?.name ?? "This character"} is still running "${running}"; wait for it to finish before "${label}".`);
+    }
+    this._busyActors.set(key, label);
+    globalThis.Hooks?.callAll?.("grand-design-ai.busyChanged", actor, true, label);
+    try {
+      return await fn();
+    } finally {
+      this._busyActors.delete(key);
+      globalThis.Hooks?.callAll?.("grand-design-ai.busyChanged", actor, false, label);
+    }
+  }
+
+  // Every AI call made on the GM's behalf gets an overall deadline on top of the transport's
+  // per-request timeout: a pipeline of many requests (chunks, repairs, retries) could otherwise keep
+  // the actor busy for a very long time. On expiry the caller's usual fallback runs with the reason
+  // (the local analyzer for notes, the template for a milestone). The late answer is ignored.
+  async _callAdapterWithDeadline(call, what) {
+    const ms = aiDeadlineMs(this.getGatewayConfig());
+    let timer = null;
+    const deadline = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`the AI ${what} did not finish within its ${formatDuration(ms)} overall deadline`)), ms);
+    });
+    const work = Promise.resolve().then(call);
+    work.catch(() => {}); // a late failure after the deadline must not surface as an unhandled rejection
+    try {
+      return await Promise.race([work, deadline]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   validate(payload) {
@@ -163,7 +219,7 @@ export class GrandDesignApi {
    * hard block, the same on-cadence check progression.js#canApproveGeneratedProposal already
    * enforces (as an outright block) for AI-generated Class proposals.
    */
-  buildClassMergePreview(actor, { sourceIds, level, gameItem, mechanics, tags, rationale, systemChassis, intentional, polarity, malignance }) {
+  buildClassMergePreview(actor, { sourceIds, level, gameItem, mechanics, tags, rationale, systemChassis, intentional, polarity, malignance, name }) {
     const registry = this.getActorRegistry(actor);
     if (!Array.isArray(sourceIds) || sourceIds.length < 2) {
       throw new Error("Merging a Class requires at least two sourceIds.");
@@ -174,7 +230,13 @@ export class GrandDesignApi {
       return source;
     });
     const actorLevel = this.getLevelProgression(actor).level;
-    return mergeClassEntry({ sourceClasses, level, gameItem, mechanics, tags, rationale, systemChassis, intentional, polarity, malignance, actorLevel });
+    // existingIds/existingNames: class-merging.js keeps a merged name from colliding with a Class
+    // the actor already has.
+    return mergeClassEntry({
+      sourceClasses, level, gameItem, mechanics, tags, rationale, systemChassis, intentional, polarity, malignance, actorLevel, name,
+      existingIds: registry.classes ?? {},
+      existingNames: Object.values(registry.classes ?? {}).map((entry) => entry?.name).filter(Boolean)
+    });
   }
 
   /**
@@ -233,8 +295,20 @@ export class GrandDesignApi {
       rationale,
       systemEquivalent,
       polarity,
-      malignance
+      malignance,
+      // skill-evolution.js keeps the evolved name from colliding with a Skill the actor already has.
+      existingIds: registry.skills ?? {},
+      existingNames: Object.values(registry.skills ?? {}).map((entry) => entry?.name).filter(Boolean)
     });
+  }
+
+  // Ids of every combination any of these participants has cast, so a new one never reuses one.
+  _existingCombinationIds(participants) {
+    const ids = new Set();
+    for (const participant of Array.isArray(participants) ? participants : []) {
+      for (const entry of this.getCombinations(participant?.actor)) if (entry?.id) ids.add(entry.id);
+    }
+    return [...ids];
   }
 
   getCombinations(actor) {
@@ -256,7 +330,8 @@ export class GrandDesignApi {
       duration,
       rationale,
       polarity,
-      malignance
+      malignance,
+      existingIds: this._existingCombinationIds(participants)
     });
   }
 
@@ -280,7 +355,9 @@ export class GrandDesignApi {
   async castCombinationSkill(participants, { effect, duration, rationale, polarity, malignance, id, recordGrowth = true, outcome, dangerGap } = {}) {
     this._assertGm();
     const contributions = this._resolveCombinationContributions(participants);
-    const combination = buildCombinationSkill({ contributions, id, effect, duration, rationale, polarity, malignance });
+    const combination = buildCombinationSkill({
+      contributions, id, effect, duration, rationale, polarity, malignance, existingIds: this._existingCombinationIds(participants)
+    });
 
     const items = [];
     for (const contribution of contributions) {
@@ -694,12 +771,15 @@ export class GrandDesignApi {
     return themeMapFromState(this._emergentThemeStore.get());
   }
 
-  async _observeThemes(events, { countExisting = true } = {}) {
+  async _observeThemes(events, { countExisting = true, actor = null } = {}) {
     if (!this._emergentEnabled()) return [];
     const withThemes = events.filter((event) => Array.isArray(event?.themes) && event.themes.length);
     if (!withThemes.length) return [];
     try {
-      const { state, newlySeen } = observeThemes(this._emergentThemeStore.get(), withThemes, new Date().toISOString(), { countExisting });
+      const { state, newlySeen } = observeThemes(this._emergentThemeStore.get(), withThemes, new Date().toISOString(), {
+        countExisting,
+        ...(actor?.id ? { actorId: actor.id } : {})
+      });
       await this._emergentThemeStore.set(state);
       return newlySeen;
     } catch (error) {
@@ -725,7 +805,13 @@ export class GrandDesignApi {
    * The invariant is unchanged: any adapter failure -> local analysis with a stated reason; the GM's
    * notes are never lost.
    */
-  async analyzeSessionNotes(actor, notes, { replaceEventIds = [], fresh = false } = {}) {
+  async analyzeSessionNotes(actor, notes, options = {}) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "analyze", () => this._analyzeSessionNotes(actor, notes, options));
+  }
+
+  async _analyzeSessionNotes(actor, notes, { replaceEventIds = [], fresh = false } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
     if (typeof notes !== "string" || !notes.trim()) {
@@ -744,7 +830,11 @@ export class GrandDesignApi {
       try {
         // `fresh`: skip the gateway's shared reading of these notes (one reading serves the whole
         // party; see pipeline.js#createExtractionCache) -- a GM who asks to re-analyze wants a new one.
-        adapterOutput = await this._proposalAdapter({ actor, notes, systemId: game.system?.id, ...(fresh ? { fresh: true } : {}) });
+        const adapter = this._proposalAdapter;
+        adapterOutput = await this._callAdapterWithDeadline(
+          () => adapter({ actor, notes, systemId: game.system?.id, ...(fresh ? { fresh: true } : {}) }),
+          "analysis"
+        );
         adapterEvents = validateAdapterEvents(adapterOutput);
       } catch (error) {
         adapterError = error;
@@ -779,7 +869,7 @@ export class GrandDesignApi {
       eventProposals = result.proposals;
     }
     // A re-analysis of the same notes registers any newly noticed theme but does not re-count old ones.
-    const newlySeenThemes = await this._observeThemes(recorded, { countExisting: !replaceEventIds.length });
+    const newlySeenThemes = await this._observeThemes(recorded, { countExisting: !replaceEventIds.length, actor });
 
     const { accepted: validProposals, skipped: invalidProposals } = usedAdapter
       ? this._validateModelProposals(adapterOutput?.proposals ?? [], actor, { customSynonyms: config.customSynonyms })
@@ -869,14 +959,17 @@ export class GrandDesignApi {
   async reanalyzeLastNotes(actor, { replace = true } = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
-    const last = this.getLastAnalysis(actor);
-    if (!last?.notes) throw new Error(`No previous session notes are stored for ${actor.name ?? "this actor"}.`);
-    if (replace && Array.isArray(last.proposalIds) && last.proposalIds.length) {
-      const stale = new Set(last.proposalIds);
-      const proposals = this.getGrowth(actor).proposals.filter((proposal) => !(stale.has(proposal.id) && proposal.status === "pending"));
-      await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
-    }
-    return this.analyzeSessionNotes(actor, last.notes, { replaceEventIds: replace ? last.eventIds ?? [] : [], fresh: true });
+    return this._withActorLock(actor, "re-analyze", async () => {
+      const last = this.getLastAnalysis(actor);
+      if (!last?.notes) throw new Error(`No previous session notes are stored for ${actor.name ?? "this actor"}.`);
+      if (replace && Array.isArray(last.proposalIds) && last.proposalIds.length) {
+        const stale = new Set(last.proposalIds);
+        // A proposal the GM edited is theirs now; a re-analysis does not throw it away.
+        const proposals = this.getGrowth(actor).proposals.filter((proposal) => !(stale.has(proposal.id) && proposal.status === "pending" && !proposal.editedAt));
+        await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+      }
+      return this._analyzeSessionNotes(actor, last.notes, { replaceEventIds: replace ? last.eventIds ?? [] : [], fresh: true });
+    });
   }
 
   async _removeRecordedEvents(actor, eventIds) {
@@ -888,8 +981,12 @@ export class GrandDesignApi {
     const levelProgression = this.getLevelProgression(actor);
     const lostProgress = removed.reduce((sum, event) => sum + progressionForEvent(event), 0);
     // A pending proposal whose every cited event was just removed no longer has any evidence behind it.
+    // Except a milestone reward (guaranteed by the level, not by the evidence: dropping it stranded
+    // the capstone allowance, board b375d56c) and a proposal the GM edited.
     const proposals = growth.proposals.filter((proposal) =>
       proposal.status !== "pending"
+      || isMilestoneProposal(proposal)
+      || proposal.editedAt
       || !Array.isArray(proposal.evidence)
       || !proposal.evidence.length
       || proposal.evidence.some((id) => !remove.has(id))
@@ -982,6 +1079,10 @@ export class GrandDesignApi {
   async requestProposalAuthoring(actor, proposalId) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
+    return this._withActorLock(actor, "author", () => this._requestProposalAuthoring(actor, proposalId));
+  }
+
+  async _requestProposalAuthoring(actor, proposalId) {
     if (!this._proposalAdapter) throw new Error("Authoring a proposal needs a configured AI provider (Grand Design AI Gateway settings).");
     const growth = this.getGrowth(actor);
     const proposal = growth.proposals.find((candidate) => candidate.id === proposalId && candidate.status === "pending");
@@ -995,12 +1096,11 @@ export class GrandDesignApi {
     const wantedKind = proposal.kind ?? "skill";
     const hasAuthorEntry = typeof this._proposalAdapter.authorProposal === "function";
     let output;
+    const adapter = this._proposalAdapter;
     try {
-      if (hasAuthorEntry) {
-        output = await this._proposalAdapter.authorProposal({ actor, proposal, events: evidenceEvents, theme, label, systemId: game.system?.id });
-      } else {
-        output = await this._proposalAdapter({ actor, notes: buildAuthoringNotes(actor, label, theme, evidenceEvents), systemId: game.system?.id });
-      }
+      output = await this._callAdapterWithDeadline(() => (hasAuthorEntry
+        ? adapter.authorProposal({ actor, proposal, events: evidenceEvents, theme, label, systemId: game.system?.id })
+        : adapter({ actor, notes: buildAuthoringNotes(actor, label, theme, evidenceEvents), systemId: game.system?.id })), "authoring");
     } catch (error) {
       // The placeholder stays exactly as it was; the GM is told why.
       throw new Error(`The AI provider failed while authoring "${label}" (the placeholder is unchanged): ${error.message}`);
@@ -1059,6 +1159,10 @@ export class GrandDesignApi {
   async requestGrowthProposals(actor) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
+    return this._withActorLock(actor, "suggest", () => this._requestGrowthProposals(actor));
+  }
+
+  async _requestGrowthProposals(actor) {
     if (!this._proposalAdapter) {
       throw new Error(
         "Suggesting proposals needs a configured AI provider (Grand Design AI Gateway settings). Without one, "
@@ -1080,7 +1184,10 @@ export class GrandDesignApi {
     try {
       // `events` lets the v2 gateway propose from the recorded events directly (stage 1 read the GM-request
       // wrapper as out-of-character and found nothing); `notes` stays for any other adapter.
-      output = await adapter({ actor, notes: buildSuggestionNotes(actor, ownEvents), events: ownEvents.slice(-15), systemId, proposalMode: "always" });
+      output = await this._callAdapterWithDeadline(
+        () => adapter({ actor, notes: buildSuggestionNotes(actor, ownEvents), events: ownEvents.slice(-15), systemId, proposalMode: "always" }),
+        "suggestion"
+      );
     } catch (error) {
       throw new Error(`The AI provider could not suggest proposals: ${error.message}`);
     }
@@ -1163,9 +1270,9 @@ export class GrandDesignApi {
       ...levelProgression,
       progress: levelProgression.progress + progressionForEvent(normalizedEvent)
     };
-    const modifier = rollModifier(actor);
     const systemId = game.system?.id;
     const registry = this.getActorRegistry(actor);
+    const rollContext = rollContextFor(actor, systemId, registry);
     const emergentEnabled = this._emergentEnabled();
     const themeMap = emergentEnabled ? this._themeMap() : {};
     // The GM's theme map is applied before template matching too: a theme mapped onto a canonical
@@ -1175,8 +1282,8 @@ export class GrandDesignApi {
     const generated = fromAdapter
       ? []
       : [
-        ...generateSkillProposals(mappedEvents, registry, modifier, this.getConsolidations(actor), this.getTagWeights(), { systemId }),
-        ...(emergentEnabled ? generateEmergentProposals(events, registry, { themeMap, systemId, excludeThemes: pendingAiThemes }) : [])
+        ...generateSkillProposals(mappedEvents, registry, 0, this.getConsolidations(actor), this.getTagWeights(), { systemId, rollContext }),
+        ...(emergentEnabled ? generateEmergentProposals(events, registry, { themeMap, systemId, excludeThemes: pendingAiThemes, actorNames: this._actorNames(actor) }) : [])
       ];
     const known = new Map(growth.proposals.map((proposal) => [proposal.id, proposal]));
     // Template/theme proposal ids are already stable per template or theme, so a rejected one is
@@ -1192,7 +1299,8 @@ export class GrandDesignApi {
       } else if (existing.status === "pending") {
         // Anything the AI authored (a placeholder, a rewritten template) keeps its authored entry;
         // only its evidence list is refreshed (board 0a1c8463).
-        const authored = existing.authoredBy === "ai-gateway" || (existing.source === "emergent" && existing.needsAuthoring === false);
+        // A GM edit (updateProposal) is kept the same way.
+        const authored = existing.authoredBy === "ai-gateway" || Boolean(existing.editedAt) || (existing.source === "emergent" && existing.needsAuthoring === false);
         known.set(proposal.id, authored ? { ...existing, evidence: proposal.evidence } : proposal);
       }
     }
@@ -1202,7 +1310,7 @@ export class GrandDesignApi {
       [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals,
       [`flags.${MODULE_ID}.${LEVEL_PROGRESSION_FLAG}`]: updatedProgression
     });
-    if (observe) await this._observeThemes([normalizedEvent]);
+    if (observe) await this._observeThemes([normalizedEvent], { actor });
     Hooks.callAll("grand-design-ai.growthEventRecorded", actor, normalizedEvent, proposals);
     return { event: normalizedEvent, proposals };
   }
@@ -1210,9 +1318,13 @@ export class GrandDesignApi {
     return this.approveProposal(actor, id, options);
   }
 
-  async approveProposal(actor, id, { confirm = false } = {}) {
+  async approveProposal(actor, id, options = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
+    return this._withActorLock(actor, "approve", () => this._approveProposal(actor, id, options));
+  }
+
+  async _approveProposal(actor, id, { confirm = false } = {}) {
     const growth = this.getGrowth(actor);
     const proposal = growth.proposals.find((candidate) => candidate.id === id && candidate.status === "pending");
     if (!proposal) throw new Error(`No pending skill proposal exists for ${id}.`);
@@ -1255,9 +1367,13 @@ export class GrandDesignApi {
    * losing the GM's evidence. Calling this twice on the same id is a no-op the second time (idempotent)
    * rather than an error, so a double-click or a retried command never throws.
    */
-  async rejectProposal(actor, id, { reason } = {}) {
+  async rejectProposal(actor, id, options = {}) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
+    return this._withActorLock(actor, "reject", () => this._rejectProposal(actor, id, options));
+  }
+
+  async _rejectProposal(actor, id, { reason } = {}) {
     const growth = this.getGrowth(actor);
     const proposal = growth.proposals.find((candidate) => candidate.id === id);
     if (proposal?.status === "rejected") return proposal;
@@ -1273,6 +1389,155 @@ export class GrandDesignApi {
     await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
     Hooks.callAll("grand-design-ai.proposalRejected", actor, rejected);
     return rejected;
+  }
+
+  /**
+   * The GM's edit of a PENDING proposal (the Growth dialog's proposal editor). `patch` is either
+   * `{ entry: <edited entry> }` -- each top-level entry field it carries replaces the stored one
+   * (mechanics, gameItem wholesale; metadata merged so the registry id and lineage survive) -- or
+   * shortcut fields merged one by one: name, tier, system_equivalent, system_chassis, level,
+   * power_tier, is_primary, is_secondary, effect (alias description), duration, trigger,
+   * requirements, frequency, actions, roll (merged into the stored roll), gameItem (merged), tags,
+   * themes, mechanics (merged), metadata (merged). Both may be combined; the shortcuts apply last.
+   * Tags go through the same canonical/synonym/theme split the AI's proposals do.
+   *
+   * The result is validated with validator.js; an invalid edit is NOT saved. Returns
+   * `{ ok, errors, proposal }` -- `proposal` is the saved one on success, the unchanged stored one
+   * otherwise (null if the id is unknown). Approved and rejected proposals are never touched. The
+   * edited proposal stays pending, is stamped `editedBy: "gm"`/`editedAt`, and is from then on kept
+   * as written by recorded events and re-analyses (like an AI-authored one).
+   */
+  async updateProposal(actor, proposalId, patch = {}) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "edit", async () => {
+      const growth = this.getGrowth(actor);
+      const proposal = growth.proposals.find((candidate) => candidate.id === proposalId) ?? null;
+      if (!proposal) return { ok: false, errors: [`No proposal exists for ${proposalId}.`], proposal: null };
+      if (proposal.status !== "pending") {
+        return { ok: false, errors: [`Only a pending proposal can be edited; "${proposal.entry?.name ?? proposalId}" is ${proposal.status}.`], proposal };
+      }
+      const { entry, errors: patchErrors } = applyProposalPatch(proposal.entry, patch, { customSynonyms: this.getGatewayConfig().customSynonyms });
+      if (patchErrors.length) return { ok: false, errors: patchErrors, proposal };
+      const kind = proposal.kind ?? "skill";
+      const errors = [...(kind === "class" ? validateClassEntry(entry) : validateSkillEntry(entry)).errors];
+      if (proposal.isCapstone && entry.tier !== 3) errors.push(`[${entry.name}] a capstone Skill is always tier 3.`);
+      const bucket = kind === "class" ? this.getActorRegistry(actor).classes : this.getActorRegistry(actor).skills;
+      if (typeof entry.name === "string" && bucket?.[`${kind}:${slugify(entry.name)}`]) {
+        errors.push(`[${entry.name}] is already an approved ${kind === "class" ? "Class" : "Skill"} on ${actor.name ?? "this character"}.`);
+      }
+      if (errors.length) return { ok: false, errors, proposal };
+      const updated = {
+        ...proposal,
+        entry,
+        status: "pending",
+        editedBy: "gm",
+        editedAt: new Date().toISOString(),
+        // Written by the GM now: no longer a generic placeholder waiting for "Author with AI".
+        ...(proposal.needsAuthoring ? { needsAuthoring: false } : {})
+      };
+      const proposals = growth.proposals.map((candidate) => (candidate.id === proposalId ? updated : candidate));
+      await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+      Hooks.callAll("grand-design-ai.proposalUpdated", actor, updated);
+      return { ok: true, errors: [], proposal: updated };
+    });
+  }
+
+  /**
+   * Board b375d56c: asks for a milestone reward (a capstone Skill or a Class evolution) again -- after
+   * the template fallback stood in for the AI, after the GM rejected it, or when its row went missing.
+   * Runs _resolveMilestoneReward exactly as the rest did (AI first; the template with a stated reason
+   * if the AI cannot deliver) and puts the result back PENDING under the same milestone id, so the
+   * capstone/grant allowance the rest earned can still be spent (a rejection never consumed it).
+   * `proposalId` is the milestone's id ("proposal:capstone-20", "proposal:class-evolution-30"); a
+   * milestone the character has reached can be asked for even if no row exists for it. An approved
+   * milestone is refused. The replaced version is remembered in `previousAttempts` (a rejected name
+   * stays rejected: the AI's answer is not accepted under that name again).
+   * Returns { proposal, usedFallback, reason? }.
+   */
+  async retryMilestoneReward(actor, proposalId) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "retry milestone", async () => {
+      const growth = this.getGrowth(actor);
+      const existing = growth.proposals.find((candidate) => candidate.id === proposalId) ?? null;
+      const parsed = parseMilestoneId(proposalId);
+      const kind = existing ? milestoneKind(existing) : parsed?.kind;
+      const level = Number.isInteger(existing?.milestoneLevel) ? existing.milestoneLevel : parsed?.level;
+      if (!kind || !Number.isInteger(level)) {
+        throw new Error(`${proposalId} is not a milestone reward (a capstone Skill or a Class evolution); use "Suggest proposals" or "Author with AI" instead.`);
+      }
+      if (existing?.status === "approved") {
+        throw new Error(`"${existing.entry?.name ?? proposalId}" was already approved; there is nothing to retry.`);
+      }
+      const reached = this.getLevelProgression(actor).level;
+      const isMilestone = kind === "capstone" ? isCapstoneLevel(level) : CLASS_EVOLUTION_LEVELS.has(level);
+      if (!isMilestone || level > reached) {
+        throw new Error(`Grand Design level ${level} grants no ${kind === "capstone" ? "capstone Skill" : "Class evolution"} ${actor.name ?? "this character"} has reached (current level ${reached}).`);
+      }
+      const systemId = game.system?.id;
+      const registry = this.getActorRegistry(actor);
+      const actorNames = this._actorNames(actor);
+      const ownEvents = growth.events.filter((event) => classifyActorName(event.actorName, actorNames) !== "other");
+      const rejectedNames = rejectedProposalNames(growth.proposals);
+      if (existing?.status === "rejected" && existing.entry?.name) rejectedNames.add(slugify(existing.entry.name));
+      const { proposal, usedFallback, reason } = await this._resolveMilestoneReward(actor, {
+        kind, level, ownEvents, registry, systemId, config: this.getGatewayConfig(), rejectedNames
+      });
+      const previousAttempts = [
+        ...(Array.isArray(existing?.previousAttempts) ? existing.previousAttempts : []),
+        ...(existing
+          ? [{
+            name: existing.entry?.name ?? null,
+            status: existing.status,
+            ...(existing.usedFallback ? { usedFallback: true } : {}),
+            ...(existing.rejectedAt ? { rejectedAt: existing.rejectedAt } : {}),
+            ...(existing.rejectedReason ? { rejectedReason: existing.rejectedReason } : {})
+          }]
+          : [])
+      ].slice(-5);
+      const replacement = {
+        ...proposal,
+        retriedAt: new Date().toISOString(),
+        retryCount: (existing?.retryCount ?? 0) + 1,
+        ...(previousAttempts.length ? { previousAttempts } : {})
+      };
+      const latest = this.getGrowth(actor).proposals;
+      const proposals = latest.some((candidate) => candidate.id === replacement.id)
+        ? latest.map((candidate) => (candidate.id === replacement.id ? replacement : candidate))
+        : [...latest, replacement];
+      await actor.update({ [`flags.${MODULE_ID}.${GROWTH_PROPOSALS_FLAG}`]: proposals });
+      Hooks.callAll("grand-design-ai.milestoneRewardRetried", actor, replacement);
+      return { proposal: replacement, usedFallback, ...(usedFallback ? { reason } : {}) };
+    });
+  }
+
+  /**
+   * Every milestone reward the character has reached, with what became of it: status "pending",
+   * "approved", "rejected" or "missing" (no row: e.g. dropped by an older re-analysis). A GM (or the
+   * Growth dialog) can hand any non-approved one to retryMilestoneReward.
+   */
+  getMilestoneRewards(actor) {
+    const reached = this.getLevelProgression(actor).level;
+    const proposals = this.getGrowth(actor).proposals;
+    const rewards = [];
+    for (let level = 10; level <= reached; level += 10) {
+      const kinds = [["capstone", `proposal:capstone-${level}`]];
+      if (CLASS_EVOLUTION_LEVELS.has(level)) kinds.push(["class-evolution", `proposal:class-evolution-${level}`]);
+      for (const [kind, proposalId] of kinds) {
+        const row = proposals.find((candidate) => candidate.id === proposalId);
+        rewards.push({
+          kind,
+          level,
+          proposalId,
+          status: row?.status ?? "missing",
+          ...(row?.entry?.name ? { name: row.entry.name } : {}),
+          ...(row?.usedFallback ? { usedFallback: true, fallbackReason: row.fallbackReason } : {}),
+          retryable: row?.status !== "approved"
+        });
+      }
+    }
+    return rewards;
   }
 
   async runTestScenario() {
@@ -1301,6 +1566,10 @@ export class GrandDesignApi {
   async resolveLevelRest(actor, options) {
     this._assertSupportedSystemActor(actor);
     this._assertGm();
+    return this._withActorLock(actor, "rest", () => this._resolveLevelRest(actor, options));
+  }
+
+  async _resolveLevelRest(actor, options) {
     const result = resolveRest(this.getLevelProgression(actor), options);
 
     // Persisted first and unconditionally: whatever happens below (network down, AI provider
@@ -1318,16 +1587,16 @@ export class GrandDesignApi {
     if (milestones.length) {
       const growth = this.getGrowth(actor);
       const registry = this.getActorRegistry(actor);
-      const modifier = rollModifier(actor);
       const systemId = game.system?.id;
       const actorNames = this._actorNames(actor);
       // Same rule requestGrowthProposals uses: events recorded for another character (or before
       // per-character attribution existed) are not this character's evidence.
       const ownEvents = growth.events.filter((event) => classifyActorName(event.actorName, actorNames) !== "other");
       const config = this.getGatewayConfig();
+      const rejectedNames = rejectedProposalNames(growth.proposals);
       for (const { kind, level } of milestones) {
         const { proposal, usedFallback, reason } = await this._resolveMilestoneReward(actor, {
-          kind, level, ownEvents, registry, modifier, systemId, config
+          kind, level, ownEvents, registry, systemId, config, rejectedNames
         });
         if (kind === "capstone") capstoneProposals.push(proposal);
         else classProposals.push(proposal);
@@ -1355,15 +1624,19 @@ export class GrandDesignApi {
    * adapter throws or times out, or it returns nothing of the requested kind that validates. The
    * rest itself is never at risk here -- this only ever produces a proposal, one way or the other.
    */
-  async _resolveMilestoneReward(actor, { kind, level, ownEvents, registry, modifier, systemId, config }) {
+  async _resolveMilestoneReward(actor, { kind, level, ownEvents, registry, systemId, config, rejectedNames = new Set() }) {
     const isCapstone = kind === "capstone";
+    // Board 0ed137cb / 17c10e97 / 9ebbf3c9: the template reads the character (level-based DC, the
+    // real modifier of the check it rolls, a name flavored from its Class), not the Grand Design level.
+    const rollContext = rollContextFor(actor, systemId, registry);
     const buildFallback = () => {
-      if (isCapstone) return generateCapstoneProposal(level, ownEvents, registry, modifier, { systemId });
+      if (isCapstone) return generateCapstoneProposal(level, ownEvents, registry, 0, { systemId, rollContext });
       const adapter = getSystemAdapter(systemId);
-      return generateClassEvolutionProposal(level, ownEvents, registry, modifier, {
+      return generateClassEvolutionProposal(level, ownEvents, registry, 0, {
         systemId,
         actorLevel: adapter.getCharacterLevel(actor),
-        systemClass: adapter.getCharacterClass?.(actor) ?? null
+        systemClass: adapter.getCharacterClass?.(actor) ?? null,
+        rollContext
       });
     };
 
@@ -1383,14 +1656,14 @@ export class GrandDesignApi {
     const adapter = this._alwaysProposeAdapter();
     let output;
     try {
-      output = await adapter({
+      output = await this._callAdapterWithDeadline(() => adapter({
         actor,
         notes: buildSuggestionNotes(actor, ownEvents),
         events: ownEvents.slice(-15),
         systemId,
         proposalMode: "always",
         milestone: { kind, level }
-      });
+      }), "milestone reward");
     } catch (error) {
       return fallback(`the AI provider failed: ${error.message}`);
     }
@@ -1401,9 +1674,20 @@ export class GrandDesignApi {
       actor,
       { customSynonyms: config.customSynonyms }
     );
-    const authored = accepted[0];
+    // A name the GM already rejected is not offered again (a retry after a rejection must bring
+    // something new).
+    const authored = accepted.find((candidate) => !rejectedNames.has(slugify(candidate.entry?.name ?? "")));
     if (!authored) {
-      return fallback("the AI did not return a usable milestone proposal");
+      // Say WHY when the gateway dropped what the model wrote (a quality gate), not only that nothing came.
+      const gatewaySkipped = Array.isArray(output?.skippedProposals) ? output.skippedProposals : [];
+      const why = gatewaySkipped
+        .map((skip) => [skip?.proposal?.entry?.name, skip?.reason ?? skip?.errors?.join(" ")].filter(Boolean).join(": "))
+        .filter(Boolean)
+        .slice(0, 3)
+        .join("; ");
+      return fallback(accepted.length
+        ? `the AI only proposed "${accepted[0].entry.name}" again, which the GM already rejected`
+        : `the AI did not return a usable milestone proposal${why ? ` (the gateway skipped ${why})` : ""}`);
     }
     const proposal = {
       id: isCapstone ? `proposal:capstone-${level}` : `proposal:class-evolution-${level}`,
@@ -1504,6 +1788,7 @@ export class GrandDesignApi {
       return { accepted, skipped: [{ proposal: proposals, errors: ["AI gateway proposals must be an array."] }] };
     }
     const registry = this.getActorRegistry(actor);
+    const systemId = globalThis.game?.system?.id;
     for (const proposal of proposals) {
       if (!proposal || !["skill", "class"].includes(proposal.kind)) {
         skipped.push({ proposal, errors: ["AI gateway proposal kind must be skill or class."] });
@@ -1532,6 +1817,11 @@ export class GrandDesignApi {
         skipped.push({ proposal, errors: [`AI proposed an already approved ${proposal.kind}: ${entry.name}.`] });
         continue;
       }
+      // Board 17c10e97: the model guesses the roll bonus ("1d20+9" for a +21 Athletics); when the roll
+      // names a statistic the sheet has, the flat fallback roll uses the sheet's own modifier.
+      const check = entry.mechanics?.roll ? resolveRollCheck(entry.mechanics.roll.kind, systemId) : null;
+      const sheetModifier = check ? checkModifier(actor, check, systemId) : null;
+      if (sheetModifier !== null) entry.mechanics.roll.formula = `1d20${sheetModifier >= 0 ? "+" : ""}${Math.round(sheetModifier)}`;
       accepted.push({
         id: proposal.id ?? `proposal:ai-${registryId}`,
         kind: proposal.kind,
@@ -1584,6 +1874,14 @@ export class GrandDesignApi {
 
     const registry = cloneRegistry(this.getActorRegistry(actor));
     const normalized = normalizeEntry(kind, entry, registry, operation);
+    // Two different entries can slug to the same registry id ("Warden's Brace" / "Wardens Brace");
+    // approving the second silently replaced the first's registry record. Re-approving the SAME
+    // entry (same name) stays allowed -- _ensureFeatureItem reuses its Item.
+    const bucket = kind === "class" ? registry.classes : registry.skills;
+    const clash = bucket?.[normalized.metadata.id];
+    if (clash && clash.name !== normalized.name) {
+      throw new Error(`[${normalized.name}] would overwrite the approved ${kind === "class" ? "Class" : "Skill"} [${clash.name}] (same registry id ${normalized.metadata.id}); rename it first.`);
+    }
     const approved = await this._ensureFeatureItem(actor, kind, normalized, registry);
 
     let finalRegistry = approved.registry;
@@ -1756,12 +2054,164 @@ export function buildSuggestionNotes(actor, events, { limit = 15 } = {}) {
   ].join("\n");
 }
 
-// The roll modifier baked into generated entries. PF2e keys the skill "acrobatics"; dnd5e keys it
-// "acr" -- reading only the PF2e key gave every dnd5e template a flat 1d20+0.
-function rollModifier(actor) {
-  const skills = actor?.system?.skills ?? {};
-  const mod = skills.acrobatics?.mod ?? skills.acr?.mod ?? skills.acr?.total ?? 0;
-  return Number.isFinite(Number(mod)) ? Number(mod) : 0;
+/**
+ * What a generated entry (template, fallback capstone / Class) needs to know about the character
+ * (progression.js#normalizeRollContext). Board 17c10e97: every generated roll used to carry the
+ * Acrobatics modifier; now each roll gets the modifier of the check it actually names, read from the
+ * sheet. Board 0ed137cb: DCs from the character level. Board 9ebbf3c9: names from its Class.
+ */
+export function rollContextFor(actor, systemId, registry) {
+  let systemClass = null;
+  try {
+    systemClass = getSystemAdapter(systemId).getCharacterClass?.(actor) ?? null;
+  } catch {
+    systemClass = null;
+  }
+  return {
+    actorLevel: characterLevel(actor, systemId),
+    modifierFor: (check, kind) => checkModifier(actor, check, systemId) ?? attackModifier(actor, kind, systemId),
+    dcFor: (check) => characterDc(actor, check, systemId),
+    namingClass: (tags) => namingClassFor(registry ?? {}, systemClass, tags)
+  };
+}
+
+// An attack roll has no single statistic on the sheet the way a skill does; estimate the usual
+// to-hit so the flat roll is not a +0 (or someone's Acrobatics). null = nothing to go on.
+function attackModifier(actor, kind, systemId) {
+  if (typeof kind !== "string" || !/\battack\b|\bstrike\b/i.test(kind) || resolveRollCheck(kind, systemId)) return null;
+  const abilities = actor?.system?.abilities ?? {};
+  const mod = (key) => Number(abilities?.[key]?.mod) || 0;
+  const isSpell = /spell/i.test(kind);
+  if (systemId === "dnd5e") {
+    const prof = Number(actor?.system?.attributes?.prof) || 2;
+    const spellAbility = actor?.system?.attributes?.spellcasting;
+    return prof + (isSpell ? mod(spellAbility || "int") : Math.max(mod("str"), mod("dex")));
+  }
+  const spellDc = Number(actor?.system?.attributes?.spellDC?.value);
+  if (isSpell && Number.isFinite(spellDc) && spellDc > 10) return spellDc - 10;
+  const level = characterLevel(actor, systemId);
+  // Trained proficiency (level + 2) plus the better of Strength/Dexterity.
+  return level + 2 + Math.max(mod("str"), mod("dex"));
+}
+
+function busyKey(actor) {
+  return typeof actor?.uuid === "string" && actor.uuid ? actor.uuid : actor;
+}
+
+// Overall deadline for one AI task: the GM can set `analysisDeadlineMs`; otherwise four per-request
+// timeouts (gateway-config.js#timeoutMs, 3 minutes by default -> 12 minutes), never under a minute.
+export function aiDeadlineMs(config = {}) {
+  const explicit = Number(config?.analysisDeadlineMs);
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+  let timeoutMs = 180000;
+  try {
+    timeoutMs = normalizeGatewayConfig(config).timeoutMs;
+  } catch {
+    // defaults
+  }
+  return Math.max(60000, timeoutMs * 4);
+}
+
+function formatDuration(ms) {
+  return ms >= 60000 ? `${Math.round(ms / 60000)}-minute` : `${Math.max(1, Math.round(ms / 1000))}-second`;
+}
+
+function milestoneKind(proposal) {
+  if (proposal?.isCapstone || proposal?.source === "capstone") return "capstone";
+  if (proposal?.source === "class-evolution") return "class-evolution";
+  return null;
+}
+
+function isMilestoneProposal(proposal) {
+  return milestoneKind(proposal) !== null && Number.isInteger(proposal?.milestoneLevel);
+}
+
+function parseMilestoneId(proposalId) {
+  const match = /^proposal:(capstone|class-evolution)-(\d+)$/.exec(String(proposalId ?? ""));
+  return match ? { kind: match[1], level: Number(match[2]) } : null;
+}
+
+const PATCH_ENTRY_FIELDS = ["name", "tier", "system_equivalent", "system_chassis", "level", "power_tier", "is_primary", "is_secondary"];
+const PATCH_MECHANICS_FIELDS = ["effect", "duration", "trigger", "requirements", "frequency", "actions", "roll"];
+const PATCH_OTHER_FIELDS = ["entry", "description", "gameItem", "mechanics", "metadata", "tags", "themes"];
+
+/**
+ * api.updateProposal's merge. Returns { entry, errors } -- errors only for a malformed patch (unknown
+ * field, wrong type); the merged entry itself is validated by the caller with validator.js.
+ */
+export function applyProposalPatch(original, patch, { customSynonyms } = {}) {
+  const errors = [];
+  if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
+    return { entry: structuredClone(original ?? {}), errors: ["The proposal patch must be an object."] };
+  }
+  const unknown = Object.keys(patch).filter((key) => ![...PATCH_ENTRY_FIELDS, ...PATCH_MECHANICS_FIELDS, ...PATCH_OTHER_FIELDS].includes(key));
+  if (unknown.length) errors.push(`Unknown proposal field(s): ${unknown.join(", ")}.`);
+  const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+  let entry = structuredClone(original ?? {});
+
+  // { entry }: the editor's whole edited entry. Each field it carries replaces the stored one; the
+  // metadata is merged so the registry id / lineage / polarity the editor did not show survive.
+  if (patch.entry !== undefined) {
+    if (!isObject(patch.entry)) {
+      errors.push("patch.entry must be an object.");
+    } else {
+      const edited = structuredClone(patch.entry);
+      const metadata = isObject(edited.metadata) ? { ...(entry.metadata ?? {}), ...edited.metadata } : entry.metadata;
+      entry = { ...entry, ...edited, ...(metadata ? { metadata } : {}) };
+    }
+  }
+  const text = (value) => (typeof value === "string" ? value.trim() : value);
+  for (const field of PATCH_ENTRY_FIELDS) {
+    if (patch[field] !== undefined) entry[field] = text(patch[field]);
+  }
+  if (patch.gameItem !== undefined) {
+    if (isObject(patch.gameItem)) entry.gameItem = { ...(entry.gameItem ?? {}), ...patch.gameItem };
+    else errors.push("gameItem must be an object.");
+  }
+  if (patch.mechanics !== undefined) {
+    if (isObject(patch.mechanics)) entry.mechanics = { ...(entry.mechanics ?? {}), ...structuredClone(patch.mechanics) };
+    else errors.push("mechanics must be an object.");
+  }
+  entry.mechanics = isObject(entry.mechanics) ? entry.mechanics : {};
+  const effect = patch.effect ?? patch.description;
+  if (effect !== undefined) entry.mechanics.effect = text(effect);
+  for (const field of ["duration", "trigger", "requirements", "actions"]) {
+    if (patch[field] === null) delete entry.mechanics[field];
+    else if (patch[field] !== undefined) entry.mechanics[field] = text(patch[field]);
+  }
+  if (patch.frequency !== undefined) {
+    if (isObject(patch.frequency)) entry.mechanics.frequency = { ...(entry.mechanics.frequency ?? {}), ...patch.frequency };
+    else errors.push("frequency must be an object like { max: 1, per: \"day\" }.");
+  }
+  if (patch.roll === null) {
+    delete entry.mechanics.roll;
+  } else if (patch.roll !== undefined) {
+    if (isObject(patch.roll)) entry.mechanics.roll = { ...(entry.mechanics.roll ?? {}), ...patch.roll };
+    else errors.push("roll must be an object like { kind, formula, dc }.");
+  }
+  if (patch.metadata !== undefined) {
+    if (isObject(patch.metadata)) entry.metadata = { ...(entry.metadata ?? {}), ...structuredClone(patch.metadata) };
+    else errors.push("metadata must be an object.");
+  }
+  entry.metadata = isObject(entry.metadata) ? entry.metadata : {};
+  if (patch.themes !== undefined) {
+    if (Array.isArray(patch.themes)) entry.metadata.themes = patch.themes.map(themeSlug).filter(Boolean);
+    else errors.push("themes must be an array of strings.");
+  }
+  // Tags from the editor go through the same split as the AI's: canonical tags stay, synonyms
+  // resolve, anything else becomes an emergent theme -- whichever way they arrived.
+  const tagSource = patch.tags !== undefined ? patch.tags : patch.entry?.metadata?.tags ?? patch.metadata?.tags;
+  if (tagSource !== undefined) {
+    if (!Array.isArray(tagSource) || tagSource.some((tag) => typeof tag !== "string")) {
+      errors.push("tags must be an array of strings.");
+    } else {
+      const { tags, themes } = splitTagsAndThemes(tagSource.map((tag) => tag.trim()).filter(Boolean), { customSynonyms });
+      entry.metadata.tags = tags;
+      const merged = [...new Set([...(Array.isArray(entry.metadata.themes) ? entry.metadata.themes : []), ...themes])];
+      if (merged.length) entry.metadata.themes = merged;
+    }
+  }
+  return { entry, errors };
 }
 
 function mergeProposals(existing, additions) {
@@ -1788,7 +2238,7 @@ function capPendingAiProposals(proposals, config, allowances, { countAll = false
   // placeholders sat on top of the AI's proposals: Briik had 12 pending, board d8c96c43) and the
   // unauthored ones go first. Guaranteed milestone rewards (capstone, class-evolution) never compete.
   const counted = (p) => p.status === "pending" && (countAll ? ["ai-gateway", "template", "emergent"].includes(p.source) : p.source === "ai-gateway");
-  const isPlaceholder = (p) => p.source !== "ai-gateway" && p.authoredBy !== "ai-gateway" && !(p.source === "emergent" && p.needsAuthoring === false);
+  const isPlaceholder = (p) => p.source !== "ai-gateway" && p.authoredBy !== "ai-gateway" && !p.editedAt && !(p.source === "emergent" && p.needsAuthoring === false);
   const pendingAi = proposals.filter(counted);
   if (pendingAi.length <= cap) return { proposals, dropped: [], cap };
   const scored = pendingAi
@@ -1836,10 +2286,17 @@ function slugify(value) {
 // so a proposal regenerated under a different id -- the gateway re-authoring it, or a template GM
 // house rules touched -- still cannot reappear under the exact name the GM already said no to.
 function rejectedProposalNames(proposals) {
+  const list = Array.isArray(proposals) ? proposals : [];
   return new Set(
-    (Array.isArray(proposals) ? proposals : [])
-      .filter((proposal) => proposal?.status === "rejected")
-      .map((proposal) => slugify(proposal.entry?.name ?? ""))
+    [
+      ...list.filter((proposal) => proposal?.status === "rejected").map((proposal) => proposal.entry?.name),
+      // A retried milestone (retryMilestoneReward) replaces its rejected row in place; the name it
+      // had stays rejected.
+      ...list.flatMap((proposal) => (Array.isArray(proposal?.previousAttempts) ? proposal.previousAttempts : [])
+        .filter((attempt) => attempt?.status === "rejected")
+        .map((attempt) => attempt.name))
+    ]
+      .map((name) => slugify(name ?? ""))
       .filter(Boolean)
   );
 }
