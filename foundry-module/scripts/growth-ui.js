@@ -44,7 +44,20 @@ const ACTIONS = Object.freeze({
   // Board 4344c58a: the GM corrects the record (GM-only controls; each asks to confirm first).
   deleteEvent: { action: "gd-delete-event", busy: "Deleting..." },
   moveEvent: { action: "gd-move-event", busy: "Moving..." },
-  revert: { action: "gd-revert-approval", busy: "Reverting..." }
+  revert: { action: "gd-revert-approval", busy: "Reverting..." },
+  // Owner decisions 2026-09-29 (boards 73fa8066, a8728f4e): the GM settles what a Horror Rank stage
+  // takes or gives back, and can restore docked Class levels. GM-only controls in the meter.
+  horrorSuppress: { action: "gd-horror-suppress", busy: "Suppressing..." },
+  horrorWaive: { action: "gd-horror-waive", busy: "Recording..." },
+  horrorRestore: { action: "gd-horror-restore", busy: "Restoring..." },
+  horrorRestoreLevels: { action: "gd-horror-restore-levels", busy: "Restoring levels..." }
+});
+// The registry panel shows the same meter, so it wires the same four actions.
+export const HORROR_ACTIONS = Object.freeze({
+  suppress: ACTIONS.horrorSuppress,
+  waive: ACTIONS.horrorWaive,
+  restore: ACTIONS.horrorRestore,
+  restoreLevels: ACTIONS.horrorRestoreLevels
 });
 // Not a long action (it only opens the panel), so it is not locked with the others.
 const OPEN_REGISTRY = "gd-open-registry";
@@ -66,6 +79,8 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
   const isGM = game.user?.isGM === true;
   const canManageEvents = isGM && typeof api.deleteRecordedEvent === "function" && typeof api.reassignRecordedEvent === "function";
   const canRevert = isGM && typeof api.revertApproval === "function";
+  // Owner decisions 2026-09-29: the Horror Rank stage suppression / restore controls (GM only).
+  const canManageHorror = isGM && typeof api.confirmHorrorSuppression === "function";
   let owned = { classes: [], skills: [], titles: [] };
   const apiBusy = () => typeof api.isBusy === "function" && safe(() => api.isBusy(actor), false) === true;
   const busyAtOpen = apiBusy();
@@ -86,7 +101,7 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
     content = renderGrowthContent({
       growth, progression, pending, lastAnalysis, lastResult, status, draftNotes, canSuggest, canEdit, canRetry, aiAttached,
       busy: busyAtOpen, namesById, focusProposalId, lastSuggest, erosion, canEvolve, horrorRank, systemId: currentSystemId(),
-      canManageEvents, canRevert, owned
+      canManageEvents, canRevert, owned, canManageHorror
     });
   } catch (error) {
     console.error(`${MODULE_ID} | growth dialog render failed`, error);
@@ -242,6 +257,17 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
         ui.notifications[level](message);
       });
     },
+    ...Object.fromEntries(Object.entries(HORROR_ACTIONS).map(([name, { action }]) => [action, async (root, button) => {
+      if (running || !isGM) return;
+      const key = { suppress: "horrorSuppress", waive: "horrorWaive", restore: "horrorRestore", restoreLevels: "horrorRestoreLevels" }[name];
+      // The confirmation (if any) happens before the busy state, like Delete / Revert.
+      const work = await prepareHorrorAction(api, actor, name, root, button, { confirm: confirmDialog });
+      if (!work) return;
+      return runAction(root, button, key, async () => {
+        const { level, message } = await work();
+        ui.notifications[level](message, level === "warn" ? { permanent: true } : undefined);
+      });
+    }])),
     [OPEN_REGISTRY]: () => {
       if (!running) openRegistryPanel(actor);
     },
@@ -994,7 +1020,7 @@ export function renderGrowthContent({
   growth, progression, pending, lastAnalysis, lastResult, status, draftNotes = "",
   canSuggest = true, canEdit = false, canRetry = false, aiAttached = true, busy = false,
   namesById = new Map(), focusProposalId = null, lastSuggest = null, erosion = [], canEvolve = false,
-  horrorRank = null, systemId = null, canManageEvents = false, canRevert = false, owned = null
+  horrorRank = null, systemId = null, canManageEvents = false, canRevert = false, owned = null, canManageHorror = false
 }) {
   const events = Array.isArray(growth?.events) ? growth.events : [];
   pending = Array.isArray(pending) ? pending : [];
@@ -1023,7 +1049,7 @@ export function renderGrowthContent({
       <button type="button" class="gd-action gd-open-registry" data-action="${OPEN_REGISTRY}"${busy ? " disabled" : ""} title="${busy ? escapeHtml(BUSY_NOTICE) : "Owned Classes, Skills and Titles: lineage, Evolve, Merge, erosion"}"><i class="fas fa-sitemap"></i> <span class="gd-btn-label">Registry</span></button>
     </header>
     ${busy ? `<p class="gd-busy-notice"><i class="fas fa-spinner fa-spin"></i> ${escapeHtml(BUSY_NOTICE)} This dialog refreshes by itself when it is done.</p>` : ""}
-    ${renderHorrorRankMeter(horrorRank, { events, compact: true })}
+    ${renderHorrorRankMeter(horrorRank, { events, compact: true, canManage: canManageHorror, busy })}
     <p><strong>${Math.floor(Number(progression?.progress) || 0)} progression</strong> toward the next level; <strong>${allowances}</strong> level-up grant allowance(s) available.</p>
     ${hint ? `<p class="gd-allowance-hint"><i class="fas fa-gift"></i> ${hint}</p>` : ""}
     <div class="form-group gd-rest-row"><label>Resolve progression at rest</label><select name="growth-rest-type"><option value="short">Short Rest</option><option value="long">Long Rest</option></select>${button("rest", "fas fa-bed", "Resolve Rest")}</div>
@@ -1067,10 +1093,12 @@ export function renderApprovedList(owned, { busy = false } = {}) {
  * A body button (type="button": it must never submit the dialog form). `id` is a proposal id,
  * `entryId` an owned Class/Skill/Title id (registry panel, Evolve). Exported for the panel.
  */
-export function actionButton({ action, icon, label, id = null, entryId = null, eventId = null, variant = "", disabled = false, title = "", aria = "" }) {
+export function actionButton({ action, icon, label, id = null, entryId = null, eventId = null, variant = "", disabled = false, title = "", aria = "", extraAttrs = null }) {
   const idAttr = (id !== null && id !== undefined ? ` data-proposal-id="${escapeHtml(id)}"` : "")
     + (entryId !== null && entryId !== undefined ? ` data-entry-id="${escapeHtml(entryId)}"` : "")
-    + (eventId !== null && eventId !== undefined ? ` data-event-id="${escapeHtml(eventId)}"` : "");
+    + (eventId !== null && eventId !== undefined ? ` data-event-id="${escapeHtml(eventId)}"` : "")
+    // Other data-* attributes (the Horror Rank controls' item id / force flag).
+    + Object.entries(extraAttrs ?? {}).filter(([name]) => /^data-[a-z-]+$/.test(name)).map(([name, value]) => ` ${name}="${escapeHtml(value)}"`).join("");
   return `<button type="button" class="gd-action${variant ? ` ${variant}` : ""}" data-action="${action}"${idAttr} aria-busy="false"${disabled ? " disabled" : ""}${title ? ` title="${escapeHtml(title)}"` : ""}${aria ? ` aria-label="${escapeHtml(aria)}"` : ""}><i class="${icon}"></i> <span class="gd-btn-label">${escapeHtml(label)}</span></button>`;
 }
 
@@ -1121,7 +1149,7 @@ export function renderEventLine(event, newThemes = new Set(), withQuote = false)
     ? `<details class="gd-quote"><summary>original${event.language ? ` (${escapeHtml(event.language)})` : ""}</summary><blockquote>${escapeHtml(event.quote)}</blockquote></details>`
     : "";
   return `<span class="gd-outcome gd-outcome-${escapeHtml(event?.outcome ?? "unknown")}" title="${escapeHtml(outcome.label)}"><i class="${outcome.icon}"></i></span>${flameHtml}
-    ${who}<span class="gd-summary">${escapeHtml(event?.summary ?? "")}</span>${moved}${isDarkDeed(event) ? ` ${renderDarkDeedBadge(event)}` : ""}${typeof event?.consequence === "string" && event.consequence.trim() ? ` <span class="gd-consequence">&rarr; ${escapeHtml(event.consequence)}</span>` : ""}
+    ${who}<span class="gd-summary">${escapeHtml(event?.summary ?? "")}</span>${moved}${isDarkDeed(event) ? ` ${renderDarkDeedBadge(event)}` : ""}${renderAtonementBadge(event) ? ` ${renderAtonementBadge(event)}` : ""}${typeof event?.consequence === "string" && event.consequence.trim() ? ` <span class="gd-consequence">&rarr; ${escapeHtml(event.consequence)}</span>` : ""}
     <span class="gd-chips">${tags}${themes || (!tags ? '<span class="gd-chip">untagged</span>' : "")}${renderChips(jevEventChips(event))}</span>${quote}`;
 }
 
@@ -1539,7 +1567,30 @@ export function normalizeHorrorRankView(raw, events = [], { threshold = HORROR_R
         points: Number.isFinite(Number(deed.points)) && deed.points !== null ? Number(deed.points) : HORROR_SEVERITY_POINTS[severity] ?? 0
       };
     }),
-    derivedDeeds: !listed
+    derivedDeeds: !listed,
+    // Owner decisions 2026-09-29: amends that lowered the meter, the stage-suppression balance, the
+    // dock log and the Stage 3 lock-out. Absent in an older API's shape: empty / zero / false.
+    atonements: (Array.isArray(raw?.atonements) ? raw.atonements : []).filter((entry) => entry && typeof entry === "object").map((entry) => ({
+      eventId: entry.eventId ?? null,
+      summary: String(entry.summary ?? "").trim(),
+      level: String(entry.level ?? ""),
+      points: Number.isFinite(Number(entry.points)) ? Number(entry.points) : 0
+    })),
+    suppression: normalizeSuppressionView(raw?.suppression),
+    docks: (Array.isArray(raw?.docks) ? raw.docks : []).filter((dock) => dock && typeof dock === "object" && dock.classId),
+    lockedOut: raw?.lockedOut === true || stage >= 3
+  };
+}
+
+function normalizeSuppressionView(raw) {
+  const list = (value) => (Array.isArray(value) ? value.filter((entry) => entry && typeof entry === "object") : []);
+  return {
+    due: Number.isInteger(raw?.due) ? raw.due : 0,
+    held: Number.isInteger(raw?.held) ? raw.held : list(raw?.suppressed).length,
+    suppressed: list(raw?.suppressed),
+    candidates: list(raw?.candidates),
+    defaultCandidateId: raw?.defaultCandidateId ?? null,
+    restoreDefaultId: raw?.restoreDefaultId ?? null
   };
 }
 
@@ -1560,6 +1611,14 @@ export function isDarkDeed(event) {
   return Boolean(vice) && vice !== "none";
 }
 
+/** The atonement chip on an event row (board a8728f4e), or "". Pure, exported for tests. */
+export function renderAtonementBadge(event) {
+  const level = typeof event?.atonement === "string" ? event.atonement.trim().toLowerCase() : "";
+  if (!["minor", "serious", "profound"].includes(level)) return "";
+  const points = HORROR_SEVERITY_POINTS[level === "profound" ? "monstrous" : level];
+  return `<span class="gd-chip gd-atonement" title="Atonement (${level}): real amends by the doer; it lowers Horror Rank (-${points} points at the default scale)."><i class="fas fa-dove"></i> atonement, ${escapeHtml(level)}</span>`;
+}
+
 /** The dark-deed chip on an event row ("cruelty, serious"), or "". Pure, exported for tests. */
 export function renderDarkDeedBadge(event) {
   if (!isDarkDeed(event)) return "";
@@ -1574,9 +1633,11 @@ export function renderDarkDeedBadge(event) {
  * the next stage, levels lost so far and the deeds (each quoting its summary). A clean character
  * gets one quiet line, so the mechanic is visible without shouting. Pure, exported for tests.
  */
-export function renderHorrorRankMeter(raw, { events = [], compact = false } = {}) {
+export function renderHorrorRankMeter(raw, { events = [], compact = false, canManage = false, busy = false } = {}) {
   const view = normalizeHorrorRankView(raw, events);
-  if (view.points <= 0 && !view.deeds.length && !view.totalLevelsDocked) {
+  const controls = renderHorrorRankControls(view, { canManage, busy });
+  const amends = renderAtonementList(view, { compact });
+  if (view.points <= 0 && !view.deeds.length && !view.totalLevelsDocked && !controls && !amends) {
     return `<p class="gd-horror gd-horror-clean"><i class="fas fa-skull"></i> <strong>Horror Rank:</strong> Stage 0, ${escapeHtml(HORROR_STAGES[0].name)}. <span class="gd-hint">Dark deeds recorded in the notes (cruelty, desecration...) would start this clock.</span></p>`;
   }
   const stage = HORROR_STAGES[view.stage];
@@ -1605,9 +1666,127 @@ export function renderHorrorRankMeter(raw, { events = [], compact = false } = {}
     <div class="gd-horror-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${fill}"><span style="width: ${fill}%"></span></div>
     <p class="gd-horror-progress">${progress}</p>
     <p class="gd-horror-flavour"><em>${escapeHtml(stage.flavour)}</em></p>
-    ${docked}${deeds}
-    <p class="gd-hint">Horror Rank counts the dark deeds in the notes. Rejecting a red Skill refuses the power, not the stain.</p>
+    ${docked}${deeds}${amends}${controls}
+    <p class="gd-hint">Horror Rank counts the dark deeds in the notes, less any real amends. Rejecting a red Skill refuses the power, not the stain.</p>
   </section>`;
+}
+
+/** The amends that took points off the meter (board a8728f4e). Pure, exported for tests. */
+export function renderAtonementList(view, { compact = false } = {}) {
+  const list = Array.isArray(view?.atonements) ? view.atonements : [];
+  if (!list.length) return "";
+  const rows = list.slice(0, 12).map((entry) => {
+    const quote = entry.summary ? `&ldquo;${escapeHtml(entry.summary)}&rdquo;` : `<code>${escapeHtml(entry.eventId ?? "amends")}</code>`;
+    return `<li><span class="gd-chip gd-atonement" title="Atonement (${escapeHtml(entry.level)}): real amends by the doer lower Horror Rank."><i class="fas fa-dove"></i> ${escapeHtml(entry.level || "atonement")}</span> ${entry.points ? `<span class="gd-horror-points gd-atonement-points">-${escapeHtml(round2(entry.points))}</span> ` : ""}${quote}</li>`;
+  }).join("");
+  const more = list.length > 12 ? `<li><em>...and ${list.length - 12} more</em></li>` : "";
+  return `<details class="gd-horror-atonements"${compact ? "" : " open"}><summary>The amends that lowered it (${list.length})</summary><ul>${rows}${more}</ul></details>`;
+}
+
+/**
+ * What the GM can act on in the meter (owner decisions 2026-09-29): the Stage 3 lock-out notice,
+ * the feature a new stage suppresses (the module's default preselected, any other eligible feature
+ * pickable, or waive), the suppressed features with Restore (owed when a stage was lost, else an
+ * Undo of a wrong pick), and Restore docked levels. Buttons only with `canManage` (GM). Pure,
+ * exported for tests; "" when there is nothing to show.
+ */
+export function renderHorrorRankControls(view, { canManage = false, busy = false } = {}) {
+  const parts = [];
+  const lock = (title) => (busy ? BUSY_NOTICE : title);
+  if (view?.lockedOut) {
+    parts.push(`<p class="gd-horror-lockout"><i class="fas fa-lock"></i> <strong>Locked out of their calling.</strong> At Stage 3 this character's Class is narratively locked out of its role: a [Guardsman] who became a horror cannot act as a guard, a [Healer] is turned away at the door. The class keeps working mechanically; the fiction no longer lets it be what it was, until the Horror Rank drops.</p>`);
+  }
+  const s = view?.suppression ?? { due: 0, suppressed: [], candidates: [] };
+  if (s.due > 0) {
+    const stage = (s.held ?? 0) + 1;
+    const options = s.candidates.map((candidate) => {
+      const why = candidate.reasons?.length ? ` (${candidate.reasons.join(", ")})` : "";
+      return `<option value="${escapeHtml(candidate.itemId)}"${candidate.itemId === s.defaultCandidateId ? " selected" : ""}>${escapeHtml(candidate.name)}${candidate.level ? ` [Lv ${escapeHtml(candidate.level)}]` : ""}${escapeHtml(why)}</option>`;
+    }).join("");
+    const picker = s.candidates.length
+      ? `<select name="gd-horror-feature" aria-label="Feature to suppress"${!canManage || busy ? " disabled" : ""}>${options}</select>`
+      : '<em>No class feat or feature on the sheet can be suppressed.</em>';
+    const buttons = canManage
+      ? [
+        s.candidates.length ? actionButton({ action: ACTIONS.horrorSuppress.action, icon: "fas fa-ban", label: "Suppress", variant: "gd-primary", disabled: busy, title: lock("Switch this feature off until the Horror Rank drops (its mechanics are kept and come back exactly).") }) : "",
+        actionButton({ action: ACTIONS.horrorWaive.action, icon: "fas fa-scale-balanced", label: "Waive", disabled: busy, title: lock("Settle this stage without suppressing anything (your ruling).") })
+      ].join("")
+      : "";
+    parts.push(`<div class="gd-horror-suppress"><p><i class="fas fa-ban"></i> <strong>Stage ${stage} suppresses one ${s.candidates.length ? "class feat or feature" : "feature"}${s.due > 1 ? ` (${s.due} stages to settle)` : ""}.</strong> The module picked the most combat-relevant one; confirm it or pick another.</p><div class="gd-horror-suppress-row">${picker}${buttons}</div></div>`);
+  }
+  if (s.suppressed.length) {
+    const owed = s.due < 0;
+    const rows = s.suppressed.map((record) => {
+      const label = record.waived ? `<em>Stage ${escapeHtml(record.stage)} waived</em>` : `<strong>${escapeHtml(record.itemName || record.itemId)}</strong> <span class="gd-hint">(Stage ${escapeHtml(record.stage)})</span>${record.present === false ? ' <span class="gd-hint">no longer on the sheet</span>' : ""}`;
+      const isDefault = owed && record.itemId && record.itemId === s.restoreDefaultId;
+      const button = canManage && (owed || !record.waived)
+        ? actionButton({
+          action: ACTIONS.horrorRestore.action,
+          icon: owed ? "fas fa-rotate-left" : "fas fa-arrow-rotate-left",
+          label: owed ? (isDefault ? "Restore (most recent)" : "Restore") : "Undo",
+          variant: isDefault ? "gd-primary" : "",
+          disabled: busy,
+          title: lock(owed ? "The Horror Rank dropped a stage: give this feature back." : "Undo this suppression (a wrong pick); the stage then asks for another."),
+          extraAttrs: { "data-item-id": record.itemId ?? "", "data-force": owed ? "" : "1" }
+        })
+        : "";
+      return `<li>${label} ${button}</li>`;
+    }).join("");
+    const heading = owed ? `The Horror Rank dropped: ${-s.due} suppressed feature${s.due === -1 ? "" : "s"} can come back (your choice of order).` : "Suppressed by Horror Rank";
+    parts.push(`<div class="gd-horror-suppressed"><p><i class="fas fa-ban"></i> ${escapeHtml(heading)}</p><ul>${rows}</ul></div>`);
+  }
+  const open = (view?.docks ?? []).filter((dock) => !dock.restoredAt);
+  if (open.length) {
+    const rows = open.map((dock) => `<li>${escapeHtml(dock.className ?? prettifyEntryId(dock.classId))}: -${escapeHtml(dock.levelsDocked)} level${dock.levelsDocked === 1 ? "" : "s"}${Number.isInteger(dock.fromLevel) && Number.isInteger(dock.toLevel) ? ` (Lv ${escapeHtml(dock.fromLevel)} &rarr; ${escapeHtml(dock.toLevel)})` : ""}</li>`).join("");
+    const button = canManage
+      ? actionButton({ action: ACTIONS.horrorRestoreLevels.action, icon: "fas fa-arrow-trend-up", label: "Restore docked levels", disabled: busy, title: lock("Give the Classes back the levels these docks took (asks to confirm; each dock is restored once).") })
+      : "";
+    parts.push(`<div class="gd-horror-docks"><p><i class="fas fa-arrow-trend-down"></i> Docked by Horror Rank:</p><ul>${rows}</ul>${button}</div>`);
+  }
+  return parts.join("");
+}
+
+/**
+ * Runs before a Horror Rank control's busy state: reads the choice from the dialog, asks to confirm
+ * where the action needs it, and returns the work to run (resolving { level, message }) or null
+ * (cancelled / nothing to do). `confirm(title, html)` is injected so tests run without Foundry.
+ */
+export async function prepareHorrorAction(api, actor, name, root, button, { confirm = async () => false } = {}) {
+  const who = actor?.name ?? "This character";
+  if (name === "suppress") {
+    const itemId = root?.querySelector?.('select[name="gd-horror-feature"]')?.value || null;
+    return async () => {
+      const { record } = await api.confirmHorrorSuppression(actor, { itemId });
+      return { level: "info", message: `${who}: ${record.itemName || "the feature"} is suppressed by Horror Rank (Stage ${record.stage}). Its mechanics are off until it is restored.` };
+    };
+  }
+  if (name === "waive") {
+    if (!(await confirm("Waive this Horror Rank stage?", `<p>Settle this stage for ${escapeHtml(who)} without suppressing any feature?</p><p>It stays recorded as waived; a later stage still asks.</p>`))) return null;
+    return async () => {
+      const { record } = await api.confirmHorrorSuppression(actor, { waive: true });
+      return { level: "info", message: `${who}: Horror Rank Stage ${record.stage} waived (no feature suppressed).` };
+    };
+  }
+  if (name === "restore") {
+    const itemId = button?.dataset?.itemId || null;
+    const force = button?.dataset?.force === "1";
+    if (force && !(await confirm("Undo this suppression?", `<p>The Horror Rank has not dropped: undoing this gives the feature back and the stage asks for another one.</p>`))) return null;
+    return async () => {
+      const { record } = await api.restoreHorrorSuppression(actor, { itemId, force });
+      return { level: "info", message: record.waived ? `${who}: the waived stage was cleared.` : `${who}: ${record.itemName || "the feature"} works again.` };
+    };
+  }
+  if (name === "restoreLevels") {
+    const open = (safe(() => api.getHorrorRank(actor), null)?.docks ?? []).filter((dock) => !dock.restoredAt);
+    const list = open.map((dock) => `<li>${escapeHtml(dock.className ?? prettifyEntryId(dock.classId))}: +${escapeHtml(dock.levelsDocked)}</li>`).join("");
+    if (!(await confirm("Restore docked levels?", `<p>Give ${escapeHtml(who)}'s Classes back the levels Horror Rank docked?</p>${list ? `<ul>${list}</ul>` : ""}<p>Each dock is restored once. The deeds stay recorded; if the Horror Rank crosses the same line again later, it docks again.</p>`))) return null;
+    return async () => {
+      const result = await api.restoreDockedLevels(actor);
+      if (!result?.restored?.length) return { level: "warn", message: `${who}: no docked levels could be restored${result?.skipped?.length ? ` (${result.skipped.map((entry) => entry.reason).join(", ")})` : ""}.` };
+      return { level: "info", message: `${who}: ${result.levelsRestored} docked level${result.levelsRestored === 1 ? "" : "s"} restored.` };
+    };
+  }
+  return null;
 }
 
 /**
@@ -1633,6 +1812,19 @@ export function describeHorrorRankChange({ actorName = "", state = null, dockedF
         level: rose ? "warn" : "info",
         message: `${who} Horror Rank ${rose ? "rose" : "fell"} to Stage ${view.stage} (${stage.name}).${rose ? ` ${stage.flavour}` : ""}`
       });
+      // Owner decision 2026-09-29: never silent. A stage gained asks the GM to confirm what it
+      // suppresses; a stage lost says a feature can come back; Stage 3 locks the calling out.
+      const s = view.suppression;
+      if (rose && s.due > 0) {
+        const pick = s.candidates.find((candidate) => candidate.itemId === s.defaultCandidateId)?.name;
+        notices.push({ level: "warn", message: `${who} new Horror Rank stage suppresses a class feat: confirm ${pick ? `${pick} (the default)` : "one"} or pick another in the Growth dialog.` });
+      }
+      if (!rose && s.due < 0) {
+        notices.push({ level: "info", message: `${who} Horror Rank dropped: restore a suppressed feature in the Growth dialog (most recent first, or your pick).` });
+      }
+      if (rose && view.stage >= 3) {
+        notices.push({ level: "warn", message: `${who} Class is locked out of its role at Stage 3: in the fiction it cannot act as what it was until the Horror Rank drops.` });
+      }
     }
   }
   return notices;

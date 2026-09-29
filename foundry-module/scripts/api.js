@@ -6,11 +6,21 @@ import {
   GROWTH_EVENTS_FLAG,
   GROWTH_PROPOSALS_FLAG,
   HORROR_RANK_FLAG,
+  HORROR_RANK_MAX_STAGE,
+  HORROR_RANK_SETTINGS,
   LEVEL_PROGRESSION_FLAG,
   MODULE_ID,
   REGISTRY_FLAG
 } from "./constants.js";
-import { applyHorrorRankDocks, computeHorrorRank, migrateHorrorRankState } from "./horror-rank.js";
+import {
+  applyHorrorRankDocks,
+  computeHorrorRank,
+  migrateHorrorRankState,
+  resolveHorrorRankConfig,
+  restoreDockedLevels as restoreDockedLevelsPure,
+  suppressionBalance
+} from "./horror-rank.js";
+import { listSuppressibleFeatures, restoreSuppressedFeature, suppressFeature } from "./systems/horror-suppression.js";
 import { checkClassErosion } from "./class-erosion.js";
 import { applyRevivalPenalty } from "./revival-penalty.js";
 import {
@@ -1004,16 +1014,21 @@ export class GrandDesignApi {
   }
 
   /**
-   * The actor's Horror Rank, derived from the dark deeds in their recorded growth events (owner
-   * decision 2026-09-29) plus any legacy baseline from a world that accrued it on red approvals.
-   * A read: it never docks (that happens when the events change, _recomputeHorrorRank).
+   * The actor's Horror Rank, derived from the dark deeds (minus atonement) in their recorded growth
+   * events (owner decisions 2026-09-29) plus any legacy baseline from a world that accrued it on red
+   * approvals. A read: it never docks (that happens when the events change, _recomputeHorrorRank).
    * Returns { points, stage (0-3), nextThreshold, totalLevelsDocked, deeds: [{ eventId, summary,
-   * vice, severity, points }], deedPoints, legacyPoints, threshold, thresholdsDocked }.
+   * vice, severity, points }], atonements: [{ eventId, summary, level, points }], deedPoints,
+   * atonementPoints, legacyPoints, threshold, pointsBySeverity, thresholdsDocked, lockedOut,
+   * docks: [{ id, crossing, classId, className, levelsDocked, fromLevel, toLevel, at, restoredAt? }],
+   * restorableDocks, suppression: { due, held, suppressed, candidates, defaultCandidateId,
+   * restoreDefaultId } }.
    */
   getHorrorRank(actor) {
-    const stored = migrateHorrorRankState(actor?.getFlag?.(MODULE_ID, HORROR_RANK_FLAG));
-    const computed = computeHorrorRank(this.getGrowth(actor).events, { docked: stored.thresholdsDocked, legacyPoints: stored.legacyPoints });
-    return horrorRankView(computed, stored);
+    const config = this._horrorConfig();
+    const stored = migrateHorrorRankState(actor?.getFlag?.(MODULE_ID, HORROR_RANK_FLAG), config);
+    const computed = computeHorrorRank(this.getGrowth(actor).events, { docked: stored.thresholdsDocked, legacyPoints: stored.legacyPoints, config });
+    return this._horrorRankStateFor(actor, computed, stored);
   }
 
   /**
@@ -1027,23 +1042,48 @@ export class GrandDesignApi {
     return this._recomputeHorrorRank(actor);
   }
 
+  // The GM's Horror Rank tuning (board 41384131): world settings, clamped by resolveHorrorRankConfig.
+  // Outside Foundry (tests, the harness) or before the settings are registered: the defaults.
+  _horrorConfig() {
+    const raw = {};
+    for (const [name, { key }] of Object.entries(HORROR_RANK_SETTINGS)) {
+      try {
+        const value = globalThis.game?.settings?.get?.(MODULE_ID, key);
+        if (value !== undefined && value !== null && value !== "") raw[name] = value;
+      } catch {
+        // Not registered (tests, an older world): the default stays.
+      }
+    }
+    return resolveHorrorRankConfig(raw);
+  }
+
   // Re-derives the meter after the actor's events changed. Only NEW crossings dock (the stored
   // thresholdsDocked is a high-water mark), so a re-analysis that removes and re-records the same
-  // deeds never docks twice, and losing points never refunds a dock. Fires
+  // deeds never docks twice, and losing points never refunds a dock (the GM's restoreDockedLevels
+  // does, deliberately). Every dock is recorded (`docks`) for that restore. Fires
   // `grand-design-ai.horrorRankChanged(actor, state, dockedFrom)` when points, stage or docked
   // levels changed, and keeps `grand-design-ai.horrorRankLevelsDocked(actor, dockedFrom)` for docks.
+  // A stage change never suppresses or restores a feature by itself: state.suppression.due says how
+  // many the GM still has to confirm (confirmHorrorSuppression / restoreHorrorSuppression).
   async _recomputeHorrorRank(actor) {
+    const config = this._horrorConfig();
     const raw = actor?.getFlag?.(MODULE_ID, HORROR_RANK_FLAG);
-    const stored = migrateHorrorRankState(raw);
-    const computed = computeHorrorRank(this.getGrowth(actor).events, { docked: stored.thresholdsDocked, legacyPoints: stored.legacyPoints });
+    const stored = migrateHorrorRankState(raw, config);
+    const computed = computeHorrorRank(this.getGrowth(actor).events, { docked: stored.thresholdsDocked, legacyPoints: stored.legacyPoints, config });
     let dockedFrom = [];
     let registry = null;
     let totalLevelsDocked = stored.totalLevelsDocked;
+    const docks = [...stored.docks];
     if (computed.newDocks > 0) {
       const docked = applyHorrorRankDocks(this.getActorRegistry(actor), computed.newDocks);
       dockedFrom = docked.dockedFrom;
       registry = docked.registry;
       totalLevelsDocked += docked.levelsDocked;
+      const at = new Date().toISOString();
+      docked.dockedFrom.forEach((dock, index) => {
+        const crossing = stored.thresholdsDocked + (docked.dockCrossings?.[index] ?? index) + 1;
+        docks.push({ id: `dock:${crossing}:${dock.classId}:${Date.parse(at) || 0}`, crossing, classId: dock.classId, levelsDocked: dock.levelsDocked, fromLevel: dock.fromLevel, toLevel: dock.toLevel, at });
+      });
     }
     const next = {
       version: 2,
@@ -1051,13 +1091,15 @@ export class GrandDesignApi {
       thresholdsDocked: Math.max(stored.thresholdsDocked, computed.crossings),
       totalLevelsDocked,
       points: computed.points,
-      stage: computed.stage
+      stage: computed.stage,
+      docks,
+      suppressions: stored.suppressions
     };
     const changed = raw?.version !== 2
       || stored.points !== next.points
       || stored.thresholdsDocked !== next.thresholdsDocked
       || stored.totalLevelsDocked !== next.totalLevelsDocked;
-    const state = horrorRankView(computed, next);
+    const state = this._horrorRankStateFor(actor, computed, next);
     if (!changed) return { state, dockedFrom, changed: false };
     await actor.update({
       [`flags.${MODULE_ID}.${HORROR_RANK_FLAG}`]: next,
@@ -1069,6 +1111,147 @@ export class GrandDesignApi {
     if (newsworthy) globalThis.Hooks?.callAll?.("grand-design-ai.horrorRankChanged", actor, state, dockedFrom);
     if (dockedFrom.length) globalThis.Hooks?.callAll?.("grand-design-ai.horrorRankLevelsDocked", actor, dockedFrom);
     return { state, dockedFrom, changed: true };
+  }
+
+  // The public state: the meter (horrorRankView) plus what the GM can act on -- the dock log with
+  // Class names, the stage-suppression balance and the candidates for the next suppression.
+  _horrorRankStateFor(actor, computed, stored) {
+    const view = horrorRankView(computed, stored);
+    const registry = safeCall(() => this.getActorRegistry(actor), null);
+    const docks = (stored.docks ?? []).map((dock) => ({ ...dock, className: registry?.classes?.[dock.classId]?.name ?? null }));
+    const balance = suppressionBalance(computed.stage, stored.suppressions);
+    const systemId = globalThis.game?.system?.id;
+    const candidates = balance.due > 0 ? safeCall(() => listSuppressibleFeatures(actorItems(actor), systemId), []) : [];
+    const suppressed = (stored.suppressions ?? []).map((record) => ({
+      ...record,
+      present: record.waived ? true : Boolean(actorItems(actor).find((item) => (item?.id ?? item?._id) === record.itemId))
+    }));
+    const restorable = suppressed.filter((record) => !record.waived);
+    return {
+      ...view,
+      lockedOut: computed.stage >= HORROR_RANK_MAX_STAGE,
+      docks,
+      restorableDocks: docks.filter((dock) => !dock.restoredAt).length,
+      suppression: {
+        due: balance.due,
+        held: balance.held,
+        suppressed,
+        candidates,
+        defaultCandidateId: candidates[0]?.itemId ?? null,
+        // Default order for a stage lost: the most recent suppression comes back first.
+        restoreDefaultId: balance.due < 0 ? (restorable.at(-1)?.itemId ?? null) : null
+      }
+    };
+  }
+
+  /**
+   * Stage suppression (owner decision 2026-09-29): confirms the feature a newly gained Horror Rank
+   * stage switches off. `itemId` defaults to the module's pick (combat-relevant first, never a Grand
+   * Design Item); `waive: true` records the stage as settled without suppressing anything (e.g. the
+   * character has no eligible feature, or the GM rules otherwise). GM only, one per call, refused
+   * when no suppression is due. The Item is switched off mechanically (PF2e rule elements /
+   * frequency, dnd5e activities / effects / uses) and labelled; its flag keeps what restores it.
+   * Returns { record, state }. Hook: grand-design-ai.horrorFeatureSuppressed(actor, record).
+   */
+  async confirmHorrorSuppression(actor, { itemId = null, waive = false } = {}) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "horror-suppress", async () => {
+      const current = this.getHorrorRank(actor);
+      if (current.suppression.due <= 0) throw new Error(`${actor.name} owes no Horror Rank suppression right now (stage ${current.stage}, ${current.suppression.held} feature(s) suppressed).`);
+      const stored = migrateHorrorRankState(actor.getFlag(MODULE_ID, HORROR_RANK_FLAG), this._horrorConfig());
+      const stage = stored.suppressions.length + 1;
+      const at = new Date().toISOString();
+      const systemId = game.system?.id;
+      let record;
+      if (waive === true) {
+        record = { stage, itemId: null, itemName: "", at, waived: true, systemId };
+      } else {
+        const pick = itemId ?? current.suppression.defaultCandidateId;
+        const candidate = current.suppression.candidates.find((entry) => entry.itemId === pick);
+        if (!candidate) throw new Error(pick ? `That feature cannot be suppressed by Horror Rank (only a ${systemId === "pf2e" ? "class feat or dedication" : "feat or class feature"} that is not a Grand Design Item).` : `${actor.name} has no feature a Horror Rank stage can suppress; waive the stage instead.`);
+        const item = actorItems(actor).find((entry) => (entry?.id ?? entry?._id) === pick);
+        await item.update(suppressFeature(item, systemId, { stage, at }));
+        record = { stage, itemId: pick, itemName: candidate.name, at, systemId };
+      }
+      await actor.update({ [`flags.${MODULE_ID}.${HORROR_RANK_FLAG}`]: { ...stored, suppressions: [...stored.suppressions, record] } });
+      globalThis.Hooks?.callAll?.("grand-design-ai.horrorFeatureSuppressed", actor, record);
+      return { record, state: this.getHorrorRank(actor) };
+    });
+  }
+
+  /**
+   * Gives back one suppressed feature (owner decision 2026-09-29: losing a stage restores one, GM's
+   * choice of order, default the most recent). Refused unless a restore is owed, except with
+   * `force: true` -- the GM undoing a wrong pick, after which the stage asks for a new one.
+   * The Item's mechanics come back exactly as the suppression stashed them. Returns { record,
+   * restored, state }. Hook: grand-design-ai.horrorFeatureRestored(actor, record).
+   */
+  async restoreHorrorSuppression(actor, { itemId = null, force = false } = {}) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "horror-restore", async () => {
+      const current = this.getHorrorRank(actor);
+      if (current.suppression.due >= 0 && force !== true) throw new Error(`${actor.name}'s Horror Rank has not dropped a stage: no suppressed feature is owed back (the GM can still force it).`);
+      const stored = migrateHorrorRankState(actor.getFlag(MODULE_ID, HORROR_RANK_FLAG), this._horrorConfig());
+      if (!stored.suppressions.length) throw new Error(`${actor.name} has no suppressed feature.`);
+      // Default: the most recent real suppression; a waived stage is given back only when nothing else is.
+      const index = itemId
+        ? stored.suppressions.findIndex((record) => record.itemId === itemId)
+        : (() => {
+          for (let i = stored.suppressions.length - 1; i >= 0; i -= 1) if (!stored.suppressions[i].waived) return i;
+          return stored.suppressions.length - 1;
+        })();
+      if (index < 0) throw new Error("That feature is not suppressed by Horror Rank.");
+      const record = stored.suppressions[index];
+      let restored = false;
+      if (!record.waived) {
+        const item = actorItems(actor).find((entry) => (entry?.id ?? entry?._id) === record.itemId);
+        const update = item ? restoreSuppressedFeature(item, record.systemId ?? game.system?.id) : null;
+        if (update) {
+          await item.update(update);
+          restored = true;
+        }
+      }
+      const suppressions = stored.suppressions.filter((_, i) => i !== index).map((entry, i) => ({ ...entry, stage: i + 1 }));
+      await actor.update({ [`flags.${MODULE_ID}.${HORROR_RANK_FLAG}`]: { ...stored, suppressions } });
+      globalThis.Hooks?.callAll?.("grand-design-ai.horrorFeatureRestored", actor, record);
+      return { record, restored, state: this.getHorrorRank(actor) };
+    });
+  }
+
+  /**
+   * GM "Restore docked levels" (owner decision 2026-09-29): gives the Classes back the levels
+   * recorded Horror Rank docks took (`ids` limits it to some docks; default every unrestored one).
+   * Each dock is restored at most once; the crossing's high-water mark only drops when the meter no
+   * longer reaches it, so the same deeds never dock again at once, while a later crossing (new
+   * deeds) docks once, as before. Docks from before the dock log (older worlds) have no record and
+   * are not restored. GM only. Returns { restored, skipped, levelsRestored, state }.
+   * Hook: grand-design-ai.horrorRankLevelsRestored(actor, restored).
+   */
+  async restoreDockedLevels(actor, { ids = null } = {}) {
+    this._assertSupportedSystemActor(actor);
+    this._assertGm();
+    return this._withActorLock(actor, "horror-restore-levels", async () => {
+      const config = this._horrorConfig();
+      const stored = migrateHorrorRankState(actor.getFlag(MODULE_ID, HORROR_RANK_FLAG), config);
+      const computed = computeHorrorRank(this.getGrowth(actor).events, { docked: stored.thresholdsDocked, legacyPoints: stored.legacyPoints, config });
+      const result = restoreDockedLevelsPure(this.getActorRegistry(actor), stored, { ids, crossings: computed.crossings });
+      if (!result.restored.length) return { restored: [], skipped: result.skipped, levelsRestored: 0, state: this.getHorrorRank(actor) };
+      const next = {
+        ...stored,
+        docks: result.docks,
+        thresholdsDocked: result.thresholdsDocked,
+        totalLevelsDocked: Math.max(0, stored.totalLevelsDocked - result.levelsRestored)
+      };
+      await actor.update({
+        [`flags.${MODULE_ID}.${HORROR_RANK_FLAG}`]: next,
+        [`flags.${MODULE_ID}.${REGISTRY_FLAG}`]: result.registry
+      });
+      await this._syncDockedClassItems(actor, result.restored.map(({ classId, toLevel }) => ({ classId, toLevel })));
+      globalThis.Hooks?.callAll?.("grand-design-ai.horrorRankLevelsRestored", actor, result.restored);
+      return { restored: result.restored, skipped: result.skipped, levelsRestored: result.levelsRestored, state: this.getHorrorRank(actor) };
+    });
   }
 
   // The registry is the source of truth for a Class's level, but a sheet Item that shows the level
@@ -2955,6 +3138,26 @@ export class GrandDesignApi {
 // Per-actor record of the last notes analyzed (api.js-local on purpose: constants.js is shared).
 export const LAST_ANALYSIS_FLAG = "lastAnalysis";
 
+// Horror Rank stage suppression reads the sheet's Items: a Foundry Collection (contents / map) or a
+// plain array/object in tests; anything else is no Items.
+function actorItems(actor) {
+  const items = actor?.items;
+  if (!items) return [];
+  if (Array.isArray(items)) return items;
+  if (Array.isArray(items.contents)) return items.contents;
+  if (Array.isArray(items.all)) return items.all;
+  if (typeof items.filter === "function") return items.filter(() => true);
+  return [];
+}
+
+function safeCall(fn, fallback) {
+  try {
+    return fn();
+  } catch {
+    return fallback;
+  }
+}
+
 // The public Horror Rank shape (getHorrorRank, the horrorRankChanged hook): the derived meter plus
 // what the stored flag remembers (levels docked so far and the crossings already docked).
 function horrorRankView(computed, stored) {
@@ -2965,8 +3168,11 @@ function horrorRankView(computed, stored) {
     totalLevelsDocked: stored.totalLevelsDocked,
     deeds: computed.deeds,
     deedPoints: computed.deedPoints,
+    atonements: computed.atonements ?? [],
+    atonementPoints: computed.atonementPoints ?? 0,
     legacyPoints: computed.legacyPoints,
     threshold: computed.threshold,
+    pointsBySeverity: computed.pointsBySeverity,
     thresholdsDocked: stored.thresholdsDocked
   };
 }

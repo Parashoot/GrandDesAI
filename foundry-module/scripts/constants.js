@@ -81,6 +81,24 @@ export const HORROR_RANK_MAX_STAGE = 3;
 // surrendered foe (serious) is a stain, not a stage; a monstrous act (eating a person) is 40% of one.
 export const DARK_SEVERITIES = ["none", "minor", "serious", "monstrous"];
 export const HORROR_RANK_POINTS_BY_SEVERITY = { none: 0, minor: 5, serious: 15, monstrous: 40 };
+// Owner decision 2026-09-29 (conversion rules section 6): genuine amends by the doer LOWER Horror
+// Rank on the same scale as deeds -- minor 5, serious 15, profound 40 (profound pays what a
+// monstrous deed costs). Each growth event carries `atonement` (one of these); the local fallback
+// analyzer never sets it.
+export const ATONEMENT_LEVELS = ["none", "minor", "serious", "profound"];
+// Which deed severity's points an atonement level is worth (so the GM's point settings move both).
+export const ATONEMENT_SEVERITY_EQUIVALENT = { none: "none", minor: "minor", serious: "serious", profound: "monstrous" };
+// GM world settings (board 41384131): the severity points and the threshold, clamped on read.
+export const HORROR_RANK_SETTINGS = Object.freeze({
+  minor: { key: "horrorPointsMinor", min: 0, max: 100 },
+  serious: { key: "horrorPointsSerious", min: 0, max: 200 },
+  monstrous: { key: "horrorPointsMonstrous", min: 0, max: 400 },
+  threshold: { key: "horrorRankThreshold", min: 20, max: 1000 }
+});
+// Stage suppression (owner decision 2026-09-29): each stage gained switches off one class feat /
+// dedication (PF2e) or feat / class feature (dnd5e) on the sheet, GM-confirmed. The Item's flag
+// holds what is needed to restore it exactly.
+export const HORROR_SUPPRESSED_ITEM_FLAG = "horrorSuppressed";
 // Revival penalty (canon: resurrection costs levels off the character's own highest Class). A
 // one-shot GM action (api.applyRevivalPenalty), NOT an accumulating meter like Horror Rank --
 // see revival-penalty.js. Deliberately does NOT exclude red Classes from being the docking target

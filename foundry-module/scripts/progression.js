@@ -11,7 +11,7 @@ import {
 import { weightForTag } from "./tag-weighting.js";
 import { checkForTag, pf2eLevelBasedDc, proficiencyForLevel5e, resolveRollCheck } from "./mechanics.js";
 import { flavorProposalName } from "./naming.js";
-import { normalizeDarkDeed } from "./horror-rank.js";
+import { normalizeAtonement, normalizeDarkDeed } from "./horror-rank.js";
 
 // The weighted-evidence total a required tag needs before a proposal template fires. Calibrated
 // against "success" outcomes (weight 1 each) so the long-standing rule of thumb -- three tagged
@@ -734,6 +734,9 @@ export function normalizeGrowthEvent(event, index) {
   // recording. Kept (validated, unknown values -> "none") whenever the reader supplied either field;
   // an event without them (the local fallback analyzer, older worlds) simply has no dark deed.
   const darkFields = event.darkDeed !== undefined || event.darkSeverity !== undefined ? normalizeDarkDeed(event) : null;
+  // Atonement (owner decision 2026-09-29) lowers the derived meter, so it must survive recording too;
+  // kept only when the reader supplied it (unknown values -> "none"), like the dark-deed fields.
+  const atonement = event.atonement !== undefined ? normalizeAtonement(event) : undefined;
   const jev = compactJev(event.jev);
   const reassigned = compactReassigned(event.reassigned);
   return {
@@ -749,6 +752,7 @@ export function normalizeGrowthEvent(event, index) {
     ...(actorName ? { actorName } : {}),
     ...(consequence ? { consequence } : {}),
     ...(darkFields ?? {}),
+    ...(atonement !== undefined ? { atonement } : {}),
     ...(source ? { source } : {}),
     ...(jev ? { jev } : {}),
     ...(reassigned ? { reassigned } : {})

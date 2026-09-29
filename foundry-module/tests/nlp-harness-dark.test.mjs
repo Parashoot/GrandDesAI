@@ -201,7 +201,8 @@ test("sim: gold events carry the gold dark deed on the first event and none else
     for (const event of events.slice(1)) assert.equal(event.darkDeed, "none", item.id);
     assert.equal(scoreDarkDeeds(item, events).darkDeedOk, true, item.id);
   }
-  for (const item of corpus.filter((entry) => entry.category !== "red-polarity-worthy")) {
+  // Any other item whose gold names no vice (at-010, an atonement item, carries a deed of its own).
+  for (const item of corpus.filter((entry) => entry.category !== "red-polarity-worthy" && alts(String(entry.gold?.darkDeed ?? "none"))[0] === "none")) {
     for (const event of goldEvents(item)) assert.deepEqual([event.darkDeed, event.darkSeverity], ["none", "none"], item.id);
   }
   // Unmatched notes: only unmistakable phrasings are dark; an ordinary fight is not.

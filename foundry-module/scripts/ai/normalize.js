@@ -708,6 +708,30 @@ export function coerceDarkDeed(rawDeed, rawSeverity) {
   return { darkDeed, darkSeverity, coercions };
 }
 
+// Atonement (owner decision 2026-09-29): genuine amends by the doer LOWER Horror Rank. Decided per
+// event like darkDeed. "none" is the overwhelmingly common answer; an unknown word never invents
+// amends (it would take points off a real stain), so anything unrecognised is "none".
+export const ATONEMENT_LEVELS = ["none", "minor", "serious", "profound"];
+const ATONEMENT_WORDS = [
+  [/^(none|no|null|n\/?a|nothing|false|0|-+)$/, "none"],
+  [/(profound|monstrous|total|complete|great|huge|immense|life|extreme|3)/, "profound"],
+  [/(serious|severe|grave|major|high|significant|real|substantial|2)/, "serious"],
+  [/(minor|petty|low|small|slight|mild|light|moderate|medium|token|1)/, "minor"]
+];
+
+/** -> { atonement, coercions }: one of ATONEMENT_LEVELS, "none" for anything unrecognised. */
+export function coerceAtonement(raw) {
+  if (raw === undefined || raw === null) return { atonement: "none", coercions: [] };
+  const value = typeof raw === "boolean" ? (raw ? "minor" : "none") : String(raw).toLowerCase().trim();
+  const atonement = ATONEMENT_WORDS.find(([pattern]) => pattern.test(value))?.[1] ?? "none";
+  return { atonement, coercions: atonement !== raw ? [`atonement:${JSON.stringify(raw)}->${atonement}`] : [] };
+}
+
+/** Order for "the greater of two" amends (pipeline.js#mergeFollowUpEvents keeps the greater one). */
+export function atonementRank(level) {
+  return Math.max(0, ATONEMENT_LEVELS.indexOf(level));
+}
+
 /** Order for "the worse of two" (pipeline.js#mergeFollowUpEvents keeps the worse deed). */
 export function darkSeverityRank(severity) {
   return Math.max(0, DARK_SEVERITIES.indexOf(severity));
@@ -909,6 +933,17 @@ export function coerceEvent(rawEvent, opts = {}) {
   const actorName = coerceActorName(actorPick?.value);
   const dark = coerceDarkDeed(raw.darkDeed ?? raw.dark_deed ?? raw.vice, raw.darkSeverity ?? raw.dark_severity ?? raw.severity);
   coercions.push(...dark.coercions);
+  const amends = coerceAtonement(raw.atonement);
+  coercions.push(...amends.coercions);
+  // An amends event names the wrong it repairs ("paid the blood-price for killing a surrendered
+  // scout"), and the model then tagged that PAST deed as a new one in 2 of 3 reps (at-001, qwen3.8),
+  // so the amends cancelled themselves out. The deed was recorded when it happened; a deed done in
+  // the same notes is its own event (at-010). So an event that carries amends carries no dark deed.
+  if (amends.atonement !== "none" && dark.darkDeed !== "none") {
+    coercions.push(`darkDeed:${dark.darkDeed}->none(atonement-event)`);
+    dark.darkDeed = "none";
+    dark.darkSeverity = "none";
+  }
   const language = coerceLanguage(pick(raw, "language")?.value);
 
   const event = {
@@ -920,6 +955,8 @@ export function coerceEvent(rawEvent, opts = {}) {
     // Always present (batch-3 contract section 1): "none"/"none" states "nothing taboo here".
     darkDeed: dark.darkDeed,
     darkSeverity: dark.darkSeverity,
+    // Always present too: "none" states "no amends here" (the fallback analyzer never sets it).
+    atonement: amends.atonement,
     ...(dangerGap ? { dangerGap } : {}),
     ...(quote ? { quote } : {}),
     ...(consequence && !NOISE_WORDS.has(consequence.toLowerCase()) ? { consequence } : {}),

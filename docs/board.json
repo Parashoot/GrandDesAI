@@ -1495,7 +1495,8 @@
    "title": "AI could suggest Class consolidation and redemption (cleanse) from evidence",
    "status": "todo",
    "notes": [
-    "setConsolidation and cleanseEntry have no callers or UI. Fix: tag atonement events in extraction; stage 2 proposes cleanse/consolidation for GM approval."
+    "setConsolidation and cleanseEntry have no callers or UI. Fix: tag atonement events in extraction; stage 2 proposes cleanse/consolidation for GM approval.",
+    "dev-red: NOT done this batch (atonement signal now exists on events, which this needs). cleanseEntry/setConsolidation still without AI proposals."
    ],
    "tags": [
     "red",
@@ -1506,7 +1507,7 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660881.194,
-   "updated": 1790661419.2064748,
+   "updated": 1790718270.793,
    "prio": 2,
    "parent": "7dcd587f"
   },
@@ -2004,6 +2005,60 @@
    "source": "4344c58a dev-integration",
    "created": 1790714064.04,
    "updated": 1790714064.04
+  },
+  {
+   "id": "73fa8066",
+   "title": "Horror Rank stage suppresses one class feat/feature per stage (PF2e class feat or dedication, dnd5e feat/class feature), Stage 3 narrative lock-out notice, restore one per stage lost (owner: yes, 2026-09-29)",
+   "status": "doing",
+   "notes": [
+    "dev-red (worktree, not committed): stage suppression both systems. scripts/systems/horror-suppression.js (eligible: PF2e class feats/dedications, dnd5e feat/class-feature Items; never Grand Design Items; combat-relevant default), suppress = PF2e rules emptied + frequency spent / dnd5e activities removed + effects disabled + uses spent, name+description labelled, stash in flag horrorSuppressed -> exact restore. api.confirmHorrorSuppression(actor,{itemId?,waive?}), restoreHorrorSuppression(actor,{itemId?,force?}); getHorrorRank().suppression {due,held,suppressed,candidates,defaultCandidateId,restoreDefaultId}, lockedOut; hooks horrorFeatureSuppressed/Restored. Growth dialog + Registry meter: picker (default preselected), Suppress/Waive, Restore (most recent default)/Undo, Stage 3 lock-out notice; GM notices on stage change. Tests both systems (exact round trip). 1447 tests green. Not live-verified."
+   ],
+   "tags": [
+    "red",
+    "progression",
+    "pf2e",
+    "dnd5e"
+   ],
+   "severity": "high",
+   "owner": "dev-red",
+   "source": "owner decision, conversion rules 6",
+   "created": 1790714088.803,
+   "updated": 1790718270.653
+  },
+  {
+   "id": "a8728f4e",
+   "title": "Atonement deeds lower Horror Rank (extraction flag + severity, points subtracted, floor 0) and a GM 'restore docked levels' action (owner: yes, 2026-09-29)",
+   "status": "doing",
+   "notes": [
+    "dev-red: event field atonement none|minor|serious|profound (schema required after darkSeverity, rule + 1 few-shot, coerceAtonement, fold keeps greater, amends event carries no darkDeed); points 5/15/40 subtracted, running sum in recorded order floored at 0, derived. api.restoreDockedLevels(actor,{ids?}) with a dock log (crossing, Class, levels): each dock once; mark drops only for crossings no longer reached. Corpus corpus/atonement.json (10 amends + 8 traps, en/es/fr). Real model qwen3.8:27b: atonement level 100% / recognised 100% on 10 items (3 reps + 2 reps), atonement invented 0% on 48 gold-none (atonement traps + traps, 2 reps; 1 of 58 in the first prompt, fixed). darkDeedAcc red 3 reps: baseline 86.7% -> 86.7% (1-rep baseline 90%); misses rd-008 (known), rd-009 2/3 (borderline in baseline too). dark FP traps 0%. Traps score 98.1% (count on tr-015/tr-037, trapAcc 100%)."
+   ],
+   "tags": [
+    "red",
+    "gateway",
+    "progression"
+   ],
+   "severity": "high",
+   "owner": "dev-red",
+   "source": "owner decision, conversion rules 6",
+   "created": 1790714088.855,
+   "updated": 1790718270.698
+  },
+  {
+   "id": "41384131",
+   "title": "Horror Rank severity points (5/15/40) and the 100-point threshold as GM world settings; tune after a campaign with real dark deeds (owner: yes)",
+   "status": "doing",
+   "notes": [
+    "dev-red: world settings horrorPointsMinor/Serious/Monstrous (defaults 5/15/40, clamped 0-100/0-200/0-400) and horrorRankThreshold (100, clamped 20-1000), registered in main.js, clamped again on read (horror-rank.js#resolveHorrorRankConfig); atonement uses the same scale. Tests: clamp + api reading them on both systems."
+   ],
+   "tags": [
+    "red",
+    "qol"
+   ],
+   "severity": "low",
+   "owner": "dev-red",
+   "source": "owner decision, conversion rules 6",
+   "created": 1790714088.922,
+   "updated": 1790718270.745
   }
  ]
 }

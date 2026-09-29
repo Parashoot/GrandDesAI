@@ -1,0 +1,285 @@
+[
+  {
+    "id": "at-001",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Tovin went back to the goblin warren alone and paid the blood-price for the scout he killed after it surrendered: his sword and every coin he had. The chieftain spat at him but took it.",
+    "gold": {
+      "mustTags": ["diplomacy|society"],
+      "okTags": ["diplomacy", "society", "intimidation", "support"],
+      "minEvents": 1,
+      "maxEvents": 1,
+      "atonement": "serious|minor",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "real, costly amends by the doer for his own past deed; the kill itself is only mentioned (already recorded), not a new deed"
+    }
+  },
+  {
+    "id": "at-002",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Saoirse freed the six villagers she had sold to the slavers. She broke into the pens at night and led them home, and took an arrow in the shoulder for it.",
+    "gold": {
+      "mustTags": ["stealth|thievery|athletics|martial|leadership"],
+      "okTags": ["stealth", "thievery", "athletics", "martial", "leadership", "support", "survival"],
+      "minEvents": 1,
+      "maxEvents": 2,
+      "atonement": "serious|profound",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "the owner's own example: freeing the slaves you sold is serious"
+    }
+  },
+  {
+    "id": "at-003",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "After burning down the mill last month, Brakka spent the whole week rebuilding it with the miller's family, hauling every beam herself and paying for the new millstone.",
+    "gold": {
+      "mustTags": ["craft|athletics"],
+      "okTags": ["craft", "athletics", "support", "society"],
+      "minEvents": 1,
+      "maxEvents": 2,
+      "atonement": "serious",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "undoes the harm she did, at real cost"
+    }
+  },
+  {
+    "id": "at-004",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Kesh turned himself in to the Watch for the murder of the courier and told the magistrate everything.",
+    "gold": {
+      "mustTags": [],
+      "okTags": ["diplomacy", "society"],
+      "minEvents": 1,
+      "maxEvents": 1,
+      "atonement": "serious|profound",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "turning himself in for his own murder"
+    }
+  },
+  {
+    "id": "at-005",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Grell tracked down the widow he swindled in the spring and paid her back twice what he took.",
+    "gold": {
+      "mustTags": [],
+      "okTags": ["diplomacy", "society", "lore", "survival"],
+      "minEvents": 1,
+      "maxEvents": 2,
+      "atonement": "minor|serious",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "paying back a wrong with interest: minor or serious"
+    }
+  },
+  {
+    "id": "at-006",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Aurel walked into the plague ward he had cursed and stayed until the last patient was cured, though the sickness nearly killed him.",
+    "gold": {
+      "mustTags": ["medicine|religion|occultism|divine"],
+      "okTags": ["medicine", "religion", "occultism", "divine", "support", "arcana"],
+      "minEvents": 1,
+      "maxEvents": 1,
+      "atonement": "profound|serious",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "risked his life to undo his own curse"
+    }
+  },
+  {
+    "id": "at-007",
+    "category": "atonement",
+    "lang": "es",
+    "notes": "Mara devolvió a la aldea todo el grano que había robado durante el invierno y trabajó sus campos gratis hasta la cosecha.",
+    "gold": {
+      "mustTags": [],
+      "okTags": ["nature", "survival", "society", "craft", "support"],
+      "minEvents": 1,
+      "maxEvents": 2,
+      "atonement": "serious|minor",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "returned what she stole and worked the fields for free"
+    }
+  },
+  {
+    "id": "at-008",
+    "category": "atonement",
+    "lang": "fr",
+    "notes": "Luc a racheté la liberté des trois esclaves qu'il avait vendus, en donnant tout son or.",
+    "gold": {
+      "mustTags": [],
+      "okTags": ["diplomacy", "society"],
+      "minEvents": 1,
+      "maxEvents": 1,
+      "atonement": "serious",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "bought back the freedom of the slaves he sold, with all his gold"
+    }
+  },
+  {
+    "id": "at-009",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "wick finally gave the smugglers kids the 50g he got for ratting out their parents + busted the parents outta jail. took a crossbow bolt doing it lol",
+    "gold": {
+      "mustTags": ["thievery|stealth|athletics|deception"],
+      "okTags": ["thievery", "stealth", "athletics", "deception", "martial", "support", "society"],
+      "minEvents": 1,
+      "maxEvents": 2,
+      "atonement": "serious|profound|minor",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "shorthand; repays and undoes his own betrayal at real risk"
+    }
+  },
+  {
+    "id": "at-010",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Tovin killed the guard after he surrendered. Later that night he buried him and left his own purse with the guard's widow.",
+    "gold": {
+      "mustTags": ["martial"],
+      "okTags": ["martial", "athletics", "religion", "support", "intimidation", "diplomacy"],
+      "minEvents": 1,
+      "maxEvents": 2,
+      "atonement": "minor|serious",
+      "darkDeed": "cruelty|bloodlust",
+      "darkSeverity": "serious",
+      "atonementWhy": "both in one note: the deed (cruelty, serious) and small amends the same night"
+    }
+  },
+  {
+    "id": "at-t01",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Ivo apologised to the innkeeper for rigging the dice again and bought him a drink.",
+    "gold": {
+      "mustTags": [],
+      "okTags": ["diplomacy", "society", "deception"],
+      "maxEvents": 2,
+      "atonement": "none",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "trap: an apology for something petty is none"
+    }
+  },
+  {
+    "id": "at-t02",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Brakka still feels terrible about the mill and swore she'd make it right someday.",
+    "gold": {
+      "mustTags": [],
+      "okTags": ["diplomacy"],
+      "maxEvents": 1,
+      "atonement": "none",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "trap: guilt and a promise are not amends"
+    }
+  },
+  {
+    "id": "at-t03",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Maren healed the wounded caravan guards after the ambush, all night, until she could barely stand.",
+    "gold": {
+      "mustTags": ["medicine|divine|religion|support"],
+      "okTags": ["medicine", "divine", "religion", "support"],
+      "minEvents": 1,
+      "maxEvents": 1,
+      "atonement": "none",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "trap: heroism with no wrong of hers to repair"
+    }
+  },
+  {
+    "id": "at-t04",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Sable prayed at the harbour shrine for the souls of the drowned sailors.",
+    "gold": {
+      "mustTags": ["religion|divine"],
+      "okTags": ["religion", "divine", "support"],
+      "minEvents": 1,
+      "maxEvents": 1,
+      "atonement": "none",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "trap: prayer is not amends"
+    }
+  },
+  {
+    "id": "at-t05",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "The villagers forgave Kesh for the fire and threw him a feast.",
+    "gold": {
+      "mustTags": [],
+      "okTags": ["diplomacy", "society"],
+      "maxEvents": 1,
+      "atonement": "none",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "trap: forgiveness done TO Kesh is not his atonement"
+    }
+  },
+  {
+    "id": "at-t06",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Grell plans to pay the widow back next week, once he gets his cut of the job.",
+    "gold": {
+      "mustTags": [],
+      "okTags": [],
+      "noEvents": true,
+      "atonement": "none",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "trap: only planned"
+    }
+  },
+  {
+    "id": "at-t07",
+    "category": "atonement",
+    "lang": "en",
+    "notes": "Wick found the baker's lost dog in the sewers and brought it back to her daughter; she gave him a whole pie.",
+    "gold": {
+      "mustTags": ["survival|nature|lore|stealth"],
+      "okTags": ["survival", "nature", "lore", "support", "stealth", "water"],
+      "minEvents": 1,
+      "maxEvents": 1,
+      "atonement": "none",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "trap: kindness with no wrong to repair"
+    }
+  },
+  {
+    "id": "at-t08",
+    "category": "atonement",
+    "lang": "es",
+    "notes": "Tovin le pidió perdón al tabernero por romper una silla en la pelea.",
+    "gold": {
+      "mustTags": [],
+      "okTags": ["diplomacy", "society"],
+      "maxEvents": 1,
+      "atonement": "none",
+      "darkDeed": "none",
+      "darkSeverity": "none",
+      "atonementWhy": "trap: apology for a broken chair (petty)"
+    }
+  }
+]

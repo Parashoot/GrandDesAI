@@ -83,15 +83,15 @@ test("computeHorrorRank sums deeds, derives stage/nextThreshold, and counts only
 });
 
 test("migrateHorrorRankState keeps approval-era points as a legacy baseline (never zeroed)", () => {
-  assert.deepEqual(migrateHorrorRankState(undefined), { version: 2, legacyPoints: 0, thresholdsDocked: 0, totalLevelsDocked: 0, points: 0, stage: 0 });
-  assert.deepEqual(migrateHorrorRankState({ points: 50, totalLevelsDocked: 0 }), { version: 2, legacyPoints: 50, thresholdsDocked: 0, totalLevelsDocked: 0, points: 50, stage: 0 });
+  assert.deepEqual(migrateHorrorRankState(undefined), { version: 2, legacyPoints: 0, thresholdsDocked: 0, totalLevelsDocked: 0, points: 0, stage: 0, docks: [], suppressions: [] });
+  assert.deepEqual(migrateHorrorRankState({ points: 50, totalLevelsDocked: 0 }), { version: 2, legacyPoints: 50, thresholdsDocked: 0, totalLevelsDocked: 0, points: 50, stage: 0, docks: [], suppressions: [] });
   // Old model: 5 approvals = 125 -> one crossing docked 2 levels, 25 left over.
   const migrated = migrateHorrorRankState({ points: 25, totalLevelsDocked: HORROR_RANK_LEVEL_PENALTY });
   assert.equal(migrated.legacyPoints, 125);
   assert.equal(migrated.thresholdsDocked, 1);
   assert.equal(migrated.stage, 1);
   assert.equal(computeHorrorRank([], { docked: migrated.thresholdsDocked, legacyPoints: migrated.legacyPoints }).newDocks, 0, "migration never re-docks the past");
-  const v2 = { version: 2, legacyPoints: 30, thresholdsDocked: 2, totalLevelsDocked: 4, points: 230, stage: 2 };
+  const v2 = { version: 2, legacyPoints: 30, thresholdsDocked: 2, totalLevelsDocked: 4, points: 230, stage: 2, docks: [], suppressions: [] };
   assert.deepEqual(migrateHorrorRankState(v2), v2);
 });
 

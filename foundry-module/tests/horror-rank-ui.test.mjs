@@ -55,7 +55,7 @@ test("normalizeHorrorRankView: today's { points, totalLevelsDocked } plus events
   assert.equal(view.derivedDeeds, true);
   assert.deepEqual(view.deeds.map((deed) => [deed.eventId, deed.vice, deed.severity, deed.points]), [["b", "cruelty", "monstrous", 40], ["c", "betrayal", "minor", 5]]);
   // Nothing at all (API missing, flag empty): a clean Stage 0, never a throw.
-  assert.deepEqual(normalizeHorrorRankView(null), { points: 0, stage: 0, nextThreshold: 100, threshold: 100, totalLevelsDocked: 0, deeds: [], derivedDeeds: true });
+  assert.deepEqual(normalizeHorrorRankView(null), { points: 0, stage: 0, nextThreshold: 100, threshold: 100, totalLevelsDocked: 0, deeds: [], derivedDeeds: true, atonements: [], suppression: { due: 0, held: 0, suppressed: [], candidates: [], defaultCandidateId: null, restoreDefaultId: null }, docks: [], lockedOut: false });
   // The stage caps at 3 and the last stage has no next threshold.
   const last = normalizeHorrorRankView({ points: 999 });
   assert.equal(last.stage, 3);

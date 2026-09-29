@@ -258,6 +258,19 @@
 .gd-horror .gd-horror-docked { color: #a12a2a; font-weight: bold; font-size: 0.9em; }
 .gd-horror details.gd-horror-deeds ul { list-style: none; padding-left: 0; max-height: 10rem; overflow-y: auto; margin: 0.1rem 0; }
 .gd-horror .gd-horror-points { font-weight: bold; color: #a12a2a; font-size: 0.85em; }
+/* Horror Rank controls (owner decisions 2026-09-29): amends, stage suppression, dock restore, Stage 3 lock-out. */
+.gd-horror details.gd-horror-atonements ul,
+.gd-horror .gd-horror-suppressed ul,
+.gd-horror .gd-horror-docks ul { list-style: none; padding-left: 0; max-height: 10rem; overflow-y: auto; margin: 0.1rem 0; }
+.gd-horror .gd-atonement-points { color: #2f6b3a; }
+.grand-design-growth .gd-chip.gd-atonement,
+.grand-design-registry .gd-chip.gd-atonement { background: rgba(47, 107, 58, 0.12); color: #2f6b3a; border: 1px solid rgba(47, 107, 58, 0.35); }
+.gd-horror .gd-horror-lockout { border-left: 3px solid #7a1616; padding-left: 0.4rem; font-size: 0.9em; }
+.gd-horror .gd-horror-suppress,
+.gd-horror .gd-horror-suppressed,
+.gd-horror .gd-horror-docks { border-top: 1px dashed rgba(161, 42, 42, 0.35); margin-top: 0.3rem; padding-top: 0.3rem; font-size: 0.9em; }
+.gd-horror .gd-horror-suppress-row { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.gd-horror .gd-horror-suppress-row select { flex: 1 1 12rem; min-width: 0; }
 .grand-design-growth .gd-chip.gd-dark-deed,
 .grand-design-registry .gd-chip.gd-dark-deed { background: rgba(161, 42, 42, 0.12); color: #a12a2a; border: 1px solid rgba(161, 42, 42, 0.35); }
 .grand-design-growth .gd-chip.gd-dark-deed.gd-dark-serious,

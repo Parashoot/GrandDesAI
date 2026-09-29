@@ -1,11 +1,13 @@
 import { MODULE_ID } from "./constants.js";
 import {
   BUSY_NOTICE,
+  HORROR_ACTIONS,
   actionButton,
   describeActionError,
   lineageSourceNames,
   normalizeHorrorRankView,
   openGrowthManager,
+  prepareHorrorAction,
   prettifyEntryId,
   renderHorrorRankMeter,
   setBusy
@@ -29,7 +31,11 @@ import {
 const EVOLVE = "gd-registry-evolve";
 const MERGE = "gd-registry-merge";
 const OPEN_GROWTH = "gd-registry-open-growth";
-const LOCKABLE = `[data-action="${EVOLVE}"], [data-action="${MERGE}"], [data-action="${OPEN_GROWTH}"], input[name="gd-merge-class"]`;
+// The Horror Rank meter here carries the same GM controls as in the Growth dialog (owner decisions
+// 2026-09-29), so they lock with the rest. Spelled out (not read from growth-ui.js HORROR_ACTIONS):
+// the two files import each other and neither may touch the other at module evaluation.
+const HORROR_LOCKABLE = ["gd-horror-suppress", "gd-horror-waive", "gd-horror-restore", "gd-horror-restore-levels"].map((action) => `[data-action="${action}"]`).join(", ");
+const LOCKABLE = `[data-action="${EVOLVE}"], [data-action="${MERGE}"], [data-action="${OPEN_GROWTH}"], input[name="gd-merge-class"]${HORROR_LOCKABLE ? `, ${HORROR_LOCKABLE}` : ""}`;
 const COMING_SOON = ["Combine Skills", "Cleanse", "Consolidate", "Revive"];
 
 /**
@@ -198,7 +204,7 @@ export function readSelectedClassIds(root) {
 /** The panel's body HTML. Pure, exported for tests. */
 export function renderRegistryContent({
   actorName = "", owned = { classes: [], skills: [], titles: [] }, erosion = [], readiness = new Map(),
-  canEvolve = false, canMerge = false, busy = false, aiAttached = true, horrorRank = null, events = []
+  canEvolve = false, canMerge = false, busy = false, aiAttached = true, horrorRank = null, events = [], canManageHorror = false
 } = {}) {
   const names = ownedNameIndex(owned);
   const byStatus = (list) => [...(Array.isArray(list) ? list : [])].sort((a, b) => (a.status === "superseded") - (b.status === "superseded"));
@@ -276,7 +282,7 @@ export function renderRegistryContent({
     </header>
     ${busy ? `<p class="gd-busy-notice"><i class="fas fa-spinner fa-spin"></i> ${escapeHtml(BUSY_NOTICE)}</p>` : ""}
     <p class="gd-hint">Evolve and Merge never change the character directly: each writes a <strong>pending proposal</strong> and opens it in the Growth dialog for you to approve or reject.</p>
-    ${renderHorrorRankMeter(horrorRank, { events })}
+    ${renderHorrorRankMeter(horrorRank, { events, canManage: canManageHorror, busy })}
     ${risks.size ? `<div class="gd-erosion-callout"><h4><i class="fas fa-hourglass-half"></i> Classes at risk of erosion</h4>${renderErosionList([...risks.values()])}</div>` : ""}
     ${section("Classes", classes.length, mergeButton, classRows, "No Classes yet.")}
     ${section("Skills", skills.length, "", skillRows, "No Skills yet.")}
@@ -314,6 +320,7 @@ export function openRegistryPanel(actor, { lastResult = null } = {}) {
   const api = game.modules.get(MODULE_ID).api;
   const canEvolve = typeof api.requestSkillEvolution === "function";
   const canMerge = typeof api.requestClassMerge === "function";
+  const canManageHorror = game.user?.isGM === true && typeof api.confirmHorrorSuppression === "function";
   const apiBusy = () => {
     try {
       return typeof api.isBusy === "function" && api.isBusy(actor) === true;
@@ -352,7 +359,7 @@ export function openRegistryPanel(actor, { lastResult = null } = {}) {
     })();
     content = renderRegistryContent({
       actorName: actor?.name, owned, erosion, readiness: evolutionReadiness(api, actor, lastResult),
-      canEvolve, canMerge, busy: apiBusy(), aiAttached, horrorRank, events
+      canEvolve, canMerge, busy: apiBusy(), aiAttached, horrorRank, events, canManageHorror
     });
   } catch (error) {
     console.error(`${MODULE_ID} | registry panel render failed`, error);
@@ -417,6 +424,25 @@ export function openRegistryPanel(actor, { lastResult = null } = {}) {
       }
       return api.requestClassMerge(actor, classIds);
     }),
+    // Horror Rank controls: confirm first (where asked), then run with the panel locked, then reopen.
+    ...Object.fromEntries(Object.entries(HORROR_ACTIONS).map(([name, { action, busy: busyLabel }]) => [action, async (root, button) => {
+      if (running || !canManageHorror || button?.disabled) return;
+      const work = await prepareHorrorAction(api, actor, name, root, button, { confirm: confirmPanel });
+      if (!work) return;
+      running = true;
+      setBusy(root, button, true, busyLabel, busyOptions);
+      try {
+        const { level, message } = await work();
+        ui.notifications[level](message, level === "warn" ? { permanent: true } : undefined);
+      } catch (error) {
+        const { level, message } = describeActionError(error);
+        if (level === "error") console.error(`${MODULE_ID} | horror ${name} failed`, error);
+        ui.notifications[level](message);
+      }
+      running = false;
+      await close();
+      openRegistryPanel(actor, { lastResult });
+    }])),
     [OPEN_GROWTH]: async () => {
       if (running) return;
       await close();
@@ -445,6 +471,18 @@ export function openRegistryPanel(actor, { lastResult = null } = {}) {
   );
   dialog.render(true);
   return dialog;
+}
+
+// Yes/no, defaulting to no (a dismissed or failed dialog runs nothing), like the Growth dialog.
+async function confirmPanel(title, content) {
+  try {
+    const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
+    if (typeof DialogV2?.confirm === "function") return (await DialogV2.confirm({ window: { title }, content, rejectClose: false })) === true;
+    if (typeof Dialog?.confirm === "function") return (await Dialog.confirm({ title, content, yes: () => true, no: () => false, defaultYes: false })) === true;
+  } catch (error) {
+    console.warn(`${MODULE_ID} | "${title}" confirmation failed`, error);
+  }
+  return false;
 }
 
 function chip(text, extra = "", title = "") {

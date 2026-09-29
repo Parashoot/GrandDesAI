@@ -14,7 +14,7 @@
 // Pure ESM, zero Foundry globals.
 
 import { parseModelJson, ModelJsonError } from "./json-repair.js";
-import { coerceEvent, eventDedupeKey, resolveTag, slugifyTheme, stemWord, CANONICAL_TAGS, VICE_SYNONYMS, darkSeverityRank } from "./normalize.js";
+import { coerceEvent, eventDedupeKey, resolveTag, slugifyTheme, stemWord, CANONICAL_TAGS, VICE_SYNONYMS, darkSeverityRank, atonementRank } from "./normalize.js";
 import { coerceStructuredMechanics, fillStructuredFromEffect } from "./structured.js";
 import { EVENT_EXTRACTION_SCHEMA, COMBINED_SCHEMA, proposalSchemaCapped } from "./schemas.js";
 // Pure (no Foundry globals): the same per-character credit rule api.js applies to the events.
@@ -1497,6 +1497,10 @@ export function mergeFollowUpEvents(events) {
       if (event.darkDeed && event.darkDeed !== "none" && darkSeverityRank(event.darkSeverity) > darkSeverityRank(prev.darkSeverity)) {
         prev.darkDeed = event.darkDeed;
         prev.darkSeverity = event.darkSeverity;
+      }
+      // Same for amends: "...and paid every family back" can be the payoff line (board a8728f4e).
+      if (event.atonement && event.atonement !== "none" && atonementRank(event.atonement) > atonementRank(prev.atonement)) {
+        prev.atonement = event.atonement;
       }
       // The first event is the action; its outcome stands unless the model had to guess it.
       if (prev.outcomeInferred && !event.outcomeInferred) {

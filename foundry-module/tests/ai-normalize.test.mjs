@@ -201,8 +201,8 @@ test("coerceEvent wraps a bare string and infers tags from its text", () => {
 
 test("coerceEvent reads aliased fields and comma-separated tags", () => {
   const { event } = coerceEvent({ description: "Mira healed Kesh", tags: "medicine, support", result: "Success!" });
-  // Batch 3: every coerced event states its dark deed, "none"/"none" when there is none.
-  assert.deepEqual(event, { summary: "Mira healed Kesh", tags: ["medicine", "support"], themes: [], outcome: "success", darkDeed: "none", darkSeverity: "none" });
+  // Batch 3: every coerced event states its dark deed, "none"/"none" when there is none; and its atonement (board a8728f4e).
+  assert.deepEqual(event, { summary: "Mira healed Kesh", tags: ["medicine", "support"], themes: [], outcome: "success", darkDeed: "none", darkSeverity: "none", atonement: "none" });
 });
 
 test("coerceEvent keeps an event whose only tag is novel, as a theme", () => {

@@ -1,6 +1,6 @@
 import { GrandDesignApi } from "./api.js";
 import { defaultAtlasAssetPath, isLegacyGithubAtlasPath } from "./atlas.js";
-import { MODULE_ID } from "./constants.js";
+import { HORROR_RANK_POINTS_BY_SEVERITY, HORROR_RANK_SETTINGS, HORROR_RANK_THRESHOLD, MODULE_ID } from "./constants.js";
 import { createHorrorRankNotifier, openGrowthManager } from "./growth-ui.js";
 import { openRegistryPanel } from "./registry-ui.js";
 import { openPopulate, runPopulateAndAnnounce } from "./populate-ui.js";
@@ -29,6 +29,26 @@ Hooks.once("init", () => {
     type: Boolean,
     default: false
   });
+  // Board 41384131 (owner: yes, 2026-09-29): the Horror Rank scale is the GM's to tune after a
+  // campaign with real dark deeds. Clamped again on read (horror-rank.js#resolveHorrorRankConfig), so
+  // a value typed past the slider still lands in range. The meter re-reads them at once; a crossing
+  // they create docks the next time the character's events change.
+  const horrorSetting = (name, label, hint) => {
+    const { key, min, max } = HORROR_RANK_SETTINGS[name];
+    game.settings.register(MODULE_ID, key, {
+      name: label,
+      hint,
+      scope: "world",
+      config: true,
+      type: Number,
+      range: { min, max, step: name === "threshold" ? 10 : 1 },
+      default: name === "threshold" ? HORROR_RANK_THRESHOLD : HORROR_RANK_POINTS_BY_SEVERITY[name]
+    });
+  };
+  horrorSetting("minor", "Horror Rank: points per minor deed", "A petty or small cruelty or betrayal. A minor atonement takes the same off.");
+  horrorSetting("serious", "Horror Rank: points per serious deed", "Killing a surrendered foe, torture for information, betraying an ally. A serious atonement takes the same off.");
+  horrorSetting("monstrous", "Horror Rank: points per monstrous deed", "Torture for pleasure, massacre, eating a person. A profound atonement takes the same off.");
+  horrorSetting("threshold", "Horror Rank: points per stage", "Every this many points is one stage (0-3) and one crossing that docks Class levels.");
   game.modules.get(MODULE_ID).api = new GrandDesignApi();
   game.modules.get(MODULE_ID).api.setTagWeightsProvider(getConfiguredTagWeights);
   // AI gateway v2: the api reads the merged gateway config fresh on every call, so per-call tuning

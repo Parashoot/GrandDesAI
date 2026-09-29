@@ -138,6 +138,17 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
       { quote: "lost 30g of the party's money rigging cards", summary: "Ivo tried to cheat at cards by rigging them.", consequence: "He lost 30 gold of the party's money.", actorName: "Ivo", tags: ["deception", "thievery"], themes: ["gambling", "cheating"], outcome: "failure", dangerGap: "none", language: "en" }
     ]
   },
+  // Board a8728f4e (owner decision 2026-09-29): atonement lowers Horror Rank, so it is shown once
+  // for real, costly amends and twice as "none" for the look-alikes (an apology for something
+  // petty; a prayer for someone else's victims).
+  {
+    notes: "Wren rode back to Millbrook and bought back the three farmhands she'd sold to the quarry bosses, every coin of her share gone. Ivo said sorry to the innkeeper for the loaded dice. Oda prayed over the dead bandits.",
+    events: [
+      { quote: "bought back the three farmhands she'd sold to the quarry bosses", summary: "Wren bought back the three farmhands she had sold to the quarry bosses.", consequence: "It cost her whole share.", actorName: "Wren", tags: ["diplomacy"], themes: ["making-amends"], outcome: "success", atonement: "serious", dangerGap: "none", language: "en" },
+      { quote: "Ivo said sorry to the innkeeper for the loaded dice", summary: "Ivo apologised to the innkeeper for using loaded dice.", actorName: "Ivo", tags: ["diplomacy"], themes: ["apology"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "Oda prayed over the dead bandits", summary: "Oda prayed over the dead bandits.", actorName: "Oda", tags: ["religion"], themes: ["prayer"], outcome: "success", dangerGap: "none", language: "en" }
+    ]
+  },
   // Three more things ember-road s2 got wrong, each shown once (board 0cd50d30, 649aeb9f, 40d30e3d):
   // (1) a second ability by the SAME actor right after a first one, joined by "then", is a new
   // action, not the first one's payoff, even mid-combat (Thorn Lash was folded into Entangle and
@@ -181,8 +192,8 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
 // and darkSeverity right after outcome, "none" unless the example says otherwise -- which also
 // shows the model that "none" is the normal answer, cheating at cards included).
 function exampleBlock(examples) {
-  const shaped = (events) => events.map(({ quote, actorName = "", actorRole = "doer", summary, consequence, tags, themes, outcome, darkDeed = "none", darkSeverity = "none", ...rest }) => ({
-    quote, actorName, actorRole, continuesPrevious: false, summary, ...(consequence !== undefined ? { consequence } : {}), tags, themes, outcome, darkDeed, darkSeverity, ...rest
+  const shaped = (events) => events.map(({ quote, actorName = "", actorRole = "doer", summary, consequence, tags, themes, outcome, darkDeed = "none", darkSeverity = "none", atonement = "none", ...rest }) => ({
+    quote, actorName, actorRole, continuesPrevious: false, summary, ...(consequence !== undefined ? { consequence } : {}), tags, themes, outcome, darkDeed, darkSeverity, atonement, ...rest
   }));
   return examples
     .map((ex, i) => `Example ${i + 1} notes:\n${ex.notes}\nExample ${i + 1} output:\n${JSON.stringify({ events: shaped(ex.events) })}`)
@@ -223,6 +234,9 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     // character levels -- hence the long "none" list and the explicit "done TO them" exclusion.
     `- darkDeed: "none" for almost every event. Only when what the DOER did is a genuinely vile, taboo act, the key it matches: ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice} (${meaning.replace(/\.$/, "")})`).join("; ")}. Killing someone who surrendered or was helpless (cruelty), torture (cruelty), breaking a captive's will (subjugation), eating a person (desecration), defiling a grave or holy relic (desecration), selling out an ally who trusted them (betrayal) = a dark deed. NOT dark deeds (\"none\"): fighting and killing in battle, self-defence, stealing, lying, bluffing, cheating at cards or dice, threatening, hard bargaining, smuggling, spying, drinking, a morally gray job, anything only planned, refused or thought about, and anything done TO the character.`,
     "- darkSeverity: \"none\" when darkDeed is \"none\". Otherwise minor (a petty or small cruelty or betrayal), serious (killing a surrendered or helpless foe, torturing for information, betraying an ally), or monstrous (torture for pleasure, massacring innocents, eating a person). Being punished (banned, evicted, arrested) is never itself a dark deed.",
+    // Owner decision 2026-09-29 (board a8728f4e): atonement LOWERS Horror Rank, so a false one would
+    // wash a real stain away -- hence "none" first and the list of things that are not amends.
+    "- atonement: \"none\" for almost every event. Only when the DOER makes real, costly amends for a serious wrong (their own or their people's): minor (a real but small reparation: paying back what they stole with interest, tending the grave of someone they wronged), serious (undoing much of the harm at real cost: freeing the slaves they sold, rebuilding the village they burned, turning themselves in), or profound (risking their life or giving up something huge to undo a grave wrong they did). NOT atonement (\"none\"): an apology (even with a drink, a round or a small gift to smooth it over), regret, prayer or feeling guilty, a promise to do better, ordinary kindness, heroism or self-sacrifice with no wrong of theirs to repair (a price paid for power or to save others is not amends), apologising for something petty (cheating at dice), anything only planned or promised (\"says he'll pay it back\"), and anything done TO or FOR the character by someone else. Amends never excuse a dark deed done in the same event (judge darkDeed as if no amends were mentioned), but a PAST deed only named as what the amends are for is not a new deed (darkDeed \"none\").",
     "- dangerGap: severe only if they survived or beat a threat hopelessly beyond them; moderate for a clearly stronger or outnumbering foe; otherwise none. It is about the power gap, not the dice roll.",
     "- language: language code of the quote (en, es, pt, fr, de, it, el, tl, ja, ...).",
     "",
@@ -416,6 +430,8 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       // Batch 3: the vice stage 1 already read off the quote. Only when there is one, so the red
       // check sees a flag on the rare dark event instead of "none" noise on every event.
       ...(event.darkDeed && event.darkDeed !== "none" ? { darkDeed: event.darkDeed, darkSeverity: event.darkSeverity } : {}),
+      // Board a8728f4e: amends stage 1 read off the quote, only when there are some (like darkDeed).
+      ...(event.atonement && event.atonement !== "none" ? { atonement: event.atonement } : {}),
       ...(event.actorName ? { actorName: event.actorName } : {}),
       // Jev's second opinion (pipeline.js#jevAnnotateEvents): "dark-act" is what the red check keys on.
       ...(Array.isArray(event.jev?.flags) && event.jev.flags.length ? { jevFlags: event.jev.flags } : {})

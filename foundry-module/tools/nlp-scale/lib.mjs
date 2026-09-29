@@ -34,6 +34,7 @@ export const HARNESS_VERSION = "1.1.0";
 // deed unless their gold says so, so a missing gold field there means "none". Any other category is
 // unlabelled and scores null, so a new category cannot silently inflate darkFalseRate's denominator.
 export const DARK_REVIEWED_CATEGORIES = Object.freeze([
+  "atonement",
   "bullets-fragments",
   "code-switching",
   "counter-leveling",
@@ -97,6 +98,53 @@ export function scoreDarkDeeds(item, events, { darkSchema = DARK_SCHEMA_ACTIVE }
       return gold.severities.length ? gold.severities.includes(severity) : Boolean(severity) && severity !== "none";
     }),
     darkFalse: null
+  };
+}
+
+// ---- atonement (Horror Rank, board a8728f4e) -------------------------------------------------
+//
+// Events may carry atonement ("none" | "minor" | "serious" | "profound"): genuine amends by the doer,
+// which LOWER Horror Rank (owner decision 2026-09-29). Gold: gold.atonement ("a|b" = either). The
+// dark-reviewed categories were re-read for amends on 2026-09-29 and hold none, so a missing gold
+// field there means "none"; the "atonement" category is labelled item by item.
+export const ATONEMENT_SCHEMA_ACTIVE = Boolean(EVENT_ITEM_SCHEMA?.properties?.atonement);
+
+/** Gold atonement levels for an item: ["none"], [levels...], or null (unlabelled). */
+export function goldAtonement(item) {
+  const gold = item?.gold ?? {};
+  if (typeof gold.atonement === "string" && gold.atonement.trim()) {
+    const levels = alts(gold.atonement.toLowerCase());
+    return levels.includes("none") ? ["none"] : levels;
+  }
+  return DARK_REVIEWED_CATEGORIES.includes(item?.category) ? ["none"] : null;
+}
+
+/** A predicted event counts as atonement when it names a level other than ""/"none". */
+export function isAtonementEvent(event) {
+  const level = darkValue(event?.atonement);
+  return Boolean(level) && level !== "none";
+}
+
+/**
+ * Per-rep atonement checks: atonementOk (some event carries a gold level), atonementDetectOk (some
+ * event carries any level) on gold-atonement items; atonementFalse (any event carries a level) on
+ * gold "none" items. All null when unlabelled, or when the output has no atonement field at all
+ * (a run from before the field existed never reads as 0%).
+ */
+export function scoreAtonement(item, events, { atonementSchema = ATONEMENT_SCHEMA_ACTIVE } = {}) {
+  const none = { atonementMeasured: false, atonementOk: null, atonementDetectOk: null, atonementFalse: null };
+  const gold = goldAtonement(item);
+  if (!gold) return none;
+  const list = (events ?? []).filter(Boolean);
+  const seen = list.some((event) => Object.prototype.hasOwnProperty.call(event, "atonement"));
+  if (!seen && !(list.length === 0 && atonementSchema)) return none;
+  const amends = list.filter(isAtonementEvent);
+  if (gold[0] === "none") return { ...none, atonementMeasured: true, atonementFalse: amends.length > 0 };
+  return {
+    atonementMeasured: true,
+    atonementDetectOk: amends.length > 0,
+    atonementOk: amends.some((event) => gold.includes(darkValue(event.atonement))),
+    atonementFalse: null
   };
 }
 
@@ -372,6 +420,8 @@ export function scoreRep(item, rep, options = {}) {
 
   // Kept out of `score` on purpose: score stays comparable with every run before dark deeds existed.
   const dark = scoreDarkDeeds(item, events, options);
+  // Same for atonement (board a8728f4e): its own metric, never part of score.
+  const amends = scoreAtonement(item, events, options);
 
   const checks = [recall, precision, outcomeOk, dangerOk, themeOk, trapOk, forbidOk, countOk].filter((value) => value !== null).map(Number);
   const score = failed ? 0 : checks.length ? checks.reduce((a, b) => a + b, 0) / checks.length : 1;
@@ -389,6 +439,7 @@ export function scoreRep(item, rep, options = {}) {
     redOk,
     redFalse,
     ...dark,
+    ...amends,
     invalidEvents,
     eventCount: events.length,
     tags: [...predicted].sort(),
@@ -734,13 +785,16 @@ export function scoreItem(item, runResult, options = {}) {
     darkViceAcc: agg("darkViceOk"),
     darkDetectAcc: agg("darkDetectOk"),
     darkFalseRate: agg("darkFalse"),
+    atonementAcc: agg("atonementOk"),
+    atonementDetectAcc: agg("atonementDetectOk"),
+    atonementFalseRate: agg("atonementFalse"),
     failRate: mean(reps.map((r) => (r.failed ? 1 : 0))),
     invalidEvents: reps.reduce((sum, r) => sum + r.invalidEvents, 0),
     score: agg("score"),
     consistency: consistency(runResult.reps),
     sampleOutput: runResult.reps.map((rep) => ({
       error: rep.error ?? undefined,
-      events: (rep.events ?? []).map((e) => ({ summary: e.summary, consequence: e.consequence, actorName: e.actorName, tags: e.tags, themes: e.themes, outcome: e.outcome, dangerGap: e.dangerGap, darkDeed: e.darkDeed, darkSeverity: e.darkSeverity, ...(e.jev ? { jev: e.jev } : {}) })),
+      events: (rep.events ?? []).map((e) => ({ summary: e.summary, consequence: e.consequence, actorName: e.actorName, tags: e.tags, themes: e.themes, outcome: e.outcome, dangerGap: e.dangerGap, darkDeed: e.darkDeed, darkSeverity: e.darkSeverity, ...(e.atonement && e.atonement !== "none" ? { atonement: e.atonement } : {}), ...(e.jev ? { jev: e.jev } : {}) })),
       proposals: (rep.proposals ?? []).map((p) => ({ name: p?.entry?.name, kind: p?.entry?.gameItem?.kind, tags: p?.entry?.metadata?.tags, polarity: p?.entry?.metadata?.polarity })),
       skippedProposals: (rep.skippedProposals ?? []).map((sp) => ({ reason: sp?.reason, name: sp?.proposal?.entry?.name ?? sp?.proposal?.name, errors: (sp?.errors ?? []).slice(0, 3) })),
       proposalStage: rep.diagnostics?.proposalStage,
@@ -890,6 +944,11 @@ function aggregateGroup(items) {
     darkFalseRate: pick("darkFalseRate"),
     darkGoldItems: items.filter((item) => item.darkDeedAcc !== null && item.darkDeedAcc !== undefined).length,
     darkNoneItems: items.filter((item) => item.darkFalseRate !== null && item.darkFalseRate !== undefined).length,
+    atonementAcc: pick("atonementAcc"),
+    atonementDetectAcc: pick("atonementDetectAcc"),
+    atonementFalseRate: pick("atonementFalseRate"),
+    atonementGoldItems: items.filter((item) => item.atonementAcc !== null && item.atonementAcc !== undefined).length,
+    atonementNoneItems: items.filter((item) => item.atonementFalseRate !== null && item.atonementFalseRate !== undefined).length,
     fallbackRate: reps.length ? reps.filter((rep) => rep.failed).length / reps.length : null,
     invalidEvents: items.reduce((s, item) => s + item.invalidEvents, 0),
     firstTryValidRate: stages ? diag.reduce((s, d) => s + d.firstTryValid, 0) / stages : null,
@@ -1034,8 +1093,15 @@ export function renderSummaryTable(summary) {
 
 /** One-line dark-deed summary for a group; says why when nothing was measured instead of printing zeros. */
 export function darkLine(g) {
-  if (g.darkDeedAcc == null && g.darkFalseRate == null) return "not measured (no darkDeed field in the model output, or no labelled items)";
-  return `vice+severity ${pct(g.darkDeedAcc)}, vice only ${pct(g.darkViceAcc)}, recognised as dark ${pct(g.darkDetectAcc)} on ${g.darkGoldItems ?? 0} gold-dark item(s); a dark deed invented on ${pct(g.darkFalseRate)} of ${g.darkNoneItems ?? 0} gold "none" item(s)`;
+  const amends = atonementLine(g);
+  if (g.darkDeedAcc == null && g.darkFalseRate == null) return `not measured (no darkDeed field in the model output, or no labelled items)${amends ? `; ${amends}` : ""}`;
+  return `vice+severity ${pct(g.darkDeedAcc)}, vice only ${pct(g.darkViceAcc)}, recognised as dark ${pct(g.darkDetectAcc)} on ${g.darkGoldItems ?? 0} gold-dark item(s); a dark deed invented on ${pct(g.darkFalseRate)} of ${g.darkNoneItems ?? 0} gold "none" item(s)${amends ? `; ${amends}` : ""}`;
+}
+
+/** One-line atonement summary (board a8728f4e), "" when nothing was measured. */
+export function atonementLine(g) {
+  if (g.atonementAcc == null && g.atonementFalseRate == null) return "";
+  return `atonement level ${pct(g.atonementAcc)}, recognised ${pct(g.atonementDetectAcc)} on ${g.atonementGoldItems ?? 0} gold-atonement item(s); atonement invented on ${pct(g.atonementFalseRate)} of ${g.atonementNoneItems ?? 0} gold "none" item(s)`;
 }
 
 function darkItemLine(item) {

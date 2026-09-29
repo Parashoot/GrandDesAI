@@ -14,7 +14,7 @@
 //
 // Pure ESM, zero Foundry globals.
 
-import { CANONICAL_TAGS, OUTCOMES, DARK_SEVERITIES } from "./normalize.js";
+import { CANONICAL_TAGS, OUTCOMES, DARK_SEVERITIES, ATONEMENT_LEVELS } from "./normalize.js";
 import { structuredMechanicsSchema } from "./structured.js";
 import { FREQUENCY_PERIODS, GRAND_DESIGN_ITEM_KINDS, SPELL_SCHOOLS } from "../constants.js";
 import { VICE_TAGS } from "../vice-taxonomy.js";
@@ -55,10 +55,14 @@ export const EVENT_ITEM_SCHEMA = {
     // Right after outcome (contract section 1); "none" is the overwhelmingly common answer.
     darkDeed: { type: "string", enum: ["none", ...VICE_TAGS] },
     darkSeverity: { type: "string", enum: DARK_SEVERITIES },
+    // Owner decision 2026-09-29 (board a8728f4e): genuine amends by the doer lower Horror Rank. A
+    // required field right after the deed fields, for the same reason they are fields: this model
+    // decides a field while it reads the quote; a prose rule alone it skips.
+    atonement: { type: "string", enum: ATONEMENT_LEVELS },
     dangerGap: { type: "string", enum: DANGER_GAP_VALUES },
     language: { type: "string" }
   },
-  required: ["quote", "actorName", "actorRole", "continuesPrevious", "summary", "tags", "themes", "outcome", "darkDeed", "darkSeverity", "dangerGap"]
+  required: ["quote", "actorName", "actorRole", "continuesPrevious", "summary", "tags", "themes", "outcome", "darkDeed", "darkSeverity", "atonement", "dangerGap"]
 };
 
 export const EVENT_EXTRACTION_SCHEMA = {
