@@ -170,12 +170,36 @@ export const RED_CHECK_SCHEMA = {
   }
 };
 
-export function proposalSchemaCapped(maxProposals, { redCheck = false } = {}) {
+// Board 7b616fea: a Title ([Trollbane], [Hero of the Bridge]) is a name the world gives a character
+// for ONE deed, with no mechanics block -- so it gets its own small list instead of the Skill/Class
+// entry shape (whose required gameItem/mechanics would make the model invent a rules effect for it).
+// `deed` comes first so the model grounds the title in a quoted line before naming it. The list is
+// not required and is capped at one: titles are rare, and a required list is one a model feels it
+// must fill.
+export const TITLE_ITEM_SCHEMA = {
+  type: "object",
+  properties: {
+    deed: { type: "string" },
+    name: { type: "string" },
+    description: { type: "string" },
+    polarity: { type: "string", enum: ["standard", "red"] },
+    vice: { type: "string", enum: ["none", ...VICE_TAGS] },
+    drawback: { type: "string" },
+    tags: { type: "array", items: { type: "string", enum: CANONICAL_TAGS } }
+  },
+  required: ["deed", "name", "description", "polarity"]
+};
+
+export function proposalSchemaCapped(maxProposals, { redCheck = false, titles = false } = {}) {
   const max = Number.isInteger(maxProposals) && maxProposals > 0 ? maxProposals : 3;
   const proposals = { ...PROPOSAL_SCHEMA.properties.proposals, maxItems: max };
   return {
     ...PROPOSAL_SCHEMA,
-    properties: redCheck ? { redCheck: RED_CHECK_SCHEMA, proposals } : { proposals },
+    properties: {
+      ...(redCheck ? { redCheck: RED_CHECK_SCHEMA } : {}),
+      proposals,
+      ...(titles ? { titles: { type: "array", items: TITLE_ITEM_SCHEMA, maxItems: 1 } } : {})
+    },
     required: redCheck ? ["redCheck", "proposals"] : PROPOSAL_SCHEMA.required,
     [CAPPED_OF]: PROPOSAL_SCHEMA
   };

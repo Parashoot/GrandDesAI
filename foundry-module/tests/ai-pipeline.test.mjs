@@ -348,9 +348,10 @@ test("proposalMode when-earned: one success and no allowance does not propose", 
 });
 
 test("proposalMode when-earned: a grant allowance triggers the proposal stage", async () => {
-  const transport = scriptedTransport([{ events: [ev("Kesh fought.", ["martial"])] }, { proposals: [] }]);
+  const transport = scriptedTransport([{ events: [ev("Kesh fought.", ["martial"])] }, { proposals: [] }, { proposals: [] }]);
   await runGatewayPipeline({ transport, request: request(NOTES, { allowances: 1 }), config: {} });
-  assert.equal(transport.calls.length, 2);
+  // extraction + proposal stage + one retry (an allowance means the GM is owed a proposal).
+  assert.equal(transport.calls.length, 3);
 });
 
 test("proposalMode when-earned: three successes on one theme earn a proposal stage", async () => {

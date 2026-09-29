@@ -204,7 +204,9 @@ test("presetEvents (Suggest proposals) skip stage 1 and propose from the recorde
   const recorded = [ev("Maren healed Brakka.", "Maren"), ev("Maren sold out of honey.", "Maren")];
   const adapter = createGatewayAdapter({ proposalMode: "always" }, { transportFactory: () => transport });
   const out = await adapter({ actor: actor("Maren"), notes: "GM REQUEST: suggest proposals for Maren now.", events: recorded, systemId: "dnd5e" });
-  assert.equal(transport.calls.length, 1);
+  // 2 calls: the stage-2 call, then one "propose something else" turn because the GM asked and the
+  // model answered with nothing (live regression 2026-09-29). Still no extraction call.
+  assert.equal(transport.calls.length, 2);
   assert.deepEqual(JSON.parse(transport.calls[0].messages[1].content).newEvents.map((e) => e.summary), ["Maren healed Brakka.", "Maren sold out of honey."]);
   assert.equal(out.gatewayDiagnostics.extractionCache, "preset");
 });

@@ -23,7 +23,7 @@ import { normalizeGatewayConfig } from "./gateway-config.js";
 import { AiProviderUnreachableError, AiProviderHttpError, AiProviderTimeoutError } from "./transport.js";
 import { GROWTH_EVENT_OUTCOME_WEIGHTS, FREQUENCY_PERIODS, GRAND_DESIGN_ITEM_KINDS, SPELL_SCHOOLS, LINEAGE_OPERATIONS, POWER_TIERS } from "../constants.js";
 import { VICE_TAGS } from "../vice-taxonomy.js";
-import { validateSkillEntry as defaultValidateSkill, validateClassEntry as defaultValidateClass } from "../validator.js";
+import { validateSkillEntry as defaultValidateSkill, validateClassEntry as defaultValidateClass, validateTitleEntry as defaultValidateTitle } from "../validator.js";
 
 // Same scale as progression.js MINIMUM_EVIDENCE / emergent-themes EMERGENT_THEME_EVIDENCE_THRESHOLD.
 export const EARNED_EVIDENCE_THRESHOLD = 3;
@@ -115,14 +115,19 @@ function proposalShape(candidate) {
 }
 
 /** Why `a` and `b` are near-duplicates ("mechanic" | "name" | "same-ground"), or null. */
-export function nearDuplicateReason(a, b, { textThreshold = 0.5, nameTextThreshold = 0.2, groundTextThreshold = 0.35, minTextTokens = 4 } = {}) {
+export function nearDuplicateReason(a, b, { textThreshold = 0.5, nameTextThreshold = 0.2, groundTextThreshold = 0.35, minTextTokens = 4, ignoreConcept = null } = {}) {
   const x = proposalShape(a);
   const y = proposalShape(b);
+  // Live PF2e rest 19->20 (build 4b63072): the Class "Fletchwright, Horizon's Edge" was skipped as a
+  // duplicate of the owned SKILLS "Fletchwright: ..." and the milestone fell back to a template. A Class
+  // and a Skill are different kinds of growth: never duplicates of each other, whatever the wording.
+  if (x.kind !== y.kind) return null;
+  // The character's class motif ("Fletchwright") is shared by every entry on purpose; not a concept.
+  if (ignoreConcept?.size) for (const token of ignoreConcept) { x.concept.delete(token); y.concept.delete(token); }
   const textOk = x.text.size >= minTextTokens && y.text.size >= minTextTokens;
   const text = textOk ? jaccard(x.text, y.text) : 0;
   const tagsAgree = !x.tags.size || !y.tags.size || jaccard(x.tags, y.tags) > 0;
   if (textOk && text >= textThreshold && tagsAgree) return "mechanic";
-  if (x.kind !== y.kind) return null;
   const tagOverlap = x.tags.size && y.tags.size ? jaccard(x.tags, y.tags) : 0;
   const sharesConcept = [...x.concept].some((token) => y.concept.has(token));
   if (sharesConcept && tagOverlap >= 0.5 && (x.kind === "class" || text >= nameTextThreshold)) return "name";
@@ -143,10 +148,21 @@ function evidenceScore(proposal) {
   return new Set((Array.isArray(proposal?.evidence) ? proposal.evidence : []).map((e) => String(e).trim().toLowerCase()).filter(Boolean)).size;
 }
 
-function findByNameOrNearDuplicate(proposal, records) {
+function findByNameOrNearDuplicate(proposal, records, options) {
   const key = slugifyTheme(proposal.entry?.name);
   const exact = records.find((record) => slugifyTheme(record?.name ?? record?.entry?.name) === key);
-  return exact ? { other: exact, reason: "name" } : findNearDuplicate(proposal, records);
+  return exact ? { other: exact, reason: "name" } : findNearDuplicate(proposal, records, options);
+}
+
+/** The motif half of "Motif: Concept" names, collected from every name a gate compares against. */
+export function motifTokens(names) {
+  const tokens = new Set();
+  for (const name of names) {
+    const text = String(name ?? "");
+    const colon = text.indexOf(":");
+    if (colon > 0) for (const token of mechanicTokens(text.slice(0, colon))) tokens.add(token);
+  }
+  return tokens;
 }
 
 // Board 3962a001: system-specific vocabulary that never belongs in the other system's entries (the
@@ -970,7 +986,8 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
   const sysId = systemId ?? cfg.systemId ?? request?.actor?.system ?? "pf2e";
   const validate = {
     skill: validators.validateSkillEntry ?? defaultValidateSkill,
-    class: validators.validateClassEntry ?? defaultValidateClass
+    class: validators.validateClassEntry ?? defaultValidateClass,
+    title: validators.validateTitleEntry ?? defaultValidateTitle
   };
   const diagnostics = {
     model: transport?.info?.model ?? cfg.model,
@@ -1263,12 +1280,43 @@ function isTargetOnly(raw) {
   return isPlainObject(raw) && typeof raw.actorRole === "string" && /^\s*(target|victim|recipient|passive)\b/i.test(raw.actorRole);
 }
 
+// Board 07b9d93f (ember-road s1): "I got banned from a pie tent" was marked "target" and dropped. A
+// ban, arrest or eviction is the one trace the notes give of the character's own misdeed, so it stays
+// their event, as a failure. A backstop to the prompt rule: the model still reaches for "target"
+// because grammatically something was done to them. Words that say it was undeserved ("falsely",
+// "framed") keep the model's reading.
+const PUNISHMENT_PATTERN = /\b(banned|barred|banished|blacklisted|evicted|expelled|exiled|arrested|jailed|imprisoned|locked up|fined|thrown out|kicked out|chased out|run out of|tossed out|booted (out|from))\b/i;
+const UNDESERVED_PATTERN = /\b(falsely|wrongly|wrongfully|framed|by mistake|mistaken|innocent)\b/i;
+
+export function isConsequenceOfOwnDeed(raw) {
+  if (!isTargetOnly(raw)) return false;
+  const text = `${raw.quote ?? ""} ${raw.summary ?? ""} ${raw.consequence ?? ""}`;
+  if (!String(raw.actorName ?? "").trim()) return false;
+  return PUNISHMENT_PATTERN.test(text) && !UNDESERVED_PATTERN.test(text);
+}
+
+function asOwnMisdeed(raw) {
+  const outcome = String(raw.outcome ?? "").trim();
+  const themes = Array.isArray(raw.themes) ? raw.themes : [];
+  const tags = Array.isArray(raw.tags) ? raw.tags : [];
+  return {
+    ...raw,
+    actorRole: "doer",
+    outcome: outcome === "criticalFailure" ? outcome : "failure",
+    // coerceEvent needs a tag or a theme; a bare ban often came with neither.
+    ...(tags.length || themes.length ? {} : { themes: ["misconduct"] })
+  };
+}
+
 function coerceAll(items, ctx, chunkIndex) {
   const accepted = [];
   const rejected = [];
   const happenedTo = [];
   let droppedPrevious = false;
-  for (const original of items) {
+  for (const item of items) {
+    const ownDeed = isConsequenceOfOwnDeed(item);
+    if (ownDeed) ctx.diagnostics.coercions.push("target->doer:consequence-of-own-deed");
+    const original = ownDeed ? asOwnMisdeed(item) : item;
     if (isTargetOnly(original)) {
       happenedTo.push({ event: original, reason: "happened-to-actor", chunk: chunkIndex });
       droppedPrevious = true;
@@ -1466,14 +1514,18 @@ async function proposeStage(events, decision, ctx, milestone = null, target = nu
   // Class in the same breath, and a class-evolution call always allows one, regardless of what
   // decision.allowClass (derived from the actor's live grandDesign flag) would otherwise say.
   const allowClass = target ? target.kind === "class" : milestone ? milestone.kind === "class-evolution" : decision.allowClass;
-  const messages = buildProposalMessages({ request, config: cfg, events, themeEvidence: decision.themeEvidence, tagEvidence: decision.tagEvidence, allowClass, mustPropose, milestone, target });
+  // Board 7b616fea: Titles only in an open-ended stage 2 (analysis, Suggest). A milestone, authoring
+  // or evolution call asks for exactly one entry of one kind.
+  const titles = !target && !milestone && cfg.titles !== false;
+  const messages = buildProposalMessages({ request, config: cfg, events, themeEvidence: decision.themeEvidence, tagEvidence: decision.tagEvidence, allowClass, mustPropose, milestone, target, titles });
   const temperature = creativityTemperature(cfg);
   let items = null;
+  let titleItems = [];
   let redFlags = [];
   let lastContent = "";
   for (let attempt = 0; attempt <= cfg.maxRepairAttempts; attempt += 1) {
     stage.attempts += 1;
-    const response = await transport.chat({ messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: cfg.allowRed }), temperature, maxTokens: cfg.numPredict });
+    const response = await transport.chat({ messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: cfg.allowRed, titles }), temperature, maxTokens: cfg.numPredict });
     stage.ms += Math.round(response.ms ?? 0);
     lastContent = response.content;
     let parsed;
@@ -1495,27 +1547,94 @@ async function proposeStage(events, decision, ctx, milestone = null, target = nu
     }
     items = located.items;
     redFlags = readRedCheck(parsed.value);
+    if (titles && isPlainObject(parsed.value) && Array.isArray(parsed.value.titles)) titleItems = parsed.value.titles;
     messages.push(assistantEcho(response.content));
     break;
   }
   if (items === null) {
     return { accepted: [], skipped: [{ reason: "unparseable-proposal-response", errors: stage.errors.slice(-3), raw: String(lastContent).slice(0, 1000) }] };
   }
+  // A title is never sent back through the Skill/Class validator or its repair turn (it has no
+  // mechanics); a {kind:"title"} object in the proposals array is moved to the titles path too.
+  const inlineTitles = titles ? items.filter((item) => isPlainObject(item) && String(item.kind ?? "").toLowerCase() === "title") : [];
+  if (inlineTitles.length) items = items.filter((item) => !inlineTitles.includes(item));
   const checked = await validateProposals(items, { messages, stage, temperature }, ctx);
+  if (target?.operation) {
+    checked.accepted = checked.accepted.map((proposal) => (proposal.kind === target.kind ? applyAdvancedTarget(proposal, target, ctx) : proposal));
+  }
   // An authoring request is for ONE kind; a model that also wrote the other kind first must not use
   // up the single slot on it.
   const wrongKind = target ? checked.accepted.filter((p) => p.kind !== target.kind) : [];
-  const gated = gateProposals(target ? checked.accepted.filter((p) => p.kind === target.kind) : checked.accepted, ctx, { guaranteed: Boolean(milestone) || Boolean(target) });
+  const gated = gateProposals(target ? checked.accepted.filter((p) => p.kind === target.kind) : checked.accepted, ctx, { guaranteed: Boolean(milestone) || Boolean(target), exempt: target?.sources ?? [] });
   checked.skipped.push(...wrongKind.map((proposal) => ({ proposal, reason: "wrong-kind-for-target" })));
+  // Live regression (dnd5e live-verify, 2026-09-29): with 4 archery proposals pending, Suggest's stage
+  // 2 answered {"proposals":[]} -- told never to re-propose what is pending, the model found nothing
+  // left to say and said nothing, and the GM who pressed the button got no idea at all. When the GM
+  // asked (mustPropose), an empty result gets ONE more turn that names what to avoid and where else
+  // to look.
+  if (mustPropose && (events.length || target) && !gated.final.length && cfg.maxRepairAttempts > 0) {
+    const retried = await proposeSomethingElse({ messages, temperature, checked, gated, allowClass, target }, ctx);
+    if (retried) {
+      if (target?.operation) retried.accepted = retried.accepted.map((proposal) => applyAdvancedTarget(proposal, target, ctx));
+      const again = gateProposals(retried.accepted, ctx, { guaranteed: Boolean(milestone) || Boolean(target), exempt: target?.sources ?? [] });
+      gated.final.push(...again.final);
+      gated.skipped.push(...retried.skipped, ...again.skipped);
+    }
+  }
+  if (titles) {
+    const titled = gateTitles([...titleItems, ...inlineTitles.map((item) => ({ ...(isPlainObject(item.entry) ? item.entry : {}), ...item }))], events, ctx);
+    gated.final.push(...titled.accepted);
+    gated.skipped.push(...titled.skipped);
+  }
   // Surface the model's own red verdicts, and say so when it flagged a deed but still wrote nothing
   // red: the GM should know a dark act went unanswered rather than find out from the players.
   if (redFlags.length) {
     diagnostics.redCheck = redFlags;
-    if (gated.final.length && !gated.final.some((p) => p.entry?.metadata?.polarity === "red")) {
+    if (gated.final.some((p) => p.kind !== "title") && !gated.final.some((p) => p.kind !== "title" && p.entry?.metadata?.polarity === "red")) {
       diagnostics.warnings.push(`red check flagged ${redFlags.map((f) => `"${f.event}" (${f.vice})`).join(", ")} but no red proposal was written`);
     }
   }
   return { accepted: gated.final, skipped: [...checked.skipped, ...gated.skipped] };
+}
+
+// The one extra turn for an empty answer to a GM request (see proposeStage). Never throws: the first
+// call already worked, so a failure here only means "still nothing".
+async function proposeSomethingElse({ messages, temperature, checked, gated, allowClass, target }, ctx) {
+  const { transport, request, cfg, diagnostics } = ctx;
+  // Its own stage entry: the first reply was valid, so this is a second question, not a repair of it
+  // (the harness counts a stage with attempts > 1 or errors as "not valid first try").
+  const stage = { stage: "propose-retry", chunk: null, attempts: 0, ms: 0, repairs: [], errors: [], notes: [] };
+  diagnostics.stages.push(stage);
+  const skippedNames = [...checked.skipped, ...gated.skipped].map((s) => s?.proposal?.entry?.name).filter((n) => typeof n === "string" && n.trim());
+  const avoid = [...new Set([
+    ...skippedNames,
+    ...(request?.actor?.pendingProposals ?? []).map((p) => p?.name),
+    ...(request?.actor?.rejectedProposals ?? []).map((p) => p?.name)
+  ].filter((n) => typeof n === "string" && n.trim()))].slice(0, 15);
+  const kind = target ? `kind "${target.kind}"` : allowClass ? "a Skill or a Class" : "a Skill";
+  const content = [
+    `You returned no usable proposal${skippedNames.length ? ` (skipped as duplicates or invalid: ${skippedNames.slice(0, 6).map((n) => `"${n}"`).join(", ")})` : ""}, but the GM asked for suggestions now, so an empty list is wrong.`,
+    `Propose ONE new ${kind} that is clearly UNLIKE ${avoid.length ? `these: ${avoid.map((n) => `"${n}"`).join(", ")}` : "anything the character already has"}.`,
+    "Look elsewhere: build it on a different activity, theme or tag from newEvents than those cover (a craft, a social moment, a failure they keep repeating), or make a clearly different kind of ability (a reaction or an action instead of a passive, a spell, a weapon technique) with a different effect.",
+    "Reply {\"proposals\":[...]} with exactly one complete proposal."
+  ].join(" ");
+  messages.push({ role: "user", content });
+  diagnostics.coercions.push("propose:empty-retry");
+  try {
+    stage.attempts += 1;
+    const response = await transport.chat({ messages, schema: proposalSchemaCapped(1, { redCheck: false }), temperature, maxTokens: cfg.numPredict });
+    stage.ms += Math.round(response.ms ?? 0);
+    const parsed = parseModelJson(response.content);
+    const located = locateProposals(parsed.value);
+    messages.push(assistantEcho(response.content));
+    if (!located?.items?.length) { stage.notes.push("still no proposal"); return null; }
+    const again = await validateProposals(located.items.slice(0, 1), { messages, stage, temperature }, ctx);
+    const wanted = target ? again.accepted.filter((p) => p.kind === target.kind) : again.accepted;
+    return { accepted: wanted, skipped: [...again.skipped, ...again.accepted.filter((p) => !wanted.includes(p)).map((proposal) => ({ proposal, reason: "wrong-kind-for-target" }))] };
+  } catch (error) {
+    stage.errors.push(`empty-retry failed: ${error.message}`);
+    return null;
+  }
 }
 
 /**
@@ -1582,13 +1701,26 @@ async function validateProposals(items, conversation, ctx) {
  * Class gating, dedupe against the registry, the GM's pending and rejected proposals and each other,
  * and the maxProposals cap.
  */
-function gateProposals(accepted, ctx, { guaranteed = false } = {}) {
+function gateProposals(accepted, ctx, { guaranteed = false, exempt = [] } = {}) {
   const { request, cfg, sysId } = ctx;
   const gd = request?.actor?.grandDesign ?? {};
   const skipped = [];
   const registry = request?.actor?.existingGrandDesign ?? {};
-  const ownedEntries = [...Object.values(registry.classes ?? {}), ...Object.values(registry.skills ?? {})].filter(Boolean);
-  const existing = new Set(ownedEntries.map((e) => slugifyTheme(e?.name)).filter(Boolean));
+  // Boards ebcc3f03 / d4ae9326: an evolution or merge is BUILT from owned entries, so of course it
+  // resembles them. The sources are left out of every owned-entry check (by registry key, metadata.id
+  // or name); everything else the character owns still counts.
+  const exemptKeys = new Set(exempt.flatMap((source) => [source?.id, slugifyTheme(source?.name)]).filter(Boolean));
+  const isExempt = (key, entry) => exemptKeys.has(key) || exemptKeys.has(entry?.metadata?.id) || exemptKeys.has(slugifyTheme(entry?.name));
+  // Kind comes from the registry bucket, not from guessing at the entry's fields.
+  const ownedByKind = [
+    ...Object.entries(registry.classes ?? {}).map(([key, entry]) => [key, entry, "class"]),
+    ...Object.entries(registry.skills ?? {}).map(([key, entry]) => [key, entry, "skill"])
+  ].filter(([key, entry]) => entry && !isExempt(key, entry));
+  const ownedEntries = ownedByKind.map(([, entry]) => entry);
+  // A source that itself mentions a base-class feature ("Sneak Attack" riders) was approved like
+  // that; its evolved form naming the same feature is not a new restatement of the class chassis.
+  const exemptFeatureText = exempt.map((source) => ({ name: source?.name, mechanics: { effect: source?.effect ?? "" } }));
+  const existing = new Set(ownedByKind.map(([, e, kind]) => `${kind}:${slugifyTheme(e?.name)}`));
   const classFeatureCtx = { systemClass: request?.actor?.systemClass, systemId: request?.actor?.system ?? sysId };
   const ownedFeatures = Array.isArray(request?.actor?.ownedFeatures) ? request.actor.ownedFeatures : [];
   // Board 3574bd96: proposals already waiting for the GM, and ones the GM turned down. A milestone or
@@ -1596,27 +1728,30 @@ function gateProposals(accepted, ctx, { guaranteed = false } = {}) {
   // here; its prompt still lists the pending ones so it writes something new.
   const pending = guaranteed || !Array.isArray(request?.actor?.pendingProposals) ? [] : request.actor.pendingProposals;
   const rejected = guaranteed || !Array.isArray(request?.actor?.rejectedProposals) ? [] : request.actor.rejectedProposals;
-  const ownedAsProposals = ownedEntries.map((entry) => ({ kind: inferEntryKind(entry), entry }));
+  const ownedAsProposals = ownedByKind.map(([, entry, kind]) => ({ kind, entry }));
+  const nearOptions = { ignoreConcept: motifTokens([...ownedEntries.map((e) => e?.name), ...pending.map((p) => p?.name), ...rejected.map((p) => p?.name), ...accepted.map((p) => p?.entry?.name)]) };
   const kept = [];
   for (const proposal of accepted) {
     const key = slugifyTheme(proposal.entry.name);
     if (proposal.kind === "class" && gd.classEvolutionAvailable !== true) { skipped.push({ proposal, reason: "class-evolution-not-available" }); continue; }
-    if (existing.has(key)) { skipped.push({ proposal, reason: "already-exists" }); continue; }
-    const duplicateOwned = findDuplicateOwnedMechanic(proposal.entry, ownedEntries) ?? findNearDuplicate(proposal, ownedAsProposals)?.other.entry;
+    if (existing.has(`${proposal.kind}:${key}`)) { skipped.push({ proposal, reason: "already-exists" }); continue; }
+    const sameKindOwned = ownedAsProposals.filter((owned) => owned.kind === proposal.kind);
+    const duplicateOwned = findDuplicateOwnedMechanic(proposal.entry, sameKindOwned.map((owned) => owned.entry)) ?? findNearDuplicate(proposal, sameKindOwned, nearOptions)?.other.entry;
     if (duplicateOwned) { skipped.push({ proposal, reason: "duplicates-owned", duplicateOf: duplicateOwned.name }); continue; }
     const duplicateFeature = findDuplicateClassFeature(proposal.entry, classFeatureCtx);
-    if (duplicateFeature) { skipped.push({ proposal, reason: "duplicates-class-feature", duplicateOf: duplicateFeature }); continue; }
-    const duplicateOwnedFeature = findDuplicateOwnedFeatureText(proposal.entry, ownedFeatures);
+    if (duplicateFeature && !exemptFeatureText.some((source) => findDuplicateClassFeature(source, classFeatureCtx) === duplicateFeature)) { skipped.push({ proposal, reason: "duplicates-class-feature", duplicateOf: duplicateFeature }); continue; }
+    const ownedFeatureHit = findDuplicateOwnedFeatureText(proposal.entry, ownedFeatures);
+    const duplicateOwnedFeature = ownedFeatureHit && !exemptFeatureText.some((source) => findDuplicateOwnedFeatureText(source, ownedFeatures) === ownedFeatureHit) ? ownedFeatureHit : null;
     if (duplicateOwnedFeature) { skipped.push({ proposal, reason: "duplicates-owned-proficiency", duplicateOf: duplicateOwnedFeature }); continue; }
-    const pendingDup = findByNameOrNearDuplicate(proposal, pending);
+    const pendingDup = findByNameOrNearDuplicate(proposal, pending, nearOptions);
     if (pendingDup) { skipped.push({ proposal, reason: "duplicates-pending", duplicateOf: pendingDup.other.name, similarity: pendingDup.reason, ...(pendingDup.other.id ? { duplicateOfId: pendingDup.other.id } : {}) }); continue; }
-    const rejectedDup = findByNameOrNearDuplicate(proposal, rejected);
+    const rejectedDup = findByNameOrNearDuplicate(proposal, rejected, nearOptions);
     if (rejectedDup) { skipped.push({ proposal, reason: "duplicates-rejected", duplicateOf: rejectedDup.other.name, similarity: rejectedDup.reason }); continue; }
     // A sibling from this same call: keep the better-sourced of the two (the one citing more events).
-    const siblingIndex = kept.findIndex((other) => slugifyTheme(other.entry.name) === key || nearDuplicateReason(proposal, other));
+    const siblingIndex = kept.findIndex((other) => slugifyTheme(other.entry.name) === key || nearDuplicateReason(proposal, other, nearOptions));
     if (siblingIndex >= 0) {
       const sibling = kept[siblingIndex];
-      const similarity = slugifyTheme(sibling.entry.name) === key ? "name" : nearDuplicateReason(proposal, sibling);
+      const similarity = slugifyTheme(sibling.entry.name) === key ? "name" : nearDuplicateReason(proposal, sibling, nearOptions);
       const [winner, loser] = evidenceScore(proposal) > evidenceScore(sibling) ? [proposal, sibling] : [sibling, proposal];
       kept[siblingIndex] = winner;
       skipped.push({ proposal: loser, reason: "duplicates-sibling", duplicateOf: winner.entry.name, similarity });
@@ -1628,4 +1763,154 @@ function gateProposals(accepted, ctx, { guaranteed = false } = {}) {
   const final = kept.slice(0, cfg.maxProposals);
   for (const proposal of kept.slice(cfg.maxProposals)) skipped.push({ proposal, reason: "over-max-proposals" });
   return { final, skipped };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Advanced operations (boards ebcc3f03 / d4ae9326): adapter.authorAdvanced "upgrade" / "combine"
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * The model writes the evolved/merged entry's name and mechanics; the numbers the rules decide are
+ * set here, not trusted to the model: tier = source + 1 (max 3), the merge's power tier from the
+ * focus score (ai-gateway.js computes it with class-merging.js), a level no lower than the highest
+ * source's, red carried forward from a red source, and lineage pointing at the source ids.
+ */
+export function applyAdvancedTarget(proposal, target, ctx = {}) {
+  const entry = proposal.entry;
+  const repairs = [...(proposal.repairs ?? [])];
+  const sources = Array.isArray(target.sources) ? target.sources : [];
+  const sourceIds = sources.map((source) => source?.id).filter((id) => typeof id === "string" && id.trim());
+  if (target.operation === "upgrade" && Number.isInteger(target.tier) && entry.tier !== target.tier) {
+    repairs.push(`tier:${entry.tier}->${target.tier}`);
+    entry.tier = target.tier;
+  }
+  if (target.operation === "combine") {
+    if (target.powerTier && entry.power_tier !== target.powerTier) {
+      repairs.push(`power_tier:${entry.power_tier}->${target.powerTier}`);
+      entry.power_tier = target.powerTier;
+    }
+    const minLevel = Number.isInteger(target.level) ? target.level : Math.max(1, ...sources.map((s) => (Number.isInteger(s?.level) ? s.level : 1)));
+    if (!Number.isInteger(entry.level) || entry.level < minLevel) {
+      repairs.push(`level:${entry.level}->${minLevel}`);
+      entry.level = minLevel;
+    }
+    entry.is_primary = true;
+    entry.is_secondary = false;
+    if (target.offCycle) entry.offCycleEvolution = true;
+  }
+  if (typeof target.name === "string" && target.name.trim() && entry.name !== target.name.trim()) {
+    repairs.push("name->gm-choice");
+    entry.name = target.name.trim();
+  }
+  const md = (entry.metadata = isPlainObject(entry.metadata) ? entry.metadata : {});
+  const redSource = sources.find((source) => source?.polarity === "red");
+  if (redSource && md.polarity !== "red") {
+    md.polarity = "red";
+    md.malignance = isPlainObject(redSource.malignance)
+      ? { ...redSource.malignance }
+      : { vice: VICE_TAGS.has(redSource.vice) ? redSource.vice : "corruption", drawback: redSource.drawback || `Carries forward the cost of [${redSource.name}].` };
+    repairs.push("polarity->red-from-source");
+  }
+  const own = typeof md.lineage?.rationale === "string" ? md.lineage.rationale.trim() : "";
+  const rationale = own && !/^Emerged from session-note evidence/.test(own)
+    ? own
+    : target.operation === "upgrade"
+      ? `[${sources[0]?.name ?? "the Skill"}] evolved through ${(sources[0]?.definingMoments ?? []).slice(0, 3).join("; ") || "sustained use"}.`
+      : `Merged from ${sources.map((s) => `[${s?.name}]`).join(" and ")}.`;
+  md.lineage = { operation: target.operation, sources: sourceIds, rationale };
+  if (sources.some((source) => slugifyTheme(source?.name) === slugifyTheme(entry.name))) {
+    ctx.diagnostics?.warnings?.push(`the ${target.operation === "upgrade" ? "evolved Skill" : "merged Class"} kept its source's name "${entry.name}"`);
+  }
+  return { ...proposal, entry, ...(repairs.length ? { repairs } : {}) };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Titles (board 7b616fea)
+// ---------------------------------------------------------------------------------------------
+
+const TITLE_DEFAULT_DRAWBACK = "Those who know the deed fear or despise the bearer.";
+
+/**
+ * Shape one model title into a `kind: "title"` proposal, or return a skip reason. The entry is what
+ * validator.js#validateTitleEntry needs (name, achievement, metadata) plus the batch contract's
+ * `description` / `tags`; the rationale quotes the deed.
+ */
+export function shapeTitle(raw, { allowRed = true, customSynonyms = {} } = {}) {
+  if (!isPlainObject(raw)) return { skip: "not-a-title" };
+  const name = String(raw.name ?? raw.title ?? "").trim().replace(/^\[|\]$/g, "");
+  const deed = String(raw.deed ?? raw.achievement ?? raw.quote ?? "").trim();
+  if (!name) return { skip: "title-without-name" };
+  if (!deed) return { skip: "title-without-deed" };
+  const tags = [];
+  for (const rawTag of Array.isArray(raw.tags) ? raw.tags : []) {
+    const resolved = resolveTag(rawTag, { customSynonyms });
+    if (resolved?.tag && !tags.includes(resolved.tag)) tags.push(resolved.tag);
+  }
+  let polarity = String(raw.polarity ?? raw.metadata?.polarity ?? "standard").toLowerCase().trim() === "red" ? "red" : "standard";
+  let vice = String(raw.vice ?? raw.metadata?.vice ?? raw.metadata?.malignance?.vice ?? "").toLowerCase().trim();
+  vice = VICE_TAGS.has(vice) ? vice : VICE_SYNONYMS[vice] ?? null;
+  if (polarity === "red" && !allowRed) return { skip: "red-entries-disabled" };
+  // A red title with no vice from the list is not a taboo title, just a dark-sounding name.
+  if (polarity === "red" && !vice) polarity = "standard";
+  const description = String(raw.description ?? "").trim() || `Earned by: ${deed}`;
+  const drawback = String(raw.drawback ?? raw.metadata?.malignance?.drawback ?? "").trim() || TITLE_DEFAULT_DRAWBACK;
+  const rationale = `Earned by: "${deed.slice(0, 240)}"`;
+  const entry = {
+    name,
+    description,
+    achievement: deed.slice(0, 400),
+    tags,
+    metadata: {
+      tags,
+      polarity,
+      ...(polarity === "red" ? { vice, malignance: { vice, drawback } } : {}),
+      lineage: { operation: "origin", sources: [], rationale }
+    }
+  };
+  return { proposal: { kind: "title", entry, evidence: [deed.slice(0, 240)], rationale } };
+}
+
+// "The Bridge-Holder" and "Bridge-Holder" are one title.
+function titleKey(name) {
+  return slugifyTheme(String(name ?? "").replace(/^\s*(the|a|an)\s+/i, ""));
+}
+
+function gateTitles(rawTitles, events, ctx) {
+  const { request, cfg, validate } = ctx;
+  const accepted = [];
+  const skipped = [];
+  const registry = request?.actor?.existingGrandDesign ?? {};
+  const taken = new Map();
+  for (const entry of Object.values(registry.titles ?? {})) if (entry?.name) taken.set(titleKey(entry.name), "already-exists");
+  for (const record of request?.actor?.pendingProposals ?? []) if (record?.kind === "title" && record.name) taken.set(titleKey(record.name), "duplicates-pending");
+  for (const record of request?.actor?.rejectedProposals ?? []) if (record?.kind === "title" && record.name) taken.set(titleKey(record.name), "duplicates-rejected");
+  const actorName = String(request?.actor?.name ?? "").trim().toLowerCase();
+  for (const raw of rawTitles.slice(0, 3)) {
+    const shaped = shapeTitle(raw, { allowRed: cfg.allowRed, customSynonyms: cfg.customSynonyms });
+    if (shaped.skip) { skipped.push({ proposal: { kind: "title", entry: raw }, reason: shaped.skip }); continue; }
+    const { proposal } = shaped;
+    const key = titleKey(proposal.entry.name);
+    if (taken.has(key)) { skipped.push({ proposal, reason: taken.get(key), duplicateOf: proposal.entry.name }); continue; }
+    if (actorName && proposal.entry.name.toLowerCase().includes(actorName)) { skipped.push({ proposal, reason: "title-uses-personal-name" }); continue; }
+    // The deed must be one of THIS character's events: a title for a party-mate's kill is the same
+    // mis-credit that per-character stage 2 exists to prevent.
+    if (!titleDeedMatchesEvent(proposal.entry.achievement, events)) { skipped.push({ proposal, reason: "title-deed-not-in-events" }); continue; }
+    const validation = (validate?.title ?? defaultValidateTitle)(proposal.entry);
+    if (!validation.valid) { skipped.push({ proposal, reason: "invalid", errors: validation.errors }); continue; }
+    if (accepted.length >= 1) { skipped.push({ proposal, reason: "over-max-titles" }); continue; }
+    taken.set(key, "duplicates-sibling");
+    accepted.push(proposal);
+  }
+  return { accepted, skipped };
+}
+
+function titleDeedMatchesEvent(deed, events) {
+  const deedTokens = mechanicTokens(deed);
+  if (!deedTokens.size) return false;
+  return (events ?? []).some((event) => {
+    const tokens = mechanicTokens(`${event?.quote ?? ""} ${event?.summary ?? ""} ${event?.consequence ?? ""}`);
+    let shared = 0;
+    for (const token of deedTokens) if (tokens.has(token)) shared += 1;
+    return shared >= Math.min(2, deedTokens.size);
+  });
 }

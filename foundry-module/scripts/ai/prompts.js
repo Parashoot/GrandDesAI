@@ -194,7 +194,7 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     "",
     "An EVENT is one thing a character actually attempted or did, whether it worked or not. One event per distinct action -- split compound sentences with several actions, and do not repeat the same action twice.",
     "An event INCLUDES its result. Whatever came of the action goes in that event's consequence field and outcome, NEVER in a new event: they got hurt, stung or knocked out; the crowd cheered or cried; the goods sold out or someone bought one; they were thrown out, moved on or offered a job; nobody was lost; the animal finally let them near; a fever broke; visions came; they learned the secret; the crit landed on the final blow; they won 2 of 3. A second line or bullet that only states such a result belongs to the event above it. Also no event that just restates or elaborates the same activity by the same person (\"brewed the ale\" + \"adjusted the malt\" is one brewing event).",
-    "Do not add a scene-level event (\"the party fought the warband\") when you also list what each character did in it. Something that merely happens TO a character (attacked, scared off, knocked down, read or sized up by someone, offered a deal, told a secret) is not their event. But money or gear lost BY DOING something is that doing, as a failure: \"lost 40g rigging dice\" = cheated at dice and lost 40g.",
+    "Do not add a scene-level event (\"the party fought the warband\") when you also list what each character did in it. Something that merely happens TO a character (attacked, scared off, knocked down, read or sized up by someone, offered a deal, told a secret) is not their event. But money or gear lost BY DOING something is that doing, as a failure: \"lost 40g rigging dice\" = cheated at dice and lost 40g. Likewise a punishment stated on its own (\"got banned from the pie tent\", \"got arrested\") stands for the misdeed that earned it: that character's event, as a failure.",
     "",
     "WHO DID IT. Notes are often a group chat pasted together, one \"Name: text\" line per player. In such a line I/me/my means Name. A line can also report what ANOTHER character did (\"Sable saw Rook push the priest\", \"she catch Tovin killing...\"): that event belongs to the DOER (Rook, Tovin), not to the one who saw or tells it, and it is recorded even though the doer never mentioned it. We/us/the party acting together = \"the party\". Leave actorName \"\" only when the notes truly do not say who.",
     "Write what was done in plain words. Never soften a deed: killing a prisoner or someone who surrendered stays exactly that in the summary, not \"dealt with a threat\" or \"tidied up a loose end\". When one line is coy (\"I may have handled a loose end\") and another line says what it was, record the deed ONCE, in the plain words, quoting the line that says it plainly (not the coy one).",
@@ -205,6 +205,9 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     "- quote: the exact source fragment, copied verbatim in its original language (keep it short).",
     "- actorName: the name of the character who DID it (see WHO DID IT), \"the party\" for a group action, else \"\".",
     "- actorRole: \"doer\" when actorName actually did or attempted it. \"target\" when it only happened TO them and they did nothing: they were attacked, ambushed, knocked down, read or sized up, offered a deal or a job, told a secret, given something. What they then DID (fought back, bargained, climbed) is a separate doer entry; merely declining or thinking it over is not.",
+    // Board 07b9d93f (ember-road s1): "I got banned from a pie tent" was dropped as "target". A
+    // punishment is never random: it is the only trace in the notes of something the PC did.
+    "  Being banned, barred, thrown or kicked out, evicted, arrested, jailed, fined or run out of town is NOT \"target\": it is the result of the character's own misbehaviour, so it is a doer entry with outcome failure (\"got banned from the pie tent\" = misbehaved at the pie tent and was banned; summary says what they did as far as the notes tell, consequence says the ban).",
     "- continuesPrevious: true ONLY when this entry is just the result, payoff or an elaboration of the entry right before it (same person, same occasion: \"didn't lose a single guest\", \"the owner offered her a slot\", \"he adjusted the malt\"). false for any new action, even one of the same kind on another occasion.",
     `- summary: one short third-person sentence in ${lang} saying who did what.`,
     `- consequence: what came of it, if the notes say (one short ${lang} sentence), else "".`,
@@ -256,7 +259,7 @@ export function creativityTemperature(config) {
 // `mustPropose`: the GM explicitly asked for suggestions (proposalMode "always") or a level-up grant
 // allowance is waiting to be spent. Without it a careful model answers {"proposals":[]} for any
 // single-session evidence -- which is right for "when-earned" and useless for "always".
-export function buildProposalMessages({ request, config, events, themeEvidence = {}, tagEvidence = {}, allowClass, mustPropose = false, milestone = null, target = null }) {
+export function buildProposalMessages({ request, config, events, themeEvidence = {}, tagEvidence = {}, allowClass, mustPropose = false, milestone = null, target = null, titles = false }) {
   const req = request.requirements ?? {};
   const polarity = config.allowRed
     ? req.polarityGuidance
@@ -265,7 +268,9 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
   const system = [
     "You design Grand Design growth proposals (new Skills, or a Class evolution) for a tabletop RPG character from evidence of what they actually did. Reply with JSON only: {\"proposals\":[...]}.",
     "Do not grant, approve, or claim to create any item -- the GM approves every proposal.",
-    target
+    target?.operation === "upgrade" || target?.operation === "combine"
+      ? `This is an ${target.operation === "upgrade" ? "EVOLUTION" : "MERGE"} request from the GM for entries the character already owns: return EXACTLY ONE proposal.`
+      : target
       ? `This is an AUTHORING request: the GM asked you to write the real proposal for one placeholder, so return EXACTLY ONE proposal.`
       : milestone
       ? `This is a GUARANTEED Grand Design milestone reward, not an open-ended suggestion: return EXACTLY ONE proposal.`
@@ -290,7 +295,10 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     "Never propose a Skill or Class whose mechanics (what it actually lets the character do) duplicate or closely resemble one the character already owns (actor.existingClassesAndSkills, including its effect) -- not even under a new name. Build on what they have, or cover genuinely new ground.",
     // Board 3574bd96: without these lists two "Suggest" clicks gave "Unbroken Bastion" then
     // "Unbroken Bulwark", and one call gave five variants of the same archery volley.
-    ...(hasProposalLists(request.actor) ? ["The same goes for actor.pendingProposals (already written and waiting for the GM) and actor.rejectedByGm (the GM turned these down): never propose one of them again, a renamed variant, or the same idea with other numbers."] : []),
+    ...(hasProposalLists(request.actor) ? ["The same goes for actor.pendingProposals (already written and waiting for the GM) and actor.rejectedByGm (the GM turned these down): never propose one of them again, a renamed variant, or the same idea with other numbers."
+      // Live regression 2026-09-29: with 4 archery ideas pending, the rule above alone made the model
+      // answer {"proposals":[]} to a GM who had just pressed Suggest.
+      + (mustPropose ? " If they already cover the obvious idea, that is a reason to look further, not to return nothing: build on another activity or theme in newEvents, or a different kind of ability (reaction, action, spell, weapon technique) with a different effect." : "")] : []),
     "Each proposal in your reply must be a DIFFERENT idea (a different activity, or a clearly different use of it): never two variants of one ability.",
     // Board 3962a001: "Hexblade: Infernal Pact" (Warlock 3) granted Pact Magic + Eldritch Blast, which
     // every Warlock already has from level 1; "Shadowfingers: Sleight of Hand" granted a Rogue
@@ -317,6 +325,7 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     // for "broke the captured scout's will over three days" (3 of 8 red-worthy items were red).
     // A per-proposal check with the vice list as the match key makes the decision explicit.
     ...(config.allowRed ? [`Red check, BEFORE any proposal: fill "redCheck" with one entry per newEvent, in order: { event: its summary, vice: the key from this list that it clearly matches (read the quote), else "none" }. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} Killing someone who surrendered or was helpless, torture, and breaking a captive's will always match. Ordinary fighting, stealing, lying and bargaining are "none". Then, if any event has a vice and you propose anything, one proposal MUST cite that event in its evidence and be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- that deed written up as a clean standard ability, or left out, is wrong. Every other proposal stays standard.`] : []),
+    ...(titles ? [titleInstruction(config)] : []),
     `Failures: ${req.eventOutcomePhilosophy ?? ""}`,
     // "May" was never enough: at GD level 50 the model wrote only Skills (2 of 2 real runs), so the GM
     // who reached a Class-evolution level and asked for suggestions was never offered a Class.
@@ -346,6 +355,7 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
         ? { effect: entry.mechanics.effect.trim().slice(0, 200) }
         : {})
     }));
+  const ownedTitles = Object.values(registry.titles ?? {}).map((entry) => entry?.name).filter((name) => typeof name === "string" && name.trim()).slice(0, 20);
   const payload = {
     actor: {
       name: actor.name,
@@ -361,7 +371,8 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       // rule above still applies from general class knowledge when this list is empty.
       ...(Array.isArray(actor.ownedFeatures) && actor.ownedFeatures.length ? { ownedFeatures: actor.ownedFeatures.slice(0, 40) } : {}),
       ...(Array.isArray(actor.pendingProposals) && actor.pendingProposals.length ? { pendingProposals: nameAndEffect(actor.pendingProposals) } : {}),
-      ...(Array.isArray(actor.rejectedProposals) && actor.rejectedProposals.length ? { rejectedByGm: nameAndEffect(actor.rejectedProposals) } : {})
+      ...(Array.isArray(actor.rejectedProposals) && actor.rejectedProposals.length ? { rejectedByGm: nameAndEffect(actor.rejectedProposals) } : {}),
+      ...(titles && ownedTitles.length ? { titles: ownedTitles } : {})
     },
     // The verbatim quote travels with the summary: summaries sanitize ("broke the scout's will over
     // three days" became "interrogated the scout"), which hid exactly the cues red polarity needs.
@@ -388,6 +399,7 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
 // api.js#requestProposalAuthoring: the GM pressed "Author with AI" on a placeholder ("<Theme> Knack",
 // a template, a capstone). Without this the model was never told WHAT to author (board 3d80edf3).
 function authoringInstruction(target) {
+  if (target.operation === "upgrade" || target.operation === "combine") return advancedInstruction(target);
   const kind = target.kind === "class" ? "class" : "skill";
   const what = target.label || target.theme || "the activity in newEvents";
   const parts = [
@@ -405,6 +417,59 @@ function authoringInstruction(target) {
     parts.push(`The generic placeholder being replaced is "${target.placeholder.name}"${effect}. Do NOT reuse its name or wording; write something specific to what this character actually did.`);
   }
   return parts.join(" ");
+}
+
+// Boards ebcc3f03 / d4ae9326 (api.requestSkillEvolution / requestClassMerge): canon's [Power Strike]
+// -> [Minotaur Punch], and comma classes. The deterministic fallbacks (skill-evolution.js,
+// class-merging.js) could only rename and re-tier the source; the model is asked for what they
+// cannot do -- mechanics that GROW from the source's, in this system's terms, named in the actor's
+// motif. Tier / power tier / lineage are decided in code (pipeline.js#applyAdvancedTarget), so the
+// prompt states them as facts rather than asking the model to work them out.
+function advancedInstruction(target) {
+  const sources = (target.sources ?? []).map((source) => {
+    const out = { name: source.name };
+    for (const key of ["tier", "level", "power_tier", "focus", "polarity"]) if (source[key] !== undefined && source[key] !== null && source[key] !== "") out[key] = source[key];
+    if (typeof source.effect === "string" && source.effect.trim()) out.effect = source.effect.trim().slice(0, 300);
+    if (Array.isArray(source.tags) && source.tags.length) out.tags = source.tags.slice(0, 8);
+    if (Array.isArray(source.definingMoments) && source.definingMoments.length) out.definingMoments = source.definingMoments.slice(0, 6).map((m) => String(m).slice(0, 200));
+    return out;
+  });
+  const nameRule = target.name
+    ? `The GM already chose the name: "${target.name}" -- use exactly that.`
+    : "Give it a NEW name (never a source's name, never the source name plus \"Greater\"/\"II\"/\"Improved\"), in the character's own class motif per the naming rules.";
+  if (target.operation === "upgrade") {
+    return [
+      `SKILL EVOLUTION: the character's Skill below has been used and tested enough to EVOLVE. Return ONE proposal, kind "skill", tier ${target.tier}: the evolved form of this Skill.`,
+      `SOURCE SKILL: ${JSON.stringify(sources[0] ?? {})}`,
+      "Building on the source(s) is the point here: the rule against duplicating owned entries does not apply to them (it still applies to everything else the character owns).",
+      "The evolved Skill is the same ability grown stronger and stranger, NOT a copy with a bigger number and NOT an unrelated new ability: keep its core action/trigger recognisable, then add what the defining moments (and newEvents) show it has become -- a wider reach, an extra rider effect, a new use, fewer limits. Its effect text must differ from the source's.",
+      `${nameRule} Evidence: cite the defining moments. metadata.lineage: { operation: "upgrade", sources: [the source id], rationale: one sentence quoting or naming the defining moments that made it evolve }.`,
+      sources[0]?.polarity === "red" ? "The source is a red (taboo) Skill: the evolved form stays metadata.polarity \"red\" with the same vice and a drawback at least as heavy." : "Keep the source's polarity."
+    ].join(" ");
+  }
+  return [
+    `CLASS MERGE: the character's Classes below fuse into ONE Class. Return ONE proposal, kind "class", level ${target.level ?? "the highest source level"}, power_tier "${target.powerTier ?? "standard"}"${target.focusNote ? ` (${target.focusNote})` : ""}.`,
+    `SOURCE CLASSES: ${JSON.stringify(sources)}`,
+    "Building on the source(s) is the point here: the rule against duplicating owned entries does not apply to them (it still applies to everything else the character owns).",
+    "The merged Class keeps the heart of every source and makes them work TOGETHER in one concrete mechanic -- not a list of both sources' effects glued together, and not one source ignoring the other. Take the primary source (highest level/power) as the chassis.",
+    `${nameRule} Evidence: cite what the sources did together. metadata.lineage: { operation: "combine", sources: [every source id], rationale: one sentence on why these belong together }.`,
+    sources.some((s) => s.polarity === "red") ? "A source is red (taboo): the merged Class stays metadata.polarity \"red\" with that vice and a drawback that carries forward." : "",
+    "is_primary true, is_secondary false."
+  ].filter(Boolean).join(" ");
+}
+
+// Board 7b616fea. Canon: [Trollbane], [Hero of Liscor], [Butcher of the Bridge] -- a name others give
+// for a deed. Sparing by design: the "almost always []" line and the one-item cap are what keep a
+// merely good session from minting a title every time.
+function titleInstruction(config) {
+  return [
+    "TITLES (rare): besides proposals you may fill \"titles\" with AT MOST ONE Title -- a name the world would call this character for ONE notable deed in newEvents. Only for: a named or notorious foe killed or driven off (\"Trollbane\"), a rescue people will talk about, a feat of infamy, or a reputation the notes state outright (\"the whole town calls her ...\"). Ordinary fights, checks, downtime and good sessions earn NO title: leave titles [] (almost always).",
+    "A title: deed = the exact quote from newEvents it is for; name = a short epithet (\"Trollbane\", \"The Bridge-Holder\", never the character's own name or class); description = one sentence on what people say about them; tags from ALLOWED TAGS. No mechanics.",
+    config.allowRed
+      ? "A title for a vile deed (the red check's vices) is polarity \"red\" with vice <that key> and drawback = how people now treat the bearer; otherwise polarity \"standard\", vice \"none\"."
+      : "polarity is always \"standard\", vice \"none\".",
+    "Never repeat a title the character already has (actor.titles) or one in pendingProposals/rejectedByGm."
+  ].join(" ");
 }
 
 function hasProposalLists(actor) {

@@ -6,6 +6,8 @@ import { validateClassEntry, validateSkillEntry } from "./validator.js";
 import { AiProviderUnreachableError, AiProviderTimeoutError, assertSafeEndpoint, createTransport } from "./ai/transport.js";
 import { normalizeGatewayConfig } from "./ai/gateway-config.js";
 import { createExtractionCache, runGatewayPipeline } from "./ai/pipeline.js";
+// Pure (constants/lineage/skill-evolution only): the merge power-tier rule authorAdvanced shares with the fallback.
+import { computeMergeFocus, resolveMergedPowerTier, MERGE_FOCUS_STRONG_THRESHOLD, MERGE_FOCUS_WEAK_THRESHOLD } from "./class-merging.js";
 
 // Backward-compatible re-exports: these used to be defined in this file.
 export { AiProviderUnreachableError, AiProviderTimeoutError };
@@ -124,12 +126,82 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
     };
     return run({ actor, notes: "", systemId, events: Array.isArray(events) ? events : [], target, replacing: { id: proposal?.id ?? null, name: proposal?.entry?.name ?? null } });
   };
+  // Boards ebcc3f03 / d4ae9326 (api.requestSkillEvolution / api.requestClassMerge): stage 2 only, like
+  // authorProposal, for an entry built FROM owned ones. See buildAdvancedTarget for what is decided in
+  // code (tier, power tier, lineage) and pipeline.js#applyAdvancedTarget for where it is enforced.
+  // Throws on provider failure (the preset-events path re-throws) so the caller's fallback can say why.
+  adapter.authorAdvanced = async ({ actor, operation, sources = [], events = [], systemId, name = null } = {}) => {
+    const target = buildAdvancedTarget({ actor, operation, sources, name });
+    const given = Array.isArray(events) ? events.filter((event) => event && typeof event.summary === "string" && event.summary.trim()) : [];
+    // An evolution's defining moments ARE its evidence; when the caller passes only those (not the
+    // full events), stage 2 still gets them as newEvents to cite.
+    const moments = given.length ? [] : target.sources.flatMap((source) => (source.definingMoments ?? []).map((summary) => ({
+      summary, tags: source.tags ?? [], themes: [], outcome: "success", actorName: actor?.name ?? ""
+    })));
+    return run({ actor, notes: "", systemId, events: [...given, ...moments], target });
+  };
   adapter.ping = () => transport.ping();
   adapter.listModels = () => transport.listModels();
   adapter.transport = transport;
   adapter.clearExtractionCache = () => extractionCache?.clear();
   adapter.config = Object.freeze({ ...cfg, apiKey: cfg.apiKey ? "********" : "", fetchImpl: undefined, getHeaders: undefined, sleep: undefined });
   return adapter;
+}
+
+const ADVANCED_OPERATIONS = { upgrade: "skill", combine: "class" };
+
+/**
+ * The stage-2 target for adapter.authorAdvanced. Sources are completed from the actor's registry
+ * (tags, polarity, malignance, tier/level) when the caller passed only ids and names, so the prompt
+ * and the red carry-over see the real entry. The merge's power tier is the conversion rules' merge
+ * (class-merging.js: focus score from tag overlap, off-cycle cap) -- the same numbers the
+ * deterministic fallback would reach, so AI and fallback never disagree on how strong a merge is.
+ */
+export function buildAdvancedTarget({ actor, operation, sources = [], name = null } = {}) {
+  const kind = ADVANCED_OPERATIONS[operation];
+  if (!kind) throw new Error(`authorAdvanced: unknown operation "${operation}" (expected "upgrade" or "combine").`);
+  const list = Array.isArray(sources) ? sources.filter((source) => source && (source.id || source.name)) : [];
+  if (operation === "upgrade" && list.length !== 1) throw new Error("authorAdvanced upgrade needs exactly one source Skill.");
+  if (operation === "combine" && list.length < 2) throw new Error("authorAdvanced combine needs at least two source Classes.");
+  const registry = actor?.getFlag?.(MODULE_ID, "registry") ?? {};
+  const bucket = (kind === "class" ? registry.classes : registry.skills) ?? {};
+  const full = list.map((source) => {
+    const owned = (source.id && bucket[source.id]) || Object.values(bucket).find((entry) => entry?.name && entry.name === source.name) || {};
+    const md = owned.metadata ?? {};
+    const malignance = source.malignance ?? md.malignance;
+    return {
+      id: source.id ?? md.id ?? null,
+      name: source.name ?? owned.name,
+      kind,
+      ...(kind === "skill" ? { tier: Number.isInteger(source.tier) ? source.tier : Number.isInteger(owned.tier) ? owned.tier : 1 } : {}),
+      ...(kind === "class" ? {
+        level: Number.isInteger(source.level) ? source.level : Number.isInteger(owned.level) ? owned.level : 1,
+        power_tier: source.power_tier ?? owned.power_tier ?? "standard",
+        ...(source.focus ?? owned.focus ? { focus: source.focus ?? owned.focus } : {})
+      } : {}),
+      effect: source.effect ?? owned.mechanics?.effect ?? "",
+      tags: Array.isArray(source.tags) ? source.tags : Array.isArray(md.tags) ? md.tags : [],
+      polarity: source.polarity ?? md.polarity ?? "standard",
+      ...(malignance ? { malignance, vice: malignance.vice } : {}),
+      ...(Array.isArray(source.definingMoments) ? { definingMoments: source.definingMoments.filter((m) => typeof m === "string" && m.trim()) } : {})
+    };
+  });
+  const target = { kind, operation, sources: full, ...(typeof name === "string" && name.trim() ? { name: name.trim() } : {}) };
+  if (operation === "upgrade") {
+    target.tier = Math.min(3, (full[0].tier ?? 1) + 1);
+    return target;
+  }
+  const shaped = full.map((source) => ({ power_tier: source.power_tier, metadata: { tags: source.tags } }));
+  const { focusScore } = computeMergeFocus(shaped);
+  const progression = actor?.getFlag?.(MODULE_ID, LEVEL_PROGRESSION_FLAG) ?? {};
+  const gdLevel = Number.isInteger(progression.level) ? progression.level : null;
+  const offCycle = gdLevel !== null && !CLASS_EVOLUTION_LEVELS.has(gdLevel);
+  target.powerTier = resolveMergedPowerTier(shaped, focusScore, { offCycle });
+  target.level = Math.max(...full.map((source) => source.level ?? 1));
+  target.offCycle = offCycle;
+  target.focusScore = Math.round(focusScore * 100) / 100;
+  target.focusNote = `focus score ${target.focusScore}: ${focusScore >= MERGE_FOCUS_STRONG_THRESHOLD ? "tightly focused sources, one tier above the strongest" : focusScore < MERGE_FOCUS_WEAK_THRESHOLD ? "unrelated sources, a generalist blend capped at standard" : "related sources, holds at the strongest source's tier"}${offCycle ? "; off the Grand Design evolution cadence, so no tier bonus" : ""}`;
+  return target;
 }
 
 // Legacy factory, kept for existing callers (ai-provider-config.js) and tests. Its old options map
@@ -175,9 +247,9 @@ export function compactProposals(actor, status, limit = 20) {
       const entry = proposal.entry;
       return {
         ...(proposal.id ? { id: proposal.id } : {}),
-        kind: proposal.kind === "class" ? "class" : "skill",
+        kind: proposal.kind === "class" ? "class" : proposal.kind === "title" ? "title" : "skill",
         name: entry.name,
-        ...(typeof entry.mechanics?.effect === "string" ? { effect: entry.mechanics.effect.slice(0, 300) } : {}),
+        ...(typeof entry.mechanics?.effect === "string" ? { effect: entry.mechanics.effect.slice(0, 300) } : typeof entry.description === "string" ? { effect: entry.description.slice(0, 300) } : {}),
         ...(typeof entry.mechanics?.trigger === "string" ? { trigger: entry.mechanics.trigger.slice(0, 160) } : {}),
         ...(entry.gameItem?.kind ? { gameItemKind: entry.gameItem.kind } : {}),
         tags: Array.isArray(entry.metadata?.tags) ? entry.metadata.tags : [],
@@ -296,7 +368,7 @@ export function buildAiGatewayRequest(actor, notes, systemId = "pf2e") {
               frequency: { max: "integer >= 1", per: "round | minute | hour | day | encounter | unlimited" },
               roll: { kind: "required for action-like entries", formula: "dice formula such as 1d20+8" }
             },
-            metadata: { tags: ["string"], polarity: "standard | red (optional -- see requirements.polarityGuidance, omit unless red)", malignance: "REQUIRED only when polarity is red -- { vice, drawback }", lineage: { operation: "origin", sources: [], rationale: "string" } }
+            metadata: { tags: ["string"], polarity: "standard | red (optional -- see requirements.polarityGuidance, omit unless red)", malignance: "REQUIRED only when polarity is red -- { vice, drawback }", lineage: { operation: "origin | upgrade (upgrade only when evolving an owned Skill on request)", sources: ["approved registry IDs (empty for origin)"], rationale: "string" } }
           },
           ifKindIsClass: {
             name: "string",
