@@ -41,9 +41,29 @@ unfair growth, broken flow), `medium` (confusing, bland, slow), `low` (polish).
 2. Read the Status section of `CLAUDE.md`; `git log --oneline -10`; `git status --short`.
 3. Is Ollama up? `curl -s http://127.0.0.1:11434/api/tags`. Is Foundry up and is anyone on it?
    `curl -s http://localhost:30000/api/status` (never switch worlds while `users` > 0).
+   After changing module code, deploy it: `powershell -ExecutionPolicy Bypass -File tools\deploy-foundry-module.ps1`
+   (the live install goes stale otherwise - on 2026-09-28 it was four days behind main).
+
 4. Decide the session's shape: **playtest** (default when nothing is `doing` and the last playtest
    is older than the last fixes), **fix** (open `high`/`critical` items exist), or **plan** (owner
    asked). Put the goal on the board if it is not already there.
+
+## Foundry access (you may run it yourself)
+
+Local Foundry v14 at `http://localhost:30000`. Worlds: **"Endex"** (id `endex`, PF2e) and **"EndexDND 5E"**
+(id `endexdnd-5e`, dnd5e). Log in as user **`Gamemaster` with no password** (empty password field). The
+owner has authorised Claude to log in, launch worlds and drive the module there for testing - no need to ask.
+
+- Drive it headless with Playwright the way `foundry-module/tests/integration/run-live-ai-campaign.mjs`
+  does (`npm run test:live-ai`; `FOUNDRY_HEADFUL=1` to watch). Or, when the Claude Chrome extension is
+  connected, in the owner's own browser.
+- Only one connection per user: logging in as Gamemaster while the owner is on it kicks them. Check
+  `curl -s http://localhost:30000/api/status` first; if `users` > 0 and the owner is playing, ask or wait.
+  Never switch or shut down a world while `users` > 0.
+- The AI gateway settings (`aiProvider`, `aiEndpoint`, `aiModel`) are CLIENT scope - stored per browser.
+  A headless session must set them itself (`game.settings.set("grand-design-ai", "aiProvider", "ollama")`,
+  endpoint `http://127.0.0.1:11434`, model `qwen3.8:27b`) and reload; that does not change the owner's browser.
+- The gateway adapter is built at `ready`, so settings changes need a world reload.
 
 ## Playtest (you are the Dungeon Master)
 
