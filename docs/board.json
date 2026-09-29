@@ -1272,10 +1272,11 @@
   {
    "id": "4344c58a",
    "title": "No way to delete or reassign a recorded event, or undo an approval",
-   "status": "todo",
+   "status": "done",
    "notes": [
     "_removeRecordedEvents is private; Re-analyze only replaces the LAST notes' events, so an older misattributed event counts forever. Fix: per-event delete/reassign under Recorded Evidence with progress recomputed, and 'revert approval'.",
-    "dev-integration (merged 3c2a141): api.deleteRecordedEvent / reassignRecordedEvent(actor, id, target) / revertApproval(actor, entryId, {reject}); GM-only, per-actor locks (both actors on a move); progress taken back (floor 0), proposals citing only that event withdrawn, others lose it from evidence, Horror Rank recomputed on both; a moved event keeps its data incl. jev, stamped reassigned; revert restores superseded sources in the registry AND on the Item (PF2e rules/frequency, dnd5e activities/effects/uses), refunds the allowance spent, refuses safely (evolved/merged further, live Combination, missing source). Growth dialog: Move to.../Delete per evidence row, Approved list with Revert. 24 tests both systems; 1421 total. Pending: live-verify both worlds."
+    "dev-integration (merged 3c2a141): api.deleteRecordedEvent / reassignRecordedEvent(actor, id, target) / revertApproval(actor, entryId, {reject}); GM-only, per-actor locks (both actors on a move); progress taken back (floor 0), proposals citing only that event withdrawn, others lose it from evidence, Horror Rank recomputed on both; a moved event keeps its data incl. jev, stamped reassigned; revert restores superseded sources in the registry AND on the Item (PF2e rules/frequency, dnd5e activities/effects/uses), refunds the allowance spent, refuses safely (evolved/merged further, live Combination, missing source). Growth dialog: Move to.../Delete per evidence row, Approved list with Revert. 24 tests both systems; 1421 total. Pending: live-verify both worlds.",
+    "LIVE 2026-09-29 build 9d1b59b, tools/playtest/live-verify.mjs 28/28 in BOTH worlds (endex pf2e, endexdnd-5e): revert restores the superseded source with its rules (1 rule back), Move to... stamps reassigned on the other PC, Delete removes the event."
    ],
    "tags": [
     "ui",
@@ -1285,17 +1286,18 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.361,
-   "updated": 1790714063.99,
+   "updated": 1790718892.038,
    "prio": 2,
    "parent": "6d04ba44"
   },
   {
    "id": "2d795cac",
    "title": "Ollama on another LAN machine is blocked (plain http only for loopback)",
-   "status": "todo",
+   "status": "done",
    "notes": [
     "validateEndpointUrl (ai-provider-config.js:77) and transport.js:85 reject http to private addresses; calls run in the GM's browser, so 127.0.0.1 is the GM's PC, not the Foundry host, and the form does not say so. Fix: opt-in checkbox for private-network http, help text on where calls originate and OLLAMA_ORIGINS.",
-    "dev-gateway (merged 2026-09-29): opt-in 'Allow plain HTTP to my local network' (aiAllowPrivateHttp, user scope, default off) -> cfg.allowPrivateHttp; one rule endpointSafetyProblem shared by transport.js and the form (RFC1918, 169.254, fc00::/7, fe80::/10, *.local/*.lan); applies to the Jev endpoint too; help text says calls come from the browser + OLLAMA_HOST/OLLAMA_ORIGINS + jev-proxy --host 0.0.0.0. Real Node check: http://192.168.4.32:11434 off -> rejected with the opt-in hint, on -> guard passes (connection refused, Ollama on loopback); http://8.8.8.8 on -> still rejected. 1397 tests. Pending: live form click-through."
+    "dev-gateway (merged 2026-09-29): opt-in 'Allow plain HTTP to my local network' (aiAllowPrivateHttp, user scope, default off) -> cfg.allowPrivateHttp; one rule endpointSafetyProblem shared by transport.js and the form (RFC1918, 169.254, fc00::/7, fe80::/10, *.local/*.lan); applies to the Jev endpoint too; help text says calls come from the browser + OLLAMA_HOST/OLLAMA_ORIGINS + jev-proxy --host 0.0.0.0. Real Node check: http://192.168.4.32:11434 off -> rejected with the opt-in hint, on -> guard passes (connection refused, Ollama on loopback); http://8.8.8.8 on -> still rejected. 1397 tests. Pending: live form click-through.",
+    "LIVE 2026-09-29 build 9d1b59b, tools/playtest/live-verify.mjs 28/28 in BOTH worlds (endex pf2e, endexdnd-5e): aiAllowPrivateHttp registered per user."
    ],
    "tags": [
     "gateway",
@@ -1305,7 +1307,7 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.436,
-   "updated": 1790713199.391,
+   "updated": 1790718892.085,
    "prio": 2,
    "parent": "567067e6"
   },
@@ -2009,9 +2011,10 @@
   {
    "id": "73fa8066",
    "title": "Horror Rank stage suppresses one class feat/feature per stage (PF2e class feat or dedication, dnd5e feat/class feature), Stage 3 narrative lock-out notice, restore one per stage lost (owner: yes, 2026-09-29)",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "dev-red (worktree, not committed): stage suppression both systems. scripts/systems/horror-suppression.js (eligible: PF2e class feats/dedications, dnd5e feat/class-feature Items; never Grand Design Items; combat-relevant default), suppress = PF2e rules emptied + frequency spent / dnd5e activities removed + effects disabled + uses spent, name+description labelled, stash in flag horrorSuppressed -> exact restore. api.confirmHorrorSuppression(actor,{itemId?,waive?}), restoreHorrorSuppression(actor,{itemId?,force?}); getHorrorRank().suppression {due,held,suppressed,candidates,defaultCandidateId,restoreDefaultId}, lockedOut; hooks horrorFeatureSuppressed/Restored. Growth dialog + Registry meter: picker (default preselected), Suppress/Waive, Restore (most recent default)/Undo, Stage 3 lock-out notice; GM notices on stage change. Tests both systems (exact round trip). 1447 tests green. Not live-verified."
+    "dev-red (worktree, not committed): stage suppression both systems. scripts/systems/horror-suppression.js (eligible: PF2e class feats/dedications, dnd5e feat/class-feature Items; never Grand Design Items; combat-relevant default), suppress = PF2e rules emptied + frequency spent / dnd5e activities removed + effects disabled + uses spent, name+description labelled, stash in flag horrorSuppressed -> exact restore. api.confirmHorrorSuppression(actor,{itemId?,waive?}), restoreHorrorSuppression(actor,{itemId?,force?}); getHorrorRank().suppression {due,held,suppressed,candidates,defaultCandidateId,restoreDefaultId}, lockedOut; hooks horrorFeatureSuppressed/Restored. Growth dialog + Registry meter: picker (default preselected), Suppress/Waive, Restore (most recent default)/Undo, Stage 3 lock-out notice; GM notices on stage change. Tests both systems (exact round trip). 1447 tests green. Not live-verified.",
+    "LIVE 2026-09-29 build 9d1b59b, tools/playtest/live-verify.mjs 28/28 in BOTH worlds (endex pf2e, endexdnd-5e): a monstrous deed (threshold set to 20) -> stage 2, candidate = the real compendium feature (dnd5e Second Wind / PF2e Sudden Charge), GM confirm -> '(suppressed)' with activity/uses off (dnd5e); profound atonement -> stage 0, restore puts the Item back byte-exact (dnd5e activities 1, uses 1/1 sr). PF2e Sudden Charge has no rule elements, so the rules round trip is unit-tested only."
    ],
    "tags": [
     "red",
@@ -2023,14 +2026,15 @@
    "owner": "dev-red",
    "source": "owner decision, conversion rules 6",
    "created": 1790714088.803,
-   "updated": 1790718270.653
+   "updated": 1790718892.131
   },
   {
    "id": "a8728f4e",
    "title": "Atonement deeds lower Horror Rank (extraction flag + severity, points subtracted, floor 0) and a GM 'restore docked levels' action (owner: yes, 2026-09-29)",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "dev-red: event field atonement none|minor|serious|profound (schema required after darkSeverity, rule + 1 few-shot, coerceAtonement, fold keeps greater, amends event carries no darkDeed); points 5/15/40 subtracted, running sum in recorded order floored at 0, derived. api.restoreDockedLevels(actor,{ids?}) with a dock log (crossing, Class, levels): each dock once; mark drops only for crossings no longer reached. Corpus corpus/atonement.json (10 amends + 8 traps, en/es/fr). Real model qwen3.8:27b: atonement level 100% / recognised 100% on 10 items (3 reps + 2 reps), atonement invented 0% on 48 gold-none (atonement traps + traps, 2 reps; 1 of 58 in the first prompt, fixed). darkDeedAcc red 3 reps: baseline 86.7% -> 86.7% (1-rep baseline 90%); misses rd-008 (known), rd-009 2/3 (borderline in baseline too). dark FP traps 0%. Traps score 98.1% (count on tr-015/tr-037, trapAcc 100%)."
+    "dev-red: event field atonement none|minor|serious|profound (schema required after darkSeverity, rule + 1 few-shot, coerceAtonement, fold keeps greater, amends event carries no darkDeed); points 5/15/40 subtracted, running sum in recorded order floored at 0, derived. api.restoreDockedLevels(actor,{ids?}) with a dock log (crossing, Class, levels): each dock once; mark drops only for crossings no longer reached. Corpus corpus/atonement.json (10 amends + 8 traps, en/es/fr). Real model qwen3.8:27b: atonement level 100% / recognised 100% on 10 items (3 reps + 2 reps), atonement invented 0% on 48 gold-none (atonement traps + traps, 2 reps; 1 of 58 in the first prompt, fixed). darkDeedAcc red 3 reps: baseline 86.7% -> 86.7% (1-rep baseline 90%); misses rd-008 (known), rd-009 2/3 (borderline in baseline too). dark FP traps 0%. Traps score 98.1% (count on tr-015/tr-037, trapAcc 100%).",
+    "LIVE 2026-09-29 build 9d1b59b, tools/playtest/live-verify.mjs 28/28 in BOTH worlds (endex pf2e, endexdnd-5e): profound atonement took the meter 55 -> 15 (stage 2 -> 0)."
    ],
    "tags": [
     "red",
@@ -2041,14 +2045,15 @@
    "owner": "dev-red",
    "source": "owner decision, conversion rules 6",
    "created": 1790714088.855,
-   "updated": 1790718270.698
+   "updated": 1790718892.188
   },
   {
    "id": "41384131",
    "title": "Horror Rank severity points (5/15/40) and the 100-point threshold as GM world settings; tune after a campaign with real dark deeds (owner: yes)",
-   "status": "doing",
+   "status": "done",
    "notes": [
-    "dev-red: world settings horrorPointsMinor/Serious/Monstrous (defaults 5/15/40, clamped 0-100/0-200/0-400) and horrorRankThreshold (100, clamped 20-1000), registered in main.js, clamped again on read (horror-rank.js#resolveHorrorRankConfig); atonement uses the same scale. Tests: clamp + api reading them on both systems."
+    "dev-red: world settings horrorPointsMinor/Serious/Monstrous (defaults 5/15/40, clamped 0-100/0-200/0-400) and horrorRankThreshold (100, clamped 20-1000), registered in main.js, clamped again on read (horror-rank.js#resolveHorrorRankConfig); atonement uses the same scale. Tests: clamp + api reading them on both systems.",
+    "LIVE 2026-09-29 build 9d1b59b, tools/playtest/live-verify.mjs 28/28 in BOTH worlds (endex pf2e, endexdnd-5e): horrorRankThreshold world setting read live (20 for the check, restored after)."
    ],
    "tags": [
     "red",
@@ -2058,7 +2063,7 @@
    "owner": "dev-red",
    "source": "owner decision, conversion rules 6",
    "created": 1790714088.922,
-   "updated": 1790718270.745
+   "updated": 1790718892.235
   }
  ]
 }

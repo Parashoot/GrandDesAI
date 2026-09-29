@@ -236,6 +236,48 @@ try {
     check("LAN plain-HTTP opt-in is a per-user setting", corrections.lanSetting === "user", String(corrections.lanSetting));
   }
 
+  // Horror Rank stage suppression (board 73fa8066) on a REAL system feature from the compendium
+  // (PF2e Sudden Charge, dnd5e Second Wind): a monstrous deed under a lowered threshold gains a
+  // stage, the GM confirms, the Item is switched off; an atonement drops the stage and the restore
+  // puts the Item back exactly.
+  const suppression = await page.evaluate(async ({ mod, id }) => {
+    const api = game.modules.get(mod).api; const actor = game.actors.get(id);
+    if (typeof api.confirmHorrorSuppression !== "function") return { missing: true };
+    const pf2e = game.system.id === "pf2e";
+    const pack = game.packs.get(pf2e ? "pf2e.feats-srd" : "dnd5e.classfeatures");
+    const index = await pack?.getIndex();
+    const entry = index?.find((e) => e.name === (pf2e ? "Sudden Charge" : "Second Wind"));
+    if (!entry) return { note: `no compendium feature in ${pack?.collection ?? "?"}` };
+    const [item] = await actor.createEmbeddedDocuments("Item", [(await pack.getDocument(entry._id)).toObject()]);
+    const snap = (i) => JSON.stringify(pf2e ? { rules: i.system.rules, frequency: i.system.frequency ?? null } : { activities: i.system.activities?.size ?? 0, uses: i.system.uses ?? null, effects: i.effects.map((e) => e.disabled) });
+    const before = { name: item.name, data: snap(item) };
+    const threshold = game.settings.get(mod, "horrorRankThreshold");
+    await game.settings.set(mod, "horrorRankThreshold", 20);
+    const out = {};
+    try {
+      await api.recordGrowthEvent(actor, { summary: "GD live check: ate the prisoner.", tags: ["martial"], outcome: "success", darkDeed: "cruelty", darkSeverity: "monstrous" });
+      const hr = api.getHorrorRank(actor);
+      out.stage = hr.stage; out.due = hr.suppression?.due; out.candidates = (hr.suppression?.candidates ?? []).map((c) => c.name ?? c.id);
+      await api.confirmHorrorSuppression(actor, { itemId: item.id });
+      const off = actor.items.get(item.id);
+      out.suppressedName = off.name; out.changed = snap(off) !== before.data || off.name !== before.name;
+      await api.recordGrowthEvent(actor, { summary: "GD live check: freed every prisoner and paid their passage home.", tags: ["support"], outcome: "success", atonement: "profound" });
+      out.stageAfter = api.getHorrorRank(actor).stage;
+      await api.restoreHorrorSuppression(actor, { itemId: item.id });
+      const back = actor.items.get(item.id);
+      out.restored = back.name === before.name && snap(back) === before.data;
+      out.restoredDetail = `${back.name} ${snap(back).slice(0, 120)}`;
+    } catch (e) { out.error = e.message; }
+    finally { await game.settings.set(mod, "horrorRankThreshold", threshold); }
+    return out;
+  }, { mod: MOD, id: actorId });
+  if (suppression.missing) check("Horror suppression API present", false);
+  else if (suppression.note) check("Horror suppression: compendium feature found", false, suppression.note);
+  else {
+    check("a Horror stage offers the class feature and the GM's confirm switches it off", suppression.due > 0 && suppression.changed === true, suppression.error ?? `stage ${suppression.stage}, candidates ${JSON.stringify(suppression.candidates)}, now "${suppression.suppressedName}"`);
+    check("atonement drops the stage and the restore puts the feature back exactly", suppression.stageAfter < suppression.stage && suppression.restored === true, suppression.error ?? `stage ${suppression.stage} -> ${suppression.stageAfter}; ${suppression.restoredDetail}`);
+  }
+
   if (!KEEP) {
     for (const extra of extraActorIds) await page.evaluate((id) => game.actors.get(id)?.delete(), extra);
     await page.evaluate((id) => game.actors.get(id)?.delete(), actorId);
