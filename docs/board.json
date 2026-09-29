@@ -740,7 +740,7 @@
   {
    "id": "3d80edf3",
    "title": "'Author with AI' never tells the model what to author (placeholders like 'Archery Knack' stay generic)",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "api.js:995 calls adapter.authorProposal, which ai-gateway.js never defines, so it falls back to the full adapter with a 'GM REQUEST' notes wrapper (stage 1 reads it as OOC; stage 2 never sees the instruction), under when-earned gating, no preset events, and takes accepted[0] whatever it is. Capstone/Class fallbacks are forced to a tier-1/2 Skill. Fix: adapter.authorProposal = stage 2 only (presetEvents = cited evidence, mustPropose) with a 'target' (theme/label, kind, tier, placeholder to replace), like the milestone param. Also: approveProposal ignores needsAuthoring - warn or auto-author before approving a placeholder."
    ],
@@ -750,15 +750,17 @@
     "gateway"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-proposals",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.497,
-   "updated": 1790660878.534
+   "updated": 1790661465.765,
+   "prio": 1,
+   "parent": "a2cbef5e"
   },
   {
    "id": "d8c96c43",
    "title": "Templates and '<Theme> Knack' placeholders are minted even when the AI read the notes, duplicating AI proposals",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "api.js:1151-1152 recordGrowthEvent always runs generateSkillProposals + generateEmergentProposals, also for adapter events. registryHasTheme only checks APPROVED skills, so an AI proposal and 'Archery Knack' are both pending; 'archery' is both a tag and an ALSO_THEME. Neither source counts toward the pending cap. Live (EndexDND 5E): Briik has 12 pending = 5 Knack placeholders + 2 templates + 5 AI. Fix: skip templates/placeholders for adapter events (or auto-author them), suppress a theme already on a pending AI proposal, include all sources in the cap."
    ],
@@ -768,15 +770,17 @@
     "gateway"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-proposals",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.571,
-   "updated": 1790660878.609
+   "updated": 1790661465.832,
+   "prio": 1,
+   "parent": "a2cbef5e"
   },
   {
    "id": "0a1c8463",
    "title": "An AI-rewritten template proposal is overwritten by the next recorded event",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "api.js:1165-1170 only protects authored EMERGENT proposals; a re-authored template keeps source 'template' and a stable id (proposal:measured-strike), so the next recordGrowthEvent puts the template text back. Fix: preserve anything with authoredBy 'ai-gateway' (refresh evidence only) and restamp source ai-gateway, origin template."
    ],
@@ -784,15 +788,17 @@
     "proposals"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-proposals",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.646,
-   "updated": 1790660878.685
+   "updated": 1790661465.907,
+   "prio": 1,
+   "parent": "a2cbef5e"
   },
   {
    "id": "f48a1e52",
    "title": "A Class-evolution proposal can no longer be approved once the character levels past the milestone",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "progression.js:782 canApproveGeneratedProposal requires CLASS_EVOLUTION_LEVELS.has(current level). The guaranteed level-20 Class is dead if the GM rests to 21 first; a multi-level rest also falls back to a template that cannot be approved. Fix: gate on proposal.milestoneLevel; pass classEvolutionAvailable for milestone calls instead of reading the live level."
    ],
@@ -801,15 +807,17 @@
     "proposals"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-proposals",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.722,
-   "updated": 1790660878.759
+   "updated": 1790661465.982,
+   "prio": 1,
+   "parent": "12372a7a"
   },
   {
    "id": "51f276b4",
    "title": "AI provider is off by default in every browser and the GM is not warned (silent keyword fallback)",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "aiProvider/aiEndpoint/aiModel are CLIENT scope, default 'disabled' (ai-provider-config.js:257); main.js only warns when adapter creation throws, not when it returns null; a local Analyze is an info toast plus a small 'Local' chip. Live: Dvathal's 14 events are all source 'local' (2026-09-29). Fix: user scope for provider/endpoint/model (API key stays client), a world 'AI expected' flag with a sticky warning + Open AI Gateway button at ready, local-mode Analyze as a warning, hide/disable Suggest/Author with no provider."
    ],
@@ -819,15 +827,17 @@
     "qol"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.796,
-   "updated": 1790660878.834
+   "updated": 1790661462.906,
+   "prio": 1,
+   "parent": "567067e6"
   },
   {
    "id": "5286a3ba",
    "title": "Gateway adapter freezes settings at ready/Save; changes elsewhere need a reload",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "ai-gateway.js:62 normalizes the config once; no setting has onChange. proposalMode, creativity, allowRed, houseRules, namingStyle, maxProposals, provider/model changed by another GM, the console or a script are ignored until reload; main.js:33 claims otherwise. Fix: onChange handlers rebuilding the adapter (GM, debounced), or build the pipeline config per call and cache only the transport."
    ],
@@ -836,10 +846,12 @@
     "proposals"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.872,
-   "updated": 1790660878.908
+   "updated": 1790661462.956,
+   "prio": 1,
+   "parent": "567067e6"
   },
   {
    "id": "dee25a95",
@@ -858,12 +870,14 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660878.947,
-   "updated": 1790660878.984
+   "updated": 1790661419.9989858,
+   "prio": 2,
+   "parent": "6d04ba44"
   },
   {
    "id": "30f2b191",
    "title": "Stale live install is undetectable: version stuck at 0.28.0, no build stamp",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "module.json version unchanged since gateway v2; deploy-foundry-module.ps1 'verifies' matching versions, which proves nothing. The live install was 4 days behind main on 2026-09-28 and the owner could not tell; after a deploy the world must be reloaded (Briik GD50 rested on old code). Fix: deploy writes a build stamp (git SHA + time), bumps patch, logs it at ready, shows it in the Gateway form and 'Under the hood'; module.json verified 13 -> 14."
    ],
@@ -873,15 +887,17 @@
     "qol"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.042,
-   "updated": 1790660879.081
+   "updated": 1790661463.053,
+   "prio": 1,
+   "parent": "567067e6"
   },
   {
    "id": "db092299",
    "title": "Rest dialog hides milestone template fallback and labels AI Class evolutions 'template'",
-   "status": "todo",
+   "status": "doing",
    "notes": [
     "growth-ui.js:182-184 shows only gainedLevels; resolveLevelRest's warnings ('used the built-in template (reason)'), capstoneProposals and classProposals are dropped - breaks the 'fallback with a stated reason' rule. renderProposal has no case for source 'class-evolution', so an AI Class gets the 'template' chip. Fix: sticky warnings per entry, info naming the new milestone proposals, chip from source + usedFallback."
    ],
@@ -890,10 +906,12 @@
     "progression"
    ],
    "severity": "high",
-   "owner": "",
+   "owner": "dev-ui",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.118,
-   "updated": 1790660879.156
+   "updated": 1790661463.003,
+   "prio": 1,
+   "parent": "567067e6"
   },
   {
    "id": "5a0cea2e",
@@ -911,7 +929,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.193,
-   "updated": 1790660879.23
+   "updated": 1790661419.4809763,
+   "prio": 2,
+   "parent": "6d04ba44"
   },
   {
    "id": "ebcc3f03",
@@ -930,7 +950,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.286,
-   "updated": 1790660879.326
+   "updated": 1790661418.3033483,
+   "prio": 2,
+   "parent": "7dcd587f"
   },
   {
    "id": "574707d8",
@@ -947,7 +969,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.366,
-   "updated": 1790660879.406
+   "updated": 1790661418.4295838,
+   "prio": 2,
+   "parent": "7dcd587f"
   },
   {
    "id": "7b616fea",
@@ -967,7 +991,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.443,
-   "updated": 1790660879.483
+   "updated": 1790661418.556193,
+   "prio": 2,
+   "parent": "7dcd587f"
   },
   {
    "id": "21e944ed",
@@ -986,7 +1012,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.521,
-   "updated": 1790660879.561
+   "updated": 1790661418.6869833,
+   "prio": 2,
+   "parent": "7dcd587f"
   },
   {
    "id": "d4ae9326",
@@ -1005,7 +1033,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.601,
-   "updated": 1790660879.64
+   "updated": 1790661418.813674,
+   "prio": 2,
+   "parent": "7dcd587f"
   },
   {
    "id": "752369f6",
@@ -1023,7 +1053,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.679,
-   "updated": 1790660879.716
+   "updated": 1790661418.1763546,
+   "prio": 2,
+   "parent": "7dcd587f"
   },
   {
    "id": "b375d56c",
@@ -1041,7 +1073,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.753,
-   "updated": 1790660879.79
+   "updated": 1790661415.195415,
+   "prio": 2,
+   "parent": "a2cbef5e"
   },
   {
    "id": "0ed137cb",
@@ -1059,7 +1093,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.826,
-   "updated": 1790660879.869
+   "updated": 1790661415.328853,
+   "prio": 2,
+   "parent": "a2cbef5e"
   },
   {
    "id": "17c10e97",
@@ -1077,7 +1113,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.906,
-   "updated": 1790660879.944
+   "updated": 1790661415.5938256,
+   "prio": 2,
+   "parent": "a2cbef5e"
   },
   {
    "id": "9ebbf3c9",
@@ -1093,7 +1131,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660879.982,
-   "updated": 1790660880.021
+   "updated": 1790661415.4652913,
+   "prio": 2,
+   "parent": "a2cbef5e"
   },
   {
    "id": "a0bcfd05",
@@ -1110,7 +1150,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.058,
-   "updated": 1790660880.097
+   "updated": 1790661419.614396,
+   "prio": 2,
+   "parent": "6d04ba44"
   },
   {
    "id": "5b2ff22d",
@@ -1127,7 +1169,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.136,
-   "updated": 1790660880.174
+   "updated": 1790661416.861209,
+   "prio": 2,
+   "parent": "567067e6"
   },
   {
    "id": "78ead05c",
@@ -1145,7 +1189,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.211,
-   "updated": 1790660880.249
+   "updated": 1790661417.0144439,
+   "prio": 2,
+   "parent": "567067e6"
   },
   {
    "id": "7f1f20ae",
@@ -1162,7 +1208,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.286,
-   "updated": 1790660880.325
+   "updated": 1790661419.7408412,
+   "prio": 2,
+   "parent": "6d04ba44"
   },
   {
    "id": "4344c58a",
@@ -1179,7 +1227,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.361,
-   "updated": 1790660880.399
+   "updated": 1790661419.871753,
+   "prio": 2,
+   "parent": "6d04ba44"
   },
   {
    "id": "2d795cac",
@@ -1196,7 +1246,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.436,
-   "updated": 1790660880.476
+   "updated": 1790661417.1431363,
+   "prio": 2,
+   "parent": "567067e6"
   },
   {
    "id": "aab65e42",
@@ -1214,7 +1266,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.513,
-   "updated": 1790660880.551
+   "updated": 1790661417.2745056,
+   "prio": 2,
+   "parent": "567067e6"
   },
   {
    "id": "e6d9185c",
@@ -1233,7 +1287,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.588,
-   "updated": 1790660880.625
+   "updated": 1790661418.9467118,
+   "prio": 2,
+   "parent": "7dcd587f"
   },
   {
    "id": "c4ec8cf7",
@@ -1251,7 +1307,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.663,
-   "updated": 1790660880.702
+   "updated": 1790661419.0743608,
+   "prio": 2,
+   "parent": "7dcd587f"
   },
   {
    "id": "b16101a9",
@@ -1269,7 +1327,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.739,
-   "updated": 1790660880.777
+   "updated": 1790661417.9167593,
+   "prio": 2,
+   "parent": "12372a7a"
   },
   {
    "id": "0860fd78",
@@ -1286,7 +1346,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.815,
-   "updated": 1790660880.852
+   "updated": 1790661417.7899277,
+   "prio": 2,
+   "parent": "12372a7a"
   },
   {
    "id": "7f220b07",
@@ -1303,7 +1365,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.888,
-   "updated": 1790660880.927
+   "updated": 1790661415.8967242,
+   "prio": 2,
+   "parent": "a2cbef5e"
   },
   {
    "id": "3574bd96",
@@ -1319,7 +1383,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.965,
-   "updated": 1790660881.004
+   "updated": 1790661415.764479,
+   "prio": 2,
+   "parent": "a2cbef5e"
   },
   {
    "id": "f798f444",
@@ -1336,7 +1402,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660881.042,
-   "updated": 1790660881.081
+   "updated": 1790661416.0285523,
+   "prio": 2,
+   "parent": "a2cbef5e"
   },
   {
    "id": "dec6d76c",
@@ -1354,7 +1422,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660881.118,
-   "updated": 1790660881.157
+   "updated": 1790661417.6626618,
+   "prio": 2,
+   "parent": "12372a7a"
   },
   {
    "id": "54a5058f",
@@ -1372,7 +1442,9 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660881.194,
-   "updated": 1790660881.232
+   "updated": 1790661419.2064748,
+   "prio": 2,
+   "parent": "7dcd587f"
   },
   {
    "id": "b9a22e1a",
@@ -1388,7 +1460,8 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660881.271,
-   "updated": 1790660881.309
+   "updated": 1790661420.1333697,
+   "prio": 3
   },
   {
    "id": "e8c5fd7f",
@@ -1405,7 +1478,8 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660881.346,
-   "updated": 1790660881.384
+   "updated": 1790661420.2640681,
+   "prio": 3
   },
   {
    "id": "b5df25bd",
@@ -1422,7 +1496,8 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660881.423,
-   "updated": 1790660881.461
+   "updated": 1790661420.3918724,
+   "prio": 3
   },
   {
    "id": "01e232b6",
@@ -1439,7 +1514,93 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660881.498,
-   "updated": 1790660881.536
+   "updated": 1790661420.521236,
+   "prio": 3
+  },
+  {
+   "id": "278670bb",
+   "title": "AI-first Grand Design: the AI authors every growth moment, visibly",
+   "status": "todo",
+   "notes": [
+    "From the 2026-09-29 gap audit (3 code audits + live Foundry audit; filed as 40 tasks). AC: with a provider configured, no template/placeholder reaches the GM where the AI could author it; the GM always sees when the AI was not used and why; every Grand Design mechanic is reachable from the UI."
+   ],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661414.2267287,
+   "updated": 1790661414.3597393,
+   "kind": "epic",
+   "prio": 1
+  },
+  {
+   "id": "a2cbef5e",
+   "title": "AI authors proposals instead of templates and placeholders",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661414.6338055,
+   "updated": 1790661414.6338055,
+   "kind": "feature",
+   "prio": 1,
+   "parent": "278670bb"
+  },
+  {
+   "id": "567067e6",
+   "title": "AI is on, current and visibly used (settings, defaults, warnings, deploys)",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661416.1670356,
+   "updated": 1790661416.1670356,
+   "kind": "feature",
+   "prio": 1,
+   "parent": "278670bb"
+  },
+  {
+   "id": "12372a7a",
+   "title": "Milestones and progression rules work end to end",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661417.406303,
+   "updated": 1790661417.406303,
+   "kind": "feature",
+   "prio": 2,
+   "parent": "278670bb"
+  },
+  {
+   "id": "7dcd587f",
+   "title": "Advanced mechanics reachable from the UI and AI-driven (evolve, merge, titles, Horror Rank, combos)",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661418.0482519,
+   "updated": 1790661418.0482519,
+   "kind": "feature",
+   "prio": 2,
+   "parent": "278670bb"
+  },
+  {
+   "id": "6d04ba44",
+   "title": "Approved growth becomes real game items; GM workflow (inspect, edit, party, undo, Populate)",
+   "status": "todo",
+   "notes": [],
+   "tags": [],
+   "owner": "",
+   "source": "cli",
+   "created": 1790661419.354566,
+   "updated": 1790661419.354566,
+   "kind": "feature",
+   "prio": 2,
+   "parent": "278670bb"
   }
  ]
 }
