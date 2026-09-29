@@ -155,5 +155,4 @@ Open, in order (see the board, epic 278670bb):
 2. Combos (e6d9185c), death/revival (b16101a9), cleanse/consolidation from atonement (54a5058f).
 3. Follow-ups: Re-analyze re-reads GM-deleted deeds (0de0d5eb), bland tag motifs (e8ae42d0), same-name proposals
    across PCs, dnd5e merges restate sources, structured conditions text-only, PF2e superseded frequency.
-4. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008. Owner question: Stage 3 lock-out is a
-   notice only (as the conversion rules say); should it also switch off class-chassis features?
+4. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008. (Owner: Stage 3 lock-out stays a story notice.)
