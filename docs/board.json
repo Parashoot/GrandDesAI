@@ -1250,7 +1250,8 @@
    "status": "done",
    "notes": [
     "Growth is per actor; the extraction cache exists to read shared party notes once, but the GM still opens five sheets and pastes five times. Fix: 'Analyze for party' (pick PCs, one paste) in the dialog, a scene control or /growth chat command.",
-    "2026-09-29: themeFoldKey (stopwords, stems, order-insensitive, synonyms); foldDuplicateThemes runs on load (mergeInto, GM curation wins, keepSeparate on un-merge); per-actor counts; wrestling-instruction kept separate on purpose. Live purge = 89437d16."
+    "2026-09-29: themeFoldKey (stopwords, stems, order-insensitive, synonyms); foldDuplicateThemes runs on load (mergeInto, GM curation wins, keepSeparate on un-merge); per-actor counts; wrestling-instruction kept separate on purpose. Live purge = 89437d16.",
+    "api.analyzePartyNotes + Growth dialog 'Analyze party' picker landed on branch claude/install-typesafe-skill-utldpd (Jev layer work); needs the live click-through."
    ],
    "tags": [
     "ui",
@@ -1260,7 +1261,7 @@
    "owner": "dev-progression",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.286,
-   "updated": 1790690120.002,
+   "updated": 1790706032.633,
    "prio": 2,
    "parent": "6d04ba44"
   },
@@ -1862,7 +1863,8 @@
    "title": "Party mode: one-click api.analyzePartyNotes over the extraction cache + Jev attribution trust",
    "status": "doing",
    "notes": [
-    "Pre-main version reviewed (MERGE AFTER FIXES, fixes done, 681 tests). Re-scoped: main's extraction cache supersedes the one-extraction refactor; porting only attribution trust, compactJev, proposal.jev, jevFactory and a thin analyzePartyNotes."
+    "Pre-main version reviewed (MERGE AFTER FIXES, fixes done, 681 tests). Re-scoped: main's extraction cache supersedes the one-extraction refactor; porting only attribution trust, compactJev, proposal.jev, jevFactory and a thin analyzePartyNotes.",
+    "Landed on the branch (thin analyzePartyNotes over the cache, attribution trust, compactJev, proposal.jev, jevFactory). 1231 tests. Covers board 7f1f20ae (party analyze). Real-model re-run pending locally."
    ],
    "tags": [
     "integration",
@@ -1872,13 +1874,15 @@
    "owner": "dev-integration",
    "source": "jev-layer",
    "created": 1790705519.873,
-   "updated": 1790705617.946
+   "updated": 1790706032.522
   },
   {
    "id": "64e3c5ae",
    "title": "Jev settings fieldset + Test Jev, Analyze party action, Jev chips in Growth dialog",
    "status": "doing",
-   "notes": [],
+   "notes": [
+    "Landed on the branch after rebase onto main (per-user settings, delegated buttons). 1272 tests, bundle check OK. Live click-through pending on the owner's Foundry (both worlds)."
+   ],
    "tags": [
     "ui",
     "jev",
@@ -1888,7 +1892,7 @@
    "owner": "dev-ui",
    "source": "jev-layer",
    "created": 1790705519.937,
-   "updated": 1790705617.815
+   "updated": 1790706032.579
   },
   {
    "id": "9f76030d",
