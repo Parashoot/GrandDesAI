@@ -51,7 +51,8 @@ try {
   const expected = await page.evaluate((mod) => { try { return game.settings.get(mod, "aiExpected"); } catch { return "unregistered"; } }, MOD);
   check("world marks AI expected", expected === true, String(expected));
 
-  // Throwaway actor.
+  // Throwaway actors.
+  const extraActorIds = [];
   const actorId = await page.evaluate(async () => {
     const a = await Actor.create({ name: "GD Live Check (delete me)", type: "character" });
     return a.id;
@@ -194,7 +195,49 @@ try {
   if (registry) check("Registry lists owned Skills with Evolve and the superseded source", registry.evolve && registry.superseded, registry.text.replace(/\s+/g, " ").slice(0, 200));
   await page.screenshot({ path: "tools/playtest/live-verify-registry.png" });
 
+  // Record corrections (board 4344c58a): revert the evolution (source comes back, its Item's mechanics
+  // too), then move one recorded event to a second PC and delete another.
+  const corrections = await page.evaluate(async ({ mod, id, evolvedName }) => {
+    const api = game.modules.get(mod).api; const actor = game.actors.get(id);
+    if (typeof api.revertApproval !== "function") return { missing: true };
+    const out = {};
+    const evolved = api.getOwnedEntries(actor).skills.find((e) => e.name === evolvedName && e.status !== "superseded");
+    if (evolved) {
+      try {
+        const r = await api.revertApproval(actor, evolved.id);
+        const restoredIds = (r.restored ?? []).map((x) => x.id ?? x);
+        const items = actor.items.filter((i) => i.getFlag(mod, "registryId"));
+        out.revert = { restored: restoredIds.length, stillSuperseded: items.filter((i) => i.getFlag(mod, "superseded")).length, liveItems: items.map((i) => ({ name: i.name, rules: i.system?.rules?.length ?? 0, activities: i.system?.activities?.size ?? 0 })) };
+      } catch (e) { out.revert = { error: e.message }; }
+    } else out.revert = { note: "no evolved entry to revert" };
+    const other = await Actor.create({ name: "GD Live Check 2 (delete me)", type: "character" });
+    out.otherId = other.id;
+    await api.recordGrowthEvent(actor, { summary: "GD live check: carried a stranger's pack up the pass.", tags: ["athletics"], outcome: "success" });
+    await api.recordGrowthEvent(actor, { summary: "GD live check: bet the ferryman and lost.", tags: ["deception"], outcome: "failure" });
+    const events = api.getGrowth(actor).events;
+    const move = events.find((e) => /stranger's pack/.test(e.summary)); const del = events.find((e) => /ferryman/.test(e.summary));
+    try {
+      await api.reassignRecordedEvent(actor, move.id, other);
+      await api.deleteRecordedEvent(actor, del.id);
+    } catch (e) { out.error = e.message; }
+    const left = api.getGrowth(actor).events.map((e) => e.summary);
+    const moved = api.getGrowth(other).events.find((e) => /stranger's pack/.test(e.summary));
+    out.moved = Boolean(moved?.reassigned) && !left.some((s) => /stranger's pack/.test(s));
+    out.deleted = !left.some((s) => /ferryman/.test(s));
+    out.lanSetting = game.settings.settings.get(`${mod}.aiAllowPrivateHttp`)?.scope ?? null;
+    return out;
+  }, { mod: MOD, id: actorId, evolvedName: advanced.evolvedName });
+  if (corrections.missing) check("record corrections API present", false);
+  else {
+    if (corrections.otherId) extraActorIds.push(corrections.otherId);
+    check("Revert approval restores the superseded source and its mechanics", corrections.revert?.restored > 0 && corrections.revert.stillSuperseded === 0, JSON.stringify(corrections.revert).slice(0, 300));
+    check("Move to... puts the event on the other PC, stamped reassigned", corrections.moved, corrections.error ?? "");
+    check("Delete removes the recorded event", corrections.deleted, corrections.error ?? "");
+    check("LAN plain-HTTP opt-in is a per-user setting", corrections.lanSetting === "user", String(corrections.lanSetting));
+  }
+
   if (!KEEP) {
+    for (const extra of extraActorIds) await page.evaluate((id) => game.actors.get(id)?.delete(), extra);
     await page.evaluate((id) => game.actors.get(id)?.delete(), actorId);
     console.log("deleted the throwaway actor");
   }

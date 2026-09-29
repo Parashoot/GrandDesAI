@@ -1274,7 +1274,8 @@
    "title": "No way to delete or reassign a recorded event, or undo an approval",
    "status": "todo",
    "notes": [
-    "_removeRecordedEvents is private; Re-analyze only replaces the LAST notes' events, so an older misattributed event counts forever. Fix: per-event delete/reassign under Recorded Evidence with progress recomputed, and 'revert approval'."
+    "_removeRecordedEvents is private; Re-analyze only replaces the LAST notes' events, so an older misattributed event counts forever. Fix: per-event delete/reassign under Recorded Evidence with progress recomputed, and 'revert approval'.",
+    "dev-integration (merged 3c2a141): api.deleteRecordedEvent / reassignRecordedEvent(actor, id, target) / revertApproval(actor, entryId, {reject}); GM-only, per-actor locks (both actors on a move); progress taken back (floor 0), proposals citing only that event withdrawn, others lose it from evidence, Horror Rank recomputed on both; a moved event keeps its data incl. jev, stamped reassigned; revert restores superseded sources in the registry AND on the Item (PF2e rules/frequency, dnd5e activities/effects/uses), refunds the allowance spent, refuses safely (evolved/merged further, live Combination, missing source). Growth dialog: Move to.../Delete per evidence row, Approved list with Revert. 24 tests both systems; 1421 total. Pending: live-verify both worlds."
    ],
    "tags": [
     "ui",
@@ -1284,7 +1285,7 @@
    "owner": "",
    "source": "gap audit 2026-09-29",
    "created": 1790660880.361,
-   "updated": 1790661419.871753,
+   "updated": 1790714063.99,
    "prio": 2,
    "parent": "6d04ba44"
   },
@@ -1921,10 +1922,12 @@
   {
    "id": "27346aba",
    "title": "Real-Jev measurement once TYPESAFE_API_KEY is set locally (+ CORS check from the Foundry browser)",
-   "status": "todo",
+   "status": "done",
    "notes": [
     "2026-09-29 local: real Jev reachable (ping 183 ms, models jev-latest/jev-preview). api.typesafe.ai refuses EVERY browser origin ('Disallowed CORS origin' for localhost:30000, 127.0.0.1, https, forge-vtt), so inside Foundry Jev always failed open. Added tools/jev-proxy.mjs (zero-dep, forwards only /v1/systemone + /v1/models, never stores a key) and Test Jev's CORS message now names it. LIVE dnd5e (tools/playtest/live-jev.mjs): direct blocked with actionable message, via proxy OK 914 ms, 4/4. Real-model party corpus runs pending.",
-    "Real Jev, party corpus 26 items x1, qwen3.8:27b (reports 2026-09-29T19-47 base / 19-58 jev): score 96.2 -> 97.2%, per-PC count in bounds 95.2 -> 96.2%, idle PCs left at zero 91.7 -> 100%, credit leak 0.19 -> 0.15/item, attribution 97.4% both, red recall 100% both (dark-act false 4.5%). Jev cost +1.8 s/run p50 (11 calls/run, 0 errors); triage skipped 0 chunks (party items are single-chunk) so no speed-up here. Worst item both: pa-021. Browser: CORS blocked -> jev-proxy (see above)."
+    "Real Jev, party corpus 26 items x1, qwen3.8:27b (reports 2026-09-29T19-47 base / 19-58 jev): score 96.2 -> 97.2%, per-PC count in bounds 95.2 -> 96.2%, idle PCs left at zero 91.7 -> 100%, credit leak 0.19 -> 0.15/item, attribution 97.4% both, red recall 100% both (dark-act false 4.5%). Jev cost +1.8 s/run p50 (11 calls/run, 0 errors); triage skipped 0 chunks (party items are single-chunk) so no speed-up here. Worst item both: pa-021. Browser: CORS blocked -> jev-proxy (see above).",
+    "With the roster fix (e54491dd), real model party corpus 26x1: roster only (20-12) 97.2% / attribution 98.7% / idle-at-zero 100%; roster + real Jev (20-21) IDENTICAL 97.2% / 98.7% / 100%. Jev cost p50 1.6 s/run, p95 21.6 s (5 x 10 s timeouts in 2 runs, all failed open, no effect on results). Jev's remaining visible value: weak-evidence chips (25) and outcome-disputed flags (2) for the GM; attribution gain is now covered by the roster for everyone. Party items are single-chunk, so triage never skips: speed-up untested on long notes.",
+    "ember-road s1 with real Jev in playtest.mjs: 4 calls 0.7 s, 0 errors, same credit as without. Real Jev QA complete: reachable, CORS needs jev-proxy (live 4/4 both worlds), numbers above."
    ],
    "tags": [
     "jev",
@@ -1934,7 +1937,7 @@
    "owner": "",
    "source": "jev-layer",
    "created": 1790705520.084,
-   "updated": 1790712606.473
+   "updated": 1790714052.951
   },
   {
    "id": "edfcd96e",
@@ -1972,8 +1975,11 @@
   {
    "id": "e54491dd",
    "title": "analyzePartyNotes should pass an explicit request.party roster so Jev can name a PC who never speaks and the LLM misnamed (pa-007 Kesh/Amiri: 78/80)",
-   "status": "doing",
-   "notes": [],
+   "status": "done",
+   "notes": [
+    "Real model, party corpus 26x1 (report 2026-09-29T20-12, roster on, NO Jev) vs 19-47 (no roster, no Jev): score 96.2 -> 97.2%, per-PC count 95.2 -> 96.2%, idle PCs at zero 91.7 -> 100%, leak 0.19 -> 0.15, attribution 97.4 -> 98.7% (76/77); pa-007 Kesh/Amiri now 1/1 each. p50 18.6 -> 17.8 s. The roster alone matches what real Jev added without it - benefits users without Jev.",
+    "ember-road s1 rerun via playtest.mjs analyze --party (v0929-party-dnd5e, roster, no Jev) and --party --jev (v0929-jev-dnd5e): both 5 PCs in 22 s with 1 extraction, events per PC 2/5/7/3/2, Tovin credited 'killed a goblin that was surrendering on the bridge' (cruelty/serious, Horror 15), Luz not credited for it. Jev agreed (Tovin, confidence 1.0; 4 calls, 0.7 s). 1421 tests."
+   ],
    "tags": [
     "integration",
     "jev"
@@ -1982,7 +1988,22 @@
    "owner": "pm",
    "source": "ab855163 fix",
    "created": 1790707682.557,
-   "updated": 1790712756.766
+   "updated": 1790714052.855
+  },
+  {
+   "id": "0de0d5eb",
+   "title": "Re-analyze reads a GM-deleted or GM-moved deed back in (credited to the original PC again); keep a per-actor 'GM corrections' record the analysis honours",
+   "status": "todo",
+   "notes": [],
+   "tags": [
+    "qol",
+    "followup"
+   ],
+   "severity": "low",
+   "owner": "",
+   "source": "4344c58a dev-integration",
+   "created": 1790714064.04,
+   "updated": 1790714064.04
   }
  ]
 }

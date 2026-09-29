@@ -1,0 +1,35 @@
+[
+ {
+  "at": "2026-09-29T20:33:44.524Z",
+  "mode": "party",
+  "requested": "party",
+  "jev": "real",
+  "model": "qwen3.8:27b",
+  "characters": 5,
+  "totalMs": 22540,
+  "perActorMs": {
+   "Brakka": null,
+   "Wick": null,
+   "Maren": null,
+   "Tovin": null,
+   "Luz": null
+  },
+  "party": {
+   "ms": 22540,
+   "extractionCalls": 1,
+   "extractionCache": {
+    "hit": 4,
+    "miss": 1,
+    "off": 0,
+    "preset": 0
+   }
+  },
+  "jevDiagnostics": {
+   "calls": 4,
+   "ms": 732,
+   "skippedChunks": 0,
+   "overrides": 0,
+   "errors": 0
+  }
+ }
+]
