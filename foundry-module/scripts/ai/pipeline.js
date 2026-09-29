@@ -14,7 +14,8 @@
 // Pure ESM, zero Foundry globals.
 
 import { parseModelJson, ModelJsonError } from "./json-repair.js";
-import { coerceEvent, eventDedupeKey, resolveTag, slugifyTheme, stemWord, CANONICAL_TAGS } from "./normalize.js";
+import { coerceEvent, eventDedupeKey, resolveTag, slugifyTheme, stemWord, CANONICAL_TAGS, VICE_SYNONYMS, darkSeverityRank } from "./normalize.js";
+import { coerceStructuredMechanics, fillStructuredFromEffect } from "./structured.js";
 import { EVENT_EXTRACTION_SCHEMA, COMBINED_SCHEMA, proposalSchemaCapped } from "./schemas.js";
 // Pure (no Foundry globals): the same per-character credit rule api.js applies to the events.
 import { attributeEventsToActor } from "../session-notes.js";
@@ -474,13 +475,6 @@ const SCHOOL_NAMES = {
   necromancy: "nec", transmutation: "trs", abj: "abj", con: "con", div: "div", enc: "enc", evo: "evo", ill: "ill", nec: "nec", trs: "trs"
 };
 
-const VICE_SYNONYMS = {
-  murder: "bloodlust", killing: "bloodlust", bloodthirst: "bloodlust", slaughter: "bloodlust", sadism: "cruelty", torment: "cruelty", torture: "cruelty",
-  domination: "subjugation", tyranny: "subjugation", enslavement: "servitude", slavery: "servitude", bondage: "servitude", thrall: "servitude",
-  drug: "addiction", drugs: "addiction", dependence: "addiction", compulsion: "addiction", greed: "corruption", pact: "corruption", taint: "corruption",
-  sacrilege: "desecration", blasphemy: "desecration", defilement: "desecration", treachery: "betrayal", treason: "betrayal", backstab: "betrayal",
-  destruction: "ruin", devastation: "ruin", arson: "ruin"
-};
 
 const ACTIONABLE = new Set(["action", "reaction", "free", "spell", "weapon"]);
 
@@ -663,6 +657,21 @@ export function repairProposal(proposal, { systemId = "pf2e", actorLevel, grandD
     note("duration-stringified");
   }
   if (typeof m.trigger !== "string" && typeof entry.trigger === "string") { m.trigger = entry.trigger; note("trigger-moved"); }
+  // Batch 3 (board 5a0cea2e): the numbers a system adapter builds real item data from. A field with
+  // a bad shape is dropped (and named here), never guessed: the prose effect still says what the
+  // ability does, and the GM can add the missing number in the Edit form.
+  if (m.structured !== undefined || entry.structured !== undefined) {
+    const { structured, dropped, coercions } = coerceStructuredMechanics(m.structured ?? entry.structured, { systemId });
+    delete entry.structured;
+    for (const c of coercions) note(`structured.${c}`);
+    for (const d of dropped) note(`structured-dropped:${d}`);
+    if (structured) m.structured = structured;
+    else delete m.structured;
+  }
+  if (typeof m.effect === "string" && m.effect.trim()) {
+    const { structured, filled } = fillStructuredFromEffect(m.effect, m.structured ?? null, { systemId });
+    if (filled.length) { m.structured = structured; note(`structured-from-effect:${filled.join(",")}`); }
+  }
 
   const level = kind === "class" ? coerceInt(entry.level) : undefined;
   const modifier = estimateModifier(systemId, actorLevel);
@@ -1226,6 +1235,12 @@ export function mergeFollowUpEvents(events) {
       if (prev.quote && event.quote) prev.quote = `${prev.quote} ... ${event.quote}`.slice(0, 400);
       if (!prev.actorName && event.actorName) prev.actorName = event.actorName;
       if (event.dangerGap && (!prev.dangerGap || (prev.dangerGap === "moderate" && event.dangerGap === "severe"))) prev.dangerGap = event.dangerGap;
+      // The payoff line can be the one that reveals the deed ("...and then left him to hang"): the
+      // folded event keeps the worse of the two, or Horror Rank would lose it with the line.
+      if (event.darkDeed && event.darkDeed !== "none" && darkSeverityRank(event.darkSeverity) > darkSeverityRank(prev.darkSeverity)) {
+        prev.darkDeed = event.darkDeed;
+        prev.darkSeverity = event.darkSeverity;
+      }
       // The first event is the action; its outcome stands unless the model had to guess it.
       if (prev.outcomeInferred && !event.outcomeInferred) {
         prev.outcome = event.outcome;
@@ -1525,7 +1540,7 @@ async function proposeStage(events, decision, ctx, milestone = null, target = nu
   let lastContent = "";
   for (let attempt = 0; attempt <= cfg.maxRepairAttempts; attempt += 1) {
     stage.attempts += 1;
-    const response = await transport.chat({ messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: cfg.allowRed, titles }), temperature, maxTokens: cfg.numPredict });
+    const response = await transport.chat({ messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: cfg.allowRed, titles, systemId: ctx.sysId }), temperature, maxTokens: cfg.numPredict });
     stage.ms += Math.round(response.ms ?? 0);
     lastContent = response.content;
     let parsed;
@@ -1622,7 +1637,7 @@ async function proposeSomethingElse({ messages, temperature, checked, gated, all
   diagnostics.coercions.push("propose:empty-retry");
   try {
     stage.attempts += 1;
-    const response = await transport.chat({ messages, schema: proposalSchemaCapped(1, { redCheck: false }), temperature, maxTokens: cfg.numPredict });
+    const response = await transport.chat({ messages, schema: proposalSchemaCapped(1, { redCheck: false, systemId: ctx.sysId }), temperature, maxTokens: cfg.numPredict });
     stage.ms += Math.round(response.ms ?? 0);
     const parsed = parseModelJson(response.content);
     const located = locateProposals(parsed.value);
@@ -1680,7 +1695,7 @@ async function validateProposals(items, conversation, ctx) {
       // Board 96b5beea: no redCheck here. The red verdicts were already read from the first reply,
       // the repair message asks for {"proposals":[...]} only, and a required per-event redCheck made
       // the model re-walk every event again, spending numPredict on a list nobody reads.
-      const response = await transport.chat({ messages: conversation.messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: false }), temperature: conversation.temperature, maxTokens: cfg.numPredict });
+      const response = await transport.chat({ messages: conversation.messages, schema: proposalSchemaCapped(cfg.maxProposals, { redCheck: false, systemId: ctx.sysId }), temperature: conversation.temperature, maxTokens: cfg.numPredict });
       conversation.stage.ms += Math.round(response.ms ?? 0);
       const parsed = parseModelJson(response.content);
       const located = locateProposals(parsed.value);

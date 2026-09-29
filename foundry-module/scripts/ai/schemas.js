@@ -14,7 +14,8 @@
 //
 // Pure ESM, zero Foundry globals.
 
-import { CANONICAL_TAGS, OUTCOMES } from "./normalize.js";
+import { CANONICAL_TAGS, OUTCOMES, DARK_SEVERITIES } from "./normalize.js";
+import { structuredMechanicsSchema } from "./structured.js";
 import { FREQUENCY_PERIODS, GRAND_DESIGN_ITEM_KINDS, SPELL_SCHOOLS } from "../constants.js";
 import { VICE_TAGS } from "../vice-taxonomy.js";
 
@@ -48,10 +49,16 @@ export const EVENT_ITEM_SCHEMA = {
     tags: { type: "array", items: { type: "string", enum: CANONICAL_TAGS } },
     themes: { type: "array", items: { type: "string" } },
     outcome: { type: "string", enum: OUTCOMES },
+    // Batch 3 (board 21e944ed): Horror Rank accrues from the red DEEDS the notes record, so the vice
+    // is decided per event, at extraction, while the model is looking at the quote -- the same
+    // "a required field beats a prompt rule" lesson as continuesPrevious and the stage-2 redCheck.
+    // Right after outcome (contract section 1); "none" is the overwhelmingly common answer.
+    darkDeed: { type: "string", enum: ["none", ...VICE_TAGS] },
+    darkSeverity: { type: "string", enum: DARK_SEVERITIES },
     dangerGap: { type: "string", enum: DANGER_GAP_VALUES },
     language: { type: "string" }
   },
-  required: ["quote", "actorName", "actorRole", "continuesPrevious", "summary", "tags", "themes", "outcome", "dangerGap"]
+  required: ["quote", "actorName", "actorRole", "continuesPrevious", "summary", "tags", "themes", "outcome", "darkDeed", "darkSeverity", "dangerGap"]
 };
 
 export const EVENT_EXTRACTION_SCHEMA = {
@@ -62,30 +69,42 @@ export const EVENT_EXTRACTION_SCHEMA = {
   required: ["events"]
 };
 
-const MECHANICS_SCHEMA = {
-  type: "object",
-  properties: {
-    effect: { type: "string" },
-    duration: { type: "string" },
-    frequency: {
-      type: "object",
-      properties: {
-        max: { type: "integer" },
-        per: { type: "string", enum: [...FREQUENCY_PERIODS] }
+// Batch 3 (board 5a0cea2e): `structured` carries the numbers a system adapter turns into real item
+// data (structured.js). REQUIRED, with every sub-field optional: an optional block is one this
+// model simply never writes (schema fields beat prompt rules), while a required object it may leave
+// {} for a purely narrative ability. It comes right after `effect`, so the numbers are copied out of
+// the prose the model has just written instead of the prose being written to fit the numbers.
+function mechanicsSchema(systemId) {
+  return {
+    type: "object",
+    properties: {
+      effect: { type: "string" },
+      structured: structuredMechanicsSchema(systemId),
+      duration: { type: "string" },
+      frequency: {
+        type: "object",
+        properties: {
+          max: { type: "integer" },
+          per: { type: "string", enum: [...FREQUENCY_PERIODS] }
+        },
+        required: ["max", "per"]
       },
-      required: ["max", "per"]
+      actions: { type: "integer" },
+      trigger: { type: "string" },
+      roll: {
+        type: "object",
+        properties: { kind: { type: "string" }, formula: { type: "string" } }
+      }
     },
-    actions: { type: "integer" },
-    trigger: { type: "string" },
-    roll: {
-      type: "object",
-      properties: { kind: { type: "string" }, formula: { type: "string" } }
-    }
-  },
-  required: ["effect", "frequency"]
-};
+    required: ["effect", "structured", "frequency"]
+  };
+}
 
-export const PROPOSAL_ENTRY_SCHEMA = {
+export const PROPOSAL_ENTRY_SCHEMA = proposalEntrySchema(null);
+
+/** The proposal entry schema with this system's structured-mechanics vocabulary (null = the contract superset). */
+export function proposalEntrySchema(systemId) {
+  return {
   type: "object",
   properties: {
     name: { type: "string" },
@@ -108,7 +127,7 @@ export const PROPOSAL_ENTRY_SCHEMA = {
       },
       required: ["kind"]
     },
-    mechanics: MECHANICS_SCHEMA,
+    mechanics: mechanicsSchema(systemId),
     metadata: {
       type: "object",
       properties: {
@@ -132,18 +151,23 @@ export const PROPOSAL_ENTRY_SCHEMA = {
     }
   },
   required: ["name", "gameItem", "mechanics", "metadata"]
-};
+  };
+}
 
-export const PROPOSAL_ITEM_SCHEMA = {
-  type: "object",
-  properties: {
-    kind: { type: "string", enum: ["skill", "class"] },
-    theme: { type: "string" },
-    evidence: { type: "array", items: { type: "string" } },
-    entry: PROPOSAL_ENTRY_SCHEMA
-  },
-  required: ["kind", "entry", "evidence"]
-};
+function proposalItemSchema(entry) {
+  return {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["skill", "class"] },
+      theme: { type: "string" },
+      evidence: { type: "array", items: { type: "string" } },
+      entry
+    },
+    required: ["kind", "entry", "evidence"]
+  };
+}
+
+export const PROPOSAL_ITEM_SCHEMA = proposalItemSchema(PROPOSAL_ENTRY_SCHEMA);
 
 export const PROPOSAL_SCHEMA = {
   type: "object",
@@ -190,9 +214,12 @@ export const TITLE_ITEM_SCHEMA = {
   required: ["deed", "name", "description", "polarity"]
 };
 
-export function proposalSchemaCapped(maxProposals, { redCheck = false, titles = false } = {}) {
+// `systemId` swaps in that system's structured-mechanics enums (structured.js); omitted, the
+// contract's cross-system superset is used.
+export function proposalSchemaCapped(maxProposals, { redCheck = false, titles = false, systemId = null } = {}) {
   const max = Number.isInteger(maxProposals) && maxProposals > 0 ? maxProposals : 3;
-  const proposals = { ...PROPOSAL_SCHEMA.properties.proposals, maxItems: max };
+  const items = systemId ? proposalItemSchema(proposalEntrySchema(systemId)) : PROPOSAL_ITEM_SCHEMA;
+  const proposals = { type: "array", items, maxItems: max };
   return {
     ...PROPOSAL_SCHEMA,
     properties: {

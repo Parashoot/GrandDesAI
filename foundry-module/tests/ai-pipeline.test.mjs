@@ -10,7 +10,7 @@ import {
   runGatewayPipeline,
   shouldPropose
 } from "../scripts/ai/pipeline.js";
-import { EVENT_EXTRACTION_SCHEMA, PROPOSAL_SCHEMA, COMBINED_SCHEMA } from "../scripts/ai/schemas.js";
+import { EVENT_EXTRACTION_SCHEMA, PROPOSAL_SCHEMA, COMBINED_SCHEMA, proposalSchemaCapped } from "../scripts/ai/schemas.js";
 import { ModelJsonError } from "../scripts/ai/json-repair.js";
 import { AiProviderTimeoutError, AiProviderUnreachableError } from "../scripts/ai/transport.js";
 import { buildAiGatewayRequest } from "../scripts/ai-gateway.js";
@@ -112,7 +112,9 @@ test("two-stage: extract then propose, returning validated events and proposals"
   assert.deepEqual(transport.calls[0].schema, EVENT_EXTRACTION_SCHEMA);
   // Stage 2 sends the proposal schema with the array capped at maxProposals (default 3), so a
   // looping model stops at the cap instead of emitting 15+ proposals.
-  assert.deepEqual(transport.calls[1].schema.properties.proposals.items, PROPOSAL_SCHEMA.properties.proposals.items);
+  // Batch 3: the items carry this system's structured-mechanics enums (PF2e here), not the superset.
+  assert.deepEqual(transport.calls[1].schema.properties.proposals.items, proposalSchemaCapped(3, { systemId: "pf2e" }).properties.proposals.items);
+  assert.notDeepEqual(transport.calls[1].schema.properties.proposals.items, PROPOSAL_SCHEMA.properties.proposals.items);
   assert.equal(transport.calls[1].schema.properties.proposals.maxItems, 3);
   // allowRed is on by default, so the per-event red verdict is required before the proposals.
   assert.deepEqual(transport.calls[1].schema.required, ["redCheck", ...PROPOSAL_SCHEMA.required]);

@@ -444,47 +444,66 @@ function buildExampleByKind(adapter) {
     evidence: ["Session note analysis"]
   });
   const equivalentSuffix = ` (${adapter.label})`;
+  // Batch 3 (board 5a0cea2e): every example shows mechanics.structured in THIS system's words -- the
+  // model copies example shapes far more faithfully than it follows a field description.
+  const is5e = adapter.id === "dnd5e";
+  const structured = {
+    feat: { uses: { max: 1, per: is5e ? "short-rest" : "encounter" } },
+    passive: is5e
+      ? { advantage: { on: "skill:survival", condition: "to avoid getting lost while exploring" } }
+      : { modifiers: [{ value: 1, type: "circumstance", selector: "skill:survival", predicate: "adjacent ally, Avoid Getting Lost" }] },
+    action: { heal: { dice: "1d8" }, uses: { max: 1, per: is5e ? "short-rest" : "hour" } },
+    reaction: { uses: { max: 1, per: is5e ? "turn" : "round" } },
+    free: is5e
+      ? { range: { value: 30, units: "ft" }, advantage: { on: "save:wis", condition: "the ally's next saving throw" }, uses: { max: 1, per: "turn" } }
+      : { range: { value: 30, units: "ft" }, modifiers: [{ value: 1, type: "circumstance", selector: "save:will", predicate: "next saving throw" }], uses: { max: 1, per: "round" } },
+    spell: is5e
+      ? { area: { type: "cone", value: 15 }, damage: [{ dice: "2d6", type: "fire" }], save: { save: "dex", dc: "spell" }, uses: { max: 2, per: "long-rest" } }
+      : { area: { type: "cone", value: 15 }, damage: [{ dice: "2d6", type: "fire" }], save: { save: "reflex", dc: "spell", basic: true }, uses: { max: 2, per: "day" } },
+    weapon: { attack: { kind: "melee" }, damage: [{ dice: "1d6", type: "piercing", bonus: 2 }] },
+    class: { uses: { max: 1, per: "day" } }
+  };
   return {
     feat: base({
       name: "Salvage Engineering", tier: 1, system_equivalent: `Engineer's Tools skill feat${equivalentSuffix}`,
       gameItem: { kind: "feat" },
-      mechanics: { effect: "Once per encounter, attempt a Craft check to build a simple device from scavenged parts.", duration: "8 hours", frequency: { max: 1, per: "encounter" } },
+      mechanics: { effect: "Once per encounter, attempt a Craft check to build a simple device from scavenged parts.", structured: structured.feat, duration: "8 hours", frequency: { max: 1, per: "encounter" } },
       tags: ["craft", "support"], rationale: "Demonstrated repeated improvised crafting under pressure."
     }),
     passive: base({
       name: "Trail Sense", tier: 1, system_equivalent: `Survival exploration feat${equivalentSuffix}`,
       gameItem: { kind: "passive" },
-      mechanics: { effect: "While exploring, an adjacent ally gains a +1 circumstance bonus to Survival checks to Avoid Getting Lost.", duration: "while exploring", frequency: { max: 1, per: "unlimited" } },
+      mechanics: { effect: "While exploring, an adjacent ally gains a +1 circumstance bonus to Survival checks to Avoid Getting Lost.", structured: structured.passive, duration: "while exploring", frequency: { max: 1, per: "unlimited" } },
       tags: ["survival", "nature"], rationale: "Demonstrated instinctive terrain reading over repeated scenes."
     }),
     action: base({
       name: "Field Triage", tier: 1, system_equivalent: `Medicine support action${equivalentSuffix}`,
       gameItem: { kind: "action" },
-      mechanics: { effect: "Attempt to Treat Wounds on one adjacent living creature. On a success, it regains 1d8 Hit Points.", duration: "10 minutes", frequency: { max: 1, per: "hour" }, actions: 2, roll: { kind: "Medicine check", formula: "1d20+7" } },
+      mechanics: { effect: "Attempt to Treat Wounds on one adjacent living creature. On a success, it regains 1d8 Hit Points.", structured: structured.action, duration: "10 minutes", frequency: { max: 1, per: "hour" }, actions: 2, roll: { kind: "Medicine check", formula: "1d20+7" } },
       tags: ["medicine", "support"], rationale: "Earned by treating a wounded ally under pressure."
     }),
     reaction: base({
       name: "Warden's Brace", tier: 2, system_equivalent: `Martial defense reaction${equivalentSuffix}`,
       gameItem: { kind: "reaction" },
-      mechanics: { effect: "Gain resistance 2 to the triggering physical damage.", duration: "instant", frequency: { max: 1, per: "round" }, trigger: "You or an adjacent ally takes physical damage from a Strike.", roll: { kind: "Athletics check", formula: "1d20+8" } },
+      mechanics: { effect: "Gain resistance 2 to the triggering physical damage.", structured: structured.reaction, duration: "instant", frequency: { max: 1, per: "round" }, trigger: "You or an adjacent ally takes physical damage from a Strike.", roll: { kind: "Athletics check", formula: "1d20+8" } },
       tags: ["defense", "martial"], rationale: "Repeatedly intercepted attacks meant for allies."
     }),
     free: base({
       name: "Rallying Call", tier: 2, system_equivalent: `Leadership free action${equivalentSuffix}`,
       gameItem: { kind: "free" },
-      mechanics: { effect: "One ally within 30 feet gains a +1 circumstance bonus to its next saving throw before the start of your next turn.", duration: "until the start of your next turn", frequency: { max: 1, per: "round" }, roll: { kind: "Diplomacy check", formula: "1d20+8" } },
+      mechanics: { effect: "One ally within 30 feet gains a +1 circumstance bonus to its next saving throw before the start of your next turn.", structured: structured.free, duration: "until the start of your next turn", frequency: { max: 1, per: "round" }, roll: { kind: "Diplomacy check", formula: "1d20+8" } },
       tags: ["leadership", "support"], rationale: "Repeatedly steadied a group under pressure with clear instructions."
     }),
     spell: base({
       name: "Ember Pulse", tier: 2, system_equivalent: `Rank 1 elemental spell${equivalentSuffix}`,
       gameItem: { kind: "spell", rank: 1, tradition: "primal", school: "evo" },
-      mechanics: { effect: "Make a spell attack against one creature within 30 feet. On a success, deal 2d6 fire damage.", duration: "instant", frequency: { max: 2, per: "encounter" }, actions: 2, roll: { kind: "Spell attack", formula: "1d20+7" } },
+      mechanics: { effect: is5e ? "Each creature in a 15-foot cone makes a Dexterity saving throw against your spell save DC, taking 2d6 fire damage on a failure or half as much on a success." : "Each creature in a 15-foot cone takes 2d6 fire damage (basic Reflex save against your spell DC).", structured: structured.spell, duration: "instant", frequency: { max: 2, per: "day" }, actions: 2, roll: { kind: is5e ? "Dexterity save" : "Reflex save", formula: "1d20+7" } },
       tags: ["fire", "spellcasting"], rationale: "Repeatedly called on a latent elemental affinity under pressure."
     }),
     weapon: base({
       name: "Silt Hook", tier: 1, system_equivalent: `Simple melee weapon${equivalentSuffix}`,
       gameItem: { kind: "weapon", damage: "1d6+2", damageType: "piercing", category: "simple", group: "knife", traits: ["agile"] },
-      mechanics: { effect: "Make a melee Strike with a hooked canal tool.", duration: "instant", frequency: { max: 1, per: "round" }, actions: 1, roll: { kind: "Melee attack", formula: "1d20+6" } },
+      mechanics: { effect: "Make a melee Strike with a hooked canal tool.", structured: structured.weapon, duration: "instant", frequency: { max: 1, per: "round" }, actions: 1, roll: { kind: "Melee attack", formula: "1d20+6" } },
       tags: ["martial", "craft"], rationale: "Adapted a salvaged tool into a reliable close-range weapon."
     }),
     class: {
@@ -493,7 +512,7 @@ function buildExampleByKind(adapter) {
         name: "Canal Hearthkeeper", level: 6, power_tier: "standard", is_primary: true, is_secondary: false,
         system_chassis: `Alchemist${equivalentSuffix}`,
         gameItem: { kind: "passive" },
-        mechanics: { effect: "During daily preparations, create one temporary meal. The first ally who eats it gains 2 temporary Hit Points for 8 hours.", duration: "8 hours", frequency: { max: 1, per: "day" } },
+        mechanics: { effect: "During daily preparations, create one temporary meal. The first ally who eats it gains 2 temporary Hit Points for 8 hours.", structured: structured.class, duration: "8 hours", frequency: { max: 1, per: "day" } },
         metadata: { tags: ["craft", "support", "water"], themes: ["cooking"], lineage: { operation: "origin", sources: [], rationale: "Only ever proposed when actor.grandDesign.classEvolutionAvailable is true." } }
       },
       evidence: ["Session note analysis"]

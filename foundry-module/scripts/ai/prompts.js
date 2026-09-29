@@ -132,7 +132,7 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
     ].join("\n"),
     events: [
       { quote: "snuck us past the cultists", summary: "Rook sneaked the party past the cultists.", actorName: "Rook", tags: ["stealth", "support"], themes: ["sneaking"], outcome: "success", dangerGap: "none", language: "en" },
-      { quote: "Sable see Rook push the old priest off the tower when he already give up", summary: "Rook pushed the old priest off the tower after the priest had surrendered.", actorName: "Rook", tags: ["athletics"], themes: ["killing-the-surrendered"], outcome: "success", dangerGap: "none", language: "en" },
+      { quote: "Sable see Rook push the old priest off the tower when he already give up", summary: "Rook pushed the old priest off the tower after the priest had surrendered.", actorName: "Rook", tags: ["athletics"], themes: ["killing-the-surrendered"], outcome: "success", darkDeed: "cruelty", darkSeverity: "serious", dangerGap: "none", language: "en" },
       { quote: "I pray for him after", summary: "Sable prayed for the old priest.", actorName: "Sable", tags: ["religion"], themes: ["prayer"], outcome: "success", dangerGap: "none", language: "en" },
       { quote: "lost 30g of the party's money rigging cards", summary: "Ivo tried to cheat at cards by rigging them.", consequence: "He lost 30 gold of the party's money.", actorName: "Ivo", tags: ["deception", "thievery"], themes: ["gambling", "cheating"], outcome: "failure", dangerGap: "none", language: "en" }
     ]
@@ -176,9 +176,13 @@ export const BUILTIN_EXTRACTION_EXAMPLES = [
 ];
 
 // Examples show the ideal, already-merged answer, so every example event is continuesPrevious:false.
-// Key order mirrors EVENT_ITEM_SCHEMA (quote, actorName, actorRole, continuesPrevious first).
+// Key order mirrors EVENT_ITEM_SCHEMA (quote, actorName, actorRole, continuesPrevious first; darkDeed
+// and darkSeverity right after outcome, "none" unless the example says otherwise -- which also
+// shows the model that "none" is the normal answer, cheating at cards included).
 function exampleBlock(examples) {
-  const shaped = (events) => events.map(({ quote, actorName = "", actorRole = "doer", ...rest }) => ({ quote, actorName, actorRole, continuesPrevious: false, ...rest }));
+  const shaped = (events) => events.map(({ quote, actorName = "", actorRole = "doer", summary, consequence, tags, themes, outcome, darkDeed = "none", darkSeverity = "none", ...rest }) => ({
+    quote, actorName, actorRole, continuesPrevious: false, summary, ...(consequence !== undefined ? { consequence } : {}), tags, themes, outcome, darkDeed, darkSeverity, ...rest
+  }));
   return examples
     .map((ex, i) => `Example ${i + 1} notes:\n${ex.notes}\nExample ${i + 1} output:\n${JSON.stringify({ events: shaped(ex.events) })}`)
     .join("\n\n");
@@ -214,6 +218,10 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
     "- tags: 0-3 tags from ALLOWED TAGS that genuinely fit. Only these exact words.",
     "- themes: 1-3 short lowercase English slugs naming the SPECIFIC activity (e.g. lockpicking, beekeeping, innkeeping, gambling, cartography, brewing, poetry, haggling). Always give themes. If no tag fits, still record the event with tags [] and themes -- never drop an activity because no tag fits.",
     "- outcome: criticalSuccess | success | failure | criticalFailure. Failures are valuable evidence: always record them. criticalSuccess ONLY for nat 20 / crit / an explicitly spectacular result (a plain win with a nice payoff is just success). nat 1 / fumble / crit fail / badly hurt / backfired = criticalFailure. \"almost\"/\"nearly\" ... but = failure. A low roll or missed DC = failure. Attacked but got beaten, knocked out or flattened = failure. No outcome stated = success.",
+    // Batch 3 (board 21e944ed): Horror Rank now accrues from these, so false alarms cost a real
+    // character levels -- hence the long "none" list and the explicit "done TO them" exclusion.
+    `- darkDeed: "none" for almost every event. Only when what the DOER did is a genuinely vile, taboo act, the key it matches: ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice} (${meaning.replace(/\.$/, "")})`).join("; ")}. Killing someone who surrendered or was helpless (cruelty), torture (cruelty), breaking a captive's will (subjugation), eating a person (desecration), defiling a grave or holy relic (desecration), selling out an ally who trusted them (betrayal) = a dark deed. NOT dark deeds (\"none\"): fighting and killing in battle, self-defence, stealing, lying, bluffing, cheating at cards or dice, threatening, hard bargaining, smuggling, spying, drinking, a morally gray job, anything only planned, refused or thought about, and anything done TO the character.`,
+    "- darkSeverity: \"none\" when darkDeed is \"none\". Otherwise minor (a petty or small cruelty or betrayal), serious (killing a surrendered or helpless foe, torturing for information, betraying an ally), or monstrous (torture for pleasure, massacring innocents, eating a person). Being punished (banned, evicted, arrested) is never itself a dark deed.",
     "- dangerGap: severe only if they survived or beat a threat hopelessly beyond them; moderate for a clearly stronger or outnumbering foe; otherwise none. It is about the power gap, not the dice roll.",
     "- language: language code of the quote (en, es, pt, fr, de, it, el, tl, ja, ...).",
     "",
@@ -318,13 +326,14 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     request.actor?.system === "dnd5e"
       ? "Never write: \"free action\" (that is PF2e's action economy), \"circumstance bonus\", \"off-guard\"/\"flat-footed\", \"per encounter\" (5e uses short/long rest or per turn), or an invented subsystem like a \"durability system\" this table never established."
       : "Never write: \"bonus action\" (that is 5e's action economy), \"short rest\"/\"long rest\" (PF2e frequency is per round/minute/hour/day), \"staggered\" (not a PF2e condition), \"Craft check\" (PF2e's skill is Crafting), a PF2e condition given a flat \"for N rounds\" duration instead of its own rules (PF2e conditions run \"until the end of your next turn\" or count down a value), or an invented subsystem like a \"durability system\" this table never established.",
+    structuredInstruction(request.actor?.system),
     `Naming: ${req.namingConvention ?? ""} Take the class motif from the character's Grand Design classes if it has any, else from actor.systemClass; never from the character's personal name. The motif is ONE evocative word you coin from that class plus this entry's own activity (for example a Ranger's trapping skill might be "Snarewright:", a Cleric's brewing skill "Altarbrew:"; never copy these example words), never the bare class name itself or its possessive ("Fighter: ..." and "Champion's Bulwark" are both wrong), and each proposal gets its own motif.`,
     ...(config.namingStyle ? [`GM naming style (takes priority): ${config.namingStyle}`] : []),
     `Polarity: ${polarity}`,
     // The guidance alone ("almost every proposal is standard") made the model pick standard even
     // for "broke the captured scout's will over three days" (3 of 8 red-worthy items were red).
     // A per-proposal check with the vice list as the match key makes the decision explicit.
-    ...(config.allowRed ? [`Red check, BEFORE any proposal: fill "redCheck" with one entry per newEvent, in order: { event: its summary, vice: the key from this list that it clearly matches (read the quote), else "none" }. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} Killing someone who surrendered or was helpless, torture, and breaking a captive's will always match. Ordinary fighting, stealing, lying and bargaining are "none". Then, if any event has a vice and you propose anything, one proposal MUST cite that event in its evidence and be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- that deed written up as a clean standard ability, or left out, is wrong. Every other proposal stays standard.`] : []),
+    ...(config.allowRed ? [`Red check, BEFORE any proposal: fill "redCheck" with one entry per newEvent, in order: { event: its summary, vice: the key from this list that it clearly matches (read the quote), else "none" }. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} Killing someone who surrendered or was helpless, torture, and breaking a captive's will always match. A newEvent that carries darkDeed was already read as that vice from its quote: use that key unless the quote plainly shows no such deed. Ordinary fighting, stealing, lying and bargaining are "none". Then, if any event has a vice and you propose anything, one proposal MUST cite that event in its evidence and be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- that deed written up as a clean standard ability, or left out, is wrong. Every other proposal stays standard.`] : []),
     ...(titles ? [titleInstruction(config)] : []),
     `Failures: ${req.eventOutcomePhilosophy ?? ""}`,
     // "May" was never enough: at GD level 50 the model wrote only Skills (2 of 2 real runs), so the GM
@@ -384,6 +393,9 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       themes: event.themes,
       outcome: event.outcome,
       ...(event.dangerGap ? { dangerGap: event.dangerGap } : {}),
+      // Batch 3: the vice stage 1 already read off the quote. Only when there is one, so the red
+      // check sees a flag on the rare dark event instead of "none" noise on every event.
+      ...(event.darkDeed && event.darkDeed !== "none" ? { darkDeed: event.darkDeed, darkSeverity: event.darkSeverity } : {}),
       ...(event.actorName ? { actorName: event.actorName } : {})
     })),
     tagEvidence: roundValues(tagEvidence),
@@ -394,6 +406,25 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     { role: "system", content: system },
     { role: "user", content: JSON.stringify(payload) }
   ];
+}
+
+// Batch 3 (board 5a0cea2e): approved growth used to become description-only Items. The schema's
+// per-system enums (structured.js) already stop wrong-system words; this says WHAT to fill, in the
+// words of this system's rules, so the numbers match the prose rather than being invented beside it.
+export function structuredInstruction(systemId) {
+  const common = "mechanics.structured: the SAME effect as data the character sheet can roll -- fill every part the effect text states, with the same numbers, and leave out every part it does not ({} only for a purely narrative ability). range and area are in feet.";
+  if (systemId === "dnd5e") {
+    return [
+      common,
+      "D&D 5e fields: attack {kind: melee|ranged|spell} when it makes an attack roll; damage [{dice: \"2d6\", type: acid|bludgeoning|cold|fire|force|lightning|necrotic|piercing|poison|psychic|radiant|slashing|thunder, bonus?}]; heal {dice, bonus?}; save {save: str|dex|con|int|wis|cha (the saving throw's ability), dc: \"spell\" (your spell save DC), \"class\" (8 + proficiency + ability) or a number}; advantage {on: attack|save:<ability>|skill:<skill>|check:<ability>, condition: when it applies} -- 5e's way to grant an edge, preferred over small bonuses; modifiers [{value, type: untyped, selector: ac|attack|damage|perception|initiative|save:<ability>|skill:<skill>}] (5e bonuses have no type);",
+      "range {value, units: \"ft\"}; area {type: cone|sphere|cube|cylinder|line|emanation, value}; condition {id: blinded|charmed|deafened|exhaustion|frightened|grappled|incapacitated|invisible|paralyzed|petrified|poisoned|prone|restrained|stunned|unconscious, value only for exhaustion, duration: e.g. \"until the end of your next turn\" or \"1 minute\"}; uses {max, per: turn|short-rest|long-rest|day}. Skills: acrobatics, animal-handling, arcana, athletics, deception, history, insight, intimidation, investigation, medicine, nature, performance, persuasion, religion, sleight-of-hand, stealth, survival."
+    ].join(" ");
+  }
+  return [
+    common,
+    "Pathfinder 2e fields: attack {kind: melee|ranged|spell} when it makes a Strike or spell attack; damage [{dice: \"2d6\", type: acid|bludgeoning|cold|electricity|fire|force|mental|piercing|poison|slashing|sonic|spirit|vitality|void|bleed, bonus?}]; heal {dice, bonus?}; save {save: fortitude|reflex|will, dc: \"class\" (your class DC), \"spell\" (your spell DC) or a number, basic: true for a basic save (no damage on a critical success, half on a success, double on a critical failure)}; modifiers [{value, type: circumstance|status|item, selector: ac|attack|damage|perception|initiative|save:fortitude|save:reflex|save:will|skill:<skill>, predicate?: when it applies}] -- PF2e has no advantage, use a circumstance or status bonus;",
+    "range {value, units: \"ft\"}; area {type: cone|burst|emanation|line, value}; condition {id: a PF2e condition slug such as frightened, off-guard, sickened, slowed, stunned, clumsy, enfeebled, stupefied, drained, dazzled, grabbed, immobilized, restrained, prone, fascinated, fleeing, value for valued conditions (frightened 1, slowed 1), duration: e.g. \"until the end of your next turn\" (a valued condition counts down on its own)}; uses {max, per: turn|round|encounter|hour|day}. Skills: acrobatics, arcana, athletics, crafting, deception, diplomacy, intimidation, medicine, nature, occultism, performance, religion, society, stealth, survival, thievery."
+  ].join(" ");
 }
 
 // api.js#requestProposalAuthoring: the GM pressed "Author with AI" on a placeholder ("<Theme> Knack",
