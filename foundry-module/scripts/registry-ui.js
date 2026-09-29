@@ -4,8 +4,10 @@ import {
   actionButton,
   describeActionError,
   lineageSourceNames,
+  normalizeHorrorRankView,
   openGrowthManager,
   prettifyEntryId,
+  renderHorrorRankMeter,
   setBusy
 } from "./growth-ui.js";
 
@@ -196,7 +198,7 @@ export function readSelectedClassIds(root) {
 /** The panel's body HTML. Pure, exported for tests. */
 export function renderRegistryContent({
   actorName = "", owned = { classes: [], skills: [], titles: [] }, erosion = [], readiness = new Map(),
-  canEvolve = false, canMerge = false, busy = false, aiAttached = true, horrorRank = null
+  canEvolve = false, canMerge = false, busy = false, aiAttached = true, horrorRank = null, events = []
 } = {}) {
   const names = ownedNameIndex(owned);
   const byStatus = (list) => [...(Array.isArray(list) ? list : [])].sort((a, b) => (a.status === "superseded") - (b.status === "superseded"));
@@ -257,8 +259,10 @@ export function renderRegistryContent({
       ? "Merging needs two or more active Classes."
       : `Tick two or more Classes, then Merge; the merged Class arrives as a pending proposal.${aiNote}`;
   const mergeButton = actionButton({ action: MERGE, icon: "fas fa-code-merge", label: "Merge selected", disabled: busy || !canMerge || activeClasses.length < 2, title: lockTitle(mergeTitle) });
-  const horror = Number(horrorRank?.points) > 0 || Number(horrorRank?.totalLevelsDocked) > 0
-    ? `<span class="gd-chip gd-red" title="Accrued from approved red entries; crossing the threshold docks Class levels.">Horror Rank ${escapeHtml(round(Number(horrorRank.points) || 0))}${Number(horrorRank.totalLevelsDocked) > 0 ? `, ${escapeHtml(horrorRank.totalLevelsDocked)} level(s) docked` : ""}</span>`
+  // Board 21e944ed: a header chip for a glance, the full meter (stage, deeds) below the intro.
+  const horrorView = normalizeHorrorRankView(horrorRank, events);
+  const horror = horrorView.points > 0 || horrorView.totalLevelsDocked > 0
+    ? `<span class="gd-chip gd-red" title="Accrued from the dark deeds recorded in the notes; each stage crossed docks Class levels.">Horror Rank ${escapeHtml(round(horrorView.points))} (Stage ${horrorView.stage})${horrorView.totalLevelsDocked > 0 ? `, ${escapeHtml(horrorView.totalLevelsDocked)} level(s) docked` : ""}</span>`
     : "";
   const section = (title, count, extra, rows, empty) =>
     `<section class="gd-registry-section"><h3>${escapeHtml(title)} (${count})${extra ? ` ${extra}` : ""}</h3>${rows ? `<ul class="gd-owned-list">${rows}</ul>` : `<p class="gd-hint">${escapeHtml(empty)}</p>`}</section>`;
@@ -272,6 +276,7 @@ export function renderRegistryContent({
     </header>
     ${busy ? `<p class="gd-busy-notice"><i class="fas fa-spinner fa-spin"></i> ${escapeHtml(BUSY_NOTICE)}</p>` : ""}
     <p class="gd-hint">Evolve and Merge never change the character directly: each writes a <strong>pending proposal</strong> and opens it in the Growth dialog for you to approve or reject.</p>
+    ${renderHorrorRankMeter(horrorRank, { events })}
     ${risks.size ? `<div class="gd-erosion-callout"><h4><i class="fas fa-hourglass-half"></i> Classes at risk of erosion</h4>${renderErosionList([...risks.values()])}</div>` : ""}
     ${section("Classes", classes.length, mergeButton, classRows, "No Classes yet.")}
     ${section("Skills", skills.length, "", skillRows, "No Skills yet.")}
@@ -331,6 +336,13 @@ export function openRegistryPanel(actor, { lastResult = null } = {}) {
     } catch {
       horrorRank = null;
     }
+    // Only for the deed list when getHorrorRank does not send one (today's API shape).
+    let events = [];
+    try {
+      events = typeof api.getGrowth === "function" ? api.getGrowth(actor)?.events ?? [] : [];
+    } catch {
+      events = [];
+    }
     const aiAttached = (() => {
       try {
         return api.hasProposalAdapter?.() !== false;
@@ -340,7 +352,7 @@ export function openRegistryPanel(actor, { lastResult = null } = {}) {
     })();
     content = renderRegistryContent({
       actorName: actor?.name, owned, erosion, readiness: evolutionReadiness(api, actor, lastResult),
-      canEvolve, canMerge, busy: apiBusy(), aiAttached, horrorRank
+      canEvolve, canMerge, busy: apiBusy(), aiAttached, horrorRank, events
     });
   } catch (error) {
     console.error(`${MODULE_ID} | registry panel render failed`, error);

@@ -149,7 +149,7 @@ export function installNlpScale(target = globalThis, corpusInput = []) {
         error: api.lastError,
         last: api.progressLog.slice(-3),
         overall: o
-          ? { score: o.score, recall: o.recall, precision: o.precision, f1: o.f1, outcomeAcc: o.outcomeAcc, dangerAcc: o.dangerAcc, themeAcc: o.themeAcc, trapAcc: o.trapAcc, fallbackRate: o.fallbackRate, firstTryValidRate: o.firstTryValidRate, tagJaccard: o.tagJaccard, latencyP50: o.latencyP50, latencyP95: o.latencyP95 }
+          ? { score: o.score, recall: o.recall, precision: o.precision, f1: o.f1, outcomeAcc: o.outcomeAcc, dangerAcc: o.dangerAcc, themeAcc: o.themeAcc, trapAcc: o.trapAcc, darkDeedAcc: o.darkDeedAcc, darkFalseRate: o.darkFalseRate, fallbackRate: o.fallbackRate, firstTryValidRate: o.firstTryValidRate, tagJaccard: o.tagJaccard, latencyP50: o.latencyP50, latencyP95: o.latencyP95 }
           : null
       };
     },

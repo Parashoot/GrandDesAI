@@ -1,7 +1,7 @@
 import { GrandDesignApi } from "./api.js";
 import { defaultAtlasAssetPath, isLegacyGithubAtlasPath } from "./atlas.js";
 import { MODULE_ID } from "./constants.js";
-import { openGrowthManager } from "./growth-ui.js";
+import { createHorrorRankNotifier, openGrowthManager } from "./growth-ui.js";
 import { openRegistryPanel } from "./registry-ui.js";
 import { openPopulate, runPopulateAndAnnounce } from "./populate-ui.js";
 import { checkGatewayAtReady, getGatewayConfig, registerAiProviderSettings } from "./ai-provider-config.js";
@@ -69,6 +69,28 @@ Hooks.once("ready", async () => {
       }
     }
   }
+});
+
+// Board 21e944ed: Horror Rank changes used to happen silently (nothing listened). The GM now gets a
+// lasting notice naming the Class and the levels it lost, and one when the stage moves. The API fires
+// horrorRankChanged (batch 3 contract) and may still fire horrorRankLevelsDocked for the same
+// docking; the notifier announces it once.
+const horrorRankNotifier = createHorrorRankNotifier({
+  notify: (level, message) => ui.notifications[level]?.(message, level === "warn" ? { permanent: true } : undefined),
+  className: (actor, classId) => {
+    try {
+      const registry = game.modules.get(MODULE_ID).api.getActorRegistry(actor);
+      return registry?.classes?.[classId]?.name ?? null;
+    } catch {
+      return null;
+    }
+  }
+});
+Hooks.on("grand-design-ai.horrorRankChanged", (actor, state, dockedFrom) => {
+  if (game.user.isGM) horrorRankNotifier.changed(actor, state, dockedFrom);
+});
+Hooks.on("grand-design-ai.horrorRankLevelsDocked", (actor, dockedFrom) => {
+  if (game.user.isGM) horrorRankNotifier.docked(actor, dockedFrom);
 });
 
 // Legacy Application (V1) sheet header hook. Still relevant for any system/version whose actor

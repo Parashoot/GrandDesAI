@@ -1,4 +1,4 @@
-import { MODULE_ID } from "./constants.js";
+import { HORROR_RANK_THRESHOLD, MODULE_ID } from "./constants.js";
 import { BUILD, describeBuild } from "./build-info.js";
 // Cyclic on purpose (the panel reopens this dialog on its new proposal): both sides only touch the
 // other's exports inside functions, never at module evaluation, so either can load first.
@@ -69,9 +69,11 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
     const namesById = safe(() => ownedNameIndex(collectOwnedEntries(api, actor)), new Map());
     // Board 0860fd78: erosion is shown right after an analysis, when the GM is looking at what changed.
     const erosion = lastResult ? safe(() => activeErosion(api, actor), []) : [];
+    // Board 21e944ed: the meter reads getHorrorRank (the new shape is feature-detected by the renderer).
+    const horrorRank = typeof api.getHorrorRank === "function" ? safe(() => api.getHorrorRank(actor), null) : null;
     content = renderGrowthContent({
       growth, progression, pending, lastAnalysis, lastResult, status, draftNotes, canSuggest, canEdit, canRetry, aiAttached,
-      busy: busyAtOpen, namesById, focusProposalId, lastSuggest, erosion, canEvolve
+      busy: busyAtOpen, namesById, focusProposalId, lastSuggest, erosion, canEvolve, horrorRank, systemId: currentSystemId()
     });
   } catch (error) {
     console.error(`${MODULE_ID} | growth dialog render failed`, error);
@@ -162,8 +164,12 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
       ui.notifications[level](message);
     }),
     [ACTIONS.reject.action]: (root, button, id) => runAction(root, button, "reject", async () => {
+      const red = isRedProposal(find(id));
       await api.rejectProposal(actor, id);
-      ui.notifications.info("Grand Design proposal rejected. It will not be suggested again under this name.");
+      // Owner decision 2026-09-29: rejecting a red Skill refuses the power, not the stain.
+      ui.notifications.info(red
+        ? "Red proposal rejected: the power is refused, but the deeds stay recorded and still count toward Horror Rank."
+        : "Grand Design proposal rejected. It will not be suggested again under this name.");
     }),
     [ACTIONS.save.action]: (root, button, id) => saveEdit(root, button, id),
     [ACTIONS.suggest.action]: (root, button) => runAction(root, button, "suggest", async () => {
@@ -218,6 +224,9 @@ export function openGrowthManager(actor, { lastResult = null, draftNotes = "", f
       return;
     }
     ui.notifications.info(`Saved your edits to ${result?.proposal?.entry?.name ?? patch.entry?.name ?? "the proposal"}. It is still pending: Approve when ready.`);
+    // The validator may have clamped dice or bonuses to the tier: say so instead of changing them silently.
+    const clamps = collectMechanicsClamps(result);
+    if (clamps.length) ui.notifications.warn(`The validator adjusted the mechanics: ${clamps.slice(0, 4).join("; ")}${clamps.length > 4 ? "; ..." : ""}.`, { permanent: true });
     await reopen({ lastResult, draftNotes: typedNotes(root) });
   };
 
@@ -526,7 +535,8 @@ export function statusBadge(config, lastRun, adapterAttached) {
 export function renderGrowthContent({
   growth, progression, pending, lastAnalysis, lastResult, status, draftNotes = "",
   canSuggest = true, canEdit = false, canRetry = false, aiAttached = true, busy = false,
-  namesById = new Map(), focusProposalId = null, lastSuggest = null, erosion = [], canEvolve = false
+  namesById = new Map(), focusProposalId = null, lastSuggest = null, erosion = [], canEvolve = false,
+  horrorRank = null, systemId = null
 }) {
   const events = Array.isArray(growth?.events) ? growth.events : [];
   pending = Array.isArray(pending) ? pending : [];
@@ -535,7 +545,7 @@ export function renderGrowthContent({
   const stuck = allowances > 0 && !pending.length;
   const hint = allowanceHint(progression, pending.length, canSuggest);
   const eventsById = new Map(events.filter((event) => event?.id).map((event) => [event.id, event]));
-  const rowOptions = { canEdit, canRetry, aiAttached: aiAttached && status?.kind !== "local", busy, eventsById, namesById, focusProposalId };
+  const rowOptions = { canEdit, canRetry, aiAttached: aiAttached && status?.kind !== "local", busy, eventsById, namesById, focusProposalId, systemId };
   const rows = pending.length
     ? pending.map((proposal) => renderProposal(proposal, rowOptions)).join("")
     : stuck && canSuggest
@@ -555,6 +565,7 @@ export function renderGrowthContent({
       <button type="button" class="gd-action gd-open-registry" data-action="${OPEN_REGISTRY}"${busy ? " disabled" : ""} title="${busy ? escapeHtml(BUSY_NOTICE) : "Owned Classes, Skills and Titles: lineage, Evolve, Merge, erosion"}"><i class="fas fa-sitemap"></i> <span class="gd-btn-label">Registry</span></button>
     </header>
     ${busy ? `<p class="gd-busy-notice"><i class="fas fa-spinner fa-spin"></i> ${escapeHtml(BUSY_NOTICE)} This dialog refreshes by itself when it is done.</p>` : ""}
+    ${renderHorrorRankMeter(horrorRank, { events, compact: true })}
     <p><strong>${Math.floor(Number(progression?.progress) || 0)} progression</strong> toward the next level; <strong>${allowances}</strong> level-up grant allowance(s) available.</p>
     ${hint ? `<p class="gd-allowance-hint"><i class="fas fa-gift"></i> ${hint}</p>` : ""}
     <div class="form-group gd-rest-row"><label>Resolve progression at rest</label><select name="growth-rest-type"><option value="short">Short Rest</option><option value="long">Long Rest</option></select>${button("rest", "fas fa-bed", "Resolve Rest")}</div>
@@ -620,7 +631,7 @@ export function renderEventLine(event, newThemes = new Set(), withQuote = false)
     ? `<details class="gd-quote"><summary>original${event.language ? ` (${escapeHtml(event.language)})` : ""}</summary><blockquote>${escapeHtml(event.quote)}</blockquote></details>`
     : "";
   return `<span class="gd-outcome gd-outcome-${escapeHtml(event?.outcome ?? "unknown")}" title="${escapeHtml(outcome.label)}"><i class="${outcome.icon}"></i></span>${flameHtml}
-    ${who}<span class="gd-summary">${escapeHtml(event?.summary ?? "")}</span>${typeof event?.consequence === "string" && event.consequence.trim() ? ` <span class="gd-consequence">&rarr; ${escapeHtml(event.consequence)}</span>` : ""}
+    ${who}<span class="gd-summary">${escapeHtml(event?.summary ?? "")}</span>${isDarkDeed(event) ? ` ${renderDarkDeedBadge(event)}` : ""}${typeof event?.consequence === "string" && event.consequence.trim() ? ` <span class="gd-consequence">&rarr; ${escapeHtml(event.consequence)}</span>` : ""}
     <span class="gd-chips">${tags}${themes || (!tags ? '<span class="gd-chip">untagged</span>' : "")}</span>${quote}`;
 }
 
@@ -650,7 +661,7 @@ function canBeAuthored(proposal) {
 
 // Exported so tests can check each control directly against a proposal's status/shape, not just
 // indirectly through renderGrowthContent's own pending-only filtering.
-export function renderProposal(proposal, { canEdit = false, canRetry = false, aiAttached = true, busy = false, eventsById = new Map(), namesById = new Map(), focusProposalId = null } = {}) {
+export function renderProposal(proposal, { canEdit = false, canRetry = false, aiAttached = true, busy = false, eventsById = new Map(), namesById = new Map(), focusProposalId = null, systemId = null } = {}) {
   proposal = proposal && typeof proposal === "object" ? proposal : {};
   const entry = proposal.entry && typeof proposal.entry === "object" ? proposal.entry : {};
   const name = entry.name ?? proposal.id ?? "(unnamed proposal)";
@@ -677,15 +688,19 @@ export function renderProposal(proposal, { canEdit = false, canRetry = false, ai
       ? '<span class="gd-chip gd-kind gd-title-chip" title="A Title: a name the world knows this character by, earned by a deed.">Title</span>'
       : '<span class="gd-chip gd-kind">Skill</span>';
   const lineage = renderLineageChip(entry.metadata?.lineage, namesById);
-  const red =entry.metadata?.polarity === "red" ? ` <span class="gd-chip gd-red" title="Red (taboo) entry: it carries a real cost.">red${entry.metadata?.malignance?.vice ? `: ${escapeHtml(entry.metadata.malignance.vice)}` : ""}</span>` : "";
+  const red = entry.metadata?.polarity === "red" ? ` <span class="gd-chip gd-red" title="Red (taboo) entry: it carries a real cost.">red${entry.metadata?.malignance?.vice ? `: ${escapeHtml(entry.metadata.malignance.vice)}` : ""}</span>` : "";
   const authoring = proposal.needsAuthoring ? ' <em class="gd-needs-authoring">placeholder — "Author with AI" writes real mechanics</em>' : "";
   const actions = proposal.status === "pending" ? renderProposalActions(proposal, { canRetry, aiAttached, busy }) : "";
-  const details = renderProposalDetails(proposal, eventsById, { open: focused, namesById });
-  const edit = canEdit && proposal.status === "pending" ? renderEditForm(proposal, { busy }) : "";
+  const details = renderProposalDetails(proposal, eventsById, { open: focused, namesById, systemId });
+  const edit = canEdit && proposal.status === "pending" ? renderEditForm(proposal, { busy, systemId }) : "";
+  // Owner decision 2026-09-29: a hint, not a blocker. Rejecting refuses the power; the deeds still count.
+  const redHint = isRedProposal(proposal) && proposal.status === "pending"
+    ? '<p class="gd-hint gd-red-reject-hint"><i class="fas fa-skull"></i> Rejecting a red proposal refuses the power, not the stain: Horror Rank counts the dark deeds in the notes either way.</p>'
+    : "";
   return `<li class="gd-proposal${focused ? " gd-focus" : ""}" data-proposal-id="${escapeHtml(proposal.id)}">
     <div class="gd-proposal-head"><strong>${escapeHtml(name)}</strong> ${kind} ${badge}${lineage}${red}${authoring}</div>
     <div class="gd-proposal-effect">${escapeHtml(effect)} <em>Evidence: ${escapeHtml(cited)}</em></div>
-    ${actions ? `<div class="gd-proposal-actions">${actions}</div>` : ""}
+    ${actions ? `<div class="gd-proposal-actions">${actions}</div>` : ""}${redHint}
     ${details}${edit}
   </li>`;
 }
@@ -711,7 +726,10 @@ function renderProposalActions(proposal, { canRetry, aiAttached, busy }) {
       buttons.push(actionButton({ action: ACTIONS.author.action, icon: "fas fa-feather-pointed", label: "Author with AI", id, ...lock(true) }));
     }
   }
-  buttons.push(actionButton({ action: ACTIONS.reject.action, icon: "fas fa-ban", label: "Reject", id, variant: "gd-reject", ...lock(false), title: busy ? BUSY_NOTICE : "Reject this proposal" }));
+  const rejectTitle = isRedProposal(proposal)
+    ? "Reject this red proposal: the power is refused, but the deeds stay recorded and still count toward Horror Rank."
+    : "Reject this proposal";
+  buttons.push(actionButton({ action: ACTIONS.reject.action, icon: "fas fa-ban", label: "Reject", id, variant: "gd-reject", ...lock(false), title: busy ? BUSY_NOTICE : rejectTitle }));
   return buttons.join(" ");
 }
 
@@ -724,7 +742,7 @@ const SOURCE_LABELS = {
 };
 
 /** The full proposal, read-only, in a collapsed <details>. Exported for tests. */
-export function renderProposalDetails(proposal, eventsById = new Map(), { open = false, namesById = new Map() } = {}) {
+export function renderProposalDetails(proposal, eventsById = new Map(), { open = false, namesById = new Map(), systemId = null } = {}) {
   const entry = proposal?.entry && typeof proposal.entry === "object" ? proposal.entry : {};
   const mechanics = entry.mechanics && typeof entry.mechanics === "object" ? entry.mechanics : {};
   const metadata = entry.metadata && typeof entry.metadata === "object" ? entry.metadata : {};
@@ -776,11 +794,11 @@ export function renderProposalDetails(proposal, eventsById = new Map(), { open =
   const cited = Array.isArray(proposal?.evidence) ? proposal.evidence : [];
   const evidence = cited.slice(0, 8).map((id) => {
     const event = eventsById?.get?.(id);
-    return `<li>${event ? `${event.actorName ? `<span class="gd-who">${escapeHtml(event.actorName)}:</span> ` : ""}${escapeHtml(event.summary ?? id)}` : `<code>${escapeHtml(id)}</code>`}</li>`;
+    return `<li>${event ? `${event.actorName ? `<span class="gd-who">${escapeHtml(event.actorName)}:</span> ` : ""}${escapeHtml(event.summary ?? id)}${isDarkDeed(event) ? ` ${renderDarkDeedBadge(event)}` : ""}` : `<code>${escapeHtml(id)}</code>`}</li>`;
   }).join("");
   const more = cited.length > 8 ? `<li><em>...and ${cited.length - 8} more</em></li>` : "";
   return `<details class="gd-proposal-details"${open ? " open" : ""}><summary><i class="fas fa-circle-info"></i> Details</summary>
-      <dl>${rows.join("")}</dl>${evidence ? `<h4>Evidence</h4><ul class="gd-proposal-evidence">${evidence}${more}</ul>` : ""}
+      <dl>${rows.join("")}</dl>${renderStructuredDetails(proposal, proposalSystem(proposal, systemId))}${evidence ? `<h4>Evidence</h4><ul class="gd-proposal-evidence">${evidence}${more}</ul>` : ""}
     </details>`;
 }
 
@@ -832,7 +850,7 @@ function describeRoll(roll) {
 const SKILL_TIERS = ["1", "2", "3"];
 const POWER_TIERS = ["standard", "elevated", "prestige"];
 
-function renderEditForm(proposal, { busy = false } = {}) {
+function renderEditForm(proposal, { busy = false, systemId = null } = {}) {
   const entry = proposal.entry && typeof proposal.entry === "object" ? proposal.entry : {};
   const mechanics = entry.mechanics ?? {};
   const isClass = proposal.kind === "class";
@@ -867,6 +885,7 @@ function renderEditForm(proposal, { busy = false } = {}) {
         ${field("Trigger", "trigger", mechanics.trigger, { attrs: ' placeholder="only for reactions"' })}
         ${field("Duration", "duration", mechanics.duration)}
         <div class="form-group stacked"><label>Effect</label><textarea data-field="effect" rows="3">${escapeHtml(mechanics.effect ?? "")}</textarea></div>
+        ${renderStructuredEditor(mechanics.structured, proposalSystem(proposal, systemId))}
         ${field("Tags (comma separated)", "tags", Array.isArray(entry.metadata?.tags) ? entry.metadata.tags.join(", ") : "")}
         <div class="form-group stacked"><label>Rationale</label><textarea data-field="rationale" rows="2">${escapeHtml(entry.metadata?.lineage?.rationale ?? "")}</textarea></div>
         <div class="gd-edit-errors" role="alert"></div>
@@ -881,7 +900,8 @@ export function readEditFields(form) {
   const nodes = form?.querySelectorAll?.("[data-field]") ?? [];
   for (const node of nodes) {
     const key = node?.dataset?.field ?? node?.getAttribute?.("data-field");
-    if (key) fields[key] = String(node.value ?? "");
+    // A checkbox (the structured editor's "basic save") reads as "true" or "".
+    if (key) fields[key] = node?.type === "checkbox" ? (node.checked ? "true" : "") : String(node.value ?? "");
   }
   return fields;
 }
@@ -953,6 +973,14 @@ export function buildProposalPatch(proposal, fields = {}) {
   if (has("tags")) {
     entry.metadata.tags = [...new Set(text("tags").split(/[,;\n]/).map((tag) => tag.trim()).filter(Boolean))];
   }
+  // Board 5a0cea2e: the structured editor's "s.*" fields rebuild mechanics.structured; parts the
+  // form does not show are kept, an all-empty editor removes it. The API's validator clamps the rest.
+  if (entry.mechanics && Object.keys(fields).some((key) => key.startsWith("s."))) {
+    const built = buildStructuredFromFields(fields, entry.mechanics.structured);
+    errors.push(...built.errors);
+    if (built.structured) entry.mechanics.structured = built.structured;
+    else delete entry.mechanics.structured;
+  }
   if (has("rationale")) {
     entry.metadata.lineage = entry.metadata.lineage && typeof entry.metadata.lineage === "object"
       ? entry.metadata.lineage
@@ -965,6 +993,538 @@ export function buildProposalPatch(proposal, fields = {}) {
 function renderEditErrors(errors) {
   const list = (Array.isArray(errors) ? errors : [errors]).map((error) => `<li>${escapeHtml(typeof error === "string" ? error : error?.message ?? JSON.stringify(error))}</li>`).join("");
   return `<p><i class="fas fa-triangle-exclamation"></i> Not saved:</p><ul>${list}</ul>`;
+}
+
+// --- Horror Rank (board 21e944ed, UI half; batch 3 contract sections 3 and 5) --------------------
+// Owner decision 2026-09-29: Horror Rank accrues from the red DEEDS the notes record, not from
+// approvals. The meter shows the design's 4-stage clock (conversion rules section 6), the points
+// toward the next stage, and every deed that made it, quoting its summary, so a GM can see WHY.
+// api.getHorrorRank's new shape ({ points, stage, nextThreshold, totalLevelsDocked, deeds }) is being
+// written in parallel: everything below also reads today's { points, totalLevelsDocked } and, when
+// the API lists no deeds, derives them from the recorded events' darkDeed/darkSeverity.
+
+// Display fallbacks only; the API's own numbers win whenever it sends them.
+export const HORROR_SEVERITY_POINTS = Object.freeze({ minor: 5, serious: 15, monstrous: 40 });
+
+// The design's four stages (wandering-inn-pf2e-conversion-rules.md section 6), in table language.
+export const HORROR_STAGES = Object.freeze([
+  { stage: 0, name: "Unstained", flavour: "No monstrous deed has marked them. The Grand Design keeps count all the same." },
+  { stage: 1, name: "Shadowed", flavour: "The deeds are noticed. People lower their voices, and something in their Classes has started to recoil." },
+  { stage: 2, name: "Marked", flavour: "The stain shows. Their Classes are eaten away as the horror grows, and the Skills tied to those levels with them." },
+  { stage: 3, name: "Horror", flavour: "Their Classes have lost their reason to exist: a [Guardsman] who became a horror cannot stand guard. Only a long road back could change that." }
+]);
+
+/**
+ * Any getHorrorRank result (new or old shape, or nothing) as { points, stage, nextThreshold,
+ * threshold, totalLevelsDocked, deeds, derivedDeeds }. `events` (the actor's recorded growth events)
+ * supply the deed list when the API does not. Pure, exported for tests.
+ */
+export function normalizeHorrorRankView(raw, events = [], { threshold = HORROR_RANK_THRESHOLD } = {}) {
+  const points = Math.max(0, Number.isFinite(Number(raw?.points)) ? Number(raw.points) : 0);
+  const step = Number.isFinite(Number(threshold)) && Number(threshold) > 0 ? Number(threshold) : 100;
+  const rawStage = Number(raw?.stage);
+  const hasStage = raw?.stage !== undefined && raw?.stage !== null && Number.isInteger(rawStage);
+  const stage = Math.max(0, Math.min(3, hasStage ? rawStage : Math.floor(points / step)));
+  const rawNext = Number(raw?.nextThreshold);
+  const nextThreshold = stage >= 3
+    ? null
+    : raw?.nextThreshold !== undefined && raw?.nextThreshold !== null && Number.isFinite(rawNext) && rawNext > 0 ? rawNext : (stage + 1) * step;
+  const totalLevelsDocked = Math.max(0, Math.floor(Number(raw?.totalLevelsDocked) || 0));
+  const listed = Array.isArray(raw?.deeds) ? raw.deeds.filter((deed) => deed && typeof deed === "object") : null;
+  const deeds = listed ?? darkDeedsFromEvents(events);
+  return {
+    points,
+    stage,
+    nextThreshold,
+    // The step between stages, for the bar: the next threshold over the stages it covers.
+    threshold: nextThreshold ? nextThreshold / (stage + 1) : step,
+    totalLevelsDocked,
+    deeds: deeds.map((deed) => {
+      const severity = deed.severity ?? deed.darkSeverity ?? null;
+      return {
+        eventId: deed.eventId ?? deed.id ?? null,
+        summary: String(deed.summary ?? "").trim(),
+        vice: deed.vice ?? deed.darkDeed ?? null,
+        severity,
+        points: Number.isFinite(Number(deed.points)) && deed.points !== null ? Number(deed.points) : HORROR_SEVERITY_POINTS[severity] ?? 0
+      };
+    }),
+    derivedDeeds: !listed
+  };
+}
+
+/** The recorded events that are dark deeds (contract section 1). Pure, exported for tests. */
+export function darkDeedsFromEvents(events = []) {
+  return (Array.isArray(events) ? events : []).filter(isDarkDeed).map((event) => ({
+    eventId: event.id ?? null,
+    summary: event.summary ?? "",
+    vice: event.darkDeed,
+    severity: event.darkSeverity,
+    points: HORROR_SEVERITY_POINTS[event.darkSeverity] ?? 0
+  }));
+}
+
+/** True when an event carries a real dark deed (a vice, not "none"). Pure, exported for tests. */
+export function isDarkDeed(event) {
+  const vice = typeof event?.darkDeed === "string" ? event.darkDeed.trim().toLowerCase() : "";
+  return Boolean(vice) && vice !== "none";
+}
+
+/** The dark-deed chip on an event row ("cruelty, serious"), or "". Pure, exported for tests. */
+export function renderDarkDeedBadge(event) {
+  if (!isDarkDeed(event)) return "";
+  const severity = Object.hasOwn(HORROR_SEVERITY_POINTS, event.darkSeverity) ? event.darkSeverity : "";
+  const points = HORROR_SEVERITY_POINTS[severity];
+  const title = `Dark deed (${event.darkDeed}${severity ? `, ${severity}` : ""}): it counts toward Horror Rank${points ? ` (+${points} points)` : ""}, whatever you do with any red Skill it earns.`;
+  return `<span class="gd-chip gd-dark-deed${severity ? ` gd-dark-${severity}` : ""}" title="${escapeHtml(title)}"><i class="fas fa-skull"></i> ${escapeHtml(event.darkDeed)}${severity ? `, ${escapeHtml(severity)}` : ""}</span>`;
+}
+
+/**
+ * The Horror Rank meter: stage pips 0-3 with the stage's name and flavour, a bar of points toward
+ * the next stage, levels lost so far and the deeds (each quoting its summary). A clean character
+ * gets one quiet line, so the mechanic is visible without shouting. Pure, exported for tests.
+ */
+export function renderHorrorRankMeter(raw, { events = [], compact = false } = {}) {
+  const view = normalizeHorrorRankView(raw, events);
+  if (view.points <= 0 && !view.deeds.length && !view.totalLevelsDocked) {
+    return `<p class="gd-horror gd-horror-clean"><i class="fas fa-skull"></i> <strong>Horror Rank:</strong> Stage 0, ${escapeHtml(HORROR_STAGES[0].name)}. <span class="gd-hint">Dark deeds recorded in the notes (cruelty, desecration...) would start this clock.</span></p>`;
+  }
+  const stage = HORROR_STAGES[view.stage];
+  const floor = view.stage * view.threshold;
+  const fill = view.nextThreshold
+    ? Math.max(0, Math.min(100, Math.round(((view.points - floor) / Math.max(1, view.nextThreshold - floor)) * 100)))
+    : 100;
+  const pips = HORROR_STAGES.map((step) => `<span class="gd-horror-pip${step.stage <= view.stage ? " gd-on" : ""}${step.stage === view.stage ? " gd-current" : ""}" title="Stage ${step.stage}: ${escapeHtml(step.name)}">${step.stage}</span>`).join("");
+  const progress = view.nextThreshold
+    ? `${escapeHtml(round2(view.points))} / ${escapeHtml(round2(view.nextThreshold))} points to Stage ${view.stage + 1} (${escapeHtml(HORROR_STAGES[view.stage + 1].name)})`
+    : `${escapeHtml(round2(view.points))} points: the last stage`;
+  const docked = view.totalLevelsDocked
+    ? `<p class="gd-horror-docked"><i class="fas fa-arrow-trend-down"></i> ${view.totalLevelsDocked} Class level${view.totalLevelsDocked === 1 ? "" : "s"} lost to Horror Rank so far.</p>`
+    : "";
+  const deedRows = view.deeds.slice(0, 12).map((deed) => {
+    const badge = renderDarkDeedBadge({ darkDeed: deed.vice || "dark deed", darkSeverity: deed.severity });
+    const quote = deed.summary ? `&ldquo;${escapeHtml(deed.summary)}&rdquo;` : `<code>${escapeHtml(deed.eventId ?? "deed")}</code>`;
+    return `<li>${badge} ${deed.points ? `<span class="gd-horror-points">+${escapeHtml(round2(deed.points))}</span> ` : ""}${quote}</li>`;
+  }).join("");
+  const more = view.deeds.length > 12 ? `<li><em>...and ${view.deeds.length - 12} more</em></li>` : "";
+  const deeds = deedRows
+    ? `<details class="gd-horror-deeds"${compact ? "" : " open"}><summary>The deed${view.deeds.length === 1 ? "" : "s"} that made it (${view.deeds.length})</summary><ul>${deedRows}${more}</ul></details>`
+    : "";
+  return `<section class="gd-horror gd-horror-stage-${view.stage}" aria-label="Horror Rank">
+    <div class="gd-horror-head"><i class="fas fa-skull"></i> <strong>Horror Rank: Stage ${view.stage}, ${escapeHtml(stage.name)}</strong> <span class="gd-horror-pips">${pips}</span></div>
+    <div class="gd-horror-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${fill}"><span style="width: ${fill}%"></span></div>
+    <p class="gd-horror-progress">${progress}</p>
+    <p class="gd-horror-flavour"><em>${escapeHtml(stage.flavour)}</em></p>
+    ${docked}${deeds}
+    <p class="gd-hint">Horror Rank counts the dark deeds in the notes. Rejecting a red Skill refuses the power, not the stain.</p>
+  </section>`;
+}
+
+/**
+ * The GM notices for a Horror Rank change: one per Class that lost levels ("Brakka's Bridge Warden
+ * lost 2 levels to Horror Rank."), plus one when the stage moved. `className(classId)` resolves a
+ * Class name. Pure, exported for tests.
+ */
+export function describeHorrorRankChange({ actorName = "", state = null, dockedFrom = [], previousStage = null, className = () => null } = {}) {
+  const who = actorName ? `${actorName}'s` : "This character's";
+  const notices = [];
+  for (const dock of Array.isArray(dockedFrom) ? dockedFrom : []) {
+    const levels = Math.max(0, Math.floor(Number(dock?.levelsDocked) || 0));
+    if (!levels) continue;
+    const name = dock?.className ?? dock?.name ?? safe(() => className(dock?.classId), null) ?? prettifyEntryId(dock?.classId);
+    notices.push({ level: "warn", message: `${who} ${name || "strongest Class"} lost ${levels} level${levels === 1 ? "" : "s"} to Horror Rank.` });
+  }
+  if (state && previousStage !== null && previousStage !== undefined) {
+    const view = normalizeHorrorRankView(state);
+    if (view.stage !== previousStage) {
+      const rose = view.stage > previousStage;
+      const stage = HORROR_STAGES[view.stage];
+      notices.push({
+        level: rose ? "warn" : "info",
+        message: `${who} Horror Rank ${rose ? "rose" : "fell"} to Stage ${view.stage} (${stage.name}).${rose ? ` ${stage.flavour}` : ""}`
+      });
+    }
+  }
+  return notices;
+}
+
+/**
+ * Handlers for grand-design-ai.horrorRankChanged (contract) and the older horrorRankLevelsDocked,
+ * announcing a docking once even when the API fires both. `notify(level, message)`,
+ * `className(actor, classId)` and `now()` are injected so tests run without Foundry.
+ */
+export function createHorrorRankNotifier({ notify, className = () => null, now = () => Date.now(), windowMs = 5000 } = {}) {
+  const lastStage = new Map();
+  const recent = new Map();
+  const key = (actor) => actor?.uuid ?? actor?.id ?? actor?.name ?? "actor";
+  const announce = (actor, dockedFrom, extra = []) => {
+    const id = key(actor);
+    const docks = Array.isArray(dockedFrom) ? dockedFrom : [];
+    const signature = JSON.stringify(docks.map((dock) => [dock?.classId, dock?.levelsDocked]));
+    const seen = recent.get(id);
+    const duplicate = docks.length > 0 && seen?.signature === signature && now() - seen.at < windowMs;
+    if (docks.length) recent.set(id, { signature, at: now() });
+    const notices = describeHorrorRankChange({ actorName: actor?.name, dockedFrom: duplicate ? [] : docks, className: (classId) => className(actor, classId) });
+    for (const notice of [...notices, ...extra]) notify(notice.level, notice.message);
+  };
+  return {
+    changed(actor, state, dockedFrom = []) {
+      const id = key(actor);
+      const stage = normalizeHorrorRankView(state).stage;
+      // Unknown before this page load: a non-zero stage is announced once, a clean one not at all.
+      const previous = lastStage.has(id) ? lastStage.get(id) : stage > 0 ? 0 : null;
+      lastStage.set(id, stage);
+      announce(actor, dockedFrom, describeHorrorRankChange({ actorName: actor?.name, state, previousStage: previous }));
+    },
+    docked(actor, dockedFrom = []) {
+      announce(actor, dockedFrom);
+    }
+  };
+}
+
+// --- Structured mechanics (board 5a0cea2e, UI half; batch 3 contract section 2) -----------------
+// entry.mechanics.structured is the game-readable half of a Skill: dice, saves, modifiers... The
+// Details list reads it in the system's own words (PF2e "basic Reflex save against your class DC",
+// dnd5e "Dexterity saving throw"), and the validator's clamps say what it cut to fit the tier.
+
+const SAVES = Object.freeze({ pf2e: ["fortitude", "reflex", "will"], dnd5e: ["str", "dex", "con", "int", "wis", "cha"] });
+const ABILITY_NAMES = Object.freeze({ str: "Strength", dex: "Dexterity", con: "Constitution", int: "Intelligence", wis: "Wisdom", cha: "Charisma" });
+const MODIFIER_TYPES = ["circumstance", "status", "item", "untyped"];
+const USE_PERIODS = ["turn", "round", "encounter", "hour", "day", "short-rest", "long-rest"];
+const AREA_TYPES = Object.freeze({ pf2e: ["cone", "burst", "emanation", "line"], dnd5e: ["cone", "sphere", "cube", "cylinder", "line"] });
+const ATTACK_KINDS = ["melee", "ranged", "spell"];
+const DC_KINDS = ["class", "spell"];
+const DICE_PATTERN = /^\d{1,2}d(?:4|6|8|10|12|20)$/i;
+const SELECTOR_PATTERN = /^(?:ac|attack|damage|perception|initiative|save:[a-z]+|skill:[a-z0-9-]+)$/;
+const ADVANTAGE_PATTERN = /^(?:attack|save:[a-z]+|skill:[a-z0-9-]+|check:(?:str|dex|con|int|wis|cha))$/;
+
+function systemOf(systemId) {
+  return systemId === "dnd5e" ? "dnd5e" : "pf2e";
+}
+
+function titleCase(text) {
+  return String(text ?? "").split(/[-_\s]+/).filter(Boolean).map((word) => word[0].toUpperCase() + word.slice(1)).join(" ");
+}
+
+function withBonus(dice, bonus) {
+  const number = Number(bonus);
+  return `${dice}${Number.isFinite(number) && number ? (number > 0 ? `+${number}` : `${number}`) : ""}`;
+}
+
+function saveName(save, system) {
+  const slug = String(save ?? "").toLowerCase();
+  return system === "dnd5e" ? `${ABILITY_NAMES[slug] ?? titleCase(slug)} saving throw` : `${titleCase(slug)} save`;
+}
+
+function selectorName(selector, system) {
+  const text = String(selector ?? "");
+  if (text === "ac") return "AC";
+  if (text === "attack") return "attack rolls";
+  if (text === "damage") return "damage rolls";
+  if (text === "perception") return system === "dnd5e" ? "Wisdom (Perception) checks" : "Perception";
+  if (text === "initiative") return system === "dnd5e" ? "initiative rolls" : "initiative";
+  if (text.startsWith("save:")) return `${saveName(text.slice(5), system)}s`;
+  if (text.startsWith("skill:")) return `${titleCase(text.slice(6))} checks`;
+  if (text.startsWith("check:")) return `${ABILITY_NAMES[text.slice(6)] ?? titleCase(text.slice(6))} checks`;
+  return text;
+}
+
+function describeDc(dc, system) {
+  if (dc === "class") return system === "dnd5e" ? "DC 8 + proficiency bonus + ability modifier" : "your class DC";
+  if (dc === "spell") return system === "dnd5e" ? "your spell save DC" : "your spell DC";
+  const number = Number(dc);
+  return dc !== "" && dc !== null && dc !== undefined && Number.isFinite(number) ? `DC ${number}` : "";
+}
+
+function describeUses(uses, system) {
+  const max = Math.max(1, Math.floor(Number(uses?.max) || 1));
+  const per = String(uses?.per ?? "?");
+  if (system === "pf2e") {
+    // PF2e frequencies have no rests: a short rest reads as 10 minutes, a long rest as a day.
+    const times = max === 1 ? "once" : max === 2 ? "twice" : `${max} times`;
+    const period = per === "short-rest" ? "10 minutes" : per === "long-rest" ? "day" : per;
+    return `${times} per ${period}`;
+  }
+  // dnd5e recovers on rests; an "encounter" is what a short rest ends.
+  const period = per === "encounter" ? "short rest" : per.replace("-", " ");
+  return `${max} per ${period}`;
+}
+
+/**
+ * [{ label, text }] for entry.mechanics.structured in the system's wording. Malformed parts are
+ * skipped (the pipeline already drops bad shapes; this is belt and braces). Pure, exported for tests.
+ */
+export function describeStructuredMechanics(structured, systemId = "pf2e") {
+  if (!structured || typeof structured !== "object") return [];
+  const system = systemOf(systemId);
+  const rows = [];
+  const push = (label, text) => { if (text) rows.push({ label, text }); };
+  const damage = (Array.isArray(structured.damage) ? structured.damage : []).filter((part) => part?.dice);
+  if (damage.length) push("Damage", `${damage.map((part) => `${withBonus(part.dice, part.bonus)}${part.type ? ` ${part.type}` : ""}`).join(" plus ")} damage`);
+  if (structured.heal?.dice) push("Healing", `restores ${withBonus(structured.heal.dice, structured.heal.bonus)} ${system === "pf2e" ? "Hit Points" : "hit points"}`);
+  if (structured.attack?.kind) {
+    const kind = structured.attack.kind;
+    push("Attack", system === "pf2e"
+      ? kind === "spell" ? "spell attack roll against AC" : `${kind} Strike against AC`
+      : kind === "spell" ? "spell attack against AC" : `${kind} weapon attack against AC`);
+  }
+  if (structured.save?.save) {
+    const { save, dc: rawDc, basic } = structured.save;
+    const dc = describeDc(rawDc, system);
+    push("Save", system === "pf2e"
+      ? `${basic ? "basic " : ""}${saveName(save, system)}${dc ? ` against ${dc}` : ""}`
+      : `${saveName(save, system)}${dc ? `, ${dc}` : ""}${basic ? " (half damage on a success)" : ""}`);
+  }
+  for (const modifier of Array.isArray(structured.modifiers) ? structured.modifiers : []) {
+    const value = Number(modifier?.value);
+    if (!Number.isFinite(value) || !modifier?.selector) continue;
+    const kind = value < 0 ? "penalty" : "bonus";
+    // dnd5e has no bonus types: every bonus there is untyped (and stacks unless the GM says not).
+    const typed = system === "pf2e" && modifier.type && modifier.type !== "untyped" ? `${modifier.type} ${kind}` : kind;
+    push("Modifier", `${value >= 0 ? "+" : ""}${value} ${typed} to ${selectorName(modifier.selector, system)}${modifier.predicate ? ` (${modifier.predicate})` : ""}`);
+  }
+  if (structured.advantage?.on) {
+    const text = `advantage on ${selectorName(structured.advantage.on, "dnd5e")}${structured.advantage.condition ? ` (${structured.advantage.condition})` : ""}`;
+    push("Advantage", system === "dnd5e" ? text : `${text}: a dnd5e rule, ignored in PF2e`);
+  }
+  const range = Number(structured.range?.value);
+  if (range > 0) push("Range", system === "pf2e" ? `${range} feet` : `${range} ft.`);
+  const area = Number(structured.area?.value);
+  if (structured.area?.type && area > 0) {
+    const radius = system === "dnd5e" && (structured.area.type === "sphere" || structured.area.type === "cylinder") ? "-radius" : "";
+    push("Area", `${area}-foot${radius} ${structured.area.type}`);
+  }
+  if (structured.condition?.id) {
+    const { id, duration } = structured.condition;
+    const value = Number(structured.condition.value);
+    const valued = Number.isFinite(value) && value > 0;
+    const name = system === "pf2e"
+      ? `${String(id).replace(/-/g, " ")}${valued ? ` ${value}` : ""}`
+      : `${titleCase(id)}${valued ? ` (level ${value})` : ""} condition`;
+    push("Condition", `${name}${duration ? ` (${duration})` : ""}`);
+  }
+  if (structured.uses && (structured.uses.max !== undefined || structured.uses.per)) push(system === "pf2e" ? "Frequency" : "Uses", describeUses(structured.uses, system));
+  return rows;
+}
+
+/**
+ * What validator.js clamped, as plain lines. Where the report lives is being settled in parallel
+ * (dev-systems), so every plausible place is read; a clamp is a string or { field|path, from, to,
+ * reason|message }. Accepts a proposal or an updateProposal result. Pure, exported for tests.
+ */
+export function collectMechanicsClamps(source) {
+  const proposal = source?.proposal && typeof source.proposal === "object" ? source.proposal : null;
+  const lines = [];
+  for (const item of [source, proposal]) {
+    if (!item || typeof item !== "object") continue;
+    const entry = item.entry && typeof item.entry === "object" ? item.entry : {};
+    const lists = [item.clamps, item.clamped, item.mechanicsClamps, item.validation?.clamps, item.validatorClamps,
+      entry.mechanics?.clamps, entry.mechanics?.structuredClamps, entry.metadata?.clamps];
+    for (const list of lists) {
+      for (const clamp of Array.isArray(list) ? list : []) {
+        const line = describeClamp(clamp);
+        if (line && !lines.includes(line)) lines.push(line);
+      }
+    }
+  }
+  return lines;
+}
+
+function describeClamp(clamp) {
+  if (typeof clamp === "string") return clamp.trim();
+  if (!clamp || typeof clamp !== "object") return "";
+  const show = (value) => (typeof value === "string" ? value : JSON.stringify(value));
+  const field = String(clamp.field ?? clamp.path ?? clamp.key ?? "");
+  const hasFrom = clamp.from !== undefined && clamp.from !== null;
+  const hasTo = clamp.to !== undefined;
+  const change = hasFrom || hasTo ? `${hasFrom ? show(clamp.from) : "?"} -> ${hasTo && clamp.to !== null ? show(clamp.to) : "removed"}` : "";
+  const why = String(clamp.reason ?? clamp.message ?? "");
+  const head = [field, change].filter(Boolean).join(": ");
+  return head && why ? `${head} (${why})` : head || why;
+}
+
+/** Details block: structured mechanics + the validator's clamps, or "". Pure, exported for tests. */
+export function renderStructuredDetails(proposal, systemId = "pf2e") {
+  const rows = describeStructuredMechanics(proposal?.entry?.mechanics?.structured, systemId);
+  const clamps = collectMechanicsClamps(proposal);
+  if (!rows.length && !clamps.length) return "";
+  const list = rows.map((row) => `<dt>${escapeHtml(row.label)}</dt><dd>${escapeHtml(row.text)}</dd>`).join("");
+  const clampList = clamps.length
+    ? `<div class="gd-clamps"><p><i class="fas fa-scale-balanced"></i> The validator adjusted it to fit the tier and level:</p><ul>${clamps.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul></div>`
+    : "";
+  return `<div class="gd-structured"><h4>Game mechanics (${systemOf(systemId) === "dnd5e" ? "D&amp;D 5e" : "PF2e"})</h4>${list ? `<dl>${list}</dl>` : ""}${clampList}</div>`;
+}
+
+/**
+ * The structured-mechanics part of the Edit form: one fieldset per part, blank rows to add a damage
+ * part or modifier. Field names are "s.<part>.<field>" (rows "s.damage.0.dice"); buildProposalPatch
+ * turns them back into mechanics.structured. Exported for tests.
+ */
+export function renderStructuredEditor(structured, systemId = "pf2e") {
+  const system = systemOf(systemId);
+  const s = structured && typeof structured === "object" ? structured : {};
+  const input = (label, name, value, { type = "text", attrs = "", size = "" } = {}) =>
+    `<label class="gd-s-field${size ? ` gd-s-${size}` : ""}"><span>${escapeHtml(label)}</span><input type="${type}" data-field="${name}" value="${escapeHtml(value ?? "")}"${attrs}></label>`;
+  const select = (label, name, options, value, { blank = true } = {}) => {
+    const current = value === undefined || value === null ? "" : String(value);
+    const list = [...(blank ? [""] : []), ...options, ...(current && !options.includes(current) ? [current] : [])];
+    return `<label class="gd-s-field"><span>${escapeHtml(label)}</span><select data-field="${name}">${list.map((option) => `<option value="${escapeHtml(option)}"${current === option ? " selected" : ""}>${escapeHtml(option || "(none)")}</option>`).join("")}</select></label>`;
+  };
+  const damage = [...(Array.isArray(s.damage) ? s.damage : []), {}].map((part, index) =>
+    `<div class="gd-s-row">${input("Dice", `s.damage.${index}.dice`, part?.dice, { attrs: ' placeholder="2d6"', size: "short" })}${input("Type", `s.damage.${index}.type`, part?.type, { attrs: ' placeholder="fire"' })}${input("Bonus", `s.damage.${index}.bonus`, part?.bonus, { type: "number", size: "short" })}</div>`).join("");
+  const modifiers = [...(Array.isArray(s.modifiers) ? s.modifiers : []), {}].map((modifier, index) => {
+    // dnd5e has no bonus types: the type is kept as it was (or untyped) without a control.
+    const type = system === "pf2e"
+      ? select("Type", `s.modifiers.${index}.type`, MODIFIER_TYPES, modifier?.type ?? (modifier?.value !== undefined ? "untyped" : ""))
+      : `<input type="hidden" data-field="s.modifiers.${index}.type" value="${escapeHtml(modifier?.type ?? "untyped")}">`;
+    return `<div class="gd-s-row">${input("Value", `s.modifiers.${index}.value`, modifier?.value, { type: "number", size: "short" })}${type}${input("On", `s.modifiers.${index}.selector`, modifier?.selector, { attrs: ` placeholder="ac, attack, damage, ${system === "pf2e" ? "save:reflex" : "save:dex"}, skill:athletics"` })}${input("When", `s.modifiers.${index}.predicate`, modifier?.predicate, { attrs: ' placeholder="optional"' })}</div>`;
+  }).join("");
+  const advantage = system === "dnd5e"
+    ? `<fieldset><legend>Advantage</legend><div class="gd-s-row">${input("On", "s.advantage.on", s.advantage?.on, { attrs: ' placeholder="attack, save:dex, skill:stealth, check:str"' })}${input("When", "s.advantage.condition", s.advantage?.condition, { attrs: ' placeholder="optional"' })}</div></fieldset>`
+    : "";
+  return `<details class="gd-structured-edit"><summary><i class="fas fa-dice-d20"></i> Game mechanics (${system === "dnd5e" ? "D&amp;D 5e" : "PF2e"})</summary>
+    <p class="gd-hint">Leave a part empty to remove it. The validator clamps dice and bonuses to the tier and level when you save.</p>
+    <fieldset><legend>Damage</legend>${damage}</fieldset>
+    <fieldset><legend>Healing</legend><div class="gd-s-row">${input("Dice", "s.heal.dice", s.heal?.dice, { attrs: ' placeholder="1d8"', size: "short" })}${input("Bonus", "s.heal.bonus", s.heal?.bonus, { type: "number", size: "short" })}</div></fieldset>
+    <fieldset><legend>Attack and save</legend><div class="gd-s-row">${select("Attack", "s.attack.kind", ATTACK_KINDS, s.attack?.kind)}${select("Save", "s.save.save", SAVES[system], s.save?.save)}${input("DC", "s.save.dc", s.save?.dc, { attrs: ' placeholder="class, spell or a number"', size: "short" })}<label class="gd-s-field gd-s-check"><input type="checkbox" data-field="s.save.basic"${s.save?.basic ? " checked" : ""}> <span>${system === "pf2e" ? "basic save" : "half on success"}</span></label></div></fieldset>
+    <fieldset><legend>Modifiers</legend>${modifiers}</fieldset>
+    ${advantage}
+    <fieldset><legend>Range, area, condition, uses</legend>
+      <div class="gd-s-row">${input("Range (ft)", "s.range.value", s.range?.value, { type: "number", size: "short" })}${select("Area", "s.area.type", AREA_TYPES[system], s.area?.type)}${input("Area size (ft)", "s.area.value", s.area?.value, { type: "number", size: "short" })}</div>
+      <div class="gd-s-row">${input("Condition", "s.condition.id", s.condition?.id, { attrs: ` placeholder="${system === "pf2e" ? "frightened" : "prone"}"` })}${input("Value", "s.condition.value", s.condition?.value, { type: "number", size: "short" })}${input("Duration", "s.condition.duration", s.condition?.duration, { attrs: ' placeholder="1 round"' })}</div>
+      <div class="gd-s-row">${input("Uses", "s.uses.max", s.uses?.max, { type: "number", size: "short" })}${select("per", "s.uses.per", USE_PERIODS, s.uses?.per)}</div>
+    </fieldset>
+  </details>`;
+}
+
+/**
+ * mechanics.structured rebuilt from the "s.*" edit fields: { structured, errors }. `structured` is
+ * null when every part is empty (the key is then removed). Fields the form does not show are kept
+ * from `previous` (the advantage block on PF2e, a damage part's extra keys). Pure, exported for tests.
+ */
+export function buildStructuredFromFields(fields = {}, previous = null) {
+  const errors = [];
+  const prior = previous && typeof previous === "object" ? previous : {};
+  const get = (key) => String(fields[`s.${key}`] ?? "").trim();
+  const has = (key) => Object.hasOwn(fields, `s.${key}`);
+  const number = (key, label, { integer = true, min = -Infinity, max = Infinity } = {}) => {
+    const text = get(key);
+    if (text === "") return undefined;
+    const value = Number(text);
+    if (!Number.isFinite(value) || (integer && !Number.isInteger(value)) || value < min || value > max) {
+      errors.push(`${label} must be a whole number${Number.isFinite(min) ? ` of ${min} or more` : ""}${Number.isFinite(max) ? ` up to ${max}` : ""}.`);
+      return undefined;
+    }
+    return value;
+  };
+  const dice = (key, label) => {
+    const text = get(key).replace(/\s+/g, "");
+    if (text && !DICE_PATTERN.test(text)) errors.push(`${label} must be dice like 2d6 (d4, d6, d8, d10, d12 or d20); put a flat bonus in Bonus.`);
+    return text && DICE_PATTERN.test(text) ? text.toLowerCase() : "";
+  };
+  const rows = (part) => {
+    const indexes = new Set();
+    for (const key of Object.keys(fields)) {
+      const match = new RegExp(`^s\\.${part}\\.(\\d+)\\.`).exec(key);
+      if (match) indexes.add(Number(match[1]));
+    }
+    return [...indexes].sort((a, b) => a - b);
+  };
+  const out = { ...prior };
+
+  const damage = [];
+  for (const index of rows("damage")) {
+    const label = `Damage part ${index + 1}`;
+    const partDice = dice(`damage.${index}.dice`, `${label} dice`);
+    const type = get(`damage.${index}.type`).toLowerCase();
+    const bonus = number(`damage.${index}.bonus`, `${label} bonus`, { min: -20, max: 50 });
+    if (!partDice) {
+      if ((type || bonus !== undefined) && !get(`damage.${index}.dice`)) errors.push(`${label} needs dice (like 2d6).`);
+      continue;
+    }
+    damage.push({ ...(Array.isArray(prior.damage) ? prior.damage[index] ?? {} : {}), dice: partDice, type: type || "untyped", ...(bonus !== undefined ? { bonus } : {}) });
+    if (bonus === undefined) delete damage.at(-1).bonus;
+  }
+  if (rows("damage").length) { if (damage.length) out.damage = damage; else delete out.damage; }
+
+  if (has("heal.dice")) {
+    const healDice = dice("heal.dice", "Healing dice");
+    const bonus = number("heal.bonus", "Healing bonus", { min: -20, max: 50 });
+    if (healDice) out.heal = { dice: healDice, ...(bonus !== undefined ? { bonus } : {}) };
+    else { if (bonus !== undefined) errors.push("Healing needs dice (like 1d8)."); delete out.heal; }
+  }
+  if (has("attack.kind")) {
+    const kind = get("attack.kind");
+    if (kind && !ATTACK_KINDS.includes(kind)) errors.push(`Attack must be one of: ${ATTACK_KINDS.join(", ")}.`);
+    if (kind && ATTACK_KINDS.includes(kind)) out.attack = { kind };
+    else delete out.attack;
+  }
+  if (has("save.save")) {
+    const save = get("save.save").toLowerCase();
+    const dcText = get("save.dc").toLowerCase();
+    if (!save) {
+      if (dcText) errors.push("Pick which save the DC is for.");
+      delete out.save;
+    } else if (![...SAVES.pf2e, ...SAVES.dnd5e].includes(save)) {
+      errors.push(`Save must be one of: ${[...SAVES.pf2e, ...SAVES.dnd5e].join(", ")}.`);
+    } else {
+      let dc = dcText || "class";
+      if (!DC_KINDS.includes(dc)) {
+        const value = Number(dc);
+        if (!Number.isInteger(value) || value < 5 || value > 60) { errors.push('The save DC must be "class", "spell" or a number from 5 to 60.'); dc = null; } else dc = value;
+      }
+      if (dc !== null) out.save = { save, dc, ...(fields["s.save.basic"] === "true" ? { basic: true } : {}) };
+    }
+  }
+  const modifiers = [];
+  for (const index of rows("modifiers")) {
+    const label = `Modifier ${index + 1}`;
+    const value = number(`modifiers.${index}.value`, `${label} value`, { min: -10, max: 10 });
+    const selector = get(`modifiers.${index}.selector`).toLowerCase();
+    const type = get(`modifiers.${index}.type`) || "untyped";
+    const predicate = get(`modifiers.${index}.predicate`);
+    if (value === undefined && !selector) continue;
+    if (value === undefined) { if (!get(`modifiers.${index}.value`)) errors.push(`${label} needs a value (like 1 or -1).`); continue; }
+    if (!selector || !SELECTOR_PATTERN.test(selector)) { errors.push(`${label} must say what it modifies: ac, attack, damage, perception, initiative, save:<save> or skill:<skill>.`); continue; }
+    if (!MODIFIER_TYPES.includes(type)) { errors.push(`${label} type must be one of: ${MODIFIER_TYPES.join(", ")}.`); continue; }
+    modifiers.push({ value, type, selector, ...(predicate ? { predicate } : {}) });
+  }
+  if (rows("modifiers").length) { if (modifiers.length) out.modifiers = modifiers; else delete out.modifiers; }
+  if (has("advantage.on")) {
+    const on = get("advantage.on").toLowerCase();
+    const condition = get("advantage.condition");
+    if (on && !ADVANTAGE_PATTERN.test(on)) errors.push("Advantage must be on: attack, save:<ability>, skill:<skill> or check:<ability>.");
+    else if (on) out.advantage = { on, ...(condition ? { condition } : {}) };
+    else delete out.advantage;
+  }
+  if (has("range.value")) {
+    const value = number("range.value", "Range", { min: 1, max: 1000 });
+    if (value !== undefined) out.range = { value, units: "ft" };
+    else delete out.range;
+  }
+  if (has("area.type")) {
+    const type = get("area.type");
+    const value = number("area.value", "Area size", { min: 1, max: 500 });
+    if (type && ![...AREA_TYPES.pf2e, ...AREA_TYPES.dnd5e].includes(type)) errors.push("Unknown area shape.");
+    else if (type && value === undefined) { if (!get("area.value")) errors.push("An area needs its size in feet."); }
+    else if (type) out.area = { type, value };
+    else delete out.area;
+  }
+  if (has("condition.id")) {
+    const id = get("condition.id").toLowerCase().replace(/\s+/g, "-");
+    const value = number("condition.value", "Condition value", { min: 1, max: 10 });
+    const duration = get("condition.duration");
+    if (id) out.condition = { id, ...(value !== undefined ? { value } : {}), ...(duration ? { duration } : {}) };
+    else delete out.condition;
+  }
+  if (has("uses.max") || has("uses.per")) {
+    const max = number("uses.max", "Uses", { min: 1, max: 20 });
+    const per = get("uses.per");
+    if (per && !USE_PERIODS.includes(per)) errors.push(`Uses must be per: ${USE_PERIODS.join(", ")}.`);
+    else if (max !== undefined || per) out.uses = { max: max ?? 1, per: per || "day" };
+    else delete out.uses;
+  }
+  return { structured: Object.keys(out).length ? out : null, errors };
 }
 
 export function renderUnderTheHood(lastAnalysis, lastResult) {
@@ -1002,6 +1562,25 @@ export function renderUnderTheHood(lastAnalysis, lastResult) {
     ${rejectedTags ? `<h4>Non-canonical tags</h4><ul>${rejectedTags}</ul>` : ""}
     ${dropped ? `<h4>Sentences the local analyzer skipped</h4><ul>${dropped}</ul>` : ""}
   </details>`;
+}
+
+/** A red (taboo) proposal: its entry's polarity. Exported for tests. */
+export function isRedProposal(proposal) {
+  return proposal?.entry?.metadata?.polarity === "red";
+}
+
+// The system a proposal's mechanics are worded for: the item it builds, else the world's system.
+function proposalSystem(proposal, systemId) {
+  const own = proposal?.entry?.gameItem?.system ?? proposal?.system ?? null;
+  return own === "pf2e" || own === "dnd5e" ? own : systemId;
+}
+
+function currentSystemId() {
+  return safe(() => globalThis.game?.system?.id ?? null, null);
+}
+
+function round2(value) {
+  return Math.round(Number(value) * 100) / 100;
 }
 
 function formatWhen(iso) {

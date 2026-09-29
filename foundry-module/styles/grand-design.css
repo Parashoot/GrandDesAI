@@ -215,3 +215,61 @@
 .grand-design-registry .gd-owned.gd-superseded strong { text-decoration: line-through; }
 .grand-design-registry .gd-coming-soon-row { margin-top: 0.6rem; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
 .grand-design-registry .gd-coming-soon { opacity: 0.55; }
+
+/* --- Horror Rank meter, dark-deed badges, structured mechanics (batch 3, boards 21e944ed, 5a0cea2e) --- */
+.grand-design-growth .gd-horror,
+.grand-design-registry .gd-horror {
+  border: 1px solid rgba(161, 42, 42, 0.45);
+  background: rgba(161, 42, 42, 0.06);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  margin: 0.4rem 0;
+}
+.grand-design-growth .gd-horror.gd-horror-clean,
+.grand-design-registry .gd-horror.gd-horror-clean { border-color: rgba(0, 0, 0, 0.12); background: transparent; font-size: 0.9em; }
+.grand-design-growth .gd-horror p,
+.grand-design-registry .gd-horror p { margin: 0.15rem 0; }
+.gd-horror .gd-horror-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; color: #a12a2a; }
+.gd-horror .gd-horror-pips { display: inline-flex; gap: 0.2rem; margin-left: auto; }
+.gd-horror .gd-horror-pip {
+  display: inline-block;
+  width: 1.3em;
+  height: 1.3em;
+  line-height: 1.3em;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 0.8em;
+  border: 1px solid rgba(161, 42, 42, 0.5);
+  color: #a12a2a;
+}
+.gd-horror .gd-horror-pip.gd-on { background: rgba(161, 42, 42, 0.25); }
+.gd-horror .gd-horror-pip.gd-current { background: #a12a2a; color: #fff; font-weight: bold; }
+.gd-horror .gd-horror-bar { height: 0.45rem; border-radius: 999px; background: rgba(0, 0, 0, 0.1); overflow: hidden; margin: 0.25rem 0; }
+.gd-horror .gd-horror-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #b35c00, #a12a2a); }
+.gd-horror .gd-horror-progress,
+.gd-horror .gd-horror-flavour { font-size: 0.9em; }
+.gd-horror .gd-horror-docked { color: #a12a2a; font-weight: bold; font-size: 0.9em; }
+.gd-horror details.gd-horror-deeds ul { list-style: none; padding-left: 0; max-height: 10rem; overflow-y: auto; margin: 0.1rem 0; }
+.gd-horror .gd-horror-points { font-weight: bold; color: #a12a2a; font-size: 0.85em; }
+.grand-design-growth .gd-chip.gd-dark-deed,
+.grand-design-registry .gd-chip.gd-dark-deed { background: rgba(161, 42, 42, 0.12); color: #a12a2a; border: 1px solid rgba(161, 42, 42, 0.35); }
+.grand-design-growth .gd-chip.gd-dark-deed.gd-dark-serious,
+.grand-design-registry .gd-chip.gd-dark-deed.gd-dark-serious { background: rgba(161, 42, 42, 0.22); }
+.grand-design-growth .gd-chip.gd-dark-deed.gd-dark-monstrous,
+.grand-design-registry .gd-chip.gd-dark-deed.gd-dark-monstrous { background: #7a1616; color: #fff; }
+.grand-design-growth .gd-red-reject-hint { color: #a12a2a; margin: 0.1rem 0; }
+
+.grand-design-growth .gd-structured h4 { margin: 0.3rem 0 0.1rem; }
+.grand-design-growth .gd-structured dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.1rem 0.6rem; margin: 0.2rem 0; }
+.grand-design-growth .gd-structured dt { font-weight: bold; }
+.grand-design-growth .gd-structured dd { margin: 0; }
+.grand-design-growth .gd-clamps { border-left: 3px solid rgba(179, 92, 0, 0.5); padding-left: 0.5rem; font-size: 0.9em; }
+.grand-design-growth .gd-clamps p { margin: 0; }
+.grand-design-growth .gd-clamps ul { list-style: disc; padding-left: 1.2rem; max-height: none; margin: 0.1rem 0; }
+.grand-design-growth details.gd-structured-edit { margin: 0.3rem 0; }
+.grand-design-growth details.gd-structured-edit fieldset { margin: 0.2rem 0; padding: 0.2rem 0.4rem; }
+.grand-design-growth .gd-s-row { display: flex; flex-wrap: wrap; gap: 0.3rem 0.5rem; align-items: flex-end; margin: 0.15rem 0; }
+.grand-design-growth .gd-s-field { display: inline-flex; flex-direction: column; flex: 1 1 8rem; font-size: 0.9em; }
+.grand-design-growth .gd-s-field.gd-s-short { flex: 0 1 5rem; }
+.grand-design-growth .gd-s-field.gd-s-check { flex-direction: row; align-items: center; flex: 0 0 auto; gap: 0.2rem; }
+.grand-design-growth .gd-s-field.gd-s-check input { flex: 0 0 auto; margin: 0; }

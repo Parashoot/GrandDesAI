@@ -89,6 +89,13 @@ ids, limit, offset, systemId, timeoutMs, config: {...gateway config...}, sim: {f
 | **traps** | `noEvents` items (intentions, questions, negated attempts, scenery, OOC talk, rules questions) returned zero events. |
 | count | Event count within `[minEvents, maxEvents]`. |
 | score | Mean of every check that applies to the item (0 on a total failure). |
+| **dark deed** (`darkDeedAcc`) | On items whose gold names a vice (`gold.darkDeed`, `"a\|b"` = either): share of reps where some event carries a gold vice **and** a gold `darkSeverity`. The summary line also gives vice only (`darkViceAcc`) and "recognised as dark" (`darkDetectAcc`, any vice). Not part of score. |
+| **dark FP** (`darkFalseRate`) | On gold "none" items: share of reps where some event's `darkDeed` is not `"none"`. Gold is "none" when the item says so or its category is in `DARK_REVIEWED_CATEGORIES` (lib.mjs; every category was read item by item on 2026-09-29). Not part of score. |
+
+Both dark metrics are **null ("–"), not 0**, when the model output has no `darkDeed` field at all (runs
+from before the field existed, or a pipeline whose coercion drops it). A rep with zero events counts
+only when the event schema asks for `darkDeed`. Dark-deed errors get their own "Dark-deed misses"
+section in the `.md`, since they never move score.
 | **tag Jaccard** | Consistency: mean pairwise Jaccard of each rep's union tag set (needs `--reps` ≥ 2). |
 | outcome agree | Share of reps agreeing with the modal dominant outcome. |
 | event-count stdev | Spread of event counts across reps. |
@@ -100,8 +107,9 @@ ids, limit, offset, systemId, timeoutMs, config: {...gateway config...}, sim: {f
 { "id": "nv-001", "category": "novel-activities", "lang": "en", "notes": "...",
   "gold": { "mustTags": ["craft|support"], "okTags": ["nature"], "outcome": "success",
             "dangerGap": "severe|moderate", "themesAny": ["beekeeping", "apiculture"],
-            "minEvents": 1, "maxEvents": 2, "noEvents": false, "forbidTags": ["fire"], "redWorthy": true } }
+            "minEvents": 1, "maxEvents": 2, "noEvents": false, "forbidTags": ["fire"], "redWorthy": true,
+            "darkDeed": "cruelty|bloodlust", "darkSeverity": "serious" } }
 ```
 
 Tags must be canonical (`scripts/growth-taxonomy.js`); `tests/nlp-harness.test.mjs` enforces that
-plus the category minimums. Non-native items carry `l1` (the writer's first language).
+plus the category minimums, and that `darkDeed` vices exist in `scripts/vice-taxonomy.js`. Non-native items carry `l1` (the writer's first language).

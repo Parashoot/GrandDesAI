@@ -20,8 +20,83 @@ import { runGatewayPipeline } from "../../scripts/ai/pipeline.js";
 import { normalizeGatewayConfig } from "../../scripts/ai/gateway-config.js";
 import { buildAiGatewayRequest } from "../../scripts/ai-gateway.js";
 import { validateGrowthEvent } from "../../scripts/progression.js";
+import { EVENT_ITEM_SCHEMA } from "../../scripts/ai/schemas.js";
 
-export const HARNESS_VERSION = "1.0.0";
+export const HARNESS_VERSION = "1.1.0";
+
+// ---- dark deeds (Horror Rank, board 21e944ed) ----------------------------------------------------
+//
+// Events may carry darkDeed ("none" | a vice id from scripts/vice-taxonomy.js) and darkSeverity
+// ("none" | "minor" | "serious" | "monstrous"). Gold lives on the item: gold.darkDeed / darkSeverity,
+// "a|b" = either. Items in the categories below were read one by one (2026-09-29) and hold no dark
+// deed unless their gold says so, so a missing gold field there means "none". Any other category is
+// unlabelled and scores null, so a new category cannot silently inflate darkFalseRate's denominator.
+export const DARK_REVIEWED_CATEGORIES = Object.freeze([
+  "bullets-fragments",
+  "code-switching",
+  "counter-leveling",
+  "dice-jargon",
+  "fluent-en",
+  "long-multiscene",
+  "non-english",
+  "non-native-en",
+  "novel-activities",
+  "red-polarity-worthy",
+  "texting-shorthand",
+  "traps",
+  "typos-phonetic"
+]);
+
+// Does the pipeline's event schema ask for darkDeed? Feature-detected, not assumed: the field is
+// being added in parallel (contract section 1). Used only to decide what a rep with ZERO events means:
+// with the field in the schema, "no events" on a dark item is a miss; without it, it says nothing.
+export const DARK_SCHEMA_ACTIVE = Boolean(EVENT_ITEM_SCHEMA?.properties?.darkDeed);
+
+/** Gold dark-deed label for an item: { vices: [...], severities: [...] }, vices ["none"], or null (unlabelled). */
+export function goldDarkDeed(item) {
+  const gold = item?.gold ?? {};
+  if (typeof gold.darkDeed === "string" && gold.darkDeed.trim()) {
+    const vices = alts(gold.darkDeed.toLowerCase());
+    if (vices.includes("none")) return { vices: ["none"], severities: ["none"] };
+    return { vices, severities: alts(String(gold.darkSeverity ?? "").toLowerCase()) };
+  }
+  return DARK_REVIEWED_CATEGORIES.includes(item?.category) ? { vices: ["none"], severities: ["none"] } : null;
+}
+
+const darkValue = (value) => (typeof value === "string" ? value.trim().toLowerCase() : "");
+/** A predicted event counts as a dark deed when it names a vice (anything but ""/"none"). */
+export function isDarkEvent(event) {
+  const vice = darkValue(event?.darkDeed);
+  return Boolean(vice) && vice !== "none";
+}
+
+/**
+ * Per-rep dark-deed checks. All null when the item is unlabelled or the model output carries no
+ * darkDeed field at all (today's pipeline), so a run from before the field existed never reads as
+ * "0% dark-deed accuracy".
+ */
+export function scoreDarkDeeds(item, events, { darkSchema = DARK_SCHEMA_ACTIVE } = {}) {
+  const none = { darkMeasured: false, darkDeedOk: null, darkViceOk: null, darkDetectOk: null, darkFalse: null };
+  const gold = goldDarkDeed(item);
+  if (!gold) return none;
+  const list = (events ?? []).filter(Boolean);
+  const seen = list.some((event) => Object.prototype.hasOwnProperty.call(event, "darkDeed"));
+  if (!seen && !(list.length === 0 && darkSchema)) return none;
+  const dark = list.filter(isDarkEvent);
+  if (gold.vices[0] === "none") return { ...none, darkMeasured: true, darkFalse: dark.length > 0 };
+  const viceHits = dark.filter((event) => gold.vices.includes(darkValue(event.darkDeed)));
+  return {
+    darkMeasured: true,
+    darkDetectOk: dark.length > 0,
+    darkViceOk: viceHits.length > 0,
+    // An empty severity gold accepts any non-"none" severity rather than failing every rep.
+    darkDeedOk: viceHits.some((event) => {
+      const severity = darkValue(event.darkSeverity);
+      return gold.severities.length ? gold.severities.includes(severity) : Boolean(severity) && severity !== "none";
+    }),
+    darkFalse: null
+  };
+}
 
 // ---- corpus --------------------------------------------------------------------------------
 
@@ -182,7 +257,7 @@ function dominantOutcome(events) {
 }
 
 /** Per-rep accuracy against gold. Checks that do not apply to an item are null. */
-export function scoreRep(item, rep) {
+export function scoreRep(item, rep, options = {}) {
   const gold = item.gold ?? {};
   const events = rep.events ?? [];
   const failed = Boolean(rep.error);
@@ -220,6 +295,9 @@ export function scoreRep(item, rep) {
     ? rep.proposals.some((proposal) => proposal?.entry?.metadata?.polarity === "red")
     : null;
 
+  // Kept out of `score` on purpose: score stays comparable with every run before dark deeds existed.
+  const dark = scoreDarkDeeds(item, events, options);
+
   const checks = [recall, precision, outcomeOk, dangerOk, themeOk, trapOk, forbidOk, countOk].filter((value) => value !== null).map(Number);
   const score = failed ? 0 : checks.length ? checks.reduce((a, b) => a + b, 0) / checks.length : 1;
   return {
@@ -235,6 +313,7 @@ export function scoreRep(item, rep) {
     countOk,
     redOk,
     redFalse,
+    ...dark,
     invalidEvents,
     eventCount: events.length,
     tags: [...predicted].sort(),
@@ -307,8 +386,8 @@ export function diagnosticsStats(rep) {
   return { stages: stages.length, calls, firstTryValid, repairTurns, jsonRepairs, callMs };
 }
 
-export function scoreItem(item, runResult) {
-  const reps = runResult.reps.map((rep) => ({ ...scoreRep(item, rep), ms: rep.ms, error: rep.error ?? null, diag: diagnosticsStats(rep) }));
+export function scoreItem(item, runResult, options = {}) {
+  const reps = runResult.reps.map((rep) => ({ ...scoreRep(item, rep, options), ms: rep.ms, error: rep.error ?? null, diag: diagnosticsStats(rep) }));
   const agg = (key) => mean(reps.map((r) => (r[key] === null || r[key] === undefined ? null : Number(r[key]))));
   return {
     id: item.id,
@@ -328,13 +407,17 @@ export function scoreItem(item, runResult) {
     countAcc: agg("countOk"),
     redAcc: agg("redOk"),
     redFalseRate: agg("redFalse"),
+    darkDeedAcc: agg("darkDeedOk"),
+    darkViceAcc: agg("darkViceOk"),
+    darkDetectAcc: agg("darkDetectOk"),
+    darkFalseRate: agg("darkFalse"),
     failRate: mean(reps.map((r) => (r.failed ? 1 : 0))),
     invalidEvents: reps.reduce((sum, r) => sum + r.invalidEvents, 0),
     score: agg("score"),
     consistency: consistency(runResult.reps),
     sampleOutput: runResult.reps.map((rep) => ({
       error: rep.error ?? undefined,
-      events: (rep.events ?? []).map((e) => ({ summary: e.summary, consequence: e.consequence, actorName: e.actorName, tags: e.tags, themes: e.themes, outcome: e.outcome, dangerGap: e.dangerGap })),
+      events: (rep.events ?? []).map((e) => ({ summary: e.summary, consequence: e.consequence, actorName: e.actorName, tags: e.tags, themes: e.themes, outcome: e.outcome, dangerGap: e.dangerGap, darkDeed: e.darkDeed, darkSeverity: e.darkSeverity })),
       proposals: (rep.proposals ?? []).map((p) => ({ name: p?.entry?.name, kind: p?.entry?.gameItem?.kind, tags: p?.entry?.metadata?.tags, polarity: p?.entry?.metadata?.polarity })),
       skippedProposals: (rep.skippedProposals ?? []).map((sp) => ({ reason: sp?.reason, name: sp?.proposal?.entry?.name ?? sp?.proposal?.name, errors: (sp?.errors ?? []).slice(0, 3) })),
       proposalStage: rep.diagnostics?.proposalStage
@@ -362,6 +445,13 @@ function aggregateGroup(items) {
     countAcc: pick("countAcc"),
     redAcc: pick("redAcc"),
     redFalseRate: pick("redFalseRate"),
+    // Item means, so an item run with 3 reps weighs the same as one with 1. null = not measured.
+    darkDeedAcc: pick("darkDeedAcc"),
+    darkViceAcc: pick("darkViceAcc"),
+    darkDetectAcc: pick("darkDetectAcc"),
+    darkFalseRate: pick("darkFalseRate"),
+    darkGoldItems: items.filter((item) => item.darkDeedAcc !== null && item.darkDeedAcc !== undefined).length,
+    darkNoneItems: items.filter((item) => item.darkFalseRate !== null && item.darkFalseRate !== undefined).length,
     fallbackRate: reps.length ? reps.filter((rep) => rep.failed).length / reps.length : null,
     invalidEvents: items.reduce((s, item) => s + item.invalidEvents, 0),
     firstTryValidRate: stages ? diag.reduce((s, d) => s + d.firstTryValid, 0) / stages : null,
@@ -393,7 +483,15 @@ export function scoreRun(scoredItems) {
     overall: aggregateGroup(items),
     byCategory: group("category"),
     byLang: Object.fromEntries(Object.entries(byLang).sort(([a], [b]) => a.localeCompare(b)).map(([k, list]) => [k, aggregateGroup(list)])),
-    worst: [...items].sort((a, b) => (a.score ?? 0) - (b.score ?? 0) || a.id.localeCompare(b.id)).slice(0, 15).map((item) => item.id)
+    worst: [...items].sort((a, b) => (a.score ?? 0) - (b.score ?? 0) || a.id.localeCompare(b.id)).slice(0, 15).map((item) => item.id),
+    // Dark-deed errors do not move `score`, so they get their own list: missed or wrong dark deeds on
+    // gold-dark items first, then dark deeds invented on gold "none" items.
+    darkMisses: items
+      .map((item) => ({ id: item.id, miss: item.darkDeedAcc == null ? null : 1 - item.darkDeedAcc, fp: item.darkFalseRate ?? null }))
+      .filter((entry) => (entry.miss ?? 0) > 0 || (entry.fp ?? 0) > 0)
+      .sort((a, b) => (b.miss ?? -1) - (a.miss ?? -1) || (b.fp ?? 0) - (a.fp ?? 0) || a.id.localeCompare(b.id))
+      .slice(0, 15)
+      .map((entry) => entry.id)
   };
 }
 
@@ -443,7 +541,7 @@ export async function runScale(options = {}, onProgress = () => {}) {
       const item = items[cursor];
       cursor += 1;
       const result = await runItem(item, { transport, config, reps, systemId, pipeline });
-      const scored = scoreItem(item, result);
+      const scored = scoreItem(item, result, options.darkSchema === undefined ? {} : { darkSchema: options.darkSchema });
       state.scored.push(scored);
       state.errors += scored.reps.filter((rep) => rep.failed).length;
       state.done += 1;
@@ -471,13 +569,48 @@ const num = (v, d = 2) => (v === null || v === undefined ? "–" : Number(v).toF
 const ms = (v) => (v === null || v === undefined ? "–" : v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`);
 
 function row(name, g) {
-  return `| ${name} | ${g.items} | ${pct(g.score)} | ${pct(g.recall)} | ${pct(g.precision)} | ${pct(g.f1)} | ${pct(g.outcomeAcc)} | ${pct(g.dangerAcc)} | ${pct(g.themeAcc)} | ${pct(g.trapAcc)} | ${pct(g.countAcc)} | ${pct(g.fallbackRate)} | ${pct(g.firstTryValidRate)} | ${num(g.tagJaccard)} | ${num(g.outcomeAgreement)} | ${ms(g.latencyP50)} | ${ms(g.latencyP95)} |`;
+  return `| ${name} | ${g.items} | ${pct(g.score)} | ${pct(g.recall)} | ${pct(g.precision)} | ${pct(g.f1)} | ${pct(g.outcomeAcc)} | ${pct(g.dangerAcc)} | ${pct(g.themeAcc)} | ${pct(g.trapAcc)} | ${pct(g.countAcc)} | ${pct(g.darkDeedAcc)} | ${pct(g.darkFalseRate)} | ${pct(g.fallbackRate)} | ${pct(g.firstTryValidRate)} | ${num(g.tagJaccard)} | ${num(g.outcomeAgreement)} | ${ms(g.latencyP50)} | ${ms(g.latencyP95)} |`;
 }
 
-const HEADER = "| group | items | score | recall | precision | F1 | outcome | dangerGap | themes | traps | count | fallback | 1st-try valid | tag Jaccard | outcome agree | p50 | p95 |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|";
+const HEADER = "| group | items | score | recall | precision | F1 | outcome | dangerGap | themes | traps | count | dark deed | dark FP | fallback | 1st-try valid | tag Jaccard | outcome agree | p50 | p95 |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|";
 
 export function renderSummaryTable(summary) {
   return [HEADER, row("**overall**", summary.overall)].join("\n");
+}
+
+/** One-line dark-deed summary for a group; says why when nothing was measured instead of printing zeros. */
+export function darkLine(g) {
+  if (g.darkDeedAcc == null && g.darkFalseRate == null) return "not measured (no darkDeed field in the model output, or no labelled items)";
+  return `vice+severity ${pct(g.darkDeedAcc)}, vice only ${pct(g.darkViceAcc)}, recognised as dark ${pct(g.darkDetectAcc)} on ${g.darkGoldItems ?? 0} gold-dark item(s); a dark deed invented on ${pct(g.darkFalseRate)} of ${g.darkNoneItems ?? 0} gold "none" item(s)`;
+}
+
+function darkItemLine(item) {
+  const gold = goldDarkDeed(item);
+  const label = gold ? (gold.vices[0] === "none" ? "none" : `${gold.vices.join("|")} / ${gold.severities.join("|") || "any"}`) : "unlabelled";
+  if (item.darkDeedAcc == null && item.darkFalseRate == null) return `dark gold \`${label}\`: not measured`;
+  return item.darkDeedAcc != null
+    ? `dark gold \`${label}\`: vice+severity ${pct(item.darkDeedAcc)}, vice ${pct(item.darkViceAcc)}, recognised ${pct(item.darkDetectAcc)}`
+    : `dark gold \`${label}\`: a dark deed invented in ${pct(item.darkFalseRate)} of reps`;
+}
+
+function renderItem(lines, item) {
+  lines.push("");
+  lines.push(`### ${item.id} (${item.category}, ${item.lang}) — score ${pct(item.score)}`);
+  lines.push("");
+  lines.push("> " + String(item.notes).replace(/\n/g, "\n> "));
+  lines.push("");
+  lines.push("gold: `" + JSON.stringify(item.gold) + "`");
+  lines.push("");
+  lines.push(darkItemLine(item));
+  item.sampleOutput.forEach((out, index) => {
+    if (out.error) {
+      lines.push(`- rep ${index}: **ERROR** ${out.error.name}: ${out.error.message}`);
+      return;
+    }
+    const events = out.events.map((e) => `[${(e.tags ?? []).join(",")}${e.themes?.length ? ` / ${e.themes.join(",")}` : ""}] ${e.outcome}${e.dangerGap ? ` (${e.dangerGap})` : ""}${isDarkEvent(e) ? ` {dark: ${e.darkDeed}/${e.darkSeverity ?? "?"}}` : ""} — ${String(e.summary ?? "").slice(0, 100)}`);
+    lines.push(`- rep ${index}: ${events.length} event(s)${events.length ? "\n  - " + events.join("\n  - ") : ""}`);
+    if (out.proposals.length) lines.push(`  - proposals: ${out.proposals.map((p) => `${p.name} (${p.kind}${p.polarity === "red" ? ", red" : ""})`).join("; ")}`);
+  });
 }
 
 export function renderMarkdown(state) {
@@ -492,6 +625,7 @@ export function renderMarkdown(state) {
   lines.push(`- latency per run p50 ${ms(o.latencyP50)} / p95 ${ms(o.latencyP95)}; per call p50 ${ms(o.callLatencyP50)} / p95 ${ms(o.callLatencyP95)}`);
   lines.push(`- consistency: tag Jaccard ${num(o.tagJaccard)}, outcome agreement ${num(o.outcomeAgreement)}, event-count stdev ${num(o.eventCountStdev)}`);
   if (o.redAcc !== null || o.redFalseRate !== null) lines.push(`- red polarity: red on red-worthy items ${o.redAcc === null ? "–" : (o.redAcc * 100).toFixed(1) + "%"}, red on other items (false positives) ${o.redFalseRate === null ? "–" : (o.redFalseRate * 100).toFixed(1) + "%"}`);
+  lines.push(`- dark deeds: ${darkLine(o)}`);
   lines.push("");
   lines.push("## Overall");
   lines.push(HEADER);
@@ -509,22 +643,14 @@ export function renderMarkdown(state) {
   const byId = new Map((state.scored ?? []).map((item) => [item.id, item]));
   for (const id of summary.worst) {
     const item = byId.get(id);
-    if (!item) continue;
+    if (item) renderItem(lines, item);
+  }
+  // Dark-deed errors do not move score, so they would rarely reach the worst-15 list on their own.
+  const darkMisses = (summary.darkMisses ?? []).map((id) => byId.get(id)).filter(Boolean);
+  if (darkMisses.length) {
     lines.push("");
-    lines.push(`### ${id} (${item.category}, ${item.lang}) — score ${pct(item.score)}`);
-    lines.push("");
-    lines.push("> " + String(item.notes).replace(/\n/g, "\n> "));
-    lines.push("");
-    lines.push("gold: `" + JSON.stringify(item.gold) + "`");
-    item.sampleOutput.forEach((out, index) => {
-      if (out.error) {
-        lines.push(`- rep ${index}: **ERROR** ${out.error.name}: ${out.error.message}`);
-        return;
-      }
-      const events = out.events.map((e) => `[${(e.tags ?? []).join(",")}${e.themes?.length ? ` / ${e.themes.join(",")}` : ""}] ${e.outcome}${e.dangerGap ? ` (${e.dangerGap})` : ""} — ${String(e.summary ?? "").slice(0, 100)}`);
-      lines.push(`- rep ${index}: ${events.length} event(s)${events.length ? "\n  - " + events.join("\n  - ") : ""}`);
-      if (out.proposals.length) lines.push(`  - proposals: ${out.proposals.map((p) => `${p.name} (${p.kind}${p.polarity === "red" ? ", red" : ""})`).join("; ")}`);
-    });
+    lines.push("## Dark-deed misses (up to 15)");
+    for (const item of darkMisses) renderItem(lines, item);
   }
   lines.push("");
   lines.push("## Metric definitions");
@@ -532,7 +658,9 @@ export function renderMarkdown(state) {
   lines.push("- **recall**: share of gold mustTags groups (\"a|b\" = either) present on some event. **precision**: share of predicted tags that are in mustTags ∪ okTags. **F1** of the two.");
   lines.push("- **outcome**: dominant event outcome ∈ gold outcome alternatives. **dangerGap**: some event carries an allowed gap (gold \"none\" = no event may carry one).");
   lines.push("- **themes**: any predicted theme (event themes, result themes, proposal metadata.themes) matches gold themesAny by slug, substring or stem. **traps**: noEvents items returned zero events. **count**: event count within [minEvents, maxEvents].");
+  lines.push("- **dark deed** (darkDeedAcc): on items whose gold names a vice, share of reps where some event carries a gold vice AND a gold severity; the summary line adds vice only and \"recognised as dark\" (any vice). **dark FP** (darkFalseRate): on gold \"none\" items (labelled, or in a reviewed category), share of reps with any event whose darkDeed is not \"none\". Both are \"–\" when the model output has no darkDeed field; neither enters score.");
   lines.push("- **fallback**: the pipeline threw (the GM would have got the local keyword analyzer). **1st-try valid**: pipeline stages that needed no repair turn and reported no errors.");
   lines.push("- **tag Jaccard**: mean pairwise Jaccard of the union tag set across reps. **outcome agree**: share of reps agreeing with the modal dominant outcome.");
   return lines.join("\n") + "\n";
 }
+
