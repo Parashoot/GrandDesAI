@@ -22,6 +22,7 @@ import { attributeEventsToActor } from "../session-notes.js";
 import { buildExtractionMessages, buildProposalMessages, buildSingleMessages, buildRepairMessage, creativityTemperature } from "./prompts.js";
 import { normalizeGatewayConfig } from "./gateway-config.js";
 import { AiProviderUnreachableError, AiProviderHttpError, AiProviderTimeoutError } from "./transport.js";
+import { triageChunks, attributeEvents, verifyEvents, rankProposals, sameName, noteLines } from "./jev.js";
 import { GROWTH_EVENT_OUTCOME_WEIGHTS, FREQUENCY_PERIODS, GRAND_DESIGN_ITEM_KINDS, SPELL_SCHOOLS, LINEAGE_OPERATIONS, POWER_TIERS } from "../constants.js";
 import { VICE_TAGS } from "../vice-taxonomy.js";
 import { validateSkillEntry as defaultValidateSkill, validateClassEntry as defaultValidateClass, validateTitleEntry as defaultValidateTitle } from "../validator.js";
@@ -924,6 +925,9 @@ export function extractionCacheKey({ notes, systemId, cfg, transportInfo = {} })
     cfg.customSynonyms,
     cfg.emergentThemes,
     cfg.mergeFollowUps,
+    // Jev triage decides which chunks stage 1 reads at all, so a triaged reading is never served to
+    // a run without Jev (or with another threshold), and vice versa.
+    cfg.jev?.enabled && cfg.jev.triage ? [cfg.jev.endpoint, cfg.jev.model, cfg.jev.triageThreshold] : null,
     preprocessNotes(notes)
   ]);
 }
@@ -985,9 +989,10 @@ function summarizeRejections(rejected) {
  * @param {{kind:"skill"|"class", theme?:string, label?:string, tier?:number, isCapstone?:boolean, placeholder?:{name:string,effect?:string}}} [args.target]
  *   "Author with AI" (api.js#requestProposalAuthoring): stage 2 only, always runs, must return exactly
  *   one proposal of target.kind about target.theme/label (tier fixed for a capstone).
+ * @param {object|null} [args.jev] a client from jev.js#createJevClient; used only when config.jev.enabled
  * @returns {Promise<{events, proposals, themes, skippedEvents, skippedProposals, diagnostics}>}
  */
-export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep, extractionCache = null, refreshExtraction = false, presetEvents = null, milestone = null, target = null } = {}) {
+export async function runGatewayPipeline({ transport, request, config = {}, validators = {}, systemId, sleep, extractionCache = null, refreshExtraction = false, presetEvents = null, milestone = null, target = null, jev = null } = {}) {
   const started = nowMs();
   const baseCfg = normalizeGatewayConfig(config);
   // An authoring request writes exactly one proposal whatever the table's maxProposals says.
@@ -1014,6 +1019,13 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
   diagnostics.chunks = chunks.length;
   const ctx = { transport, request, cfg, diagnostics, validate, sysId };
   const sleepFn = typeof sleep === "function" ? sleep : typeof transport?.sleep === "function" ? transport.sleep : realSleep;
+  // Jev is strictly additive: with it off (no key, disabled, no client) jevRun is null and not one
+  // line below behaves differently, down to the diagnostics object's keys.
+  const jevRun = startJevRun(cfg, jev);
+  if (jevRun) {
+    diagnostics.jev = jevRun.diag;
+    ctx.jevRun = jevRun;
+  }
 
   const skippedEvents = [];
   const skippedProposals = [];
@@ -1066,7 +1078,22 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
     diagnostics.warnings.push(...extracted.diagnostics.warnings);
     events = extracted.events;
     skippedEvents.push(...extracted.skippedEvents);
+    // Triage ran inside the producer (it decides what stage 1 reads); replay its skips on a hit.
+    if (jevRun && Array.isArray(extracted.diagnostics.jevSkippedChunks)) {
+      jevRun.diag.skippedChunks = extracted.diagnostics.jevSkippedChunks;
+      if (hit) jevRun.diag.ran.push("triage:cached");
+    }
   }
+
+  // Attribution and verification are SECOND OPINIONS on the LLM's actorName / outcome / darkDeed.
+  // They run before stage 2 (which sees the corrected doer and the dark-act flag), on copies: the
+  // cache hands out clones already, but the preset path holds the caller's own recorded objects --
+  // and those are already recorded, so they get no second opinion at all, only ranking.
+  if (jevRun && !Array.isArray(presetEvents)) {
+    events = events.map((event) => ({ ...event, tags: [...(event.tags ?? [])], themes: [...(event.themes ?? [])] }));
+    await jevAnnotateEvents(jevRun, events, { request, notes, cfg });
+  }
+  let rankEvents = events;
 
   // ---- proposals ----
   let proposals = [];
@@ -1088,6 +1115,7 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
     // events stay whole; api.js attributes them per character with the same rule.
     const ownEvents = request?.actor?.name ? attributeEventsToActor(events, [request.actor.name], { notes: String(request.notes ?? notes) }).kept : events;
     if (ownEvents.length !== events.length) diagnostics.proposalEvents = { own: ownEvents.length, total: events.length };
+    rankEvents = ownEvents;
     const decision = target
       ? { ...shouldPropose(ownEvents, request, { ...cfg, proposalMode: "always" }), run: true, reason: "authoring-target", allowClass: target.kind === "class" }
       : shouldPropose(ownEvents, request, cfg);
@@ -1109,6 +1137,8 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
       }
     }
   }
+  // An authoring target returns exactly one proposal: nothing to order, so no rank call.
+  if (jevRun && !target) proposals = await jevRank(jevRun, proposals, rankEvents, request);
 
   const themes = summarizeThemes(events);
   diagnostics.coercions = diagnostics.coercions.slice(0, 300);
@@ -1125,6 +1155,220 @@ export async function runGatewayPipeline({ transport, request, config = {}, vali
 }
 
 /**
+ * Stage 2 alone for one character over already-extracted events (docs/jev-layer-contract.md,
+ * party mode). A thin wrapper over main's `presetEvents` path, so it IS the same gating, repair,
+ * validation and Jev ranking as "Suggest proposals" -- and like that path it re-throws a provider
+ * failure (there are no freshly read events to protect). Always two-stage: `diagnostics.pipeline`
+ * is "two-stage" whatever the config says, because "single" combines stage 1 and 2 in one call and
+ * has no stage-2-only form.
+ * @returns {Promise<{ proposals, skippedProposals, diagnostics }>}
+ */
+export async function runProposalStageFor({ transport, request, events, config = {}, validators = {}, systemId, jev = null } = {}) {
+  const result = await runGatewayPipeline({
+    transport,
+    request: { ...request, notes: "" },
+    config: { ...normalizeGatewayConfig(config), pipeline: "two-stage" },
+    validators,
+    systemId,
+    jev,
+    presetEvents: Array.isArray(events) ? events : []
+  });
+  return { proposals: result.proposals, skippedProposals: result.skippedProposals, diagnostics: result.diagnostics };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Jev steps (docs/jev-layer-contract.md). Every one is fail-open: an error is recorded in
+// diagnostics.jev.errors and the pipeline carries on exactly as if Jev were off. A Jev failure never
+// throws out of here, so it can never send the GM to the local analyzer.
+// ---------------------------------------------------------------------------------------------
+
+// Attribution replaces the LLM's actorName only at or above this confidence (contract, fixed).
+const JEV_ATTRIBUTION_CONFIDENCE = 0.6;
+
+const round2 = (value) => Math.round((Number(value) || 0) * 100) / 100;
+
+function startJevRun(cfg, jev) {
+  if (!cfg.jev?.enabled || !jev || typeof jev.ask !== "function") return null;
+  // routed = events whose actorName Jev set or confidently confirmed.
+  const diag = { enabled: true, model: jev.info?.model ?? cfg.jev.model, ran: [], calls: 0, ms: 0, skippedChunks: [], routed: 0, overrides: [], flags: [], errors: [] };
+  const run = { cfg: cfg.jev, diag, dead: null };
+  // Counting wrapper: every request is one call; after a fatal error (401/403, a bad key) nothing
+  // more is sent this run.
+  const client = {
+    info: jev.info,
+    async ask(args) {
+      if (run.dead) throw run.dead;
+      diag.calls += 1;
+      const t = nowMs();
+      try {
+        return await jev.ask(args);
+      } finally {
+        diag.ms += Math.round(nowMs() - t);
+      }
+    }
+  };
+  run.step = async (name, fn) => {
+    if (run.dead) return null;
+    try {
+      const result = await fn(client);
+      diag.ran.push(name);
+      return result;
+    } catch (error) {
+      diag.errors.push({
+        step: name,
+        kind: error?.kind ?? "error",
+        ...(error?.status ? { status: error.status } : {}),
+        ...(error?.fatal ? { fatal: true } : {}),
+        message: String(error?.message ?? error).slice(0, 300)
+      });
+      if (error?.fatal) run.dead = error;
+      return null;
+    }
+  };
+  return run;
+}
+
+// Returns the jobs to extract. Skips are recorded on `diagnostics` (the producer's scope, so a cache
+// hit replays them) and on the run.
+async function jevTriage(run, chunks, jobs, diagnostics) {
+  const result = await run.step("triage", (client) => triageChunks(client, chunks, { threshold: run.cfg.triageThreshold }));
+  if (!result || !Array.isArray(result.keep)) return jobs;
+  const kept = jobs.filter((job) => result.keep[job.index] !== false);
+  // "Nothing in any chunk is a character action" is far more likely a Jev miss than a real answer,
+  // and acting on it would return zero events for notes the GM just typed -- so it is ignored.
+  if (!kept.length) {
+    diagnostics.warnings.push("jev triage would have skipped every chunk; all chunks were extracted anyway");
+    return jobs;
+  }
+  const skipped = jobs
+    .filter((job) => result.keep[job.index] === false)
+    .map((job) => ({ chunk: job.index, p: round2(result.p?.[job.index]), text: job.text.slice(0, 160) }));
+  run.diag.skippedChunks = skipped;
+  diagnostics.jevSkippedChunks = skipped;
+  return kept;
+}
+
+function jevInfo(event) {
+  if (!isPlainObject(event.jev)) event.jev = { flags: [] };
+  if (!Array.isArray(event.jev.flags)) event.jev.flags = [];
+  return event.jev;
+}
+
+function addJevFlag(run, event, index, flag) {
+  const info = jevInfo(event);
+  if (!info.flags.includes(flag)) info.flags.push(flag);
+  run.diag.flags.push({ event: index, flag });
+}
+
+const GROUP_NAME = /^(the party|the group|everyone|we|us)$/i;
+
+// Who could have done things in these notes: an explicit `request.party`, else the speaker labels
+// of the notes plus every doer the LLM named and the analysed character. Attribution is only asked
+// when at least two candidates exist (with one name there is no one to confuse).
+function jevRoster(request, events, notes) {
+  const explicit = (Array.isArray(request?.party) ? request.party : [])
+    .map((entry) => (typeof entry === "string" ? { name: entry.trim() } : isPlainObject(entry) && typeof entry.name === "string" ? { name: entry.name.trim(), aliases: Array.isArray(entry.aliases) ? entry.aliases : [] } : null))
+    .filter((entry) => entry?.name);
+  if (explicit.length >= 2) return explicit;
+  const names = [];
+  const add = (name) => {
+    const clean = typeof name === "string" ? name.trim() : "";
+    if (!clean || GROUP_NAME.test(clean) || names.some((known) => sameName(known, clean))) return;
+    names.push(clean);
+  };
+  add(request?.actor?.name);
+  for (const line of noteLines(notes)) add(line.speaker);
+  for (const event of events) if (event.actorRole !== "target") add(event.actorName);
+  return names.map((name) => ({ name }));
+}
+
+async function jevAnnotateEvents(run, events, { request, notes, cfg }) {
+  // Things done TO a character (actorRole "target") have no doer to route and no outcome to judge.
+  const subjects = events.map((event, index) => ({ event, index })).filter(({ event }) => event && event.actorRole !== "target");
+  if (!subjects.length) return;
+  const roster = jevRoster(request, events, notes);
+  if (run.cfg.attribution && roster.length >= 2) {
+    const results = await run.step("attribution", (client) => attributeEvents(client, subjects.map((s) => s.event), { roster, notes }));
+    (results ?? []).forEach((r, k) => {
+      const { event, index: i } = subjects[k];
+      if (!r) return;
+      const info = jevInfo(event);
+      // Pinned names (dev-integration reads event.jev.actorName + actorConfidence): actorName is a
+      // roster name or null (someone-else / whole-party); whole marks a whole-party deed.
+      info.actorName = r.actorName ?? null;
+      info.whole = r.whole === true;
+      info.actorConfidence = round2(r.confidence);
+      if (r.witnessOnly !== null && r.witnessOnly !== undefined) info.witnessOnly = round2(r.witnessOnly);
+      if (!r.actorName || r.confidence < JEV_ATTRIBUTION_CONFIDENCE) return;
+      const llm = typeof event.actorName === "string" ? event.actorName.trim() : "";
+      if (llm && sameName(llm, r.actorName)) { run.diag.routed += 1; return; }
+      // The LLM's usual mistake: crediting the character whose line reported the deed. Replace it
+      // only when that is what happened (it named the line's speaker, and Jev agrees the speaker
+      // only witnessed it); any other disagreement is a flag for the GM, not a silent change.
+      const namedWitness = llm && r.speaker && sameName(llm, r.speaker) && (r.witnessOnly === null || r.witnessOnly >= 0.5);
+      if (!llm || namedWitness) {
+        info.actorFrom = llm || null;
+        event.actorName = r.actorName;
+        run.diag.routed += 1;
+        run.diag.overrides.push({ event: i, field: "actorName", from: llm || null, to: r.actorName, confidence: round2(r.confidence) });
+      } else {
+        addJevFlag(run, event, i, "actor-disputed");
+      }
+    });
+  }
+  if (run.cfg.verify) {
+    const oc = run.cfg.overrideConfidence;
+    const results = await run.step("verify", (client) => verifyEvents(client, subjects.map((s) => s.event), { allowRed: cfg.allowRed }));
+    (results ?? []).forEach((r, k) => {
+      const { event, index: i } = subjects[k];
+      if (!r) return;
+      const info = jevInfo(event);
+      // Jev's own reading, always, so a disputed event can say "Jev reads this as failure".
+      info.outcome = r.outcome;
+      info.outcomeConfidence = round2(r.outcomeConfidence);
+      if (r.outcome && r.outcome !== "unclear" && r.outcome !== event.outcome) {
+        if (r.outcomeConfidence >= oc) {
+          info.outcomeFrom = event.outcome;
+          run.diag.overrides.push({ event: i, field: "outcome", from: event.outcome, to: r.outcome, confidence: round2(r.outcomeConfidence) });
+          event.outcome = r.outcome;
+          delete event.outcomeInferred;
+        } else {
+          addJevFlag(run, event, i, "outcome-disputed");
+        }
+      }
+      if (r.darkP !== null && r.darkP !== undefined) {
+        info.darkP = round2(r.darkP);
+        // A second opinion on darkDeed: never a vice of Jev's own, never a lower severity. When the
+        // LLM said "none" and Jev is confident, the flag + theme make stage 2's red check look again.
+        const signalled = Boolean(event.darkDeed) && event.darkDeed !== "none";
+        if (r.darkP >= oc && !signalled) {
+          addJevFlag(run, event, i, "dark-act");
+          if (!event.themes.includes("dark-deed")) event.themes = [...event.themes, "dark-deed"];
+        }
+      }
+    });
+  }
+}
+
+async function jevRank(run, proposals, events, request) {
+  if (!run.cfg.rank || !proposals.length) return proposals;
+  const results = await run.step("rank", (client) => rankProposals(client, proposals, { events, actor: request?.actor }));
+  if (!Array.isArray(results) || results.length !== proposals.length) return proposals;
+  const scored = proposals.map((proposal, i) => {
+    const r = results[i];
+    const jev = { grounded: r.grounded, fit: r.fit };
+    if (r.grounded < 1) {
+      jev.flags = ["weak-evidence"];
+      run.diag.flags.push({ proposal: proposal.entry?.name ?? i, flag: "weak-evidence" });
+    }
+    return { proposal: { ...proposal, jev }, score: r.grounded + r.fit, i };
+  });
+  // Stable: equal scores keep the LLM's order.
+  scored.sort((a, b) => b.score - a.score || a.i - b.i);
+  return scored.map((s) => s.proposal);
+}
+
+/**
  * Extract (or, for pipeline "single", extract + propose) every chunk. Throws only on a total or
  * fatal failure. Returns deduped events; diagnostics go to ctx.diagnostics.
  */
@@ -1134,7 +1378,8 @@ async function extractAllChunks(chunks, ctx, sleepFn) {
   const skippedEvents = [];
   const proposalBatches = [];
   const failures = [];
-  const queue = chunks.map((text, index) => ({ text, index, depth: 0 }));
+  let queue = chunks.map((text, index) => ({ text, index, depth: 0 }));
+  if (ctx.jevRun && ctx.jevRun.cfg.triage && chunks.length >= 2) queue = await jevTriage(ctx.jevRun, chunks, queue, diagnostics);
   let succeeded = 0;
   while (queue.length) {
     const job = queue.shift();

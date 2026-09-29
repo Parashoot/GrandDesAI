@@ -6,6 +6,7 @@ import { validateClassEntry, validateSkillEntry } from "./validator.js";
 import { AiProviderUnreachableError, AiProviderTimeoutError, assertSafeEndpoint, createTransport } from "./ai/transport.js";
 import { normalizeGatewayConfig } from "./ai/gateway-config.js";
 import { createExtractionCache, runGatewayPipeline } from "./ai/pipeline.js";
+import { createJevClient } from "./ai/jev.js";
 // Pure (constants/lineage/skill-evolution only): the merge power-tier rule authorAdvanced shares with the fallback.
 import { computeMergeFocus, resolveMergedPowerTier, MERGE_FOCUS_STRONG_THRESHOLD, MERGE_FOCUS_WEAK_THRESHOLD } from "./class-merging.js";
 
@@ -59,8 +60,13 @@ function activeSystemId() {
  *
  * For G2's "Test connection" button the adapter also carries `adapter.ping()`,
  * `adapter.listModels()` and `adapter.config` (the normalized config, apiKey redacted).
+ *
+ * Jev (docs/jev-layer-contract.md): when `config.jev` is enabled (it needs its own apiKey) the
+ * adapter builds a client with `jevFactory` and passes it to every pipeline run; `adapter.jev` is
+ * that client or null. A rebuild from `adapter.config` (both keys redacted) keeps Jev only when it
+ * is handed the live client: `{ jevFactory: () => adapter.jev }`.
  */
-export function createGatewayAdapter(config = {}, { validators, transportFactory = createTransport } = {}) {
+export function createGatewayAdapter(config = {}, { validators, transportFactory = createTransport, jevFactory = createJevClient } = {}) {
   const cfg = normalizeGatewayConfig(config);
   assertSafeEndpoint(cfg.endpoint);
   if (typeof cfg.model !== "string" || !cfg.model.trim()) throw new Error("An AI model name is required.");
@@ -78,6 +84,26 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
     ollamaOptions: { num_ctx: cfg.numCtx, num_predict: cfg.numPredict }
   });
   const injected = validators ?? { validateSkillEntry, validateClassEntry };
+  // A Jev client that cannot be built just means Jev is off: it is an optional speed-up and must
+  // never stop the gateway from being created. A redacted key (a rebuild from adapter.config without
+  // the live client) is never sent to the default client -- it would 401 on every run.
+  let jev = null;
+  const redactedKey = /^\*+$/.test(cfg.jev.apiKey);
+  if (cfg.jev.enabled && typeof jevFactory === "function" && !(redactedKey && jevFactory === createJevClient)) {
+    try {
+      jev = jevFactory({
+        apiKey: cfg.jev.apiKey,
+        endpoint: cfg.jev.endpoint,
+        model: cfg.jev.model,
+        timeoutMs: cfg.jev.timeoutMs,
+        fetchImpl: cfg.jev.fetchImpl,
+        sleep: cfg.sleep
+      }) ?? null;
+    } catch (error) {
+      jev = null;
+      console.warn("grand-design-ai | could not create the Jev client; continuing without Jev", error?.message ?? error);
+    }
+  }
   // One stage-1 reading per distinct notes/config, shared by every character this adapter analyses:
   // the same party recap pasted into five sheets used to cost five extractions (ember-road s1).
   // Lives on the adapter, so saving new gateway settings (which builds a new adapter) starts clean.
@@ -102,7 +128,7 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
     if ((milestone?.kind === "class-evolution" || target?.kind === "class") && request.actor?.grandDesign) {
       request.actor.grandDesign.classEvolutionAvailable = true;
     }
-    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys, extractionCache, refreshExtraction: fresh === true, presetEvents: Array.isArray(events) ? events : null, milestone, target });
+    const result = await runGatewayPipeline({ transport, request, config: cfg, validators: injected, systemId: sys, extractionCache, refreshExtraction: fresh === true, presetEvents: Array.isArray(events) ? events : null, milestone, target, jev });
     return {
       events: result.events,
       proposals: result.proposals,
@@ -144,7 +170,15 @@ export function createGatewayAdapter(config = {}, { validators, transportFactory
   adapter.listModels = () => transport.listModels();
   adapter.transport = transport;
   adapter.clearExtractionCache = () => extractionCache?.clear();
-  adapter.config = Object.freeze({ ...cfg, apiKey: cfg.apiKey ? "********" : "", fetchImpl: undefined, getHeaders: undefined, sleep: undefined });
+  adapter.jev = jev;
+  adapter.config = Object.freeze({
+    ...cfg,
+    apiKey: cfg.apiKey ? "********" : "",
+    fetchImpl: undefined,
+    getHeaders: undefined,
+    sleep: undefined,
+    jev: Object.freeze({ ...cfg.jev, apiKey: cfg.jev.apiKey ? "********" : "", fetchImpl: undefined })
+  });
   return adapter;
 }
 

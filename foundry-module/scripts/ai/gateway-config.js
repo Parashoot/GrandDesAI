@@ -40,6 +40,21 @@ export const GATEWAY_DEFAULTS = Object.freeze({
   customSynonyms: Object.freeze({}),
   toneHints: "",
   extractionExamples: Object.freeze([]),
+  // Optional TypeSafe Jev layer (docs/jev-layer-contract.md). Off unless an API key is present: the
+  // key is a client-scoped setting, so a world without it behaves exactly as before.
+  jev: Object.freeze({
+    enabled: false,
+    apiKey: "",
+    endpoint: "https://api.typesafe.ai",
+    model: "jev-latest",
+    timeoutMs: 10000,
+    triage: true,
+    attribution: true,
+    verify: true,
+    rank: true,
+    triageThreshold: 0.12,
+    overrideConfidence: 0.85
+  }),
   // Reuse one stage-1 reading of identical notes across characters (pipeline.js#createExtractionCache):
   // a party recap pasted into five sheets is read once. 0 entries or 0 ms turns it off.
   extractionCacheEntries: 20,
@@ -108,7 +123,8 @@ export function normalizeGatewayConfig(partial = {}) {
     extractionCacheEntries: clampInt(input.extractionCacheEntries, 0, 200, d.extractionCacheEntries),
     extractionCacheTtlMs: clampInt(input.extractionCacheTtlMs, 0, 24 * 60 * 60 * 1000, d.extractionCacheTtlMs),
     pendingProposalCapExtra: clampInt(input.pendingProposalCapExtra, 0, 20, d.pendingProposalCapExtra),
-    pendingProposalCapMin: clampInt(input.pendingProposalCapMin, 1, 20, d.pendingProposalCapMin)
+    pendingProposalCapMin: clampInt(input.pendingProposalCapMin, 1, 20, d.pendingProposalCapMin),
+    jev: normalizeJevConfig(input.jev)
   };
   // Pass-through hooks: not user settings, but the adapter/tests/harness need to inject them.
   for (const key of ["fetchImpl", "getHeaders", "sleep"]) {
@@ -117,6 +133,32 @@ export function normalizeGatewayConfig(partial = {}) {
   if (input.extraBody && typeof input.extraBody === "object" && !Array.isArray(input.extraBody)) config.extraBody = input.extraBody;
   if (typeof input.systemId === "string" && input.systemId.trim()) config.systemId = input.systemId.trim();
   return config;
+}
+
+/**
+ * The `jev` sub-config. Unknown keys are dropped; a non-object is the defaults. `enabled` is forced
+ * false without an apiKey, so "enabled but no key" never reaches the network to 401 on every run.
+ * `fetchImpl` is a pass-through hook (tests, the harness's simulated Jev), like the top-level one.
+ */
+export function normalizeJevConfig(value) {
+  const input = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const d = GATEWAY_DEFAULTS.jev;
+  const apiKey = typeof input.apiKey === "string" ? input.apiKey.trim() : d.apiKey;
+  const jev = {
+    enabled: bool(input.enabled, d.enabled) && apiKey.length > 0,
+    apiKey,
+    endpoint: (nonEmptyString(input.endpoint, 2048) ?? d.endpoint).replace(/\/+$/, "") || d.endpoint,
+    model: nonEmptyString(input.model, 128) ?? d.model,
+    timeoutMs: clampInt(input.timeoutMs, 1000, 60000, d.timeoutMs),
+    triage: bool(input.triage, d.triage),
+    attribution: bool(input.attribution, d.attribution),
+    verify: bool(input.verify, d.verify),
+    rank: bool(input.rank, d.rank),
+    triageThreshold: clampNumber(input.triageThreshold, 0, 1, d.triageThreshold),
+    overrideConfidence: clampNumber(input.overrideConfidence, 0, 1, d.overrideConfidence)
+  };
+  if (typeof input.fetchImpl === "function") jev.fetchImpl = input.fetchImpl;
+  return jev;
 }
 
 function normalizeProvider(value) {

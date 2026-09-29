@@ -27,7 +27,10 @@ test("every gateway-config knob a GM can set is in exactly one stored layer", ()
   assert.deepEqual(overlap, []);
   // Everything in GATEWAY_DEFAULTS except the connection basics is reachable from the form.
   const basics = new Set(["provider", "endpoint", "model", "apiKey"]);
-  const unreachable = Object.keys(GATEWAY_DEFAULTS).filter((key) => !basics.has(key) && !CLIENT_TUNING_KEYS.includes(key) && !WORLD_FLAVOR_KEYS.includes(key));
+  // `jev` is a nested sub-config (docs/jev-layer-contract.md) with its own fieldset: its knobs are
+  // stored under the client tuning JSON's `jev` key via normalizeJevTuning and the key in jevApiKey.
+  const nested = new Set(["jev"]);
+  const unreachable = Object.keys(GATEWAY_DEFAULTS).filter((key) => !basics.has(key) && !nested.has(key) && !CLIENT_TUNING_KEYS.includes(key) && !WORLD_FLAVOR_KEYS.includes(key));
   assert.deepEqual(unreachable, []);
 });
 

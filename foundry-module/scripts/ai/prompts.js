@@ -243,7 +243,15 @@ export function buildExtractionMessages({ notesChunk, request, config, chunkInde
   // were pasted into; per-character credit is decided afterwards from actorName. `request` is still
   // accepted (unused) so callers need not change.
   const chunkLine = chunkCount > 1 ? `This is part ${chunkIndex + 1} of ${chunkCount} of the notes.\n` : "";
-  const user = `${chunkLine}NOTES:\n<<<\n${notesChunk}\n>>>`;
+  // Party mode ADDITION (docs/jev-layer-contract.md): with `request.party` the roster is stated so
+  // nicknames and first-person lines resolve to it. Byte-identical without a party, on purpose --
+  // the cache above depends on it. No character is singled out, and no example names are used
+  // (they could be in a real roster).
+  const party = partyNames(request?.party);
+  const partyLine = party.length >= 2
+    ? `The player characters are ${party.map((name) => `"${name}"`).join(", ")}. A line written by one of them can report what ANOTHER of them did: actorName is always the character who performed the act, never merely the one telling it.\n`
+    : "";
+  const user = `${partyLine}${chunkLine}NOTES:\n<<<\n${notesChunk}\n>>>`;
   return [
     { role: "system", content: system },
     { role: "user", content: user }
@@ -255,6 +263,13 @@ const CREATIVITY_WORDING = {
   balanced: "Be flavorful but balanced: interesting mechanics a GM would happily approve.",
   wild: "Be inventive and surprising -- memorable names and unusual mechanics -- while staying balanced for the character's level."
 };
+
+// request.party: names (strings) or { name } objects; blanks and duplicates dropped.
+function partyNames(party) {
+  if (!Array.isArray(party)) return [];
+  const names = party.map((entry) => (typeof entry === "string" ? entry : entry?.name)).filter((n) => typeof n === "string" && n.trim()).map((n) => n.trim());
+  return [...new Set(names)];
+}
 
 export function creativityTemperature(config) {
   const base = config.temperature;
@@ -334,6 +349,10 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
     // for "broke the captured scout's will over three days" (3 of 8 red-worthy items were red).
     // A per-proposal check with the vice list as the match key makes the decision explicit.
     ...(config.allowRed ? [`Red check, BEFORE any proposal: fill "redCheck" with one entry per newEvent, in order: { event: its summary, vice: the key from this list that it clearly matches (read the quote), else "none" }. ${VICE_TAXONOMY.map(([vice, meaning]) => `${vice}: ${meaning}`).join(" ")} Killing someone who surrendered or was helpless, torture, and breaking a captive's will always match. A newEvent that carries darkDeed was already read as that vice from its quote: use that key unless the quote plainly shows no such deed. Ordinary fighting, stealing, lying and bargaining are "none". Then, if any event has a vice and you propose anything, one proposal MUST cite that event in its evidence and be metadata.polarity "red" with metadata.malignance { vice: <that key>, drawback: <a concrete cost> } -- that deed written up as a clean standard ability, or left out, is wrong. Every other proposal stays standard.`] : []),
+    // Only when Jev flagged something: the instruction text stays byte-identical otherwise.
+    ...(config.allowRed && events.some((event) => Array.isArray(event.jev?.flags) && event.jev.flags.includes("dark-act"))
+      ? ["A newEvent whose jevFlags include \"dark-act\" was judged a dark act by a second, independent reader although no darkDeed was recorded: re-read its quote and give it the matching vice unless the quote plainly shows no such deed."]
+      : []),
     ...(titles ? [titleInstruction(config)] : []),
     `Failures: ${req.eventOutcomePhilosophy ?? ""}`,
     // "May" was never enough: at GD level 50 the model wrote only Skills (2 of 2 real runs), so the GM
@@ -396,7 +415,9 @@ export function buildProposalMessages({ request, config, events, themeEvidence =
       // Batch 3: the vice stage 1 already read off the quote. Only when there is one, so the red
       // check sees a flag on the rare dark event instead of "none" noise on every event.
       ...(event.darkDeed && event.darkDeed !== "none" ? { darkDeed: event.darkDeed, darkSeverity: event.darkSeverity } : {}),
-      ...(event.actorName ? { actorName: event.actorName } : {})
+      ...(event.actorName ? { actorName: event.actorName } : {}),
+      // Jev's second opinion (pipeline.js#jevAnnotateEvents): "dark-act" is what the red check keys on.
+      ...(Array.isArray(event.jev?.flags) && event.jev.flags.length ? { jevFlags: event.jev.flags } : {})
     })),
     tagEvidence: roundValues(tagEvidence),
     themeEvidence: roundValues(themeEvidence),

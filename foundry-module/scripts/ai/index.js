@@ -58,6 +58,18 @@ export {
   normalizeProposalShape,
   repairProposal,
   shouldPropose,
-  runGatewayPipeline
+  runGatewayPipeline,
+  runProposalStageFor
 } from "./pipeline.js";
-export { GATEWAY_DEFAULTS, PIPELINES, PROPOSAL_MODES, CREATIVITY_LEVELS, PROVIDERS, normalizeGatewayConfig } from "./gateway-config.js";
+export { GATEWAY_DEFAULTS, PIPELINES, PROPOSAL_MODES, CREATIVITY_LEVELS, PROVIDERS, normalizeGatewayConfig, normalizeJevConfig } from "./gateway-config.js";
+export {
+  JEV_DEFAULTS,
+  JEV_BATCH_SIZE,
+  JEV_OUTCOMES,
+  JevError,
+  createJevClient,
+  triageChunks,
+  attributeEvents,
+  verifyEvents,
+  rankProposals
+} from "./jev.js";
