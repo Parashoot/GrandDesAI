@@ -12,7 +12,7 @@ source: `foundry-module/`. Live install: `%LOCALAPPDATA%\FoundryVTT\Data\modules
 
 ## Commands (run from `foundry-module/`)
 ```powershell
-npm test                                    # 840 unit tests, ~30 s, no network
+npm test                                    # 907 unit tests, ~30 s, no network
 node tools/nlp-scale/job-runner.mjs         # job queue for real-model scale runs (see below)
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --reps 3            # full corpus vs local Ollama
 node tools/nlp-scale/run.mjs --model qwen3:30b-a3b --filter traps,non-english --reps 5
@@ -83,9 +83,18 @@ Grappler's Resilience). Landed: proposal quality gates (owned-Skill / class-feat
 terms rewritten or skipped, bare class motifs re-coined), pending cap, C5 review (eventDedupeKey includes the
 actor; differentActors ignores titles). 840 tests + 1 todo. Foundry was down: the PF2e live check is pending.
 
-Open, in order (see the board):
-1. Extraction: softened dark deeds, two deeds per event, smashed-lock misread (pf2e s2), over-splits.
-2. Proposals: tier-1 balance outliers (beef7277), rd-008 red miss, bland re-coined motifs, single-session failures.
-3. Playtest: salt-lantern s3 and ember-road s4 to exercise the new gates on both systems.
-4. Live Foundry (both worlds): Suggest/Reject buttons + the PF2e live check, when the server is up.
-5. Cloud packets C1-C3; the repair-turn redCheck todo (low).
+2026-09-29: gap audit (3 code audits + live Foundry audit) filed 40 items under the epic "AI-first Grand
+Design" (278670bb, 5 features). First batch landed and verified LIVE in EndexDND 5E (build c579a64,
+`tools/playtest/live-verify.mjs` 15/15): "Author with AI" really authors (adapter.authorProposal, stage-2
+target); no templates/Knack placeholders when the AI read the notes; authored templates survive; Class
+evolutions stay approvable past their milestone; AI settings per USER (not browser) with an "AI expected"
+warning; adapter rebuilds on settings change; rest shows fallback warnings; milestone capstones tier 3;
+deploys stamp a build (0.28.x) shown at ready, in the Gateway form and Under the hood. 907 tests + 1 todo.
+Foundry: the owner authorised Claude to log in as Gamemaster (no password) and drive the worlds.
+
+Open, in order (see the board, epic 278670bb):
+1. PF2e live verify (switch to world "endex" when free; Ollama is shared with MandoAI).
+2. AI authoring feature: milestone retry, fallback numbers/rolls, naming, near-duplicate proposals, theme slugs.
+3. Advanced mechanics feature (evolution, merge, titles, Horror Rank, combos) + registry UI.
+4. Real game items (structured damage/saves/modifiers), proposal details/edit, party analyze, Populate AI.
+5. Earlier items: softened dark deeds, over-splits, tier-1 balance, rd-008.
